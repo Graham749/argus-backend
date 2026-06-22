@@ -25,7 +25,8 @@ function fetchUserFromGraph(token) {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
-      }
+      },
+      timeout: 5000
     };
 
     const req = https.request(options, (res) => {
@@ -40,12 +41,17 @@ function fetchUserFromGraph(token) {
             reject(new Error('Failed to parse user data'));
           }
         } else {
+          console.error('[user] Graph API error:', res.statusCode, data);
           reject(new Error(`Graph API error: ${res.statusCode}`));
         }
       });
     });
 
     req.on('error', reject);
+    req.on('timeout', () => {
+      req.destroy();
+      reject(new Error('Graph API timeout'));
+    });
     req.end();
   });
 }
@@ -61,8 +67,23 @@ async function getCurrentUser(req, res) {
     }
 
     console.log('[user] Fetching current user from Microsoft Graph...');
-    const token = getAccessToken();
+    let token;
+    try {
+      token = getAccessToken();
+      console.log('[user] Got access token');
+    } catch (tokenErr) {
+      console.error('[user] Token error:', tokenErr.message);
+      // Fallback to environment or default user
+      return res.json({
+        name: process.env.FALLBACK_USER_NAME || 'Aurora User',
+        email: process.env.FALLBACK_USER_EMAIL || 'user@aurora.local',
+        initials: 'AU',
+        id: 'fallback'
+      });
+    }
+
     const user = await fetchUserFromGraph(token);
+    console.log('[user] Got user from Graph:', user.displayName);
 
     const initials = ((user.givenName || user.displayName || '')[0] + (user.surname || user.displayName.split(' ')[1] || '')[0]).toUpperCase();
 
@@ -76,10 +97,17 @@ async function getCurrentUser(req, res) {
     cachedUser = cachedData;
     userCacheTime = now;
 
+    console.log('[user] Returning user:', cachedData.name);
     res.json(cachedData);
   } catch (err) {
-    console.error('[user]', err);
-    res.status(500).json({ error: err.message });
+    console.error('[user] Error:', err.message);
+    // Fallback to default user on any error
+    res.json({
+      name: process.env.FALLBACK_USER_NAME || 'Aurora User',
+      email: process.env.FALLBACK_USER_EMAIL || 'user@aurora.local',
+      initials: 'AU',
+      id: 'fallback'
+    });
   }
 }
 
