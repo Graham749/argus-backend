@@ -57,58 +57,14 @@ function fetchUserFromGraph(token) {
 }
 
 async function getCurrentUser(req, res) {
-  try {
-    const now = Date.now();
-
-    // Cache for 5 minutes
-    if (cachedUser && userCacheTime && (now - userCacheTime) < 5 * 60 * 1000) {
-      console.log('[user] Using cached user info');
-      return res.json(cachedUser);
-    }
-
-    console.log('[user] Fetching current user from Microsoft Graph...');
-    let token;
-    try {
-      token = getAccessToken();
-      console.log('[user] Got access token');
-    } catch (tokenErr) {
-      console.error('[user] Token error:', tokenErr.message);
-      // Fallback to environment or default user
-      return res.json({
-        name: process.env.FALLBACK_USER_NAME || 'Aurora User',
-        email: process.env.FALLBACK_USER_EMAIL || 'user@aurora.local',
-        initials: 'AU',
-        id: 'fallback'
-      });
-    }
-
-    const user = await fetchUserFromGraph(token);
-    console.log('[user] Got user from Graph:', user.displayName);
-
-    const initials = ((user.givenName || user.displayName || '')[0] + (user.surname || user.displayName.split(' ')[1] || '')[0]).toUpperCase();
-
-    const cachedData = {
-      name: user.displayName || user.userPrincipalName,
-      email: user.mail || user.userPrincipalName,
-      initials: initials,
-      id: user.id
-    };
-
-    cachedUser = cachedData;
-    userCacheTime = now;
-
-    console.log('[user] Returning user:', cachedData.name);
-    res.json(cachedData);
-  } catch (err) {
-    console.error('[user] Error:', err.message);
-    // Fallback to default user on any error
-    res.json({
-      name: process.env.FALLBACK_USER_NAME || 'Aurora User',
-      email: process.env.FALLBACK_USER_EMAIL || 'user@aurora.local',
-      initials: 'AU',
-      id: 'fallback'
-    });
-  }
+  // For now: return hardcoded user to verify endpoint works
+  console.log('[current-user] Endpoint called - returning test user');
+  res.json({
+    name: 'Graham Clark',
+    email: 'graham@aurora.local',
+    initials: 'GC',
+    id: 'test-user'
+  });
 }
 
 module.exports = getCurrentUser;
