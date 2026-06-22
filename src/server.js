@@ -18,16 +18,14 @@ app.use((req, res, next) => {
   next();
 });
 
-// Serve Argus dashboard static files
 const argusPath = path.join(__dirname, '../../skills-for-fabric/Argus/Argus live data update');
-app.use(express.static(argusPath));
 
 // Health check
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// API routes
+// API routes (MUST be before static files)
 app.get('/api/lakehouse-status', lakehouseStatus);
 app.get('/api/features', features);
 app.get('/api/current-user', currentUser);
@@ -36,6 +34,9 @@ app.get('/api/current-user', currentUser);
 app.get('/', (req, res) => {
   res.sendFile(path.join(argusPath, 'Argus.dc.html'));
 });
+
+// Serve Argus dashboard static files (AFTER API routes)
+app.use(express.static(argusPath));
 
 // Error handler
 app.use((err, req, res, next) => {
