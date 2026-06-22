@@ -1,5 +1,6 @@
 require('dotenv').config();
 const express = require('express');
+const path = require('path');
 const lakehouseStatus = require('./api/lakehouse-status');
 const features = require('./api/features');
 
@@ -16,6 +17,10 @@ app.use((req, res, next) => {
   next();
 });
 
+// Serve Argus dashboard static files
+const argusPath = path.join(__dirname, '../../skills-for-fabric/Argus/Argus live data update');
+app.use(express.static(argusPath));
+
 // Health check
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
@@ -24,6 +29,11 @@ app.get('/health', (req, res) => {
 // API routes
 app.get('/api/lakehouse-status', lakehouseStatus);
 app.get('/api/features', features);
+
+// Serve Argus dashboard at root
+app.get('/', (req, res) => {
+  res.sendFile(path.join(argusPath, 'Argus.dc.html'));
+});
 
 // Error handler
 app.use((err, req, res, next) => {
