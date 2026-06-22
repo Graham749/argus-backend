@@ -45,6 +45,7 @@ const medalion = {
       { name: 'v_silver_pb_subfeatures', purpose: 'Deduped subfeatures with parent feature', sources: ['bronze_pb_subfeatures', 'bronze_pb_features'], source: 'Productboard', stage: 'validated' },
       { name: 'v_silver_pb_releases', purpose: 'Deduped releases with latest state', sources: ['bronze_pb_releases'], source: 'Productboard', stage: 'validated' },
       { name: 'v_silver_pb_release_groups', purpose: 'Release groupings (e.g., quarters)', sources: ['bronze_pb_release_groups'], source: 'Productboard', stage: 'validated' },
+      { name: 'v_silver_pb_release_group_members', purpose: 'Release group membership mappings', sources: ['bronze_pb_release_groups'], source: 'Productboard', stage: 'validated' },
       { name: 'v_silver_pb_initiatives', purpose: 'Deduped initiatives with hierarchy', sources: ['bronze_pb_initiatives'], source: 'Productboard', stage: 'validated' },
       { name: 'v_silver_pb_objectives', purpose: 'Deduped OKR objectives', sources: ['bronze_pb_objectives'], source: 'Productboard', stage: 'validated' },
       { name: 'v_silver_pb_key_results', purpose: 'Deduped key results linked to objectives', sources: ['bronze_pb_key_results'], source: 'Productboard', stage: 'validated' },
@@ -72,6 +73,13 @@ const medalion = {
       // Supporting enrichment views
       { name: 'v_silver_pb_priority_region', purpose: 'Region classification & weighting for strategic scoring', sources: ['v_silver_pb_features'], source: 'Productboard', stage: 'validated' },
       { name: 'v_silver_pb_subfeature_prioritization', purpose: 'Subfeature scoring by region & criticality', sources: ['v_silver_pb_subfeatures'], source: 'Productboard', stage: 'validated' },
+
+      // Feature prioritization scoring lookups
+      { name: 'v_silver_lookup_regional_priority_rank', purpose: 'Priority range → rank score mapping (1-3:10, 4-6:7, 7-10:3, 11-999:1)', sources: [], source: 'Product Operations', stage: 'validated' },
+      { name: 'v_silver_lookup_criticality_score', purpose: 'Criticality level → score mapping (BLOCKER:4, HIGH:2, MEDIUM:1, LOW:0)', sources: [], source: 'Product Operations', stage: 'validated' },
+      { name: 'v_silver_lookup_efficiency_score', purpose: 'Efficiency level → score mapping (HIGH:4, MEDIUM:2, LOW:0)', sources: [], source: 'Product Operations', stage: 'validated' },
+      { name: 'v_silver_lookup_region_factor', purpose: 'Region market count → factor multiplier (16+:1.5, 6-15:1.3, 2-5:1.2, 1:1.0, 0:1.0)', sources: [], source: 'Product Operations', stage: 'validated' },
+      { name: 'v_silver_lookup_strategic_regions', purpose: 'Strategic region list with scoring weights (USA, NORAM, JPN, FRA, BENE, NOD, POL, IRX:2)', sources: [], source: 'Product Operations', stage: 'validated' },
 
       // Team/tag decomposition
       { name: 'v_silver_pb_initiative_teams', purpose: 'Initiative → team assignments (JSON unpacked)', sources: ['bronze_pb_initiatives'], source: 'Productboard', stage: 'validated' },

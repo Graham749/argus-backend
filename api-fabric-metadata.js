@@ -5,6 +5,14 @@ const { execSync } = require('child_process');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// CORS middleware
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+  res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  next();
+});
+
 // Fabric connection config
 let connPool = null;
 
@@ -40,50 +48,92 @@ async function initConnection() {
   }
 }
 
-// Data source categorization
+// Data source categorization — returns { layer, source } where layer is 'silver'|'gold' and source is the data source
 function categorizeView(viewName) {
-  if (viewName.includes('_pb_')) return 'Productboard';
-  if (viewName.includes('_sf_')) return 'Salesforce';
-  if (viewName.includes('_lookup_') || viewName.includes('_prioritization')) return 'Product Operations';
-  if (viewName.includes('_posthog_')) return 'Posthog';
-  if (viewName.includes('_zendesk_')) return 'Zendesk';
-  if (viewName.includes('_jira_')) return 'Jira';
-  return 'Other';
+  // Determine medallion layer first
+  let layer = 'other';
+  if (viewName.startsWith('v_silver_')) layer = 'silver';
+  else if (viewName.startsWith('v_gold_')) layer = 'gold';
+
+  // Determine source system
+  let source = 'Other';
+  if (viewName.includes('_pb_')) source = 'Productboard';
+  else if (viewName.includes('_sf_')) source = 'Salesforce';
+  else if (viewName.includes('_lookup_') || viewName.includes('_prioritization')) source = 'Product Operations';
+  else if (viewName.includes('_posthog_')) source = 'Posthog';
+  else if (viewName.includes('_zendesk_')) source = 'Zendesk';
+  else if (viewName.includes('_jira_')) source = 'Jira';
+
+  return { layer, source };
 }
 
-// Get all views with metadata
-async function getDataSources() {
+// Get all views and tables with metadata (combined for performance)
+async function getMetadata() {
   try {
     const conn = await initConnection();
 
-    const result = await conn.request().query(`
+    // Get basic table/view structure
+    const structResult = await conn.request().query(`
       SELECT
-        TABLE_NAME as view_name,
+        TABLE_NAME as name,
         TABLE_SCHEMA as schema_name,
         TABLE_TYPE as type
       FROM INFORMATION_SCHEMA.TABLES
       WHERE TABLE_SCHEMA = 'dbo'
-        AND TABLE_TYPE = 'VIEW'
-        AND (TABLE_NAME LIKE 'v_%' OR TABLE_NAME LIKE 'lu_%')
       ORDER BY TABLE_NAME
     `);
 
-    // Organize by data source
-    const dataSources = {};
+    // Get row counts and modification times for base tables
+    const statsResult = await conn.request().query(`
+      SELECT
+        t.name,
+        SUM(p.rows) as row_count,
+        MAX(t.modify_date) as last_modified
+      FROM sys.tables t
+      LEFT JOIN sys.partitions p ON t.object_id = p.object_id AND p.index_id IN (0, 1)
+      WHERE t.schema_id = SCHEMA_ID('dbo')
+      GROUP BY t.object_id, t.name, t.modify_date
+    `);
 
-    result.recordset.forEach(view => {
-      const source = categorizeView(view.view_name);
-      if (!dataSources[source]) {
-        dataSources[source] = [];
-      }
-      dataSources[source].push({
-        name: view.view_name,
-        schema: view.schema_name,
-        type: view.type
-      });
+    // Create lookup for stats
+    const statsMap = {};
+    statsResult.recordset.forEach(stat => {
+      statsMap[stat.name] = {
+        rowCount: stat.row_count || 0,
+        lastModified: stat.last_modified || null
+      };
     });
 
-    return dataSources;
+    const silverViews = [];
+    const goldViews = [];
+    const secondaryViews = [];
+    const tables = [];
+
+    structResult.recordset.forEach(item => {
+      if (item.type === 'VIEW') {
+        const { layer, source } = categorizeView(item.name);
+        const view = {
+          name: item.name,
+          schema: item.schema_name,
+          source: source
+        };
+
+        if (layer === 'silver') silverViews.push(view);
+        else if (layer === 'gold') goldViews.push(view);
+        else secondaryViews.push(view);
+      } else if (item.type === 'BASE TABLE') {
+        const stats = statsMap[item.name] || { rowCount: 0, lastModified: null };
+        tables.push({
+          name: item.name,
+          schema: item.schema_name,
+          type: item.type,
+          rowCount: stats.rowCount,
+          lastModified: stats.lastModified
+        });
+      }
+    });
+
+    return { silverViews, goldViews, secondaryViews, tables };
   } catch (err) {
     console.error('[API] Query error:', err.message);
     throw err;
@@ -95,7 +145,15 @@ async function getDataSources() {
 // GET /api/data-sources — Full metadata for all sources
 app.get('/api/data-sources', async (req, res) => {
   try {
-    const dataSources = await getDataSources();
+    const { silverViews, goldViews, secondaryViews } = await getMetadata();
+    const allViews = [...silverViews, ...goldViews, ...secondaryViews];
+
+    // Group by source
+    const dataSources = {};
+    allViews.forEach(v => {
+      if (!dataSources[v.source]) dataSources[v.source] = [];
+      dataSources[v.source].push(v);
+    });
 
     // Reorder to put primary sources first
     const ordered = {};
@@ -124,14 +182,22 @@ app.get('/api/data-sources', async (req, res) => {
 // GET /api/data-sources/minimal — Just view names grouped by source (for UI)
 app.get('/api/data-sources/minimal', async (req, res) => {
   try {
-    const dataSources = await getDataSources();
+    const { silverViews, goldViews, secondaryViews } = await getMetadata();
+    const allViews = [...silverViews, ...goldViews, ...secondaryViews];
+
+    // Group by source
+    const dataSources = {};
+    allViews.forEach(v => {
+      if (!dataSources[v.source]) dataSources[v.source] = [];
+      dataSources[v.source].push(v.name);
+    });
 
     const minimal = {};
     const priority = ['Productboard', 'Salesforce', 'Product Operations', 'Posthog', 'Zendesk', 'Jira'];
 
     priority.forEach(source => {
       if (dataSources[source]) {
-        minimal[source] = dataSources[source].map(v => v.name);
+        minimal[source] = dataSources[source];
       }
     });
 
@@ -141,44 +207,104 @@ app.get('/api/data-sources/minimal', async (req, res) => {
   }
 });
 
-// GET /api/build-status — For Argus Build Status widget
-app.get('/api/build-status', async (req, res) => {
+// GET /api/lakehouse-status — For Argus Build Status widget (legacy format)
+app.get('/api/lakehouse-status', async (req, res) => {
   try {
-    const dataSources = await getDataSources();
+    const { silverViews, goldViews, secondaryViews, tables } = await getMetadata();
 
-    // Format for Argus Build Status UI
+    // Group silver views by source
+    const silverBySource = {};
+    silverViews.forEach(v => {
+      if (!silverBySource[v.source]) silverBySource[v.source] = [];
+      silverBySource[v.source].push(v);
+    });
+
+    // Group gold views by source
+    const goldBySource = {};
+    goldViews.forEach(v => {
+      if (!goldBySource[v.source]) goldBySource[v.source] = [];
+      goldBySource[v.source].push(v);
+    });
+
+    // Group secondary views by source
+    const secondaryBySource = {};
+    secondaryViews.forEach(v => {
+      if (!secondaryBySource[v.source]) secondaryBySource[v.source] = [];
+      secondaryBySource[v.source].push(v);
+    });
+
+    // Filter and categorize bronze tables (only those starting with 'bronze_')
+    const bronzeTables = tables.filter(t => t.name.startsWith('bronze_'));
+    const bronzeBySource = {};
+
+    // Prepare table objects with HTML-expected properties
+    const bronzeTableDetails = bronzeTables.map(t => {
+      let source = 'Other';
+      if (t.name.includes('_pb')) source = 'Productboard';
+      else if (t.name.includes('_sfapi')) source = 'Salesforce';
+
+      if (!bronzeBySource[source]) bronzeBySource[source] = [];
+
+      // Each table has 1 load (distinct modification timestamp = 1 unique date)
+      const loadCount = t.lastModified ? 1 : 0;
+
+      const tableDetail = {
+        name: t.name,
+        source: source,
+        lastRefresh: t.lastModified ? new Date(t.lastModified).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: '2-digit' }) : 'Unknown',
+        rowCount: loadCount,
+        loadLabel: loadCount === 1 ? 'load' : 'loads'
+      };
+
+      bronzeBySource[source].push(tableDetail);
+      return tableDetail;
+    });
+
+    // Calculate total distinct loads across all bronze tables
+    const distinctTimestamps = new Set(
+      bronzeTables
+        .map(t => t.lastModified)
+        .filter(ts => ts !== null && ts !== undefined)
+        .map(ts => new Date(ts).toLocaleDateString())
+    );
+    const totalLoads = distinctTimestamps.size;
+
+    // Build sourceGroups for HTML rendering
+    const sourceGroups = Object.entries(bronzeBySource).map(([source, tables]) => ({
+      name: source,
+      count: tables.length,
+      tables: tables
+    }));
+
     const buildStatus = {
-      primary: {
-        title: 'Medallion Layer Data Sources',
-        sources: {}
+      bronze: {
+        count: bronzeTables.length,
+        description: 'Source tables',
+        tables: bronzeTableDetails,
+        sourceGroups: sourceGroups,
+        totalRows: bronzeTables.reduce((sum, t) => sum + (t.rowCount || 0), 0),
+        lastRefresh: bronzeTables.length > 0 ? new Date(Math.max(...bronzeTables.map(t => new Date(t.lastModified).getTime()).filter(n => !isNaN(n)))).toISOString() : null,
+        productboardCount: (bronzeBySource['Productboard'] || []).length,
+        salesforceCount: (bronzeBySource['Salesforce'] || []).length
       },
-      secondary: {
-        title: 'Observability & Support',
-        sources: {}
+      silver: {
+        count: silverViews.length,
+        description: 'Transformed views',
+        status: 'ready',
+        views: silverViews,
+        productboardCount: (silverBySource['Productboard'] || []).length,
+        salesforceCount: (silverBySource['Salesforce'] || []).length,
+        productOpsCount: (silverBySource['Product Operations'] || []).length
+      },
+      gold: {
+        count: goldViews.length,
+        description: 'Materialized tables',
+        status: 'ready',
+        views: goldViews,
+        productboardCount: (goldBySource['Productboard'] || []).length,
+        salesforceCount: (goldBySource['Salesforce'] || []).length
       }
     };
-
-    // Primary sources
-    ['Productboard', 'Salesforce', 'Product Operations'].forEach(source => {
-      if (dataSources[source]) {
-        buildStatus.primary.sources[source] = {
-          views: dataSources[source].length,
-          status: 'ready',
-          updated: new Date().toISOString()
-        };
-      }
-    });
-
-    // Secondary sources
-    ['Posthog', 'Zendesk', 'Jira'].forEach(source => {
-      if (dataSources[source]) {
-        buildStatus.secondary.sources[source] = {
-          views: dataSources[source].length,
-          status: 'ready',
-          updated: new Date().toISOString()
-        };
-      }
-    });
 
     res.json(buildStatus);
   } catch (err) {
