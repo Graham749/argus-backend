@@ -90,17 +90,17 @@ const medalion = {
     description: 'Materialized analytical tables. When silver PoC is validated, data team materializes as Delta tables.',
     status: 'production-ready',
     views: [
-      { name: 'v_gold_pb_feature_prioritization', purpose: 'Feature scoring by region with market count weighting', sources: ['v_silver_pb_features', 'v_silver_pb_path_feature_product', 'v_silver_pb_priority_region'], type: 'Analytical', stage: 'ready-for-materialization' },
-      { name: 'v_gold_pb_feature_prioritization_final', purpose: 'Final ranked feature priorities (rank + criticality + efficiency + region)', sources: ['v_gold_pb_feature_prioritization', 'v_silver_pb_subfeature_prioritization'], type: 'Analytical', stage: 'ready-for-materialization' },
-      { name: 'v_gold_pb_subfeature_prioritization', purpose: 'Subfeature ranking mirroring feature logic', sources: ['v_silver_pb_subfeatures', 'v_silver_pb_path_feature_subfeature', 'v_silver_pb_priority_region'], type: 'Analytical', stage: 'ready-for-materialization' },
-      { name: 'v_gold_pb_note_company_feature', purpose: 'Denormalized: note → company → feature feedback fact table', sources: ['v_silver_pb_notes', 'v_silver_pb_path_note_company', 'v_silver_pb_path_note_feature'], type: 'Fact Table', stage: 'ready-for-materialization' },
-      { name: 'v_gold_pb_note_company_subfeature', purpose: 'Denormalized: note → company → subfeature feedback fact table', sources: ['v_silver_pb_notes', 'v_silver_pb_path_note_company', 'v_silver_pb_path_note_subfeature'], type: 'Fact Table', stage: 'ready-for-materialization' },
-      { name: 'v_gold_pb_path_feature_component', purpose: '6-level hierarchy walk: feature → component path', sources: ['v_silver_pb_path_feature_component'], type: 'Lineage', stage: 'ready-for-materialization' },
-      { name: 'v_gold_pb_path_feature_product', purpose: 'Feature → product lineage', sources: ['v_silver_pb_path_feature_product'], type: 'Lineage', stage: 'ready-for-materialization' },
-      { name: 'v_gold_pb_path_feature_initiative', purpose: 'Feature → initiative paths (direct & via objective)', sources: ['v_silver_pb_path_feature_initiative'], type: 'Lineage', stage: 'ready-for-materialization' },
-      { name: 'v_gold_pb_path_feature_objective', purpose: 'Feature → objective lineage', sources: ['v_silver_pb_path_feature_objective'], type: 'Lineage', stage: 'ready-for-materialization' },
-      { name: 'v_gold_pb_path_feature_release', purpose: 'Feature & subfeature → release assignment', sources: ['v_silver_pb_path_feature_release'], type: 'Lineage', stage: 'ready-for-materialization' },
-      { name: 'v_gold_pb_path_feature_subfeature', purpose: 'Feature → subfeature parent-child', sources: ['v_silver_pb_path_feature_subfeature'], type: 'Lineage', stage: 'ready-for-materialization' }
+      { name: 'v_gold_pb_feature_prioritization', purpose: 'Feature scoring by region with market count weighting', sources: ['v_silver_pb_features', 'v_silver_pb_path_feature_product', 'v_silver_pb_priority_region'], source: 'Productboard', stage: 'ready-for-materialization' },
+      { name: 'v_gold_pb_feature_prioritization_final', purpose: 'Final ranked feature priorities (rank + criticality + efficiency + region)', sources: ['v_gold_pb_feature_prioritization', 'v_silver_pb_subfeature_prioritization'], source: 'Productboard', stage: 'ready-for-materialization' },
+      { name: 'v_gold_pb_subfeature_prioritization', purpose: 'Subfeature ranking mirroring feature logic', sources: ['v_silver_pb_subfeatures', 'v_silver_pb_path_feature_subfeature', 'v_silver_pb_priority_region'], source: 'Productboard', stage: 'ready-for-materialization' },
+      { name: 'v_gold_pb_note_company_feature', purpose: 'Denormalized: note → company → feature feedback fact table', sources: ['v_silver_pb_notes', 'v_silver_pb_path_note_company', 'v_silver_pb_path_note_feature'], source: 'Productboard', stage: 'ready-for-materialization' },
+      { name: 'v_gold_pb_note_company_subfeature', purpose: 'Denormalized: note → company → subfeature feedback fact table', sources: ['v_silver_pb_notes', 'v_silver_pb_path_note_company', 'v_silver_pb_path_note_subfeature'], source: 'Productboard', stage: 'ready-for-materialization' },
+      { name: 'v_gold_pb_path_feature_component', purpose: '6-level hierarchy walk: feature → component path', sources: ['v_silver_pb_path_feature_component'], source: 'Productboard', stage: 'ready-for-materialization' },
+      { name: 'v_gold_pb_path_feature_product', purpose: 'Feature → product lineage', sources: ['v_silver_pb_path_feature_product'], source: 'Productboard', stage: 'ready-for-materialization' },
+      { name: 'v_gold_pb_path_feature_initiative', purpose: 'Feature → initiative paths (direct & via objective)', sources: ['v_silver_pb_path_feature_initiative'], source: 'Productboard', stage: 'ready-for-materialization' },
+      { name: 'v_gold_pb_path_feature_objective', purpose: 'Feature → objective lineage', sources: ['v_silver_pb_path_feature_objective'], source: 'Productboard', stage: 'ready-for-materialization' },
+      { name: 'v_gold_pb_path_feature_release', purpose: 'Feature & subfeature → release assignment', sources: ['v_silver_pb_path_feature_release'], source: 'Productboard', stage: 'ready-for-materialization' },
+      { name: 'v_gold_pb_path_feature_subfeature', purpose: 'Feature → subfeature parent-child', sources: ['v_silver_pb_path_feature_subfeature'], source: 'Productboard', stage: 'ready-for-materialization' }
     ]
   }
 };
