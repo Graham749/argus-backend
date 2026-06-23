@@ -83,7 +83,12 @@ input{font-family:inherit;}
       <!-- ============ HEALTH ============ -->
       <sc-if value="{{ isHealth }}" hint-placeholder-val="{{ true }}">
       <div style="padding:32px;max-width:1000px;animation:argusFade .25s ease;">
-        <!-- Salesforce Subscriptions Card (Live Data - Top Priority) -->
+        <div style="margin-bottom:22px;">
+          <div style="font-size:24px;font-weight:700;letter-spacing:-0.01em;">Client health card</div>
+          <div style="font-size:14px;color:#6d6d6c;margin-top:4px;">Unified signals from Posthog · Zendesk · Salesforce</div>
+        </div>
+
+        <!-- Salesforce Subscriptions Card (Live Data) -->
         <div style="background:#fff;border:1px solid #e6e6e5;border-radius:12px;padding:20px;box-shadow:0 1px 3px rgba(60,60,59,0.07);margin-bottom:28px;">
           <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
             <img src="./assets/Salesforce-Logo.jpg" alt="Salesforce" style="width:40px;height:40px;object-fit:contain;" />
@@ -129,11 +134,6 @@ input{font-family:inherit;}
           <div id="sfErrorMessage" style="padding:20px;text-align:center;color:#d32f2f;display:none;">
             <span style="font-size:13px;" id="sfErrorText"></span>
           </div>
-        </div>
-
-        <div style="margin-bottom:22px;">
-          <div style="font-size:24px;font-weight:700;letter-spacing:-0.01em;">Client health card</div>
-          <div style="font-size:14px;color:#6d6d6c;margin-top:4px;">Unified signals from Posthog · Zendesk · Salesforce</div>
         </div>
 
         <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:20px;">
