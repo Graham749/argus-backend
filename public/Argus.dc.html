@@ -1135,7 +1135,7 @@ class Component extends DCLogic {
       const statusColor = sub.status === 'Termination in Progress' ? '#d32f2f' : '#00be86';
 
       row.innerHTML = `
-        <td style="padding:10px 12px;color:#3c3c3b;font-size:11px;">${sub.subscription_id.substring(0,10)}</td>
+        <td style="padding:10px 12px;color:#3c3c3b;font-size:11px;">${sub.subscription_id}</td>
         <td style="padding:10px 12px;color:#3c3c3b;">${sub.product_category}</td>
         <td style="padding:10px 12px;text-align:right;color:#3c3c3b;font-weight:600;">£${sub.arr_gbp.toLocaleString()}</td>
         <td style="padding:10px 12px;color:#6d6d6c;font-size:11px;">${sub.service_type || '-'}</td>
