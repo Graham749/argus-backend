@@ -1,0 +1,1252 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+@font-face{font-family:'Lato';src:url('assets/fonts/lato-regular.woff2') format('woff2');font-weight:400;font-style:normal;font-display:swap;}
+@font-face{font-family:'Lato';src:url('assets/fonts/lato-bold.woff2') format('woff2');font-weight:700;font-style:normal;font-display:swap;}
+@font-face{font-family:'Lato';src:url('assets/fonts/lato-black.woff2') format('woff2');font-weight:900;font-style:normal;font-display:swap;}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Lato','Helvetica Neue',Arial,sans-serif;background:#f7f7f6;color:#3c3c3b;-webkit-font-smoothing:antialiased;}
+input{font-family:inherit;}
+@keyframes argusBounce{0%,60%,100%{transform:translateY(0);}30%{transform:translateY(-5px);}}
+@keyframes argusFade{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+</style>
+</helmet>
+
+<div style="min-height:100vh;background:#f7f7f6;">
+
+  <nav style="background:#3c3c3b;padding:0 28px;display:flex;align-items:center;justify-content:space-between;height:60px;position:sticky;top:0;z-index:100;box-shadow:0 1px 0 rgba(0,0,0,0.15);">
+    <div style="display:flex;align-items:center;gap:16px;">
+      <img src="assets/logo-negative.png" alt="Aurora Energy Research" style="height:26px;display:block;"/>
+      <span style="width:1px;height:24px;background:rgba(255,255,255,0.18);"></span>
+      <span style="font-size:13px;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;color:#fff;">Argus</span>
+      <span style="font-size:10px;font-weight:700;padding:3px 9px;background:#ffcc00;color:#3c3c3b;border-radius:20px;letter-spacing:0.08em;text-transform:uppercase;">Beta</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:16px;">
+      <span style="display:flex;align-items:center;gap:7px;font-size:12px;color:rgba(255,255,255,0.6);">
+        <span style="width:7px;height:7px;border-radius:50%;background:#00be86;box-shadow:0 0 0 3px rgba(0,190,134,0.25);"></span>
+        Synced {{ syncedAgo }}
+      </span>
+      <span style="font-size:13px;color:rgba(255,255,255,0.7);">{{ currentUser.name }}</span>
+      <span style="width:32px;height:32px;border-radius:50%;background:#52524f;border:1.5px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;">{{ currentUser.initials }}</span>
+    </div>
+  </nav>
+
+  <div style="display:flex;min-height:calc(100vh - 60px);">
+
+    <aside style="width:226px;flex-shrink:0;background:#3c3c3b;padding:22px 0;display:flex;flex-direction:column;gap:2px;">
+      <div style="font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:rgba(255,255,255,0.32);padding:10px 20px 6px;">Intelligence</div>
+      <a href="#" onClick="{{ goHealth }}" style="{{ navStyleHealth }}" style-hover="background:rgba(255,255,255,0.06);color:#fff;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;flex-shrink:0;"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        Client health card
+      </a>
+      <a href="#" onClick="{{ goFeatures }}" style="{{ navStyleFeatures }}" style-hover="background:rgba(255,255,255,0.06);color:#fff;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;flex-shrink:0;"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="9"/></svg>
+        Feature priority
+      </a>
+      <a href="#" onClick="{{ goAssistant }}" style="{{ navStyleAssistant }}" style-hover="background:rgba(255,255,255,0.06);color:#fff;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;flex-shrink:0;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        Ask Argus
+      </a>
+      <a href="#" onClick="{{ goBriefing }}" style="{{ navStyleBriefing }}" style-hover="background:rgba(255,255,255,0.06);color:#fff;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;flex-shrink:0;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Pre-call briefing
+      </a>
+      <a href="#" onClick="{{ goBuildStatus }}" style="{{ navStyleBuildStatus }}" style-hover="background:rgba(255,255,255,0.06);color:#fff;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;flex-shrink:0;"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        Build status
+      </a>
+      <div style="font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:rgba(255,255,255,0.32);padding:18px 20px 6px;">Account</div>
+      <a href="#" style="display:flex;align-items:center;gap:10px;padding:8px 20px;font-size:13px;color:rgba(255,255,255,0.65);text-decoration:none;border-left:3px solid transparent;" style-hover="background:rgba(255,255,255,0.06);color:#fff;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;flex-shrink:0;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        My accounts
+      </a>
+      <a href="#" style="display:flex;align-items:center;gap:10px;padding:8px 20px;font-size:13px;color:rgba(255,255,255,0.65);text-decoration:none;border-left:3px solid transparent;" style-hover="background:rgba(255,255,255,0.06);color:#fff;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;flex-shrink:0;"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+        Usage reports
+      </a>
+      <div style="margin-top:auto;padding:16px 20px 4px;display:flex;align-items:center;gap:9px;">
+        <img src="assets/isotope.png" alt="" style="width:20px;height:20px;opacity:0.9;"/>
+        <span style="font-size:10px;line-height:1.4;color:rgba(255,255,255,0.4);">Aurora datalake<br/>Posthog · Zendesk · Salesforce · Productboard · Jira</span>
+      </div>
+    </aside>
+
+    <main style="flex:1;overflow:auto;">
+
+      <!-- ============ HEALTH ============ -->
+      <sc-if value="{{ isHealth }}" hint-placeholder-val="{{ true }}">
+      <div style="padding:32px;max-width:1000px;animation:argusFade .25s ease;">
+        <div style="margin-bottom:22px;">
+          <div style="font-size:24px;font-weight:700;letter-spacing:-0.01em;">Client health card</div>
+          <div style="font-size:14px;color:#6d6d6c;margin-top:4px;">Unified signals from Posthog · Zendesk · Salesforce</div>
+        </div>
+
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:20px;">
+          <sc-for list="{{ healthTabs }}" as="t" hint-placeholder-count="6">
+            <div onClick="{{ t.onClick }}" style="{{ t.style }}">
+              <span style="{{ t.dotStyle }}"></span>{{ t.name }}
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="display:flex;gap:4px;margin-bottom:22px;">
+          <sc-for list="{{ ranges }}" as="r" hint-placeholder-count="3">
+            <button onClick="{{ r.onClick }}" style="{{ r.style }}">{{ r.label }}</button>
+          </sc-for>
+        </div>
+
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:20px;">
+          <div style="display:flex;align-items:center;gap:14px;">
+            <div style="{{ hc.avatarStyle }}">{{ hc.initials }}</div>
+            <div>
+              <div style="font-size:22px;font-weight:700;letter-spacing:-0.01em;">{{ hc.name }}</div>
+              <div style="font-size:13px;color:#6d6d6c;margin-top:3px;">{{ hc.meta }}</div>
+              <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;">
+                <sc-for list="{{ hc.flags }}" as="f" hint-placeholder-count="4"><span style="{{ f.style }}">{{ f.text }}</span></sc-for>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="background:#fff;border:1px solid #e6e6e5;border-radius:12px;padding:20px;margin-bottom:16px;box-shadow:0 1px 3px rgba(60,60,59,0.07);">
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#9d9d9d;margin-bottom:16px;display:flex;align-items:center;gap:6px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+            Aurora product usage — Posthog
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:8px;">
+            <div style="background:#f7f7f6;border-radius:8px;padding:12px 16px;">
+              <div style="font-size:11px;color:#6d6d6c;margin-bottom:3px;">Active users</div>
+              <div onClick="{{ toggleUsers }}" style="font-size:22px;font-weight:700;color:#288184;cursor:pointer;text-decoration:underline;text-decoration-style:dotted;">{{ hc.users }} ▾</div>
+              <div style="font-size:11px;color:#9d9d9d;margin-top:2px;">of {{ hc.licensed }} licensed</div>
+            </div>
+            <div style="background:#f7f7f6;border-radius:8px;padding:12px 16px;">
+              <div style="font-size:11px;color:#6d6d6c;margin-bottom:3px;">Sessions</div>
+              <div style="font-size:22px;font-weight:700;">{{ hc.sessions }}</div>
+              <div style="font-size:11px;color:#9d9d9d;margin-top:2px;">this period</div>
+            </div>
+            <div style="background:#f7f7f6;border-radius:8px;padding:12px 16px;">
+              <div style="font-size:11px;color:#6d6d6c;margin-bottom:3px;">Avg. session</div>
+              <div style="font-size:22px;font-weight:700;">11m</div>
+              <div style="font-size:11px;color:#9d9d9d;margin-top:2px;">minutes</div>
+            </div>
+            <div style="background:#f7f7f6;border-radius:8px;padding:12px 16px;">
+              <div style="font-size:11px;color:#6d6d6c;margin-bottom:3px;">Last active</div>
+              <div style="font-size:22px;font-weight:700;">2h</div>
+              <div style="font-size:11px;color:#9d9d9d;margin-top:2px;">ago</div>
+            </div>
+          </div>
+          <sc-if value="{{ drillUsers }}" hint-placeholder-val="{{ false }}">
+            <div style="margin-top:12px;padding-top:12px;border-top:1px solid #f1f1f0;">
+              <p style="font-size:12px;color:#6d6d6c;margin-bottom:8px;">Active users this period</p>
+              <sc-for list="{{ hc.userRows }}" as="u" hint-placeholder-count="4">
+                <div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid #f1f1f0;">
+                  <div style="width:28px;height:28px;border-radius:50%;background:#e9f2f2;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#288184;flex-shrink:0;">{{ u.init }}</div>
+                  <div style="flex:1;"><div style="font-size:13px;">{{ u.name }}</div><div style="font-size:11px;color:#9d9d9d;">{{ u.role }}</div></div>
+                  <span style="font-size:12px;color:#6d6d6c;min-width:64px;text-align:right;">{{ u.sessions }} sessions</span>
+                  <span style="font-size:11px;color:#b5b5b4;min-width:72px;text-align:right;">{{ u.ago }}</span>
+                </div>
+              </sc-for>
+              <div style="display:flex;align-items:center;gap:10px;padding:7px 0;">
+                <div style="width:28px;height:28px;border-radius:50%;background:#f1f1f0;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#9d9d9d;flex-shrink:0;">+{{ hc.moreUsers }}</div>
+                <div style="font-size:13px;color:#9d9d9d;">{{ hc.moreUsers }} more users</div>
+              </div>
+            </div>
+          </sc-if>
+          <p style="font-size:12px;color:#6d6d6c;margin:18px 0 8px;">Product adoption</p>
+          <sc-for list="{{ hc.productRows }}" as="p" hint-placeholder-count="4">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid #f1f1f0;">
+              <span style="font-size:13px;color:#3c3c3b;min-width:140px;">{{ p.name }}</span>
+              <div style="flex:1;margin:0 12px;height:6px;background:#e6e6e5;border-radius:3px;overflow:hidden;"><div style="{{ p.barStyle }}"></div></div>
+              <span style="font-size:12px;color:#6d6d6c;min-width:34px;text-align:right;">{{ p.pct }}%</span>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+          <div style="background:#fff;border:1px solid #e6e6e5;border-radius:12px;padding:20px;margin-bottom:16px;box-shadow:0 1px 3px rgba(60,60,59,0.07);">
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#9d9d9d;margin-bottom:16px;display:flex;align-items:center;gap:6px;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              Open tickets — Zendesk
+            </div>
+            <sc-for list="{{ hc.openTickets }}" as="t" hint-placeholder-count="3">
+              <div style="display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:1px solid #f1f1f0;">
+                <span style="{{ t.badgeStyle }}">{{ t.label }}</span>
+                <div><p style="font-size:13px;color:#3c3c3b;line-height:1.5;">{{ t.text }}</p><p style="font-size:11px;color:#9d9d9d;margin-top:2px;">{{ t.date }}</p></div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="background:#fff;border:1px solid #e6e6e5;border-radius:12px;padding:20px;margin-bottom:16px;box-shadow:0 1px 3px rgba(60,60,59,0.07);">
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#9d9d9d;margin-bottom:16px;display:flex;align-items:center;gap:6px;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><polyline points="20 6 9 17 4 12"/></svg>
+              Closed tickets — selected period
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+              <div style="background:#f7f7f6;border-radius:8px;padding:12px 16px;"><div style="font-size:11px;color:#6d6d6c;margin-bottom:3px;">Closed</div><div style="font-size:22px;font-weight:700;">{{ hc.closed }}</div><div style="font-size:11px;color:#9d9d9d;margin-top:2px;">tickets</div></div>
+              <div style="background:#f7f7f6;border-radius:8px;padding:12px 16px;"><div style="font-size:11px;color:#6d6d6c;margin-bottom:3px;">Avg. resolution</div><div style="font-size:22px;font-weight:700;">2.4d</div><div style="font-size:11px;color:#9d9d9d;margin-top:2px;">days</div></div>
+            </div>
+            <sc-for list="{{ hc.closedTopics }}" as="c" hint-placeholder-count="4">
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #f1f1f0;font-size:13px;"><span style="color:#3c3c3b;">{{ c.topic }}</span><span style="font-weight:700;color:#6d6d6c;">{{ c.n }}</span></div>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="background:#fff;border:1px solid #e6e6e5;border-radius:12px;padding:20px;margin-bottom:16px;box-shadow:0 1px 3px rgba(60,60,59,0.07);">
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#9d9d9d;margin-bottom:16px;display:flex;align-items:center;gap:6px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            Simulations &amp; credits — selected period
+          </div>
+          <table style="width:100%;border-collapse:collapse;font-size:13px;">
+            <thead><tr>
+              <th style="font-size:11px;font-weight:700;color:#9d9d9d;text-align:left;padding:0 0 8px;border-bottom:1px solid #e6e6e5;letter-spacing:0.04em;text-transform:uppercase;">Product · Region</th>
+              <th style="font-size:11px;font-weight:700;color:#9d9d9d;text-align:right;padding:0 0 8px;border-bottom:1px solid #e6e6e5;letter-spacing:0.04em;text-transform:uppercase;">Simulations</th>
+              <th style="font-size:11px;font-weight:700;color:#9d9d9d;text-align:right;padding:0 0 8px;border-bottom:1px solid #e6e6e5;letter-spacing:0.04em;text-transform:uppercase;">Credits</th>
+            </tr></thead>
+            <tbody>
+              <sc-for list="{{ hc.consumption }}" as="r" hint-placeholder-count="4">
+                <tr>
+                  <td style="padding:9px 0;border-bottom:1px solid #f1f1f0;"><div style="font-weight:700;">{{ r.prod }}</div><div style="font-size:11px;color:#9d9d9d;margin-top:1px;">{{ r.region }}</div></td>
+                  <td style="padding:9px 0;border-bottom:1px solid #f1f1f0;text-align:right;vertical-align:top;">
+                    <sc-if value="{{ r.hasSims }}" hint-placeholder-val="{{ true }}">
+                      <span style="font-weight:700;">{{ r.sims }}</span><span style="font-size:11px;color:#9d9d9d;display:block;">of {{ r.simsOf }}</span>
+                      <div style="margin-top:3px;text-align:right;"><span style="display:inline-block;width:72px;height:5px;background:#e6e6e5;border-radius:3px;overflow:hidden;vertical-align:middle;"><span style="{{ r.simsBarStyle }}"></span></span><span style="{{ r.simsPctStyle }}">{{ r.simsPctLabel }}</span></div>
+                    </sc-if>
+                    <sc-if value="{{ r.noSims }}" hint-placeholder-val="{{ false }}"><span style="color:#b5b5b4;">—</span></sc-if>
+                  </td>
+                  <td style="padding:9px 0;border-bottom:1px solid #f1f1f0;text-align:right;vertical-align:top;">
+                    <sc-if value="{{ r.hasCreds }}" hint-placeholder-val="{{ true }}">
+                      <span style="font-weight:700;">{{ r.creds }}</span><span style="font-size:11px;color:#9d9d9d;display:block;">of {{ r.credsOf }}</span>
+                      <div style="margin-top:3px;text-align:right;"><span style="display:inline-block;width:72px;height:5px;background:#e6e6e5;border-radius:3px;overflow:hidden;vertical-align:middle;"><span style="{{ r.credsBarStyle }}"></span></span><span style="{{ r.credsPctStyle }}">{{ r.credsPctLabel }}</span></div>
+                    </sc-if>
+                    <sc-if value="{{ r.noCreds }}" hint-placeholder-val="{{ false }}"><span style="color:#b5b5b4;">—</span></sc-if>
+                  </td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+        </div>
+
+        <div style="background:#fff;border:1px solid #e6e6e5;border-radius:12px;padding:20px;margin-bottom:16px;box-shadow:0 1px 3px rgba(60,60,59,0.07);">
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#9d9d9d;margin-bottom:16px;display:flex;align-items:center;gap:6px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            Account health — Salesforce
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;margin:4px 0 14px;">
+            <div style="flex:1;height:8px;background:#e6e6e5;border-radius:4px;overflow:hidden;"><div style="{{ hc.churnBarStyle }}"></div></div>
+            <span style="{{ hc.churnPctStyle }}">{{ hc.churnPct }}% churn probability</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid #f1f1f0;font-size:13px;"><span style="color:#6d6d6c;">Contract value</span><span style="font-weight:700;">{{ hc.contract }}</span></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid #f1f1f0;font-size:13px;"><span style="color:#6d6d6c;">Subscription tier</span><span onClick="{{ toggleSubs }}" style="font-weight:700;color:#288184;cursor:pointer;text-decoration:underline;text-decoration-style:dotted;">{{ hc.subSummary }} ▾</span></div>
+          <sc-if value="{{ drillSubs }}" hint-placeholder-val="{{ false }}">
+            <div style="background:#f7f7f6;border-radius:8px;padding:12px;margin:8px 0;">
+              <sc-for list="{{ hc.subscriptions }}" as="s" hint-placeholder-count="3">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;padding:7px 0;border-bottom:1px solid #e6e6e5;">
+                  <div><div style="font-size:13px;font-weight:700;">{{ s.name }}</div><div style="font-size:11px;color:#9d9d9d;margin-top:2px;">{{ s.detail }}</div></div>
+                  <span style="{{ s.badgeStyle }}">{{ s.status }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid #f1f1f0;font-size:13px;"><span style="color:#6d6d6c;">Last commercial contact</span><span style="font-weight:700;">{{ hc.lastContact }}</span></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;font-size:13px;"><span style="color:#6d6d6c;">Open opportunity</span><span style="font-weight:700;">{{ hc.opportunity }}</span></div>
+        </div>
+
+        <div style="background:#fff;border:1px solid #e6e6e5;border-radius:12px;padding:20px;margin-bottom:16px;box-shadow:0 1px 3px rgba(60,60,59,0.07);">
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#9d9d9d;margin-bottom:16px;display:flex;align-items:center;gap:6px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+            External intelligence — {{ hc.name }}
+          </div>
+          <sc-for list="{{ hc.intel }}" as="i" hint-placeholder-count="4">
+            <div style="display:flex;gap:10px;padding:9px 0;border-bottom:1px solid #f1f1f0;">
+              <span style="font-size:11px;font-weight:700;padding:2px 9px;border-radius:20px;background:#e9f2f2;color:#288184;white-space:nowrap;flex-shrink:0;align-self:flex-start;margin-top:1px;">{{ i.tag }}</span>
+              <div><p style="font-size:13px;color:#3c3c3b;line-height:1.5;">{{ i.text }}</p><p style="font-size:11px;color:#b5b5b4;margin-top:2px;">Source: {{ i.src }}</p></div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+      </sc-if>
+
+      <!-- ============ FEATURE PRIORITY ============ -->
+      <sc-if value="{{ isFeatures }}" hint-placeholder-val="{{ false }}">
+      <div style="padding:32px;max-width:1000px;animation:argusFade .25s ease;">
+        <div style="margin-bottom:16px;">
+          <div style="font-size:24px;font-weight:700;letter-spacing:-0.01em;">Feature priority</div>
+          <div style="font-size:14px;color:#6d6d6c;margin-top:4px;">Productboard demand scored in the Fabric gold layer — rank 50% · criticality 20% · efficiency 20% · strategic region 10%</div>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:#6d6d6c;background:#fff;border:1px solid #e6e6e5;border-radius:8px;padding:7px 12px;margin-bottom:20px;width:fit-content;">
+          <span style="width:7px;height:7px;border-radius:50%;background:#00be86;box-shadow:0 0 0 3px rgba(0,190,134,0.22);flex-shrink:0;"></span>
+          <span style="white-space:nowrap;"><span style="font-weight:700;color:#3c3c3b;font-family:monospace;">gold_feature_priority</span> · Microsoft Fabric · {{ featRowsLabel }}</span>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:22px;">
+          <div style="background:#fff;border:1px solid #e6e6e5;border-radius:12px;padding:16px 18px;box-shadow:0 1px 3px rgba(60,60,59,0.07);">
+            <div style="font-size:11px;color:#6d6d6c;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;">Features scored</div>
+            <div style="font-size:28px;font-weight:700;">{{ featSummary.total }}</div>
+          </div>
+          <div style="background:#fff;border:1px solid #e6e6e5;border-radius:12px;padding:16px 18px;box-shadow:0 1px 3px rgba(60,60,59,0.07);">
+            <div style="font-size:11px;color:#6d6d6c;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;">Critical &amp; high</div>
+            <div style="font-size:28px;font-weight:700;color:#d23f3f;">{{ featSummary.criticalCount }}</div>
+          </div>
+          <div style="background:#fff;border:1px solid #e6e6e5;border-radius:12px;padding:16px 18px;box-shadow:0 1px 3px rgba(60,60,59,0.07);">
+            <div style="font-size:11px;color:#6d6d6c;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;">Top priority score</div>
+            <div style="font-size:28px;font-weight:700;">{{ featSummary.topScore }}</div>
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:8px;">
+          <sc-for list="{{ featTabs }}" as="t" hint-placeholder-count="5">
+            <button onClick="{{ t.onClick }}" style="{{ t.style }}">{{ t.label }}</button>
+          </sc-for>
+        </div>
+        <div style="margin-bottom:18px;">
+          <button onClick="{{ toggleFeatAtRisk }}" style="{{ atRiskToggleStyle }}">
+            <span style="width:7px;height:7px;border-radius:50%;background:#d23f3f;display:inline-block;"></span>
+            Only critical &amp; high criticality
+          </button>
+        </div>
+
+        <sc-for list="{{ feats }}" as="f" hint-placeholder-count="6">
+          <div style="background:#fff;border:1px solid #e6e6e5;border-radius:12px;padding:18px 20px;margin-bottom:12px;box-shadow:0 1px 3px rgba(60,60,59,0.07);">
+            <div style="display:flex;align-items:flex-start;gap:16px;">
+              <div style="font-size:15px;font-weight:900;color:#cecece;min-width:26px;text-align:center;margin-top:2px;">{{ f.rank }}</div>
+              <div style="flex:1;min-width:0;">
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                  <span style="font-size:15px;font-weight:700;">{{ f.name }}</span>
+                  <span style="{{ f.critStyle }}">{{ f.critLabel }}</span>
+                  <span style="{{ f.effStyle }}">{{ f.effLabel }}</span>
+                  <span style="{{ f.regionStyle }}">{{ f.region }}</span>
+                  <sc-if value="{{ f.fromSub }}" hint-placeholder-val="{{ false }}"><span style="font-size:11px;font-weight:700;padding:2px 9px;border-radius:20px;background:#f0e9f7;color:#7030a0;">Scored from subfeature</span></sc-if>
+                </div>
+                <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-top:12px;">
+                  <div style="flex:1;min-width:200px;">
+                    <div style="display:flex;justify-content:space-between;font-size:11px;color:#6d6d6c;margin-bottom:4px;"><span>Final priority score</span><span style="font-weight:700;color:#3c3c3b;">{{ f.score }}</span></div>
+                    <div style="height:8px;background:#f1f1f0;border-radius:4px;overflow:hidden;"><div style="{{ f.scoreBarStyle }}"></div></div>
+                  </div>
+                  <div style="font-size:12px;color:#6d6d6c;">{{ f.subLabel }}</div>
+                  <div style="font-size:12px;color:#6d6d6c;">{{ f.marketLabel }}</div>
+                  <button onClick="{{ f.onToggle }}" style="margin-left:auto;font-size:12px;font-weight:700;color:#288184;background:none;border:none;cursor:pointer;">{{ f.toggleLabel }}</button>
+                </div>
+                <sc-if value="{{ f.expanded }}" hint-placeholder-val="{{ false }}">
+                  <div style="margin-top:14px;padding-top:14px;border-top:1px solid #f1f1f0;">
+                    <p style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#9d9d9d;margin-bottom:10px;">Priority score breakdown</p>
+                    <sc-for list="{{ f.detail }}" as="d" hint-placeholder-count="4">
+                      <div style="display:flex;align-items:center;gap:12px;padding:5px 0;">
+                        <span style="font-size:12px;color:#3c3c3b;min-width:118px;">{{ d.label }}</span>
+                        <span style="font-size:11px;color:#9d9d9d;min-width:118px;">{{ d.rawLabel }}</span>
+                        <span style="font-size:11px;color:#9d9d9d;min-width:38px;">{{ d.weightLabel }}</span>
+                        <div style="flex:1;height:6px;background:#f1f1f0;border-radius:3px;overflow:hidden;min-width:80px;"><div style="{{ d.barStyle }}"></div></div>
+                        <span style="font-size:12px;font-weight:700;min-width:38px;text-align:right;">{{ d.points }}</span>
+                      </div>
+                    </sc-for>
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;padding-top:10px;border-top:1px solid #f1f1f0;flex-wrap:wrap;gap:8px;">
+                      <span style="font-size:11px;color:#b5b5b4;font-family:monospace;">{{ f.featureId }}</span>
+                      <span style="font-size:12px;color:#6d6d6c;">{{ f.summaryLine }}</span>
+                    </div>
+                  </div>
+                </sc-if>
+              </div>
+            </div>
+          </div>
+        </sc-for>
+        <sc-if value="{{ featEmpty }}" hint-placeholder-val="{{ false }}"><div style="text-align:center;padding:48px;color:#9d9d9d;font-size:14px;">No features match this filter.</div></sc-if>
+      </div>
+      </sc-if>
+
+      <!-- ============ ASSISTANT ============ -->
+      <sc-if value="{{ isAssistant }}" hint-placeholder-val="{{ false }}">
+      <div style="padding:32px;max-width:1000px;animation:argusFade .25s ease;">
+        <div style="margin-bottom:22px;">
+          <div style="font-size:24px;font-weight:700;letter-spacing:-0.01em;">Ask Argus</div>
+          <div style="font-size:14px;color:#6d6d6c;margin-top:4px;">Ask about any client, account, or usage pattern</div>
+        </div>
+        <div style="background:#fff;border:1px solid #e6e6e5;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(60,60,59,0.07);">
+          <div style="background:#3c3c3b;padding:14px 20px;display:flex;align-items:center;gap:12px;">
+            <img src="assets/isotope.png" alt="" style="width:34px;height:34px;"/>
+            <div>
+              <div style="font-size:15px;font-weight:700;color:#fff;">Argus assistant</div>
+              <div style="font-size:12px;color:rgba(255,255,255,0.55);margin-top:1px;">Powered by Aurora datalake · Posthog · Zendesk · Salesforce · Productboard</div>
+            </div>
+          </div>
+          <div style="padding:20px;min-height:300px;display:flex;flex-direction:column;gap:14px;">
+            <sc-for list="{{ chat }}" as="m" hint-placeholder-count="1">
+              <div style="{{ m.rowStyle }}">
+                <span style="{{ m.avStyle }}">{{ m.av }}</span>
+                <div style="{{ m.bubbleStyle }}" dangerouslySetInnerHTML="{{ m.dhtml }}"></div>
+              </div>
+            </sc-for>
+            <sc-if value="{{ typing }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;gap:10px;align-items:center;">
+                <img src="assets/isotope.png" alt="" style="width:30px;height:30px;flex-shrink:0;"/>
+                <div style="display:flex;align-items:center;gap:4px;padding:8px 0;">
+                  <span style="width:6px;height:6px;border-radius:50%;background:#cecece;animation:argusBounce 1.2s infinite;"></span>
+                  <span style="width:6px;height:6px;border-radius:50%;background:#cecece;animation:argusBounce 1.2s infinite .2s;"></span>
+                  <span style="width:6px;height:6px;border-radius:50%;background:#cecece;animation:argusBounce 1.2s infinite .4s;"></span>
+                </div>
+              </div>
+            </sc-if>
+          </div>
+          <sc-if value="{{ showSuggestions }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex;flex-wrap:wrap;gap:6px;padding:0 20px 16px;">
+              <sc-for list="{{ suggestions }}" as="s" hint-placeholder-count="6">
+                <button onClick="{{ s.onClick }}" style="font-size:12px;font-weight:500;padding:6px 12px;border-radius:20px;border:1.5px solid #cecece;background:#fff;color:#3c3c3b;cursor:pointer;" style-hover="border-color:#ffcc00;background:#fff2bf;">{{ s.text }}</button>
+              </sc-for>
+            </div>
+          </sc-if>
+          <div style="display:flex;gap:8px;padding:16px 20px;border-top:1px solid #e6e6e5;background:#f7f7f6;">
+            <input value="{{ chatInput }}" onInput="{{ onChatInput }}" onKeyDown="{{ onChatKey }}" placeholder="Ask about a client or portfolio…" style="flex:1;font-size:13px;padding:10px 14px;border-radius:8px;border:1.5px solid #cecece;background:#fff;color:#3c3c3b;outline:none;" style-focus="border-color:#ffcc00;"/>
+            <button onClick="{{ sendChat }}" style="padding:10px 20px;border-radius:8px;background:#ffcc00;color:#3c3c3b;border:none;font-size:13px;font-weight:700;cursor:pointer;" style-hover="background:#f0bf00;">Ask →</button>
+          </div>
+        </div>
+      </div>
+      </sc-if>
+
+      <!-- ============ BRIEFING ============ -->
+      <sc-if value="{{ isBriefing }}" hint-placeholder-val="{{ false }}">
+      <div style="padding:32px;max-width:1000px;animation:argusFade .25s ease;">
+        <div style="margin-bottom:22px;">
+          <div style="font-size:24px;font-weight:700;letter-spacing:-0.01em;">Pre-call briefing</div>
+          <div style="font-size:14px;color:#6d6d6c;margin-top:4px;">Auto-generated before every client call</div>
+        </div>
+        <div style="display:flex;gap:6px;margin-bottom:22px;flex-wrap:wrap;">
+          <sc-for list="{{ briefTabs }}" as="t" hint-placeholder-count="6">
+            <button onClick="{{ t.onClick }}" style="{{ t.style }}">{{ t.label }}</button>
+          </sc-for>
+        </div>
+        <div style="background:#fff;border:1px solid #e6e6e5;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(60,60,59,0.07);">
+          <div style="background:#3c3c3b;padding:20px 24px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;">
+            <div>
+              <div style="font-size:20px;font-weight:700;color:#fff;">{{ bc.name }}</div>
+              <div style="font-size:13px;color:rgba(255,255,255,0.6);margin-top:3px;">{{ bc.meta }}</div>
+              <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;">
+                <sc-for list="{{ bc.flags }}" as="f" hint-placeholder-count="4"><span style="{{ f.style }}">{{ f.text }}</span></sc-for>
+              </div>
+            </div>
+            <div style="font-size:12px;color:rgba(255,255,255,0.45);text-align:right;">
+              <div>Generated by Argus</div>
+              <div style="margin-top:3px;">{{ briefStamp }}</div>
+              <div style="margin-top:6px;color:rgba(255,255,255,0.55);">Prepared for: {{ amName }}</div>
+            </div>
+          </div>
+          <div style="padding:24px;">
+            <div style="margin-bottom:24px;">
+              <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#9d9d9d;margin-bottom:10px;display:flex;align-items:center;gap:6px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                Situation in one paragraph
+              </div>
+              <p style="font-size:14px;color:#3c3c3b;line-height:1.75;">{{ bc.situation }}</p>
+            </div>
+            <hr style="border:none;border-top:1px solid #f1f1f0;margin:0 0 24px;"/>
+            <div style="margin-bottom:24px;">
+              <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#9d9d9d;margin-bottom:10px;display:flex;align-items:center;gap:6px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                Recommended actions before this call
+              </div>
+              <div style="background:#f7f7f6;border-radius:12px;padding:16px 20px;">
+                <sc-for list="{{ bc.actions }}" as="a" hint-placeholder-count="3">
+                  <div style="display:flex;gap:12px;align-items:flex-start;padding:8px 0;border-bottom:1px solid #e6e6e5;">
+                    <div style="width:22px;height:22px;border-radius:50%;background:#ffcc00;color:#3c3c3b;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">{{ a.n }}</div>
+                    <div><p style="font-size:13px;color:#3c3c3b;line-height:1.5;">{{ a.text }}</p><p style="font-size:11px;color:#9d9d9d;margin-top:2px;">{{ a.owner }}</p></div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+            <hr style="border:none;border-top:1px solid #f1f1f0;margin:0 0 24px;"/>
+            <div style="margin-bottom:24px;">
+              <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#9d9d9d;margin-bottom:10px;display:flex;align-items:center;gap:6px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+                Usage snapshot — last 3 months
+              </div>
+              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:10px;">
+                <div style="background:#f7f7f6;border-radius:8px;padding:12px 16px;"><div style="font-size:11px;color:#6d6d6c;margin-bottom:3px;">Active users</div><div style="font-size:22px;font-weight:700;">{{ bc.users }}</div><div style="font-size:11px;color:#9d9d9d;margin-top:2px;">of {{ bc.licensed }} licensed</div></div>
+                <div style="background:#f7f7f6;border-radius:8px;padding:12px 16px;"><div style="font-size:11px;color:#6d6d6c;margin-bottom:3px;">Sessions</div><div style="font-size:22px;font-weight:700;">{{ bc.sessions }}</div><div style="font-size:11px;color:#9d9d9d;margin-top:2px;">this period</div></div>
+                <div style="background:#f7f7f6;border-radius:8px;padding:12px 16px;"><div style="font-size:11px;color:#6d6d6c;margin-bottom:3px;">Top user</div><div style="font-size:14px;font-weight:700;">{{ bc.topUser }}</div><div style="font-size:11px;color:#9d9d9d;margin-top:2px;">{{ bc.topSessions }} sessions</div></div>
+                <div style="background:#f7f7f6;border-radius:8px;padding:12px 16px;"><div style="font-size:11px;color:#6d6d6c;margin-bottom:3px;">Last active</div><div style="font-size:22px;font-weight:700;">2h ago</div></div>
+              </div>
+              <p style="font-size:13px;color:#6d6d6c;line-height:1.6;">{{ bc.productLine }}</p>
+            </div>
+            <hr style="border:none;border-top:1px solid #f1f1f0;margin:0 0 24px;"/>
+            <div style="margin-bottom:24px;">
+              <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#9d9d9d;margin-bottom:10px;display:flex;align-items:center;gap:6px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                Open support issues
+              </div>
+              <sc-for list="{{ bc.tickets }}" as="t" hint-placeholder-count="2">
+                <p style="font-size:14px;color:#3c3c3b;line-height:1.7;margin-bottom:6px;"><strong style="font-weight:700;">{{ t.head }}</strong> {{ t.text }}</p>
+              </sc-for>
+            </div>
+            <hr style="border:none;border-top:1px solid #f1f1f0;margin:0 0 24px;"/>
+            <div>
+              <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#9d9d9d;margin-bottom:10px;display:flex;align-items:center;gap:6px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                Know their world
+              </div>
+              <p style="font-size:14px;color:#3c3c3b;line-height:1.75;" dangerouslySetInnerHTML="{{ bc.intelHtml }}"></p>
+            </div>
+          </div>
+          <div style="padding:16px 24px;border-top:1px solid #f1f1f0;background:#f7f7f6;display:flex;align-items:center;gap:9px;">
+            <img src="assets/isotope.png" alt="" style="width:20px;height:20px;"/>
+            <span style="font-size:11px;color:#9d9d9d;">Argus client intelligence · Sources: Posthog · Zendesk · Salesforce · Productboard · Public market data · Aurora Energy Research</span>
+          </div>
+        </div>
+      </div>
+      </sc-if>
+
+      <!-- ============ BUILD STATUS ============ -->
+      <sc-if value="{{ isBuildStatus }}" hint-placeholder-val="{{ false }}">
+      <div style="padding:32px;max-width:1000px;animation:argusFade .25s ease;">
+        <div style="margin-bottom:22px;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="font-size:24px;font-weight:700;letter-spacing:-0.01em;">Medallion architecture status</div>
+            <button onClick="{{ toggleAboutModal }}" style="width:24px;height:24px;padding:0;border:none;background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#288184;font-size:16px;font-weight:700;" title="About Fabric Lakehouse">ℹ</button>
+          </div>
+          <div style="font-size:14px;color:#6d6d6c;margin-top:4px;">Bronze → Silver → Gold build progress</div>
+        </div>
+
+        <sc-if value="{{ showAboutModal }}" hint-placeholder-val="{{ false }}">
+          <div style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;z-index:1000;" onClick="{{ toggleAboutModal }}">
+            <div style="background:#fff;border-radius:12px;padding:28px;max-width:600px;box-shadow:0 8px 32px rgba(0,0,0,0.15);" onClick="{{ e => e.stopPropagation() }}">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+                <div style="font-size:18px;font-weight:700;">About Fabric Lakehouse</div>
+                <button onClick="{{ toggleAboutModal }}" style="width:28px;height:28px;padding:0;border:none;background:none;cursor:pointer;font-size:20px;color:#9d9d9d;">×</button>
+              </div>
+              <div style="font-size:14px;color:#3c3c3b;line-height:1.8;">
+                <p style="margin-bottom:12px;">This environment follows Microsoft's Medallion Architecture in Microsoft Fabric. Data progresses through Bronze (raw source data), Silver (validated and transformed business-ready datasets), and Gold (curated views optimized for reporting, analytics, and the data that powers Argus).</p>
+                <p style="margin-bottom:0;">Each layer improves data quality, governance, and reusability while preserving full lineage back to the original source.</p>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+
+        <div style="display:flex;align-items:center;gap:12px;font-size:12px;color:#6d6d6c;background:#fff;border:1px solid #e6e6e5;border-radius:8px;padding:7px 12px;margin-bottom:20px;width:fit-content;">
+          <sc-if value="{{ isLoading }}" hint-placeholder-val="{{ false }}">
+            <span style="width:7px;height:7px;border-radius:50%;background:#00be86;flex-shrink:0;animation:pulse 1s infinite;"></span>
+            <span>Loading <strong>{{ loadingSeconds }}s</strong></span>
+          </sc-if>
+          <sc-if value="{{ !isLoading }}" hint-placeholder-val="{{ false }}">
+            <span style="width:7px;height:7px;border-radius:50%;background:#00be86;box-shadow:0 0 0 3px rgba(0,190,134,0.22);flex-shrink:0;"></span>
+            <span>{{ buildStatus.syncLabel }}</span>
+            <sc-if value="{{ buildStatus.silver.count }}" hint-placeholder-val="0">
+              <span style="color:#9d9d9d;font-size:10px;padding-left:8px;border-left:1px solid #e6e6e5;">Bronze: {{ buildStatus.bronze.count }} | Silver: {{ buildStatus.silver.count }} | Gold: {{ buildStatus.gold.count }}</span>
+            </sc-if>
+          </sc-if>
+          <button onClick="{{ refreshBuildStatus }}" style="margin-left:12px;font-size:11px;font-weight:700;color:#288184;background:none;border:none;cursor:pointer;text-decoration:underline;">Refresh</button>
+        </div>
+
+        <style>
+          @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+          }
+        </style>
+
+        <div style="background:#fff;border:1px solid #e6e6e5;border-radius:12px;padding:20px;margin-bottom:28px;box-shadow:0 1px 3px rgba(60,60,59,0.07);">
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#9d9d9d;margin-bottom:14px;">Medallion journey</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:20px;">
+            <div style="text-align:center;flex:1;">
+              <div style="width:48px;height:48px;border-radius:50%;background:#f5ece0;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;color:#cd7f32;margin:0 auto 6px;">B</div>
+              <div style="font-size:12px;font-weight:700;">{{ buildStatus.bronze.count }} Bronze</div>
+              <div style="font-size:10px;color:#9d9d9d;margin-top:2px;">Source (raw)</div>
+            </div>
+            <div style="font-size:20px;color:#e6e6e5;">→</div>
+            <div style="text-align:center;flex:1;">
+              <div style="width:48px;height:48px;border-radius:50%;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;color:#c0c0c0;margin:0 auto 6px;">S</div>
+              <div style="font-size:12px;font-weight:700;">{{ buildStatus.silver.count }} Silver</div>
+              <div style="font-size:10px;color:#9d9d9d;margin-top:2px;">Views</div>
+            </div>
+            <div style="font-size:20px;color:#e6e6e5;">→</div>
+            <div style="text-align:center;flex:1;">
+              <div style="width:48px;height:48px;border-radius:50%;background:#fefbf3;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;color:#d4af37;margin:0 auto 6px;">G</div>
+              <div style="font-size:12px;font-weight:700;">{{ buildStatus.gold.count }} Gold</div>
+              <div style="font-size:10px;color:#9d9d9d;margin-top:2px;">Views</div>
+            </div>
+          </div>
+          <div style="margin-top:14px;padding-top:14px;border-top:1px solid #f1f1f0;">
+            <div style="font-size:12px;color:#3c3c3b;line-height:1.6;">
+              <strong>How this works:</strong> Data team ingests raw source data into Bronze → Product Operations builds Silver views to validate transformations and Gold views for Argus UI testing → Once validated through PoC testing, data team materializes views as Gold Delta tables → Ready for BI & reporting, Argus UI development, and stakeholder visibility.
+            </div>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:28px;">
+          <div style="background:#fff;border:1px solid #e6e6e5;border-radius:12px;padding:20px;box-shadow:0 1px 3px rgba(60,60,59,0.07);">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+              <div style="width:40px;height:40px;border-radius:50%;background:#f5ece0;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#cd7f32;">B</div>
+              <div style="flex:1;">
+                <div style="font-size:13px;font-weight:700;">Bronze layer</div>
+                <div style="font-size:11px;color:#9d9d9d;margin-top:2px;">Raw delta tables from data team</div>
+              </div>
+            </div>
+            <div style="background:#f7f7f6;border-radius:8px;padding:12px;text-align:center;margin-bottom:12px;">
+              <div style="font-size:32px;font-weight:700;color:#cd7f32;">{{ buildStatus.bronze.count }}</div>
+              <div style="font-size:11px;color:#6d6d6c;margin-top:4px;">delta tables</div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+              <div style="background:#f7f7f6;border-radius:8px;padding:10px;text-align:center;">
+                <div style="font-size:18px;font-weight:700;color:#cd7f32;">{{ buildStatus.bronze.productboardCount }}</div>
+                <div style="font-size:10px;color:#cd7f32;">Productboard</div>
+              </div>
+              <div style="background:#f7f7f6;border-radius:8px;padding:10px;text-align:center;">
+                <div style="font-size:18px;font-weight:700;color:#cd7f32;">{{ buildStatus.bronze.salesforceCount }}</div>
+                <div style="font-size:10px;color:#cd7f32;">Salesforce</div>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;">
+              <div style="background:#f7f7f6;border-radius:8px;padding:10px;text-align:center;">
+                <div style="font-size:18px;font-weight:700;color:#cd7f32;">0</div>
+                <div style="font-size:10px;color:#cd7f32;">Posthog</div>
+              </div>
+              <div style="background:#f7f7f6;border-radius:8px;padding:10px;text-align:center;">
+                <div style="font-size:18px;font-weight:700;color:#cd7f32;">0</div>
+                <div style="font-size:10px;color:#cd7f32;">Zendesk</div>
+              </div>
+              <div style="background:#f7f7f6;border-radius:8px;padding:10px;text-align:center;">
+                <div style="font-size:18px;font-weight:700;color:#cd7f32;">0</div>
+                <div style="font-size:10px;color:#cd7f32;">Jira</div>
+              </div>
+            </div>
+
+            <button onClick="{{ toggleBronzeExpand }}" style="{{ bronzeButtonStyle }}">
+              <span style="pointer-events:none;">{{ bronzeButtonLabel }}</span>
+            </button>
+
+            <sc-if value="{{ bronzeExpanded }}" hint-placeholder-val="{{ false }}">
+              <div style="border-top:1px solid #e6e6e5;padding-top:12px;">
+                <sc-for list="{{ buildStatus.bronze.sourceGroups }}" as="src" hint-placeholder-count="2">
+                  <div style="margin-bottom:12px;">
+                    <div style="font-size:11px;font-weight:700;color:#cd7f32;text-transform:uppercase;margin-bottom:6px;">{{ src.name }} ({{ src.count }} tables)</div>
+                    <sc-for list="{{ src.tables }}" as="t" hint-placeholder-count="5">
+                      <div style="padding:8px;background:#f7f7f6;border-radius:6px;margin-bottom:4px;font-size:12px;">
+                        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+                          <span style="background:#cd7f32;color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;white-space:nowrap;">Delta</span>
+                          <span style="background:#e6e6e5;color:#6d6d6c;font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;white-space:nowrap;">Raw</span>
+                          <a href="https://app.powerbi.com/groups/{{ fabricWorkspaceId }}/mirroredwarehouses/{{ fabricLakehouseId }}?experience=power-bi&selectedNodePath={{ fabricLakehouseId }}%2FLakewarehouse%2FSchemasFolder%2Fdbo%2FTables%2F{{ t.name }}&selectedNodeDisplayValue={{ t.name }}" target="_blank" style="color:#3c3c3b;flex:1;font-weight:500;text-decoration:none;cursor:pointer;" title="Open Lakehouse in Fabric">{{ t.name }}</a>
+                        </div>
+                      </div>
+                    </sc-for>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+
+            <div style="font-size:10px;color:#9d9d9d;margin-top:8px;padding-top:8px;border-top:1px solid #e6e6e5;font-style:italic;line-height:1.5;">
+              <strong>Bronze Layer</strong> — Raw ingestion zone storing data in Delta format, Fabric's native table standard. Data lands with minimal transformation, preserving source records exactly as received. Each ingestion run appends a full snapshot, meaning the same record appears multiple times across loads — giving complete historical audit trail of data evolution.
+            </div>
+          </div>
+
+          <div style="background:#fff;border:1px solid #e6e6e5;border-radius:12px;padding:20px;box-shadow:0 1px 3px rgba(60,60,59,0.07);">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+              <div style="width:40px;height:40px;border-radius:50%;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#c0c0c0;">S</div>
+              <div style="flex:1;">
+                <div style="font-size:13px;font-weight:700;">Silver layer</div>
+                <div style="font-size:11px;color:#9d9d9d;margin-top:2px;">PoC transformation views</div>
+              </div>
+            </div>
+            <div style="background:#f7f7f6;border-radius:8px;padding:12px;text-align:center;margin-bottom:12px;">
+              <div style="font-size:32px;font-weight:700;color:#c0c0c0;">{{ buildStatus.silver.count }}</div>
+              <div style="font-size:11px;color:#6d6d6c;margin-top:4px;">Silver views</div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px;">
+              <div style="background:#f7f7f6;border-radius:8px;padding:10px;text-align:center;">
+                <div style="font-size:18px;font-weight:700;color:#c0c0c0;">{{ buildStatus.silver.productboardCount }}</div>
+                <div style="font-size:10px;color:#c0c0c0;">Productboard</div>
+              </div>
+              <div style="background:#f7f7f6;border-radius:8px;padding:10px;text-align:center;">
+                <div style="font-size:18px;font-weight:700;color:#c0c0c0;">{{ buildStatus.silver.salesforceCount }}</div>
+                <div style="font-size:10px;color:#c0c0c0;">Salesforce</div>
+              </div>
+              <div style="background:#f7f7f6;border-radius:8px;padding:10px;text-align:center;">
+                <div style="font-size:18px;font-weight:700;color:#c0c0c0;">{{ buildStatus.silver.productOpsCount }}</div>
+                <div style="font-size:10px;color:#c0c0c0;">Product Ops</div>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;">
+              <div style="background:#f7f7f6;border-radius:8px;padding:10px;text-align:center;">
+                <div style="font-size:18px;font-weight:700;color:#c0c0c0;">{{ buildStatus.gold.posthogCount }}</div>
+                <div style="font-size:10px;color:#c0c0c0;">Posthog</div>
+              </div>
+              <div style="background:#f7f7f6;border-radius:8px;padding:10px;text-align:center;">
+                <div style="font-size:18px;font-weight:700;color:#c0c0c0;">0</div>
+                <div style="font-size:10px;color:#c0c0c0;">Zendesk</div>
+              </div>
+              <div style="background:#f7f7f6;border-radius:8px;padding:10px;text-align:center;">
+                <div style="font-size:18px;font-weight:700;color:#c0c0c0;">0</div>
+                <div style="font-size:10px;color:#c0c0c0;">Jira</div>
+              </div>
+            </div>
+
+            <button onClick="{{ toggleSilverExpand }}" style="{{ silverButtonStyle }}">
+              <span style="pointer-events:none;">{{ silverButtonLabel }}</span>
+            </button>
+
+            <sc-if value="{{ silverExpanded }}" hint-placeholder-val="{{ false }}">
+              <div style="border-top:1px solid #e6e6e5;padding-top:12px;">
+                <sc-for list="{{ buildStatus.silver.sourceGroups }}" as="src" hint-placeholder-count="2">
+                  <div style="margin-bottom:12px;">
+                    <div style="font-size:11px;font-weight:700;color:#c0c0c0;text-transform:uppercase;margin-bottom:6px;">{{ src.name }} ({{ src.count }} views)</div>
+                    <sc-for list="{{ src.views }}" as="v" hint-placeholder-count="5">
+                      <div style="padding:8px;background:#f7f7f6;border-radius:6px;margin-bottom:4px;font-size:11px;">
+                        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+                          <span style="background:#c0c0c0;color:#fff;font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;white-space:nowrap;">View</span>
+                          <span style="background:#f1f1f0;color:#6d6d6c;font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;white-space:nowrap;text-transform:uppercase;">{{ v.stage }}</span>
+                          <a href="https://app.powerbi.com/groups/{{ fabricWorkspaceId }}/mirroredwarehouses/{{ fabricLakehouseId }}?experience=power-bi&selectedNodePath={{ fabricLakehouseId }}%2FLakewarehouse%2FSchemasFolder%2Fdbo%2FViews%2F{{ v.name }}&selectedNodeDisplayValue={{ v.name }}" target="_blank" style="color:#3c3c3b;flex:1;font-weight:600;text-decoration:none;cursor:pointer;" title="Open Lakehouse in Fabric">{{ v.name }}</a>
+                        </div>
+                        <div style="padding-left:8px;color:#9d9d9d;font-size:10px;border-left:1px solid #e6e6e5;">{{ v.purpose }}</div>
+                      </div>
+                    </sc-for>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+
+            <div style="font-size:10px;color:#9d9d9d;margin-top:8px;padding-top:8px;border-top:1px solid #e6e6e5;font-style:italic;line-height:1.5;">
+              <strong>Silver Layer</strong> — Product Operations' validation layer. Base views deduplicate and validate Bronze source data. Product Operations builds Silver and Gold views to develop and test transformation logic and business rules. Once validated through PoC testing, the data team materializes these views as permanent tables. Validates source quality, transformation logic, and performance at scale.
+            </div>
+          </div>
+
+          <div style="background:#fff;border:1px solid #e6e6e5;border-radius:12px;padding:20px;box-shadow:0 1px 3px rgba(60,60,59,0.07);">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+              <div style="width:40px;height:40px;border-radius:50%;background:#fefbf3;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#d4af37;">G</div>
+              <div style="flex:1;">
+                <div style="font-size:13px;font-weight:700;">Gold layer</div>
+                <div style="font-size:11px;color:#9d9d9d;margin-top:2px;">Gold Views for Argus</div>
+              </div>
+            </div>
+            <div style="background:#f7f7f6;border-radius:8px;padding:12px;text-align:center;margin-bottom:12px;">
+              <div style="font-size:32px;font-weight:700;color:#d4af37;">{{ buildStatus.gold.count }}</div>
+              <div style="font-size:11px;color:#6d6d6c;margin-top:4px;">Gold views</div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+              <div style="background:#f7f7f6;border-radius:8px;padding:10px;text-align:center;">
+                <div style="font-size:18px;font-weight:700;color:#d4af37;">{{ buildStatus.gold.productboardCount }}</div>
+                <div style="font-size:10px;color:#d4af37;">Productboard</div>
+              </div>
+              <div style="background:#f7f7f6;border-radius:8px;padding:10px;text-align:center;">
+                <div style="font-size:18px;font-weight:700;color:#d4af37;">{{ buildStatus.gold.salesforceCount }}</div>
+                <div style="font-size:10px;color:#d4af37;">Salesforce</div>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;">
+              <div style="background:#f7f7f6;border-radius:8px;padding:10px;text-align:center;">
+                <div style="font-size:18px;font-weight:700;color:#d4af37;">0</div>
+                <div style="font-size:10px;color:#d4af37;">Posthog</div>
+              </div>
+              <div style="background:#f7f7f6;border-radius:8px;padding:10px;text-align:center;">
+                <div style="font-size:18px;font-weight:700;color:#d4af37;">0</div>
+                <div style="font-size:10px;color:#d4af37;">Zendesk</div>
+              </div>
+              <div style="background:#f7f7f6;border-radius:8px;padding:10px;text-align:center;">
+                <div style="font-size:18px;font-weight:700;color:#d4af37;">0</div>
+                <div style="font-size:10px;color:#d4af37;">Jira</div>
+              </div>
+            </div>
+
+            <button onClick="{{ toggleGoldExpand }}" style="{{ goldButtonStyle }}">
+              <span style="pointer-events:none;">{{ goldButtonLabel }}</span>
+            </button>
+
+            <sc-if value="{{ goldExpanded }}" hint-placeholder-val="{{ false }}">
+              <div style="border-top:1px solid #e6e6e5;padding-top:12px;">
+                <sc-for list="{{ buildStatus.gold.sourceGroups }}" as="src" hint-placeholder-count="2">
+                  <div style="margin-bottom:12px;">
+                    <div style="font-size:11px;font-weight:700;color:#d4af37;text-transform:uppercase;margin-bottom:6px;">{{ src.name }} ({{ src.count }} tables)</div>
+                    <sc-for list="{{ src.views }}" as="v" hint-placeholder-count="5">
+                      <div style="padding:8px;background:#f7f7f6;border-radius:6px;margin-bottom:4px;font-size:11px;">
+                        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+                          <span style="background:#d4af37;color:#fff;font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;white-space:nowrap;">View</span>
+                          <a href="https://app.powerbi.com/groups/{{ fabricWorkspaceId }}/mirroredwarehouses/{{ fabricLakehouseId }}?experience=power-bi&selectedNodePath={{ fabricLakehouseId }}%2FLakewarehouse%2FSchemasFolder%2Fdbo%2FViews%2F{{ v.name }}&selectedNodeDisplayValue={{ v.name }}" target="_blank" style="color:#3c3c3b;flex:1;font-weight:600;text-decoration:none;cursor:pointer;" title="Open Lakehouse in Fabric">{{ v.name }}</a>
+                        </div>
+                        <div style="padding-left:8px;color:#9d9d9d;font-size:10px;border-left:1px solid #e6e6e5;">{{ v.purpose }}</div>
+                      </div>
+                    </sc-for>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+
+            <div style="font-size:10px;color:#9d9d9d;margin-top:8px;padding-top:8px;border-top:1px solid #e6e6e5;font-style:italic;line-height:1.5;">
+              <strong>Gold Layer</strong> — Product Operations builds Gold views for Argus UI testing and validation. Once confirmed through PoC testing, the data team materializes these as Gold Delta tables, ready for BI & reporting and the Argus UI.
+            </div>
+          </div>
+        </div>
+
+      </div>
+      </sc-if>
+
+    </main>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  constructor(props){
+    super(props);
+    const savedView = typeof localStorage !== 'undefined' ? localStorage.getItem('argusView') : 'health';
+    this.state = {
+      view: savedView || 'health', healthClient:'rwe', range:'3m', briefClient:'rwe',
+      featProduct:'all', featAtRisk:false, drills:{},
+      chat:[{role:'argus', html:'Hello — I can brief you on any client account, or help you spot patterns across your portfolio. Try asking about a specific client, or a cross-portfolio question like &ldquo;which clients are at churn risk?&rdquo;'}],
+      chatInput:'', typing:false, started:false,
+      bronzeExpanded:false, silverExpanded:false, goldExpanded:false,
+      isLoading:false, loadingSeconds:0,
+      showAboutModal:false,
+      currentUser:{name:'Loading...',initials:'...'},
+      buildStatus:{bronze:{count:0,label:'tables',rowLabel:'0 rows',productboardCount:0,salesforceCount:0,sourceGroups:[]},silver:{count:0,label:'views',productboardCount:0,salesforceCount:0,productOpsCount:0,views:[],sourceGroups:[]},gold:{count:0,label:'tables',productboardCount:0,salesforceCount:0,posthogCount:0,views:[],sourceGroups:[]},syncLabel:'Loading...'}
+    };
+  }
+
+  componentDidMount(){
+    setTimeout(()=>{
+      this.refreshBuildStatus && this.refreshBuildStatus();
+    }, 100);
+    this.fetchCurrentUser();
+  }
+
+  fetchCurrentUser(){
+    console.log('[Argus] Fetching current user...');
+    const controller = new AbortController();
+    const timeout = setTimeout(()=>controller.abort(), 5000);
+
+    fetch('http://localhost:3001/api/current-user', {signal: controller.signal})
+      .then(r=>{
+        console.log('[Argus] Current user response:', r.status);
+        return r.json();
+      })
+      .then(user=>{
+        clearTimeout(timeout);
+        console.log('[Argus] Got user:', user.name);
+        this.setState({currentUser:user});
+      })
+      .catch(err=>{
+        clearTimeout(timeout);
+        console.error('[Argus] Failed to fetch current user:', err.message);
+        this.setState({currentUser:{name:'Aurora User',initials:'AU',email:'user@aurora.local'}});
+      });
+  }
+
+  refreshBuildStatus(){
+    const S = this.state;
+    this.setState({isLoading:true, loadingSeconds:0});
+    const startTime = Date.now();
+    const loadingInterval = setInterval(()=>{
+      const elapsed = Math.floor((Date.now() - startTime) / 1000);
+      this.setState({loadingSeconds:elapsed});
+    }, 100);
+
+    fetch('http://localhost:3000/api/lakehouse-status')
+      .then(r=>r.json())
+      .then(data=>{
+        clearInterval(loadingInterval);
+        this.setState({isLoading:false});
+        const topGoldTables=(data.gold.views||[]).slice(0,3).map(v=>({name:v.name,desc:v.purpose}));
+
+        // Group bronze tables by source system
+        const bronzeTables=data.bronze.tables||[];
+        const sourceMap={};
+        bronzeTables.forEach(t=>{
+          if(!sourceMap[t.source]) sourceMap[t.source]={name:t.source,count:0,tables:[]};
+          sourceMap[t.source].count++;
+          const rc=t.rowCount||0;
+          sourceMap[t.source].tables.push({name:t.name,source:t.source,lastRefresh:t.lastRefresh||'Unknown',rowCount:rc,loadLabel:rc===1?'load':'loads'});
+        });
+        const sourceGroups=Object.values(sourceMap).sort((a,b)=>b.count-a.count);
+
+        const bs={
+          syncLabel:`Synced ${new Date().toLocaleTimeString()}`,
+          bronze:{
+            count:data.bronze.count,
+            label:'source tables',
+            rowLabel:data.bronze.totalRows ? `${(data.bronze.totalRows/1_000_000).toFixed(1)}M rows` : '0 rows',
+            hasRows:data.bronze.totalRows>0,
+            description:data.bronze.description,
+            tables:data.bronze.tables||[],
+            productboardCount:bronzeTables.filter(t=>t.source==='Productboard').length,
+            salesforceCount:bronzeTables.filter(t=>t.source==='Salesforce').length,
+            sourceGroups:sourceGroups
+          },
+          silver:{
+            count:data.silver.count,
+            label:'Silver views',
+            description:data.silver.description,
+            status:data.silver.status,
+            views:data.silver.views||[],
+            productboardCount:(data.silver.views||[]).filter(v=>v.source==='Productboard').length,
+            salesforceCount:(data.silver.views||[]).filter(v=>v.source==='Salesforce').length,
+            productOpsCount:(data.silver.views||[]).filter(v=>v.source==='Product Operations').length,
+            sourceGroups:(() => {
+              const sm={};
+              (data.silver.views||[]).forEach(v=>{
+                if(!sm[v.source]) sm[v.source]={name:v.source,count:0,views:[]};
+                sm[v.source].count++;
+                sm[v.source].views.push(v);
+              });
+              return Object.values(sm).sort((a,b)=>b.count-a.count);
+            })()
+          },
+          gold:{
+            count:data.gold.count,
+            label:'materialized tables',
+            description:data.gold.description,
+            status:data.gold.status,
+            views:data.gold.views||[],
+            productboardCount:(data.gold.views||[]).filter(v=>v.source==='Productboard').length,
+            salesforceCount:(data.gold.views||[]).filter(v=>v.source==='Salesforce').length,
+            posthogCount:(data.gold.views||[]).filter(v=>v.source==='Posthog').length,
+            sourceGroups:(() => {
+              const sm={};
+              (data.gold.views||[]).forEach(v=>{
+                if(!sm[v.source]) sm[v.source]={name:v.source,count:0,views:[]};
+                sm[v.source].count++;
+                sm[v.source].views.push(v);
+              });
+              return Object.values(sm).sort((a,b)=>b.count-a.count);
+            })()
+          }
+        };
+        this.setState({buildStatus:bs});
+      })
+      .catch(err=>{console.error('Build status fetch failed:',err);this.setState({buildStatus:{...S.buildStatus,syncLabel:'Failed to fetch (API down?)'}});})
+  }
+
+  productColor = { Chronos:'#0089b3', Origin:'#00966b', Reports:'#c2600f', 'Scenario Explorer':'#7030a0', Platform:'#6d6d6c' };
+  productTint  = { Chronos:'#e4f6fd', Origin:'#e6f7f1', Reports:'#fdeee0', 'Scenario Explorer':'#f0e9f7', Platform:'#eceae6' };
+
+  clients = {
+    rwe:{name:'RWE AG',sector:'Energy',tier:'Enterprise',am:'Sarah Chen',arr:148000,avatarBg:'#e9f0f6',avatarColor:'#246093',initials:'RW',churnPct:67,renewal:'14 Sep 2025',notice:'14 Jul 2025',contract:'£148,000 / yr',
+      subscriptions:[{name:'Chronos',detail:'25 seats · Full data access',status:'Active',active:true},{name:'Origin',detail:'10 seats · Standard tier',status:'Active',active:true},{name:'Scenario Explorer',detail:'Trial · Expires 30 Jun 2025',status:'Trial',active:false}],
+      opportunity:'Scenario Explorer full licence — £22k · Stage 2',lastContact:'22 May 2025 · Sarah Chen',
+      usage:{'3m':{users:18,sessions:142,closed:12,u1s:34,u2s:28,u3s:21,u4s:19},'6m':{users:21,sessions:298,closed:27,u1s:61,u2s:53,u3s:44,u4s:38},'12m':{users:23,sessions:541,closed:49,u1s:112,u2s:98,u3s:87,u4s:74}},licensed:24,
+      users:[['LM','Lars Müller','Head of Energy Trading'],['AK','Anna König','Analyst — Renewables'],['TS','Thomas Schulz','Senior Modeller'],['EW','Eva Weber','Portfolio Manager']],
+      products:[['Chronos',88],['Origin',54],['Reports',42],['Scenario Explorer',17]],
+      openTickets:[{badge:'escalated',label:'Escalated',text:'Origin crashing on large datasets (>5yr horizon)',date:'Opened 3 Jun · 14 days open'},{badge:'open',label:'Open',text:'Reports missing H2 2026 forward curve values',date:'Opened 10 Jun · 7 days open'},{badge:'watching',label:'Watching',text:'API rate limits unclear in documentation',date:'Opened 14 Jun · 3 days open'}],
+      closedTopics:[['Login / access issues',4],['Data discrepancies',4],['Feature how-to',3],['Performance',1]],
+      consumption:[{prod:'Chronos',region:'Europe',sims:847,simsOf:1200,creds:34,credsOf:60},{prod:'Chronos',region:'North America',sims:1104,simsOf:1000,creds:12,credsOf:30},{prod:'Origin',region:'Europe',sims:312,simsOf:600,creds:8,credsOf:40},{prod:'Scenario Explorer',region:'Europe · Trial',sims:41,simsOf:250,creds:null,credsOf:null}],
+      intel:[{tag:'Regions',text:'Primary operations in Germany, UK, Netherlands, and US. Expanding offshore wind in the North Sea and US East Coast.',src:'RWE Annual Report 2024'},{tag:'Transactions',text:'Acquired 1.4 GW US onshore wind portfolio from Con Edison Clean Energy (Dec 2024). Divesting coal assets by 2030.',src:'Reuters, Dec 2024'},{tag:'Technology',text:'Strong focus on offshore wind, battery storage, and green hydrogen. Piloting grid-scale BESS in the UK.',src:'RWE Investor Day 2024'},{tag:'Strategy',text:'Target 65 GW renewable capacity by 2030. Building internal modelling capability for PPA pricing and long-term power decisions.',src:'Bloomberg NEF, Jan 2025'}],
+      situation:'RWE is a high-value account at serious churn risk with less than four weeks until the notice window closes. Usage is healthy — 18 of 24 users active, strong Chronos adoption — but an escalated ticket has been unresolved for 14 days (Origin crashing on large datasets), and there has been no commercial contact since 22 May. The risk is relationship and support quality, not product relevance: RWE is building internal modelling capability for PPA pricing, exactly what Chronos and Origin support.',
+      actions:[{text:'Resolve or give a clear ETA on the Origin crash ticket — Lars Müller (heaviest user) opened it. Come with an update, not a question.',owner:'Client Solutions · Urgent'},{text:'Scenario Explorer trial expires 30 Jun. Adoption is at 17% — either extend the trial or make the case for the full licence (£22k at Stage 2).',owner:'Account manager Sarah Chen · This week'},{text:'Acknowledge the data discrepancy pattern — 4 of 12 closed tickets were data-related. Name it proactively.',owner:'Client Solutions · Raise on call'}]},
+    sse:{name:'SSE plc',sector:'Utilities',tier:'Enterprise',am:'James Hooper',arr:212000,avatarBg:'#fdeee0',avatarColor:'#c2600f',initials:'SS',churnPct:28,renewal:'15 Feb 2026',notice:'15 Dec 2025',contract:'£212,000 / yr',
+      subscriptions:[{name:'Chronos',detail:'40 seats · Full data access',status:'Active',active:true},{name:'Origin',detail:'20 seats · Premium tier',status:'Active',active:true},{name:'Reports',detail:'40 seats',status:'Active',active:true}],
+      opportunity:'Scenario Explorer add-on — £18k · Stage 1',lastContact:'4 Jun 2025 · James Hooper',
+      usage:{'3m':{users:32,sessions:287,closed:8,u1s:48,u2s:41,u3s:35,u4s:28},'6m':{users:37,sessions:541,closed:19,u1s:89,u2s:76,u3s:63,u4s:52},'12m':{users:39,sessions:1024,closed:37,u1s:162,u2s:141,u3s:118,u4s:97}},licensed:40,
+      users:[['FA','Fiona Allison','Head of Market Analysis'],['MK','Michael Kerr','Senior Energy Trader'],['LC','Laura Chen','Renewables Analyst'],['DP','Derek Payne','Portfolio Strategy Lead']],
+      products:[['Chronos',94],['Origin',78],['Reports',65],['Scenario Explorer',22]],
+      openTickets:[{badge:'open',label:'Open',text:'Chronos GB wind capacity forecasts diverging from actuals post-Apr update',date:'Opened 9 Jun · 8 days open'},{badge:'watching',label:'Watching',text:'Reports PDF export formatting broken on large tables',date:'Opened 15 Jun · 2 days open'}],
+      closedTopics:[['Feature how-to',3],['Data discrepancies',3],['Performance',2]],
+      consumption:[{prod:'Chronos',region:'GB & Ireland',sims:2140,simsOf:2400,creds:58,credsOf:80},{prod:'Origin',region:'GB & Ireland',sims:874,simsOf:1200,creds:21,credsOf:50},{prod:'Reports',region:'GB & Ireland',sims:null,simsOf:null,creds:44,credsOf:60}],
+      intel:[{tag:'Regions',text:'Primarily GB and Ireland. Strong presence in offshore wind (Dogger Bank), hydro, and gas peaking.',src:'SSE Annual Report 2024'},{tag:'Transactions',text:'Completed sale of SSE Energy Services to OVO Energy. Focusing capital on regulated networks and renewable generation.',src:'FT, Mar 2024'},{tag:'Technology',text:'Leading UK offshore wind developer. Investing £18bn in low-carbon infrastructure 2023–2027, including BESS and pumped hydro.',src:'SSE Capital Markets Day 2024'},{tag:'Strategy',text:'Targeting net zero by 2050, with 50% reduction in emissions by 2030. Strong regulatory relationships in Ofgem price control periods.',src:'SSE Sustainability Report 2024'}],
+      situation:'SSE is a healthy, high-value account with strong product adoption across Chronos, Origin, and Reports. Churn risk is medium — driven primarily by a data quality issue flagged in the open ticket (GB wind forecasts diverging from actuals). This needs resolving before renewal conversations begin. The relationship is in good shape: last contact was 4 June and engagement is high.',
+      actions:[{text:'Investigate and respond to the Chronos GB wind forecast divergence — this touches SSE\u2019s core use case and must not be left open.',owner:'Client Solutions · This week'},{text:'Begin renewal conversation ahead of December notice date — the account is healthy and the timing is right to renew early.',owner:'Account manager James Hooper · July'},{text:'Scenario Explorer is at 22% adoption — a structured demo or workshop could accelerate the £18k upsell.',owner:'Client Solutions · Suggest on call'}]},
+    skyborn:{name:'Skyborn Renewables',sector:'Renewables',tier:'Growth',am:'Priya Nair',arr:74000,avatarBg:'#e6f7f1',avatarColor:'#00966b',initials:'SK',churnPct:12,renewal:'1 Mar 2026',notice:'1 Jan 2026',contract:'£74,000 / yr',
+      subscriptions:[{name:'Chronos',detail:'15 seats · Standard tier',status:'Active',active:true},{name:'Origin',detail:'8 seats · Standard tier',status:'Active',active:true}],
+      opportunity:'Reports add-on — £11k · Stage 3',lastContact:'11 Jun 2025 · Priya Nair',
+      usage:{'3m':{users:13,sessions:118,closed:4,u1s:28,u2s:22,u3s:18,u4s:14},'6m':{users:14,sessions:231,closed:9,u1s:52,u2s:41,u3s:34,u4s:26},'12m':{users:15,sessions:444,closed:17,u1s:96,u2s:78,u3s:63,u4s:48}},licensed:15,
+      users:[['JB','Jan Bredesen','CTO'],['MH','Maria Hoffmann','Lead Analyst'],['PR','Petter Rud','Offshore Wind Lead'],['AV','Astrid Voss','Finance Director']],
+      products:[['Chronos',87],['Origin',63],['Reports',0]],
+      openTickets:[{badge:'watching',label:'Watching',text:'Request for Baltic Sea regional data coverage',date:'Opened 12 Jun · 5 days open'}],
+      closedTopics:[['Feature how-to',2],['Login / access issues',2]],
+      consumption:[{prod:'Chronos',region:'Northern Europe',sims:612,simsOf:800,creds:18,credsOf:30},{prod:'Origin',region:'Northern Europe',sims:287,simsOf:400,creds:7,credsOf:20}],
+      intel:[{tag:'Regions',text:'Primarily Nordics and Baltic region. Growing portfolio in Germany and UK offshore wind.',src:'Skyborn website 2024'},{tag:'Transactions',text:'Acquired by Green Equity Investors in 2022. Developing 10 GW pipeline across Europe.',src:'Recharge News, 2023'},{tag:'Technology',text:'Pure-play offshore wind developer. Focus on large-scale projects in the North Sea and Baltic.',src:'Skyborn Investor Presentation 2024'},{tag:'Strategy',text:'Targeting 5 GW operational capacity by 2027. Expanding development team and data capability to support pipeline decisions.',src:'Internal briefing note'}],
+      situation:'Skyborn is a healthy, growing account with low churn risk and strong product adoption. They have no critical open issues — just a data coverage request for Baltic Sea regions which represents a potential expansion conversation. The Reports add-on is at Stage 3 and the relationship is warm following a call on 11 June.',
+      actions:[{text:'Follow up on the Baltic Sea data coverage request — if deliverable, this removes a friction point and strengthens the renewal case.',owner:'Client Solutions · This week'},{text:'Close the Reports add-on (£11k, Stage 3) — Skyborn has no Reports usage today, so a demo of automated reporting output would accelerate the decision.',owner:'Account manager Priya Nair · This week'},{text:'Origin credits are at 35% utilisation — check whether the team is aware of the full capability or if onboarding support would help.',owner:'Client Solutions · Mention on call'}]},
+    encavis:{name:'Encavis AG',sector:'Renewables',tier:'Growth',am:'Tom Reilly',arr:88000,avatarBg:'#f0e9f7',avatarColor:'#7030a0',initials:'EN',churnPct:19,renewal:'30 Apr 2026',notice:'28 Feb 2026',contract:'£88,000 / yr',
+      subscriptions:[{name:'Chronos',detail:'18 seats · Standard tier',status:'Active',active:true},{name:'Origin',detail:'10 seats · Standard tier',status:'Active',active:true},{name:'Scenario Explorer',detail:'5 seats',status:'Active',active:true}],
+      opportunity:'Seat expansion — £14k · Stage 2',lastContact:'6 Jun 2025 · Tom Reilly',
+      usage:{'3m':{users:16,sessions:134,closed:5,u1s:31,u2s:25,u3s:19,u4s:16},'6m':{users:17,sessions:268,closed:11,u1s:58,u2s:47,u3s:36,u4s:29},'12m':{users:18,sessions:499,closed:22,u1s:108,u2s:87,u3s:66,u4s:53}},licensed:18,
+      users:[['SF','Stefan Fischer','Head of Asset Management'],['KM','Katrin Müller','Senior Analyst'],['LB','Lars Beck','Scenario Modeller'],['CR','Clara Roth','Finance Lead']],
+      products:[['Chronos',89],['Origin',72],['Scenario Explorer',58],['Reports',31]],
+      openTickets:[{badge:'open',label:'Open',text:'Scenario Explorer comparison view not loading for >3 scenarios',date:'Opened 13 Jun · 4 days open'}],
+      closedTopics:[['Feature how-to',2],['Data discrepancies',2],['Performance',1]],
+      consumption:[{prod:'Chronos',region:'Central Europe',sims:731,simsOf:900,creds:27,credsOf:40},{prod:'Origin',region:'Central Europe',sims:398,simsOf:500,creds:11,credsOf:25},{prod:'Scenario Explorer',region:'Central Europe',sims:214,simsOf:300,creds:null,credsOf:null}],
+      intel:[{tag:'Regions',text:'Operations across Germany, Netherlands, Denmark, Italy, and France. One of Europe\u2019s largest listed renewable IPPs.',src:'Encavis Annual Report 2024'},{tag:'Transactions',text:'Taken private by KKR in 2024 in a €2.8bn deal. Accelerating growth in solar and wind under new ownership.',src:'Reuters, Apr 2024'},{tag:'Technology',text:'Solar PV is core; growing wind portfolio. Exploring co-location with BESS for merchant price risk management.',src:'Encavis Investor Day 2024'},{tag:'Strategy',text:'Targeting 10 GW operational capacity by 2027 following KKR acquisition. Increasing use of quantitative analysis for asset valuation.',src:'Bloomberg, May 2024'}],
+      situation:'Encavis is a healthy mid-size account with good product engagement and low churn risk. Scenario Explorer adoption is strong at 58% — higher than most accounts at this tier — and there is a seat expansion opportunity at Stage 2. One open ticket (Scenario Explorer comparison view) should be resolved quickly as it touches their primary use case.',
+      actions:[{text:'Fix or triage the Scenario Explorer comparison view bug — this is their most-adopted product and the issue blocks a core workflow.',owner:'Client Solutions · This week'},{text:'Progress the seat expansion opportunity (£14k, Stage 2) — usage is at 89% of licensed seats on Chronos, making the case straightforward.',owner:'Account manager Tom Reilly · This week'},{text:'Reports adoption is at 31% — worth checking whether the KKR acquisition has changed internal reporting requirements.',owner:'Client Solutions · Explore on call'}]},
+    macquarie:{name:'Macquarie Asset Mgmt',sector:'Infrastructure Finance',tier:'Enterprise',am:'Rachel Wong',arr:265000,avatarBg:'#eceae6',avatarColor:'#6d6d6c',initials:'MA',churnPct:44,renewal:'31 Oct 2025',notice:'31 Aug 2025',contract:'£265,000 / yr',
+      subscriptions:[{name:'Chronos',detail:'35 seats · Full data access',status:'Active',active:true},{name:'Origin',detail:'20 seats · Premium tier',status:'Active',active:true},{name:'Reports',detail:'35 seats',status:'Active',active:true},{name:'Scenario Explorer',detail:'15 seats',status:'Active',active:true}],
+      opportunity:'Global data access upgrade — £45k · Stage 2',lastContact:'28 May 2025 · Rachel Wong',
+      usage:{'3m':{users:24,sessions:196,closed:9,u1s:42,u2s:36,u3s:29,u4s:22},'6m':{users:28,sessions:381,closed:18,u1s:78,u2s:67,u3s:54,u4s:41},'12m':{users:31,sessions:712,closed:34,u1s:143,u2s:122,u3s:99,u4s:75}},licensed:35,
+      users:[['JT','James Tan','MD — Infrastructure Investments'],['NW','Natasha Webb','Senior Portfolio Manager'],['RK','Ryan Kim','Quantitative Analyst'],['SL','Sophie Liu','Associate Director']],
+      products:[['Chronos',69],['Reports',61],['Origin',48],['Scenario Explorer',34]],
+      openTickets:[{badge:'escalated',label:'Escalated',text:'APAC regional data missing for Q2 2025 in Chronos',date:'Opened 5 Jun · 12 days open'},{badge:'open',label:'Open',text:'Reports currency conversion inconsistency (USD vs AUD)',date:'Opened 12 Jun · 5 days open'},{badge:'watching',label:'Watching',text:'Scenario Explorer slow to load for portfolios >50 assets',date:'Opened 16 Jun · 1 day open'}],
+      closedTopics:[['Data discrepancies',5],['Feature how-to',2],['Performance',2]],
+      consumption:[{prod:'Chronos',region:'APAC',sims:892,simsOf:1200,creds:31,credsOf:60},{prod:'Chronos',region:'EMEA',sims:1087,simsOf:1200,creds:44,credsOf:60},{prod:'Origin',region:'APAC',sims:312,simsOf:600,creds:9,credsOf:30},{prod:'Scenario Explorer',region:'Global',sims:187,simsOf:400,creds:null,credsOf:null}],
+      intel:[{tag:'Regions',text:'Global presence — key energy transition focus in Australia, UK, Germany, US, and Southeast Asia.',src:'Macquarie Group Annual Report 2024'},{tag:'Transactions',text:'Acquired a 49% stake in a 2 GW Australian solar pipeline (Mar 2025). Active M&A in European offshore wind.',src:'AFR, Mar 2025'},{tag:'Technology',text:'Diversified across wind, solar, BESS, and green hydrogen. APAC BESS pipeline growing rapidly.',src:'Macquarie Green Investment Group 2024'},{tag:'Strategy',text:'Targeting $20bn in green investments by 2030. Aurora data is core to asset valuation and risk modelling across the fund.',src:'Internal briefing'}],
+      situation:'Macquarie is a high-value strategic account at medium churn risk, primarily driven by persistent APAC data quality issues and a renewal in October with a notice date of 31 August — just 11 weeks away. The APAC Chronos data gap has been escalated for 12 days. There is a significant global data upgrade opportunity at Stage 2 (£45k) but it will not progress until trust in data quality is restored.',
+      actions:[{text:'Resolve the APAC Chronos data gap as the top priority — this is escalated, 12 days old, and directly affects the £45k upgrade conversation.',owner:'Client Solutions · Urgent'},{text:'Notice date is 31 August — 11 weeks away. Start the renewal conversation now and tie it to the data quality resolution.',owner:'Account manager Rachel Wong · This week'},{text:'The currency inconsistency in Reports (USD vs AUD) is likely connected to Macquarie\u2019s APAC portfolio reporting. Flag it as part of the same data quality story.',owner:'Client Solutions · Raise on call'}]},
+    masdar:{name:'Masdar',sector:'Renewables',tier:'Growth',am:'Omar Al-Rashidi',arr:96000,avatarBg:'#e9f2f2',avatarColor:'#288184',initials:'MS',churnPct:8,renewal:'1 Jun 2026',notice:'1 Apr 2026',contract:'£96,000 / yr',
+      subscriptions:[{name:'Chronos',detail:'20 seats · Full data access',status:'Active',active:true},{name:'Origin',detail:'12 seats · Standard tier',status:'Active',active:true},{name:'Reports',detail:'20 seats',status:'Active',active:true}],
+      opportunity:'MENA regional data expansion — £28k · Stage 3',lastContact:'13 Jun 2025 · Omar Al-Rashidi',
+      usage:{'3m':{users:17,sessions:152,closed:3,u1s:38,u2s:29,u3s:22,u4s:17},'6m':{users:19,sessions:298,closed:7,u1s:71,u2s:54,u3s:42,u4s:32},'12m':{users:20,sessions:564,closed:14,u1s:131,u2s:99,u3s:77,u4s:59}},licensed:20,
+      users:[['AH','Ahmed Hassan','Director of Project Finance'],['LA','Leila Al-Ahmadi','Senior Energy Analyst'],['KJ','Khalid Jabri','Renewables Modeller'],['NF','Nora Fahim','Strategy Associate']],
+      products:[['Chronos',90],['Reports',75],['Origin',60],['Scenario Explorer',12]],
+      openTickets:[{badge:'open',label:'Open',text:'MENA solar irradiance data coverage sparse for Red Sea region',date:'Opened 10 Jun · 7 days open'}],
+      closedTopics:[['Feature how-to',1],['Data coverage requests',2]],
+      consumption:[{prod:'Chronos',region:'MENA',sims:841,simsOf:1000,creds:29,credsOf:40},{prod:'Origin',region:'MENA',sims:344,simsOf:500,creds:8,credsOf:25},{prod:'Reports',region:'MENA',sims:null,simsOf:null,creds:31,credsOf:40}],
+      intel:[{tag:'Regions',text:'HQ in Abu Dhabi. Active across MENA, Central Asia, and emerging markets. One of the world\u2019s largest renewable energy companies.',src:'Masdar Annual Review 2024'},{tag:'Transactions',text:'Reached 20 GW operational capacity in 2024. Announced 100 GW global ambition by 2030 with backing from Abu Dhabi sovereign funds.',src:'Masdar Press Release, Jan 2025'},{tag:'Technology',text:'Predominantly solar PV and onshore wind. Expanding into offshore wind (UK, Azerbaijan) and green hydrogen (NEOM partnership).',src:'IRENA World Energy Transitions Outlook 2024'},{tag:'Strategy',text:'Aurora data supports project feasibility and valuation in MENA, Central Asia, and new market entry decisions. Strong appetite for expanded regional coverage.',src:'Internal briefing'}],
+      situation:'Masdar is Aurora\u2019s healthiest account in this portfolio — low churn risk, high adoption across Chronos and Reports, and a warm relationship. The MENA regional data expansion is at Stage 3 (£28k) and is the clear focus of this call. The open ticket around Red Sea solar data coverage is directly related and should be addressed alongside the expansion discussion.',
+      actions:[{text:'Respond to the Red Sea solar irradiance coverage gap — resolving this directly supports the MENA expansion conversation and demonstrates responsiveness.',owner:'Client Solutions · This week'},{text:'Close the MENA regional data expansion (£28k, Stage 3) — Masdar\u2019s consumption is at 84% of allowance and they have a clear appetite for more coverage.',owner:'Account manager Omar Al-Rashidi · This call'},{text:'Scenario Explorer adoption is only 12% — if Masdar\u2019s team is doing multi-scenario project finance modelling, a targeted demo could unlock meaningful upsell.',owner:'Client Solutions · Explore on call'}]}
+  };
+
+  // Rows mirror the Fabric gold table `gold_feature_priority`.
+  // Raw inputs (rank_score, criticality_score, efficiency_score, strategic_region_score, region_market_count,
+  // subfeature_count, max_subfeature_priority_score) drive the weighted final_priority_score computed in renderVals.
+  // Scores here are illustrative pending the live feed — the schema and formula are faithful.
+  features = [
+    {id:'c084622a-b04a-48bd-b31b-ba120d49ec15',name:'Provide more Aurora-curated scenarios ("Sensitivity Library")',criticality:'High',criticalityScore:0.75,efficiency:'High',efficiencyScore:1.0,rankScore:0.92,regionalPriority:'Global',strategicRegionScore:1.0,regionMarketCount:6,subfeatureCount:4,maxSubScore:78},
+    {id:'243164a4-37bb-438e-a642-981c281a4ccf',name:'Assess cannibalisation risk of their assets',criticality:'High',criticalityScore:0.75,efficiency:'High',efficiencyScore:1.0,rankScore:0.74,regionalPriority:'EMEA',strategicRegionScore:0.8,regionMarketCount:4,subfeatureCount:3,maxSubScore:82},
+    {id:'f5ffb231-72b4-4a17-911e-d588123c02fd',name:'[ERC] Consideration of Battery SoC in scarcity pricing',criticality:'Critical',criticalityScore:1.0,efficiency:'Medium',efficiencyScore:0.6,rankScore:0.80,regionalPriority:'North America',strategicRegionScore:0.7,regionMarketCount:2,subfeatureCount:2,maxSubScore:71},
+    {id:'22590778-647c-4766-8f62-9760c86f7c6a',name:'Exact MCC and MCL attribution outputs for the nodal basis script',criticality:'High',criticalityScore:0.75,efficiency:'Medium',efficiencyScore:0.6,rankScore:0.68,regionalPriority:'North America',strategicRegionScore:0.7,regionMarketCount:3,subfeatureCount:1,maxSubScore:0},
+    {id:'c2d51c8b-5065-4bd4-9e34-3a7daabef6e0',name:'Degradation based on incorrect cycle definition',criticality:'Critical',criticalityScore:1.0,efficiency:'Low',efficiencyScore:0.3,rankScore:0.60,regionalPriority:'Global',strategicRegionScore:1.0,regionMarketCount:5,subfeatureCount:0,maxSubScore:0},
+    {id:'2208fc31-980b-4b77-bc01-73fe6b6a9f29',name:'P0: Launch EMEA beta social media video campaign',criticality:'High',criticalityScore:0.75,efficiency:'Low',efficiencyScore:0.3,rankScore:0.72,regionalPriority:'EMEA',strategicRegionScore:0.8,regionMarketCount:1,subfeatureCount:0,maxSubScore:0},
+    {id:'2b705d16-c10c-4a69-b7db-c4fbb2f34cf8',name:'Waterfall results: tolling agreements',criticality:'Medium',criticalityScore:0.5,efficiency:'High',efficiencyScore:1.0,rankScore:0.54,regionalPriority:'EMEA',strategicRegionScore:0.8,regionMarketCount:3,subfeatureCount:2,maxSubScore:58},
+    {id:'7872223d-b364-4154-bd9d-2ed767417c4a',name:'GitLab integration: commit origin input changes to GitLab / Branch',criticality:'Medium',criticalityScore:0.5,efficiency:'Medium',efficiencyScore:0.6,rankScore:0.50,regionalPriority:'Global',strategicRegionScore:1.0,regionMarketCount:4,subfeatureCount:1,maxSubScore:0},
+    {id:'449e65da-7123-48e8-aed7-502b6efe777b',name:'Launcher (UI): map "statefile" to "Market Scenario" when copying an old run',criticality:'Low',criticalityScore:0.25,efficiency:'High',efficiencyScore:1.0,rankScore:0.42,regionalPriority:'Global',strategicRegionScore:1.0,regionMarketCount:5,subfeatureCount:0,maxSubScore:0},
+    {id:'8ebd943b-e2da-44a6-bed9-6bf2ccde564e',name:'Remove dependency on LocationIQ',criticality:'Medium',criticalityScore:0.5,efficiency:'Medium',efficiencyScore:0.6,rankScore:0.38,regionalPriority:'Global',strategicRegionScore:1.0,regionMarketCount:6,subfeatureCount:0,maxSubScore:0}
+  ];
+
+  // ── helpers ──
+  pct(u,o){ return Math.round(u/o*100); }
+  fmtArr(n){ return n>=1e6 ? '£'+(n/1e6).toFixed(1)+'m' : '£'+Math.round(n/1000)+'k'; }
+  churnKind(p){ return p>=50?'high':p>=25?'medium':'low'; }
+  churnColor(p){ return p>=50?'#d23f3f':p>=25?'#ee791a':'#00be86'; }
+  churnLabel(p){ return 'Churn risk: '+(p>=50?'high':p>=25?'medium':'low'); }
+  isAtRisk(f){ return f.requesters.some(r=> this.clients[r.client].churnPct>=40); }
+
+  flagStyle(kind){
+    const c={critical:['#fbeaea','#d23f3f'],warning:['#fdeee0','#c2600f'],positive:['#e6f7f1','#00966b'],info:['#e9f2f2','#288184']}[kind];
+    return {display:'inline-flex',alignItems:'center',gap:'5px',fontSize:'12px',fontWeight:700,padding:'4px 10px',borderRadius:'20px',background:c[0],color:c[1]};
+  }
+  pill(bg,col){ return {fontSize:'11px',fontWeight:700,padding:'2px 9px',borderRadius:'20px',whiteSpace:'nowrap',background:bg,color:col}; }
+  ticketBadge(b){ const m={escalated:'critical',open:'warning',watching:'info'}; const s=this.flagStyle(m[b]); return {...s,flexShrink:0,marginTop:'1px'}; }
+  utilBar(p){ const col=p>100?'#d23f3f':p>=70?'#ee791a':'#00be86'; return {display:'block',height:'100%',borderRadius:'3px',width:Math.min(p,100)+'%',background:col}; }
+  utilPctStyle(p){ return {fontSize:'11px',marginLeft:'6px',fontWeight:p>100?700:400,color:p>100?'#d23f3f':'#9d9d9d'}; }
+
+  setV(patch){
+    if(patch.view && typeof localStorage !== 'undefined') localStorage.setItem('argusView', patch.view);
+    this.setState(patch);
+  }
+  toggleDrill(id){ this.setState(s=>({drills:{...s.drills,[id]:!s.drills[id]}})); }
+
+  send(){
+    const text=(this.state.chatInput||'').trim();
+    if(!text) return;
+    this.setState(s=>({chat:[...s.chat,{role:'user',html:this.esc(text)}],chatInput:'',started:true,typing:true}));
+    setTimeout(()=>{
+      this.setState(s=>({typing:false,chat:[...s.chat,{role:'argus',html:this.chatResponse(text)}]}));
+    },900);
+  }
+  esc(t){ return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  chatResponse(text){
+    const t=text.toLowerCase();
+    const box='border:1px solid #e6e6e5;border-radius:8px;overflow:hidden;margin:8px 0;';
+    const row='display:flex;justify-content:space-between;padding:9px 12px;border-bottom:1px solid #f1f1f0;font-size:13px;';
+    if(t.includes('masdar')) return '<strong>Masdar</strong> — <span style="color:#00966b;font-weight:700;">Low churn risk (8%)</span> · Renewal Jun 2026<br><br>17 of 20 users active. Chronos and Reports adoption are both excellent (90% and 75%). There is a MENA regional data expansion at Stage 3 (£28k) — the main focus of any upcoming call. One open ticket around Red Sea solar irradiance coverage is directly related to the expansion conversation.<br><br>Scenario Explorer is only at 12% — a targeted demo could unlock meaningful upsell for a team doing project finance modelling.';
+    if(t.includes('macquarie')) return '<strong>Macquarie Asset Management</strong> — <span style="color:#c2600f;font-weight:700;">Medium churn risk (44%)</span> · Notice date 31 Aug 2025<br><br>24 of 35 users active. <strong>Escalated ticket open 12 days</strong>: APAC Chronos data missing for Q2 2025. Renewal is in October with an 11-week notice window. The £45k global data upgrade at Stage 2 will not progress until the data quality issue is resolved.<br><br>A currency inconsistency in Reports (USD vs AUD) is likely tied to the same APAC data problem — treat them as one story.';
+    if(t.includes('rwe')) return '<strong>RWE AG</strong> — <span style="color:#d23f3f;font-weight:700;">High churn risk (67%)</span> · Notice date 14 Jul 2025<br><br>18 of 24 users active. Chronos adoption is strong at 88% but there is an <strong>escalated ticket 14 days open</strong> (Origin crashing on large datasets). No commercial contact since 22 May. The notice window closes in under 4 weeks — this is the most urgent account in the portfolio.<br><br>The product fit is strong: RWE is building internal modelling capability for PPA pricing, exactly what Chronos and Origin support. The risk is relationship, not relevance.';
+    if(t.includes('churn')) return 'Three accounts currently flagged with elevated churn risk:<br><div style="'+box+'"><div style="'+row+'"><strong>RWE AG</strong><span style="color:#d23f3f;font-weight:700;">67% · Notice 14 Jul</span></div><div style="'+row+'"><strong>Macquarie Asset Mgmt</strong><span style="color:#c2600f;font-weight:700;">44% · Notice 31 Aug</span></div><div style="display:flex;justify-content:space-between;padding:9px 12px;font-size:13px;"><strong>SSE plc</strong><span style="color:#c2600f;font-weight:700;">28% · Notice Dec 2025</span></div></div>RWE is most urgent — notice window closes in under 4 weeks and there is an unresolved escalated ticket. Macquarie is next — 11 weeks to notice, and a critical APAC data gap to fix first.';
+    if(t.includes('escalat')) return 'Two clients with escalated tickets:<br><div style="'+box+'"><div style="padding:10px 12px;border-bottom:1px solid #f1f1f0;"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:3px;"><strong>RWE AG</strong><span style="background:#fbeaea;color:#d23f3f;font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;">14 days open</span></div><div style="font-size:13px;color:#6d6d6c;">Origin crashing on large datasets (&gt;5yr horizon) — high churn risk account</div></div><div style="padding:10px 12px;"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:3px;"><strong>Macquarie Asset Mgmt</strong><span style="background:#fbeaea;color:#d23f3f;font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;">12 days open</span></div><div style="font-size:13px;color:#6d6d6c;">APAC Chronos data missing for Q2 2025 — blocking £45k upgrade conversation</div></div></div>Both are overdue. RWE\u2019s ticket is the most commercially urgent given the 14 July notice date.';
+    if(t.includes('origin')) return 'Clients with lower Origin adoption (under 60% of licensed users):<br><div style="'+box+'"><div style="'+row+'"><strong>Macquarie Asset Mgmt</strong><span style="color:#c2600f;font-weight:700;">48% · below target</span></div><div style="'+row+'"><strong>RWE AG</strong><span style="color:#c2600f;font-weight:700;">54% · below target</span></div><div style="display:flex;justify-content:space-between;padding:9px 12px;font-size:13px;"><strong>Masdar</strong><span style="color:#6d6d6c;">60% · on target</span></div></div>RWE\u2019s low Origin usage is partly explained by the open crash ticket. For Macquarie, low Origin adoption alongside strong Chronos usage suggests the team may not have been onboarded to Origin\u2019s capabilities.';
+    if(t.includes('feature')||t.includes('roadmap')||t.includes('productboard')) return 'Top features by final priority score (gold_feature_priority, Fabric):<br><div style="'+box+'"><div style="'+row+'"><strong>Sensitivity Library (Aurora-curated scenarios)</strong><span style="font-weight:700;">91</span></div><div style="'+row+'"><strong>Assess cannibalisation risk of their assets</strong><span style="font-weight:700;color:#7030a0;">82 · from subfeature</span></div><div style="display:flex;justify-content:space-between;padding:9px 12px;font-size:13px;"><strong>[ERC] Battery SoC in scarcity pricing</strong><span style="font-weight:700;color:#d23f3f;">79 · Critical</span></div></div>Scores are the weighted blend of rank (50%), criticality (20%), efficiency (20%) and strategic region (10%), maxed against the best subfeature score. Open the Feature priority view for the full ranked list and per-feature breakdown.';
+    return 'I don\u2019t have a canned response for that query in this prototype. In a live Argus, this would query the Aurora datalake across Posthog, Zendesk, Salesforce and Productboard in real time. Try one of the suggested prompts to see the assistant in action.';
+  }
+
+  renderVals(){
+    const S=this.state;
+    const order=['rwe','sse','skyborn','encavis','macquarie','masdar'];
+
+    // ── nav ──
+    const navBase={display:'flex',alignItems:'center',gap:'10px',padding:'8px 20px',fontSize:'13px',textDecoration:'none',borderLeft:'3px solid transparent',cursor:'pointer',fontWeight:600};
+    const navStyle=(v)=> S.view===v ? {...navBase,background:'rgba(255,204,0,0.16)',color:'#fff',borderLeftColor:'#ffcc00'} : {...navBase,color:'rgba(255,255,255,0.65)'};
+
+    // ── health tabs ──
+    const tabBase={display:'flex',alignItems:'center',gap:'8px',padding:'7px 14px',borderRadius:'8px',border:'1.5px solid #cecece',background:'#fff',fontSize:'13px',fontWeight:500,color:'#3c3c3b',cursor:'pointer'};
+    const healthTabs=order.map(k=>{
+      const c=this.clients[k];
+      return {name:c.name, onClick:()=>this.setV({healthClient:k}),
+        style: S.healthClient===k?{...tabBase,borderColor:'#ffcc00',background:'#fff8e1'}:tabBase,
+        dotStyle:{width:'8px',height:'8px',borderRadius:'50%',background:this.churnColor(c.churnPct)}};
+    });
+
+    // ── ranges ──
+    const rBase={fontSize:'12px',fontWeight:700,padding:'5px 12px',borderRadius:'8px',border:'1.5px solid #cecece',background:'#fff',color:'#6d6d6c',cursor:'pointer'};
+    const ranges=[['3 months','3m'],['6 months','6m'],['12 months','12m']].map(([label,key])=>({
+      label, onClick:()=>this.setV({range:key}),
+      style: S.range===key?{...rBase,background:'#3c3c3b',color:'#fff',borderColor:'#3c3c3b'}:rBase}));
+
+    // ── health card view-model ──
+    const c=this.clients[S.healthClient], u=c.usage[S.range];
+    const ck=this.churnKind(c.churnPct);
+    const hc={
+      name:c.name, initials:c.initials, licensed:c.licensed, users:u.users, sessions:u.sessions, closed:u.closed,
+      meta:`${c.sector} · ${c.tier} · Account manager: ${c.am}`,
+      avatarStyle:{width:'52px',height:'52px',borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'16px',fontWeight:700,flexShrink:0,background:c.avatarBg,color:c.avatarColor},
+      flags:[
+        {text:this.churnLabel(c.churnPct),style:this.flagStyle(ck==='high'?'critical':ck==='medium'?'warning':'positive')},
+        {text:'Renewal: '+c.renewal,style:this.flagStyle('warning')},
+        {text:'Notice: '+c.notice,style:this.flagStyle('info')},
+        {text:c.contract,style:this.flagStyle('info')}
+      ],
+      moreUsers:u.users-4,
+      userRows:c.users.map((x,i)=>({init:x[0],name:x[1],role:x[2],sessions:[u.u1s,u.u2s,u.u3s,u.u4s][i],ago:['Today','Yesterday','2 days ago','3 days ago'][i]})),
+      productRows:c.products.map(([name,p])=>({name,pct:p,barStyle:{height:'100%',borderRadius:'3px',width:p+'%',background:'#ffcc00'}})),
+      openTickets:c.openTickets.map(t=>({label:t.label,text:t.text,date:t.date,badgeStyle:this.ticketBadge(t.badge)})),
+      closedTopics:c.closedTopics.map(([topic,n])=>({topic,n})),
+      consumption:c.consumption.map(r=>{
+        const sp=r.sims!=null?this.pct(r.sims,r.simsOf):null;
+        const cp=r.creds!=null?this.pct(r.creds,r.credsOf):null;
+        return {prod:r.prod,region:r.region,
+          hasSims:r.sims!=null,noSims:r.sims==null,sims:r.sims!=null?r.sims.toLocaleString():'',simsOf:r.simsOf!=null?r.simsOf.toLocaleString():'',
+          simsBarStyle:sp!=null?this.utilBar(sp):{},simsPctStyle:sp!=null?this.utilPctStyle(sp):{},simsPctLabel:sp!=null?(sp+'%'+(sp>100?' ⚠':'')):'',
+          hasCreds:r.creds!=null,noCreds:r.creds==null,creds:r.creds!=null?r.creds:'',credsOf:r.credsOf!=null?r.credsOf:'',
+          credsBarStyle:cp!=null?this.utilBar(cp):{},credsPctStyle:cp!=null?this.utilPctStyle(cp):{},credsPctLabel:cp!=null?(cp+'%'+(cp>100?' ⚠':'')):''};
+      }),
+      churnPct:c.churnPct,
+      churnBarStyle:{height:'100%',borderRadius:'4px',width:c.churnPct+'%',background:this.churnColor(c.churnPct)},
+      churnPctStyle:{fontSize:'12px',fontWeight:700,color:this.churnColor(c.churnPct)},
+      contract:c.contract, lastContact:c.lastContact, opportunity:c.opportunity,
+      subSummary:`${c.tier} — ${c.subscriptions[0].name} + more`,
+      subscriptions:c.subscriptions.map(s=>({name:s.name,detail:s.detail,status:s.status,badgeStyle:this.pill(...(s.active?['#e6f7f1','#00966b']:['#fdeee0','#c2600f']))})),
+      intel:c.intel
+    };
+
+    // ── feature priority view-model (mirrors Fabric gold table) ──
+    const scored=this.features.map(f=>{
+      const rw=f.rankScore*50, cw=f.criticalityScore*20, ew=f.efficiencyScore*20, srw=f.strategicRegionScore*10;
+      const base=Math.round(rw+cw+ew+srw);
+      const finalScore=Math.max(base,f.maxSubScore);
+      const fromSub=f.maxSubScore>base;
+      return {...f, rw, cw, ew, srw, base, finalScore, fromSub};
+    });
+    const critRank={Critical:4,High:3,Medium:2,Low:1};
+    const fTabBase={fontSize:'13px',fontWeight:500,padding:'7px 14px',borderRadius:'8px',border:'1.5px solid #cecece',background:'#fff',color:'#3c3c3b',cursor:'pointer'};
+    const featTabs=[['All','all'],['Critical','Critical'],['High','High'],['Medium','Medium'],['Low','Low']].map(([label,key])=>({
+      label, onClick:()=>this.setV({featProduct:key}),
+      style: S.featProduct===key?{...fTabBase,borderColor:'#ffcc00',background:'#fff8e1',fontWeight:700}:fTabBase }));
+    const atRiskToggleStyle={display:'inline-flex',alignItems:'center',gap:'8px',fontSize:'12px',fontWeight:700,padding:'7px 14px',borderRadius:'8px',cursor:'pointer',
+      border:'1.5px solid '+(S.featAtRisk?'#d23f3f':'#cecece'),background:S.featAtRisk?'#fbeaea':'#fff',color:S.featAtRisk?'#d23f3f':'#6d6d6c'};
+
+    const critStyleFor=(lvl)=>{ const m={Critical:['#fbeaea','#d23f3f'],High:['#fdeee0','#c2600f'],Medium:['#f1f1f0','#6d6d6c'],Low:['#f1f1f0','#9d9d9d']}[lvl]; return {fontSize:'11px',fontWeight:700,padding:'2px 9px',borderRadius:'20px',background:m[0],color:m[1]}; };
+    const effStyleFor=(lvl)=>{ const m={High:['#e6f7f1','#00966b'],Medium:['#f1f1f0','#6d6d6c'],Low:['#f1f1f0','#9d9d9d']}[lvl]; return {fontSize:'11px',fontWeight:700,padding:'2px 9px',borderRadius:'20px',background:m[0],color:m[1]}; };
+    const regionStyle={fontSize:'11px',fontWeight:700,padding:'2px 9px',borderRadius:'20px',background:'#e9f2f2',color:'#288184'};
+    const compBar=(pts,cap,col)=>({display:'block',height:'100%',borderRadius:'3px',width:Math.round(pts/cap*100)+'%',background:col});
+
+    const filtered=scored
+      .filter(f=> (S.featProduct==='all'||f.criticality===S.featProduct) && (!S.featAtRisk || f.criticality==='Critical' || f.criticality==='High'))
+      .sort((a,b)=> b.finalScore-a.finalScore || (critRank[b.criticality]-critRank[a.criticality]));
+    const feats=filtered.map((f,i)=>{
+      const expanded=!!S.drills['feat_'+f.id];
+      return {
+        rank:i+1, name:f.name, score:f.finalScore, fromSub:f.fromSub,
+        critLabel:f.criticality, effLabel:f.efficiency+' efficiency', region:f.regionalPriority,
+        critStyle:critStyleFor(f.criticality), effStyle:effStyleFor(f.efficiency), regionStyle,
+        scoreBarStyle:{height:'100%',borderRadius:'4px',width:f.finalScore+'%',background:'#ffcc00'},
+        subLabel: f.subfeatureCount>0 ? (f.subfeatureCount+(f.subfeatureCount===1?' subfeature':' subfeatures')) : 'No subfeatures',
+        marketLabel: f.regionMarketCount+(f.regionMarketCount===1?' market':' markets'),
+        onToggle:()=>this.toggleDrill('feat_'+f.id),
+        toggleLabel:expanded?'Hide breakdown':'Scoring breakdown',
+        expanded,
+        featureId:'feature_id '+f.id,
+        summaryLine:`Base ${f.base} · best subfeature ${f.maxSubScore} · final ${f.finalScore}`,
+        detail:[
+          {label:'Rank', rawLabel:'rank_score '+f.rankScore.toFixed(2), weightLabel:'×50%', points:f.rw.toFixed(1), barStyle:compBar(f.rw,50,'#ffcc00')},
+          {label:'Criticality', rawLabel:f.criticality+' ('+f.criticalityScore.toFixed(2)+')', weightLabel:'×20%', points:f.cw.toFixed(1), barStyle:compBar(f.cw,20,'#ee791a')},
+          {label:'Efficiency impact', rawLabel:f.efficiency+' ('+f.efficiencyScore.toFixed(2)+')', weightLabel:'×20%', points:f.ew.toFixed(1), barStyle:compBar(f.ew,20,'#288184')},
+          {label:'Strategic region', rawLabel:f.regionalPriority+' ('+f.strategicRegionScore.toFixed(2)+')', weightLabel:'×10%', points:f.srw.toFixed(1), barStyle:compBar(f.srw,10,'#6d6d6c')}
+        ]
+      };
+    });
+    const featSummary={ total:this.features.length, criticalCount:this.features.filter(f=>f.criticality==='Critical'||f.criticality==='High').length, topScore:Math.max(...scored.map(f=>f.finalScore)) };
+
+    // ── assistant view-model ──
+    const chat=S.chat.map(m=>({
+      av:m.role==='user'?'ZG':'A',
+      rowStyle:m.role==='user'?{display:'flex',gap:'10px',alignItems:'flex-start',flexDirection:'row-reverse'}:{display:'flex',gap:'10px',alignItems:'flex-start'},
+      avStyle:{width:'30px',height:'30px',borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'11px',fontWeight:700,flexShrink:0,background:m.role==='user'?'#3c3c3b':'#ffcc00',color:m.role==='user'?'#fff':'#3c3c3b'},
+      bubbleStyle:m.role==='user'?{maxWidth:'85%',padding:'10px 14px',borderRadius:'12px',borderBottomRightRadius:'4px',fontSize:'13px',lineHeight:1.65,background:'#3c3c3b',color:'#fff'}:{maxWidth:'85%',padding:'10px 14px',borderRadius:'12px',borderBottomLeftRadius:'4px',fontSize:'13px',lineHeight:1.65,background:'#f7f7f6',color:'#3c3c3b',border:'1px solid #e6e6e5'},
+      dhtml:{__html:m.html}
+    }));
+    const suggestions=['Tell me about RWE','Which clients are at churn risk?','Escalated tickets','Top feature requests','Tell me about Masdar','Tell me about Macquarie'].map(text=>({text,onClick:()=>{ this.setState({chatInput:text},()=>this.send()); }}));
+
+    // ── briefing view-model ──
+    const bcd=this.clients[S.briefClient], b3=bcd.usage['3m'], bk=this.churnKind(bcd.churnPct);
+    const tu=bcd.users[0][1].split(' ');
+    const bc={
+      name:bcd.name, meta:`${bcd.sector} · ${bcd.tier} · Account manager: ${bcd.am}`,
+      flags:[
+        {text:this.churnLabel(bcd.churnPct),style:this.flagStyle(bk==='high'?'critical':bk==='medium'?'warning':'positive')},
+        {text:'Notice: '+bcd.notice,style:this.flagStyle('warning')},
+        {text:'Renewal: '+bcd.renewal,style:this.flagStyle('info')},
+        {text:bcd.contract,style:this.flagStyle('info')}
+      ],
+      situation:bcd.situation,
+      actions:bcd.actions.map((a,i)=>({n:i+1,text:a.text,owner:a.owner})),
+      users:b3.users, licensed:bcd.licensed, sessions:b3.sessions,
+      topUser:`${tu[0]} ${tu[1][0]}.`, topSessions:b3.u1s,
+      productLine:bcd.products.map(([n,p])=>`${n} ${p}%`).join(' · '),
+      tickets:bcd.openTickets.map(t=>({head:`${t.label} (${t.date.split('·')[1].trim()}):`,text:t.text})),
+      intelHtml:{__html:bcd.intel.map(i=>`<strong>${i.tag}:</strong> ${i.text}`).join(' ')}
+    };
+    const briefBase={fontSize:'13px',fontWeight:500,padding:'7px 14px',borderRadius:'8px',border:'1.5px solid #cecece',background:'#fff',color:'#3c3c3b',cursor:'pointer'};
+    const briefTabs=[['RWE AG','rwe'],['SSE','sse'],['Skyborn','skyborn'],['Encavis','encavis'],['Macquarie','macquarie'],['Masdar','masdar']].map(([label,key])=>({
+      label, onClick:()=>this.setV({briefClient:key}),
+      style: S.briefClient===key?{...briefBase,borderColor:'#ffcc00',background:'#fff8e1',fontWeight:700}:briefBase }));
+
+    return {
+      syncedAgo:S.buildStatus.syncLabel || 'Synced just now', amName:S.currentUser.name, amInitials:S.currentUser.initials,
+      goHealth:(e)=>{e&&e.preventDefault();this.setV({view:'health'});},
+      goFeatures:(e)=>{e&&e.preventDefault();this.setV({view:'features'});},
+      goAssistant:(e)=>{e&&e.preventDefault();this.setV({view:'assistant'});},
+      goBriefing:(e)=>{e&&e.preventDefault();this.setV({view:'briefing'});},
+      goBuildStatus:(e)=>{e&&e.preventDefault();this.setV({view:'buildStatus'});},
+      navStyleHealth:navStyle('health'), navStyleFeatures:navStyle('features'), navStyleAssistant:navStyle('assistant'), navStyleBriefing:navStyle('briefing'), navStyleBuildStatus:navStyle('buildStatus'),
+      isHealth:S.view==='health', isFeatures:S.view==='features', isAssistant:S.view==='assistant', isBriefing:S.view==='briefing', isBuildStatus:S.view==='buildStatus',
+      healthTabs, ranges, hc,
+      toggleUsers:()=>this.toggleDrill('users_'+S.healthClient), drillUsers:!!S.drills['users_'+S.healthClient],
+      toggleSubs:()=>this.toggleDrill('subs_'+S.healthClient), drillSubs:!!S.drills['subs_'+S.healthClient],
+      featTabs, atRiskToggleStyle, toggleFeatAtRisk:()=>this.setV({featAtRisk:!S.featAtRisk}), feats, featSummary, featEmpty:feats.length===0,
+      featRowsLabel:`${this.features.length} rows · synced 4 min ago`,
+      chat, typing:S.typing, showSuggestions:!S.started, suggestions,
+      chatInput:S.chatInput, onChatInput:(e)=>this.setV({chatInput:e.target.value}), onChatKey:(e)=>{ if(e.key==='Enter') this.send(); }, sendChat:()=>this.send(),
+      briefTabs, bc, briefStamp:'17 Jun 2025 · 09:14',
+      buildStatus:S.buildStatus,
+      bronzeExpanded:S.bronzeExpanded,
+      toggleBronzeExpand:()=>this.setV({bronzeExpanded:!S.bronzeExpanded}),
+      bronzeButtonStyle:S.bronzeExpanded
+        ? {width:'100%',fontSize:'12px',fontWeight:700,padding:'8px 12px',borderRadius:'8px',border:'1.5px solid #cd7f32',background:'#f5ece0',color:'#cd7f32',cursor:'pointer',marginBottom:'8px',userSelect:'none',WebkitUserSelect:'none'}
+        : {width:'100%',fontSize:'12px',fontWeight:700,padding:'8px 12px',borderRadius:'8px',border:'1.5px solid #e6e6e5',background:'#fff',color:'#cd7f32',cursor:'pointer',marginBottom:'8px',userSelect:'none',WebkitUserSelect:'none'},
+      bronzeButtonLabel:S.bronzeExpanded ? '▼ Hide tables' : '▶ Show tables',
+      silverExpanded:S.silverExpanded,
+      toggleSilverExpand:()=>this.setV({silverExpanded:!S.silverExpanded}),
+      silverButtonStyle:S.silverExpanded
+        ? {width:'100%',fontSize:'12px',fontWeight:700,padding:'8px 12px',borderRadius:'8px',border:'1.5px solid #c0c0c0',background:'#f0f0f0',color:'#708090',cursor:'pointer',marginBottom:'8px',userSelect:'none',WebkitUserSelect:'none'}
+        : {width:'100%',fontSize:'12px',fontWeight:700,padding:'8px 12px',borderRadius:'8px',border:'1.5px solid #e6e6e5',background:'#fff',color:'#c0c0c0',cursor:'pointer',marginBottom:'8px',userSelect:'none',WebkitUserSelect:'none'},
+      silverButtonLabel:S.silverExpanded ? '▼ Hide views' : '▶ Show views',
+      goldExpanded:S.goldExpanded,
+      toggleGoldExpand:()=>this.setV({goldExpanded:!S.goldExpanded}),
+      goldButtonStyle:S.goldExpanded
+        ? {width:'100%',fontSize:'12px',fontWeight:700,padding:'8px 12px',borderRadius:'8px',border:'1.5px solid #d4af37',background:'#fefbf3',color:'#d4af37',cursor:'pointer',marginBottom:'8px',userSelect:'none',WebkitUserSelect:'none'}
+        : {width:'100%',fontSize:'12px',fontWeight:700,padding:'8px 12px',borderRadius:'8px',border:'1.5px solid #e6e6e5',background:'#fff',color:'#d4af37',cursor:'pointer',marginBottom:'8px',userSelect:'none',WebkitUserSelect:'none'},
+      goldButtonLabel:S.goldExpanded ? '▼ Hide views' : '▶ Show views',
+      refreshBuildStatus:()=>this.refreshBuildStatus(),
+      fabricWorkspaceId:'48f4c481-18b4-4596-8920-2461ec44e621',
+      fabricLakehouseId:'9136d03f-b4d3-4d49-8429-a803114c114e',
+      isLoading:S.isLoading,
+      loadingSeconds:S.loadingSeconds,
+      showAboutModal:S.showAboutModal,
+      toggleAboutModal:()=>this.setV({showAboutModal:!S.showAboutModal}),
+      currentUser:S.currentUser
+    };
+  }
+}
+</script>
+</body>
+</html>
