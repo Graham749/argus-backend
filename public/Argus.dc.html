@@ -925,24 +925,15 @@ class Component extends DCLogic {
 
   loadAccountsList(){
     console.log('[Argus] Loading accounts list...');
-    fetch('http://localhost:3001/api/accounts-list')
-      .then(r=>r.json())
-      .then(data=>{
-        console.log('[Argus] Got accounts:', data.accounts);
-        const select = document.getElementById('sfAccountSelector');
-        select.innerHTML = '<option value="">-- Select Account --</option>';
-        data.accounts.forEach(acc=>{
-          const option = document.createElement('option');
-          option.value = acc.value;
-          option.textContent = acc.name;
-          select.appendChild(option);
-        });
-      })
-      .catch(err=>{
-        console.error('[Argus] Failed to load accounts:', err);
-        const select = document.getElementById('sfAccountSelector');
-        select.innerHTML = '<option value="">Error loading accounts</option>';
-      });
+    const accountsList = ['TotalEnergies', 'RWE', 'EDF Energy', 'Shell', 'BP'];
+    const select = document.getElementById('sfAccountSelector');
+    select.innerHTML = '<option value="">-- Select Account --</option>';
+    accountsList.forEach(name=>{
+      const option = document.createElement('option');
+      option.value = name;
+      option.textContent = name;
+      select.appendChild(option);
+    });
   }
 
   fetchSalesforceSubscriptions(accountName){

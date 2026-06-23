@@ -28,6 +28,11 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+// Test route
+app.get('/api/test', (req, res) => {
+  res.json({ test: 'ok', hasAccountsList: typeof accountsList });
+});
+
 // API routes (MUST be before static files)
 app.get('/api/lakehouse-status', lakehouseStatus);
 app.get('/api/features', features);
