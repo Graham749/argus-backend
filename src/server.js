@@ -19,7 +19,7 @@ app.use((req, res, next) => {
   next();
 });
 
-const argusPath = path.join(__dirname, '../../skills-for-fabric/Argus/Argus live data update');
+const argusPath = path.join(__dirname, '../public');
 
 // Health check
 app.get('/health', (req, res) => {
