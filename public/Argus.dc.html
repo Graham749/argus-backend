@@ -977,7 +977,7 @@ class Component extends DCLogic {
     fetch('http://localhost:3001/api/accounts-list')
       .then(r => r.json())
       .then(data => {
-        const accounts = data.accounts || [];
+        const accounts = (data.accounts || []).sort((a, b) => a.name.localeCompare(b.name));
         console.log('[Argus] Got accounts:', accounts.length);
 
         if(accounts.length === 0){
@@ -985,60 +985,13 @@ class Component extends DCLogic {
           return;
         }
 
-        const accountsWithArr = [];
-        let completed = 0;
-        const topN = Math.min(100, accounts.length);
-        const batch = accounts.slice(0, topN);
-
-        const fetchWithConcurrency = (accs, maxConcurrent = 10) => {
-          let running = 0;
-          let index = 0;
-
-          const fetchNext = () => {
-            if(index >= accs.length) return;
-            running++;
-            const acc = accs[index++];
-
-            fetch(`http://localhost:3001/api/accounts/${encodeURIComponent(acc.name)}`)
-              .then(r => r.json())
-              .then(summary => {
-                accountsWithArr.push({
-                  name: acc.name,
-                  arr: summary.summary?.total_arr_gbp || 0
-                });
-                completed++;
-                console.log(`[Argus] Fetched ${completed}/${batch.length}`);
-              })
-              .catch(err => {
-                console.warn('[Argus] Failed to fetch:', acc.name);
-                accountsWithArr.push({ name: acc.name, arr: 0 });
-                completed++;
-              })
-              .finally(() => {
-                running--;
-                if(index < accs.length) fetchNext();
-                else if(running === 0) populateDropdown();
-              });
-          };
-
-          for(let i = 0; i < Math.min(maxConcurrent, accs.length); i++) {
-            fetchNext();
-          }
-        };
-
-        const populateDropdown = () => {
-          accountsWithArr.sort((a, b) => b.arr - a.arr);
-          select.innerHTML = '<option value="">-- Select Account --</option>';
-          accountsWithArr.forEach(acc => {
-            const option = document.createElement('option');
-            option.value = acc.name;
-            const arrDisplay = acc.arr > 0 ? ` (£${(acc.arr/1000).toFixed(0)}k)` : '';
-            option.textContent = acc.name + arrDisplay;
-            select.appendChild(option);
-          });
-        };
-
-        fetchWithConcurrency(batch, 10);
+        select.innerHTML = '<option value="">-- Select Account --</option>';
+        accounts.forEach(acc => {
+          const option = document.createElement('option');
+          option.value = acc.name;
+          option.textContent = acc.name;
+          select.appendChild(option);
+        });
       })
       .catch(err => {
         console.error('[Argus] Failed to load accounts list:', err);
