@@ -83,6 +83,52 @@ input{font-family:inherit;}
       <!-- ============ HEALTH ============ -->
       <sc-if value="{{ isHealth }}" hint-placeholder-val="{{ true }}">
       <div style="padding:32px;max-width:1000px;animation:argusFade .25s ease;">
+        <!-- Salesforce Subscriptions Card (Live Data - Top Priority) -->
+        <div style="background:#fff;border:1px solid #e6e6e5;border-radius:12px;padding:20px;box-shadow:0 1px 3px rgba(60,60,59,0.07);margin-bottom:28px;">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+            <img src="./assets/salesforce-logo.png" alt="Salesforce" style="width:40px;height:40px;object-fit:contain;" />
+            <div style="flex:1;">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <div style="font-size:13px;font-weight:700;">Salesforce Subscriptions</div>
+                <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:#00be86;font-weight:600;">
+                  <span style="font-size:12px;line-height:1;">●</span>Live data
+                </div>
+              </div>
+              <div style="font-size:11px;color:#9d9d9d;margin-top:2px;">Top 5 subscriptions by ARR</div>
+            </div>
+          </div>
+
+          <div style="margin-bottom:16px;">
+            <label style="font-size:11px;font-weight:700;color:#3c3c3b;display:block;margin-bottom:6px;">SELECT ACCOUNT</label>
+            <input id="sfAccountSelector" type="text" placeholder="e.g., TotalEnergies" style="width:100%;padding:8px 12px;border:1px solid #e6e6e5;border-radius:6px;font-size:12px;" />
+          </div>
+
+          <div id="sfSubscriptionsTable" style="display:none;">
+            <div style="overflow-x:auto;border:1px solid #e6e6e5;border-radius:8px;">
+              <table style="width:100%;border-collapse:collapse;font-size:12px;">
+                <thead style="background:#f7f7f6;border-bottom:1px solid #e6e6e5;">
+                  <tr>
+                    <th style="padding:10px 12px;text-align:left;font-weight:700;color:#3c3c3b;">Subscription</th>
+                    <th style="padding:10px 12px;text-align:right;font-weight:700;color:#3c3c3b;">ARR (£)</th>
+                    <th style="padding:10px 12px;text-align:left;font-weight:700;color:#3c3c3b;">Service</th>
+                    <th style="padding:10px 12px;text-align:left;font-weight:700;color:#3c3c3b;">Status</th>
+                    <th style="padding:10px 12px;text-align:right;font-weight:700;color:#3c3c3b;">Days to Renewal</th>
+                  </tr>
+                </thead>
+                <tbody id="sfSubscriptionsBody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div id="sfLoadingMessage" style="padding:20px;text-align:center;color:#9d9d9d;display:none;">
+            <span style="font-size:13px;">Loading subscriptions...</span>
+          </div>
+
+          <div id="sfErrorMessage" style="padding:20px;text-align:center;color:#d32f2f;display:none;">
+            <span style="font-size:13px;" id="sfErrorText"></span>
+          </div>
+        </div>
+
         <div style="margin-bottom:22px;">
           <div style="font-size:24px;font-weight:700;letter-spacing:-0.01em;">Client health card</div>
           <div style="font-size:14px;color:#6d6d6c;margin-top:4px;">Unified signals from Posthog · Zendesk · Salesforce</div>
@@ -493,56 +539,6 @@ input{font-family:inherit;}
           <div style="padding:16px 24px;border-top:1px solid #f1f1f0;background:#f7f7f6;display:flex;align-items:center;gap:9px;">
             <img src="assets/isotope.png" alt="" style="width:20px;height:20px;"/>
             <span style="font-size:11px;color:#9d9d9d;">Argus client intelligence · Sources: Posthog · Zendesk · Salesforce · Productboard · Public market data · Aurora Energy Research</span>
-          </div>
-        </div>
-      </div>
-      </sc-if>
-
-      <!-- ============ SALESFORCE SUBSCRIPTIONS ============ -->
-      <sc-if value="{{ isHealth }}" hint-placeholder-val="{{ true }}">
-      <div style="padding:0 32px 32px;">
-        <div style="background:#fff;border:1px solid #e6e6e5;border-radius:12px;padding:20px;box-shadow:0 1px 3px rgba(60,60,59,0.07);">
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
-            <div style="width:40px;height:40px;border-radius:50%;background:#fff0e6;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#ff6b35;">📊</div>
-            <div style="flex:1;">
-              <div style="display:flex;align-items:center;gap:8px;">
-                <div style="font-size:13px;font-weight:700;">Salesforce Subscriptions</div>
-                <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:#00be86;font-weight:600;">
-                  <span style="font-size:12px;line-height:1;">●</span>Live data
-                </div>
-              </div>
-              <div style="font-size:11px;color:#9d9d9d;margin-top:2px;">Top 5 subscriptions by ARR</div>
-            </div>
-          </div>
-
-          <div style="margin-bottom:16px;">
-            <label style="font-size:11px;font-weight:700;color:#3c3c3b;display:block;margin-bottom:6px;">SELECT ACCOUNT</label>
-            <input id="sfAccountSelector" type="text" placeholder="e.g., TotalEnergies" style="width:100%;padding:8px 12px;border:1px solid #e6e6e5;border-radius:6px;font-size:12px;" />
-          </div>
-
-          <div id="sfSubscriptionsTable" style="display:none;">
-            <div style="overflow-x:auto;border:1px solid #e6e6e5;border-radius:8px;">
-              <table style="width:100%;border-collapse:collapse;font-size:12px;">
-                <thead style="background:#f7f7f6;border-bottom:1px solid #e6e6e5;">
-                  <tr>
-                    <th style="padding:10px 12px;text-align:left;font-weight:700;color:#3c3c3b;">Subscription</th>
-                    <th style="padding:10px 12px;text-align:right;font-weight:700;color:#3c3c3b;">ARR (£)</th>
-                    <th style="padding:10px 12px;text-align:left;font-weight:700;color:#3c3c3b;">Service</th>
-                    <th style="padding:10px 12px;text-align:left;font-weight:700;color:#3c3c3b;">Status</th>
-                    <th style="padding:10px 12px;text-align:right;font-weight:700;color:#3c3c3b;">Days to Renewal</th>
-                  </tr>
-                </thead>
-                <tbody id="sfSubscriptionsBody"></tbody>
-              </table>
-            </div>
-          </div>
-
-          <div id="sfLoadingMessage" style="padding:20px;text-align:center;color:#9d9d9d;display:none;">
-            <span style="font-size:13px;">Loading subscriptions...</span>
-          </div>
-
-          <div id="sfErrorMessage" style="padding:20px;text-align:center;color:#d32f2f;display:none;">
-            <span style="font-size:13px;" id="sfErrorText"></span>
           </div>
         </div>
       </div>
