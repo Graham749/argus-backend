@@ -790,20 +790,20 @@ input{font-family:inherit;}
           </div>
 
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px;">
-            <div style="background:#f7f7f6;border-radius:8px;padding:12px;border-left:3px solid #00be86;">
-              <div style="font-size:11px;font-weight:700;color:#288184;text-transform:uppercase;margin-bottom:4px;">Lakehouse Status</div>
-              <div style="font-size:14px;font-weight:700;color:#00be86;">✓</div>
-              <div style="font-size:10px;color:#6d6d6c;margin-top:4px;">Build status UI</div>
+            <div style="background:#f7f7f6;border-radius:8px;padding:12px;border-left:3px solid {{ integrationStatus.lakehouseStatus.color }};">
+              <div style="font-size:11px;font-weight:700;color:#288184;text-transform:uppercase;margin-bottom:4px;">{{ integrationStatus.lakehouseStatus.name }}</div>
+              <div style="font-size:14px;font-weight:700;color:{{ integrationStatus.lakehouseStatus.color }};">{{ integrationStatus.lakehouseStatus.symbol }}</div>
+              <div style="font-size:10px;color:#6d6d6c;margin-top:4px;">{{ integrationStatus.lakehouseStatus.description }}</div>
             </div>
-            <div style="background:#f7f7f6;border-radius:8px;padding:12px;border-left:3px solid #ffcc00;">
-              <div style="font-size:11px;font-weight:700;color:#288184;text-transform:uppercase;margin-bottom:4px;">Productboard Features</div>
-              <div style="font-size:14px;font-weight:700;color:#ffcc00;">◐</div>
-              <div style="font-size:10px;color:#6d6d6c;margin-top:4px;">API only (not wired)</div>
+            <div style="background:#f7f7f6;border-radius:8px;padding:12px;border-left:3px solid {{ integrationStatus.productboardFeatures.color }};">
+              <div style="font-size:11px;font-weight:700;color:#288184;text-transform:uppercase;margin-bottom:4px;">{{ integrationStatus.productboardFeatures.name }}</div>
+              <div style="font-size:14px;font-weight:700;color:{{ integrationStatus.productboardFeatures.color }};">{{ integrationStatus.productboardFeatures.symbol }}</div>
+              <div style="font-size:10px;color:#6d6d6c;margin-top:4px;">{{ integrationStatus.productboardFeatures.description }}</div>
             </div>
-            <div style="background:#f7f7f6;border-radius:8px;padding:12px;border-left:3px solid #ffcc00;">
-              <div style="font-size:11px;font-weight:700;color:#288184;text-transform:uppercase;margin-bottom:4px;">Salesforce</div>
-              <div style="font-size:14px;font-weight:700;color:#ffcc00;">◐</div>
-              <div style="font-size:10px;color:#6d6d6c;margin-top:4px;">Subscriptions API only</div>
+            <div style="background:#f7f7f6;border-radius:8px;padding:12px;border-left:3px solid {{ integrationStatus.salesforce.color }};">
+              <div style="font-size:11px;font-weight:700;color:#288184;text-transform:uppercase;margin-bottom:4px;">{{ integrationStatus.salesforce.name }}</div>
+              <div style="font-size:14px;font-weight:700;color:{{ integrationStatus.salesforce.color }};">{{ integrationStatus.salesforce.symbol }}</div>
+              <div style="font-size:10px;color:#6d6d6c;margin-top:4px;">{{ integrationStatus.salesforce.description }}</div>
             </div>
           </div>
 
@@ -833,6 +833,7 @@ class Component extends DCLogic {
       isLoading:false, loadingSeconds:0,
       showAboutModal:false,
       currentUser:{name:'Loading...',initials:'...'},
+      integrationStatus:{},
       buildStatus:{bronze:{count:0,label:'tables',rowLabel:'0 rows',productboardCount:0,salesforceCount:0,sourceGroups:[]},silver:{count:0,label:'views',productboardCount:0,salesforceCount:0,productOpsCount:0,views:[],sourceGroups:[]},gold:{count:0,label:'tables',productboardCount:0,salesforceCount:0,posthogCount:0,views:[],sourceGroups:[]},syncLabel:'Loading...'}
     };
   }
@@ -842,6 +843,24 @@ class Component extends DCLogic {
       this.refreshBuildStatus && this.refreshBuildStatus();
     }, 100);
     this.fetchCurrentUser();
+    this.fetchIntegrationStatus();
+  }
+
+  fetchIntegrationStatus(){
+    console.log('[Argus] Fetching integration status...');
+    fetch('http://localhost:3001/api/integration-status')
+      .then(r=>{
+        console.log('[Argus] Response status:', r.status);
+        return r.json();
+      })
+      .then(data=>{
+        console.log('[Argus] Got integration status:', JSON.stringify(data, null, 2));
+        this.setState({integrationStatus: data});
+        console.log('[Argus] Updated state, checking:', this.state.integrationStatus);
+      })
+      .catch(err=>{
+        console.error('[Argus] Failed to fetch integration status:', err);
+      });
   }
 
   fetchCurrentUser(){
