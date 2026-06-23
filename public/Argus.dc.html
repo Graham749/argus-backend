@@ -789,16 +789,22 @@ input{font-family:inherit;}
             </div>
           </div>
 
-          <div style="font-size:12px;margin-bottom:12px;color:#666;">Debug: {{ apis }}</div>
-
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px;">
-            <sc-for list="{{ apis }}" as="api" hint-placeholder-count="3">
-            <div style="background:#f7f7f6;border-radius:8px;padding:12px;border-left:3px solid {{ api.color }};">
-              <div style="font-size:11px;font-weight:700;color:#288184;text-transform:uppercase;margin-bottom:4px;">{{ api.name }}</div>
-              <div style="font-size:14px;font-weight:700;color:{{ api.color }};">{{ api.symbol }}</div>
-              <div style="font-size:10px;color:#6d6d6c;margin-top:4px;">{{ api.description }}</div>
+            <div style="background:#f7f7f6;border-radius:8px;padding:12px;border-left:3px solid #00be86;">
+              <div style="font-size:11px;font-weight:700;color:#288184;text-transform:uppercase;margin-bottom:4px;">Lakehouse Status</div>
+              <div style="font-size:14px;font-weight:700;color:#00be86;">✓</div>
+              <div style="font-size:10px;color:#6d6d6c;margin-top:4px;">Build status UI</div>
             </div>
-            </sc-for>
+            <div style="background:#f7f7f6;border-radius:8px;padding:12px;border-left:3px solid #ffcc00;">
+              <div style="font-size:11px;font-weight:700;color:#288184;text-transform:uppercase;margin-bottom:4px;">Productboard Features</div>
+              <div style="font-size:14px;font-weight:700;color:#ffcc00;">◐</div>
+              <div style="font-size:10px;color:#6d6d6c;margin-top:4px;">API only (not wired)</div>
+            </div>
+            <div style="background:#f7f7f6;border-radius:8px;padding:12px;border-left:3px solid #ffcc00;">
+              <div style="font-size:11px;font-weight:700;color:#288184;text-transform:uppercase;margin-bottom:4px;">Salesforce</div>
+              <div style="font-size:14px;font-weight:700;color:#ffcc00;">◐</div>
+              <div style="font-size:10px;color:#6d6d6c;margin-top:4px;">Subscriptions API only</div>
+            </div>
           </div>
 
           <div style="font-size:10px;color:#9d9d9d;margin-top:8px;padding-top:8px;border-top:1px solid #e6e6e5;font-style:italic;line-height:1.5;">
