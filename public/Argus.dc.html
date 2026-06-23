@@ -1119,7 +1119,7 @@ class Component extends DCLogic {
   showDrilldown(group){
     document.getElementById('sfSummaryView').style.display = 'none';
     document.getElementById('sfDetailView').style.display = 'block';
-    document.getElementById('sfDrilldownTitle').textContent = `Top subscriptions by ARR — Renewals in ${group} days range`;
+    document.getElementById('sfDrilldownTitle').textContent = `Subscriptions by ARR — Renewals in ${group} days range`;
 
     const tbody = document.getElementById('sfSubscriptionsBody');
     tbody.innerHTML = '';
@@ -1127,9 +1127,9 @@ class Component extends DCLogic {
     const groupData = this.groupedSubs[group];
     const subs = groupData ? groupData.subs : [];
 
-    const top5 = subs.sort((a, b) => b.arr_gbp - a.arr_gbp).slice(0, 5);
+    const sorted = subs.sort((a, b) => b.arr_gbp - a.arr_gbp);
 
-    top5.forEach(sub=>{
+    sorted.forEach(sub=>{
       const row = document.createElement('tr');
       row.style.borderBottom = '1px solid #e6e6e5';
       const statusColor = sub.status === 'Termination in Progress' ? '#d32f2f' : '#00be86';
