@@ -978,6 +978,13 @@ class Component extends DCLogic {
     const loading = document.getElementById('sfLoadingMessage');
     const error = document.getElementById('sfErrorMessage');
 
+    console.log('[Argus] Elements found - summary:', !!summary, 'detail:', !!detail, 'loading:', !!loading, 'error:', !!error);
+
+    if(!summary || !detail || !loading || !error) {
+      console.error('[Argus] Missing required elements!');
+      return;
+    }
+
     summary.style.display = 'none';
     detail.style.display = 'none';
     error.style.display = 'none';
