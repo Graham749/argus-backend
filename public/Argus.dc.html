@@ -113,22 +113,22 @@ input{font-family:inherit;}
           <!-- Summary View (Grouped by Days to Renewal) -->
           <div id="sfSummaryView" style="display:none;">
             <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;">
-              <div style="background:#f7f7f6;border-radius:8px;padding:12px;cursor:pointer;border:1px solid #e6e6e5;" onclick="window.sfDrilldown('0-30')">
+              <div class="sfSummaryCard" data-group="0-30" style="background:#f7f7f6;border-radius:8px;padding:12px;cursor:pointer;border:1px solid #e6e6e5;">
                 <div style="font-size:11px;font-weight:700;color:#6d6d6c;margin-bottom:4px;">0-30 Days</div>
                 <div style="font-size:16px;font-weight:700;color:#d32f2f;" id="sf_0_30_Count">0</div>
                 <div style="font-size:10px;color:#9d9d9d;margin-top:4px;">£<span id="sf_0_30_ARR">0</span>k</div>
               </div>
-              <div style="background:#f7f7f6;border-radius:8px;padding:12px;cursor:pointer;border:1px solid #e6e6e5;" onclick="window.sfDrilldown('30-60')">
+              <div class="sfSummaryCard" data-group="30-60" style="background:#f7f7f6;border-radius:8px;padding:12px;cursor:pointer;border:1px solid #e6e6e5;">
                 <div style="font-size:11px;font-weight:700;color:#6d6d6c;margin-bottom:4px;">30-60 Days</div>
                 <div style="font-size:16px;font-weight:700;color:#ff9800;" id="sf_30_60_Count">0</div>
                 <div style="font-size:10px;color:#9d9d9d;margin-top:4px;">£<span id="sf_30_60_ARR">0</span>k</div>
               </div>
-              <div style="background:#f7f7f6;border-radius:8px;padding:12px;cursor:pointer;border:1px solid #e6e6e5;" onclick="window.sfDrilldown('60-90')">
+              <div class="sfSummaryCard" data-group="60-90" style="background:#f7f7f6;border-radius:8px;padding:12px;cursor:pointer;border:1px solid #e6e6e5;">
                 <div style="font-size:11px;font-weight:700;color:#6d6d6c;margin-bottom:4px;">60-90 Days</div>
                 <div style="font-size:16px;font-weight:700;color:#2196f3;" id="sf_60_90_Count">0</div>
                 <div style="font-size:10px;color:#9d9d9d;margin-top:4px;">£<span id="sf_60_90_ARR">0</span>k</div>
               </div>
-              <div style="background:#f7f7f6;border-radius:8px;padding:12px;cursor:pointer;border:1px solid #e6e6e5;" onclick="window.sfDrilldown('90+')">
+              <div class="sfSummaryCard" data-group="90+" style="background:#f7f7f6;border-radius:8px;padding:12px;cursor:pointer;border:1px solid #e6e6e5;">
                 <div style="font-size:11px;font-weight:700;color:#6d6d6c;margin-bottom:4px;">90+ Days</div>
                 <div style="font-size:16px;font-weight:700;color:#4caf50;" id="sf_90_plus_Count">0</div>
                 <div style="font-size:10px;color:#9d9d9d;margin-top:4px;">£<span id="sf_90_plus_ARR">0</span>k</div>
@@ -139,7 +139,7 @@ input{font-family:inherit;}
           <!-- Detail View (Drilldown) -->
           <div id="sfDetailView" style="display:none;">
             <div style="margin-bottom:12px;">
-              <button onclick="window.sfBackToSummary()" style="padding:6px 12px;border-radius:6px;border:1px solid #e6e6e5;background:#fff;color:#288184;font-size:11px;font-weight:700;cursor:pointer;">← Back to Summary</button>
+              <button id="sfBackButton" style="padding:6px 12px;border-radius:6px;border:1px solid #e6e6e5;background:#fff;color:#288184;font-size:11px;font-weight:700;cursor:pointer;">← Back to Summary</button>
               <span style="margin-left:12px;font-size:12px;color:#6d6d6c;" id="sfDrilldownTitle"></span>
             </div>
             <div style="overflow-x:auto;border:1px solid #e6e6e5;border-radius:8px;">
@@ -953,9 +953,19 @@ class Component extends DCLogic {
       });
     }
 
-    // Expose drilldown functions to window for onclick handlers
-    window.sfDrilldown = (group) => this.showDrilldown(group);
-    window.sfBackToSummary = () => this.showSummary();
+    // Add event listeners for summary cards
+    document.querySelectorAll('.sfSummaryCard').forEach(card=>{
+      card.addEventListener('click', ()=>{
+        const group = card.getAttribute('data-group');
+        this.showDrilldown(group);
+      });
+    });
+
+    // Add event listener for back button
+    const backBtn = document.getElementById('sfBackButton');
+    if(backBtn) {
+      backBtn.addEventListener('click', () => this.showSummary());
+    }
   }
 
   loadAccountsList(){
