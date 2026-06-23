@@ -1138,7 +1138,7 @@ class Component extends DCLogic {
         if(typeof aVal === 'string') {
           return this.currentSortDir * aVal.localeCompare(bVal);
         }
-        return this.currentSortDir * (bVal - aVal);
+        return this.currentSortDir * (aVal - bVal);
       });
 
       sorted.forEach(sub=>{
