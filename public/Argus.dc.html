@@ -973,24 +973,29 @@ class Component extends DCLogic {
 
   fetchSalesforceSubscriptions(accountName){
     console.log('[Argus] Fetching subscriptions for:', accountName);
-    const table = document.getElementById('sfSubscriptionsTable');
+    const summary = document.getElementById('sfSummaryView');
+    const detail = document.getElementById('sfDetailView');
     const loading = document.getElementById('sfLoadingMessage');
     const error = document.getElementById('sfErrorMessage');
 
-    table.style.display = 'none';
+    summary.style.display = 'none';
+    detail.style.display = 'none';
     error.style.display = 'none';
     loading.style.display = 'block';
 
+    console.log('[Argus] Updated UI to show loading...');
+
     fetch(`http://localhost:3001/api/accounts/${encodeURIComponent(accountName)}`)
       .then(r=>{
+        console.log('[Argus] Response status:', r.status);
         if(!r.ok) throw new Error('Account not found');
         return r.json();
       })
       .then(data=>{
-        console.log('[Argus] Got subscriptions:', data);
+        console.log('[Argus] Got subscriptions, count:', data.subscriptions?.length || 0);
         loading.style.display = 'none';
         this.renderSubscriptions(data.subscriptions || []);
-        table.style.display = 'block';
+        console.log('[Argus] Subscriptions rendered');
       })
       .catch(err=>{
         console.error('[Argus] Failed:', err);
