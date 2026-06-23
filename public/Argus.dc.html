@@ -792,17 +792,32 @@ input{font-family:inherit;}
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px;">
             <div style="background:#f7f7f6;border-radius:8px;padding:12px;border-left:3px solid {{ integrationStatus.lakehouseStatus.color }};">
               <div style="font-size:11px;font-weight:700;color:#288184;text-transform:uppercase;margin-bottom:4px;">{{ integrationStatus.lakehouseStatus.name }}</div>
-              <div style="font-size:14px;font-weight:700;color:{{ integrationStatus.lakehouseStatus.color }};">{{ integrationStatus.lakehouseStatus.status === 'integrated' ? '✓' : '◐' }}</div>
+              <sc-if value="{{ integrationStatus.lakehouseStatus.status === 'integrated' }}" hint-placeholder-val="{{ false }}">
+                <div style="font-size:14px;font-weight:700;color:{{ integrationStatus.lakehouseStatus.color }};">✓</div>
+              </sc-if>
+              <sc-if value="{{ integrationStatus.lakehouseStatus.status !== 'integrated' }}" hint-placeholder-val="{{ true }}">
+                <div style="font-size:14px;font-weight:700;color:{{ integrationStatus.lakehouseStatus.color }};">◐</div>
+              </sc-if>
               <div style="font-size:10px;color:#6d6d6c;margin-top:4px;">{{ integrationStatus.lakehouseStatus.description }}</div>
             </div>
             <div style="background:#f7f7f6;border-radius:8px;padding:12px;border-left:3px solid {{ integrationStatus.productboardFeatures.color }};">
               <div style="font-size:11px;font-weight:700;color:#288184;text-transform:uppercase;margin-bottom:4px;">{{ integrationStatus.productboardFeatures.name }}</div>
-              <div style="font-size:14px;font-weight:700;color:{{ integrationStatus.productboardFeatures.color }};">{{ integrationStatus.productboardFeatures.status === 'integrated' ? '✓' : '◐' }}</div>
+              <sc-if value="{{ integrationStatus.productboardFeatures.status === 'integrated' }}" hint-placeholder-val="{{ false }}">
+                <div style="font-size:14px;font-weight:700;color:{{ integrationStatus.productboardFeatures.color }};">✓</div>
+              </sc-if>
+              <sc-if value="{{ integrationStatus.productboardFeatures.status !== 'integrated' }}" hint-placeholder-val="{{ true }}">
+                <div style="font-size:14px;font-weight:700;color:{{ integrationStatus.productboardFeatures.color }};">◐</div>
+              </sc-if>
               <div style="font-size:10px;color:#6d6d6c;margin-top:4px;">{{ integrationStatus.productboardFeatures.description }}</div>
             </div>
             <div style="background:#f7f7f6;border-radius:8px;padding:12px;border-left:3px solid {{ integrationStatus.salesforce.color }};">
               <div style="font-size:11px;font-weight:700;color:#288184;text-transform:uppercase;margin-bottom:4px;">{{ integrationStatus.salesforce.name }}</div>
-              <div style="font-size:14px;font-weight:700;color:{{ integrationStatus.salesforce.color }};">{{ integrationStatus.salesforce.status === 'integrated' ? '✓' : '◐' }}</div>
+              <sc-if value="{{ integrationStatus.salesforce.status === 'integrated' }}" hint-placeholder-val="{{ false }}">
+                <div style="font-size:14px;font-weight:700;color:{{ integrationStatus.salesforce.color }};">✓</div>
+              </sc-if>
+              <sc-if value="{{ integrationStatus.salesforce.status !== 'integrated' }}" hint-placeholder-val="{{ true }}">
+                <div style="font-size:14px;font-weight:700;color:{{ integrationStatus.salesforce.color }};">◐</div>
+              </sc-if>
               <div style="font-size:10px;color:#6d6d6c;margin-top:4px;">{{ integrationStatus.salesforce.description }}</div>
             </div>
           </div>
