@@ -96,11 +96,29 @@ async function lakelzouseStatus(req, res) {
       source: getSourceFromName(b.name)
     }));
 
+    // Calculate counts by source
+    const silverBySource = {};
+    const goldBySource = {};
+    const bronzeBySource = {};
+
+    silverViewsWithSource.forEach(v => {
+      silverBySource[v.source] = (silverBySource[v.source] || 0) + 1;
+    });
+
+    goldViewsWithSource.forEach(v => {
+      goldBySource[v.source] = (goldBySource[v.source] || 0) + 1;
+    });
+
+    bronzeTablesWithSource.forEach(b => {
+      bronzeBySource[b.source] = (bronzeBySource[b.source] || 0) + 1;
+    });
+
     const status = {
       bronze: {
         layer: 'Bronze',
         count: bronzeCount[0].count,
         totalRows: null,
+        countBySource: bronzeBySource,
         label: 'Bronze Layer',
         description: 'Raw data tables landed by data team. Source of truth, minimal transformation.',
         tables: bronzeTablesWithSource
@@ -109,6 +127,7 @@ async function lakelzouseStatus(req, res) {
         layer: 'Silver',
         count: silverViews.length,
         totalRows: null,
+        countBySource: silverBySource,
         label: 'Silver Layer',
         description: 'PoC transformation views. Data validation and business logic.',
         status: 'proof-of-concept',
@@ -118,6 +137,7 @@ async function lakelzouseStatus(req, res) {
         layer: 'Gold',
         count: goldViews.length,
         totalRows: null,
+        countBySource: goldBySource,
         label: 'Gold Layer',
         description: 'Materialized analytical tables and views.',
         status: 'production-ready',
