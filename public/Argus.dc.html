@@ -895,10 +895,10 @@ input{font-family:inherit;}
               <div style="font-size:14px;font-weight:700;color:#ffcc00;">◐</div>
               <div style="font-size:10px;color:#6d6d6c;margin-top:4px;">API only (not wired)</div>
             </div>
-            <div style="background:#f7f7f6;border-radius:8px;padding:12px;border-left:3px solid #ffcc00;">
+            <div style="background:#f7f7f6;border-radius:8px;padding:12px;border-left:3px solid #00be86;">
               <div style="font-size:11px;font-weight:700;color:#288184;text-transform:uppercase;margin-bottom:4px;">Salesforce</div>
-              <div style="font-size:14px;font-weight:700;color:#ffcc00;">◐</div>
-              <div style="font-size:10px;color:#6d6d6c;margin-top:4px;">Subscriptions API only</div>
+              <div style="font-size:20px;color:#00be86;line-height:1;">●</div>
+              <div style="font-size:10px;color:#6d6d6c;margin-top:4px;">Subscriptions UI live</div>
             </div>
           </div>
 
@@ -945,23 +945,39 @@ class Component extends DCLogic {
   }
 
   setupSalesforceSubscriptions(){
-    const self = this;
-    const trySetup = (attempts = 0) => {
+    // Wait for DOM to be fully ready, then load accounts and setup listeners
+    const waitForDOM = () => {
       const select = document.getElementById('sfAccountSelector');
-      if(select && select.parentElement){
-        console.log('[Argus] sfAccountSelector found, loading accounts');
-        self.loadAccountsList();
-        select.addEventListener('change', (e)=>{
-          const accountName = e.target.value;
-          if(accountName) self.fetchSalesforceSubscriptions(accountName);
+      if(!select) {
+        setTimeout(waitForDOM, 100);
+        return;
+      }
+
+      // Load accounts immediately
+      this.loadAccountsList();
+
+      // Add change listener
+      select.addEventListener('change', (e) => {
+        const accountName = e.target.value;
+        if(accountName) this.fetchSalesforceSubscriptions(accountName);
+      });
+
+      // Add event listeners for summary cards
+      document.querySelectorAll('.sfSummaryCard').forEach(card => {
+        card.addEventListener('click', () => {
+          const group = card.getAttribute('data-group');
+          this.showDrilldown(group);
         });
-      } else if(attempts < 50){
-        setTimeout(() => trySetup(attempts + 1), 50);
-      } else {
-        console.error('[Argus] sfAccountSelector not found after 2.5s');
+      });
+
+      // Add back button listener
+      const backBtn = document.getElementById('sfBackButton');
+      if(backBtn) {
+        backBtn.addEventListener('click', () => this.showSummary());
       }
     };
-    trySetup();
+
+    waitForDOM();
 
     // Add event listeners for summary cards
     document.querySelectorAll('.sfSummaryCard').forEach(card=>{
