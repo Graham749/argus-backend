@@ -1178,14 +1178,11 @@ class Component extends DCLogic {
   fetchIntegrationStatus(){
     console.log('[Argus] Fetching integration status...');
     fetch('http://localhost:3001/api/integration-status')
-      .then(r=>{
-        console.log('[Argus] Response status:', r.status);
-        return r.json();
+      .then(r => r.json())
+      .then(data => {
+        console.log('[Argus] Got integration status:', data);
       })
-      .then(data=>{
-        console.log('[Argus] Got integration status:', JSON.stringify(data, null, 2));
-      })
-      .catch(err=>{
+      .catch(err => {
         console.error('[Argus] Failed to fetch integration status:', err);
       });
   }
