@@ -789,6 +789,7 @@ input{font-family:inherit;}
             </div>
           </div>
 
+          <sc-if value="{{ Object.keys(integrationStatus).length > 0 }}" hint-placeholder-val="{{ false }}">
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px;">
             <sc-for list="{{ Object.entries(integrationStatus) }}" as="item" hint-placeholder-count="3">
               <div style="background:#f7f7f6;border-radius:8px;padding:12px;border-left:3px solid {{ item[1].color }};">
@@ -798,6 +799,17 @@ input{font-family:inherit;}
               </div>
             </sc-for>
           </div>
+          </sc-if>
+          <sc-if value="{{ Object.keys(integrationStatus).length === 0 }}" hint-placeholder-val="{{ true }}">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px;">
+            <div style="background:#f7f7f6;border-radius:8px;padding:12px;border-left:3px solid #ddd;opacity:0.5;">
+              <div style="font-size:11px;font-weight:700;color:#288184;text-transform:uppercase;margin-bottom:4px;">Loading...</div>
+              <div style="font-size:10px;color:#9d9d9d;margin-top:4px;">Fetching API status</div>
+            </div>
+            <div style="background:#f7f7f6;border-radius:8px;padding:12px;border-left:3px solid #ddd;opacity:0.5;"></div>
+            <div style="background:#f7f7f6;border-radius:8px;padding:12px;border-left:3px solid #ddd;opacity:0.5;"></div>
+          </div>
+          </sc-if>
 
           <div style="font-size:10px;color:#9d9d9d;margin-top:8px;padding-top:8px;border-top:1px solid #e6e6e5;font-style:italic;line-height:1.5;">
             <strong>✓ Integrated</strong> = wired into Argus UI and serving live data. <strong>◐ API only</strong> = endpoint available but not yet connected to a dashboard widget.
