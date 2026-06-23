@@ -945,16 +945,20 @@ class Component extends DCLogic {
   }
 
   setupSalesforceSubscriptions(){
-    const trySetup = () => {
+    const self = this;
+    const trySetup = (attempts = 0) => {
       const select = document.getElementById('sfAccountSelector');
-      if(select){
-        this.loadAccountsList();
+      if(select && select.parentElement){
+        console.log('[Argus] sfAccountSelector found, loading accounts');
+        self.loadAccountsList();
         select.addEventListener('change', (e)=>{
           const accountName = e.target.value;
-          if(accountName) this.fetchSalesforceSubscriptions(accountName);
+          if(accountName) self.fetchSalesforceSubscriptions(accountName);
         });
+      } else if(attempts < 50){
+        setTimeout(() => trySetup(attempts + 1), 50);
       } else {
-        setTimeout(trySetup, 100);
+        console.error('[Argus] sfAccountSelector not found after 2.5s');
       }
     };
     trySetup();
