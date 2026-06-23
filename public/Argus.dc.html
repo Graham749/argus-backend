@@ -110,16 +110,47 @@ input{font-family:inherit;}
             </select>
           </div>
 
-          <div id="sfSubscriptionsTable" style="display:none;">
+          <!-- Summary View (Grouped by Days to Renewal) -->
+          <div id="sfSummaryView" style="display:none;">
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;">
+              <div style="background:#f7f7f6;border-radius:8px;padding:12px;cursor:pointer;border:1px solid #e6e6e5;" onclick="window.sfDrilldown('0-30')">
+                <div style="font-size:11px;font-weight:700;color:#6d6d6c;margin-bottom:4px;">0-30 Days</div>
+                <div style="font-size:16px;font-weight:700;color:#d32f2f;" id="sf0-30Count">0</div>
+                <div style="font-size:10px;color:#9d9d9d;margin-top:4px;">£<span id="sf0-30ARR">0</span>k</div>
+              </div>
+              <div style="background:#f7f7f6;border-radius:8px;padding:12px;cursor:pointer;border:1px solid #e6e6e5;" onclick="window.sfDrilldown('30-60')">
+                <div style="font-size:11px;font-weight:700;color:#6d6d6c;margin-bottom:4px;">30-60 Days</div>
+                <div style="font-size:16px;font-weight:700;color:#ff9800;" id="sf30-60Count">0</div>
+                <div style="font-size:10px;color:#9d9d9d;margin-top:4px;">£<span id="sf30-60ARR">0</span>k</div>
+              </div>
+              <div style="background:#f7f7f6;border-radius:8px;padding:12px;cursor:pointer;border:1px solid #e6e6e5;" onclick="window.sfDrilldown('60-90')">
+                <div style="font-size:11px;font-weight:700;color:#6d6d6c;margin-bottom:4px;">60-90 Days</div>
+                <div style="font-size:16px;font-weight:700;color:#2196f3;" id="sf60-90Count">0</div>
+                <div style="font-size:10px;color:#9d9d9d;margin-top:4px;">£<span id="sf60-90ARR">0</span>k</div>
+              </div>
+              <div style="background:#f7f7f6;border-radius:8px;padding:12px;cursor:pointer;border:1px solid #e6e6e5;" onclick="window.sfDrilldown('90+')">
+                <div style="font-size:11px;font-weight:700;color:#6d6d6c;margin-bottom:4px;">90+ Days</div>
+                <div style="font-size:16px;font-weight:700;color:#4caf50;" id="sf90PlusCount">0</div>
+                <div style="font-size:10px;color:#9d9d9d;margin-top:4px;">£<span id="sf90PlusARR">0</span>k</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Detail View (Drilldown) -->
+          <div id="sfDetailView" style="display:none;">
+            <div style="margin-bottom:12px;">
+              <button onclick="window.sfBackToSummary()" style="padding:6px 12px;border-radius:6px;border:1px solid #e6e6e5;background:#fff;color:#288184;font-size:11px;font-weight:700;cursor:pointer;">← Back to Summary</button>
+              <span style="margin-left:12px;font-size:12px;color:#6d6d6c;" id="sfDrilldownTitle"></span>
+            </div>
             <div style="overflow-x:auto;border:1px solid #e6e6e5;border-radius:8px;">
               <table style="width:100%;border-collapse:collapse;font-size:12px;">
                 <thead style="background:#f7f7f6;border-bottom:1px solid #e6e6e5;">
                   <tr>
-                    <th style="padding:10px 12px;text-align:left;font-weight:700;color:#3c3c3b;">Subscription</th>
+                    <th style="padding:10px 12px;text-align:left;font-weight:700;color:#3c3c3b;">Product</th>
                     <th style="padding:10px 12px;text-align:right;font-weight:700;color:#3c3c3b;">ARR (£)</th>
-                    <th style="padding:10px 12px;text-align:left;font-weight:700;color:#3c3c3b;">Service</th>
+                    <th style="padding:10px 12px;text-align:left;font-weight:700;color:#3c3c3b;">Service Type</th>
                     <th style="padding:10px 12px;text-align:left;font-weight:700;color:#3c3c3b;">Status</th>
-                    <th style="padding:10px 12px;text-align:right;font-weight:700;color:#3c3c3b;">Days to Renewal</th>
+                    <th style="padding:10px 12px;text-align:right;font-weight:700;color:#3c3c3b;">Days</th>
                   </tr>
                 </thead>
                 <tbody id="sfSubscriptionsBody"></tbody>
@@ -921,6 +952,10 @@ class Component extends DCLogic {
         if(accountName) this.fetchSalesforceSubscriptions(accountName);
       });
     }
+
+    // Expose drilldown functions to window for onclick handlers
+    window.sfDrilldown = (group) => this.showDrilldown(group);
+    window.sfBackToSummary = () => this.showSummary();
   }
 
   loadAccountsList(){
@@ -966,18 +1001,62 @@ class Component extends DCLogic {
   }
 
   renderSubscriptions(subs){
+    this.currentSubscriptions = subs;
+    this.groupedSubs = this.groupByRenewalDays(subs);
+    this.showSummary();
+  }
+
+  groupByRenewalDays(subs){
+    const groups = {
+      '0-30': [],
+      '30-60': [],
+      '60-90': [],
+      '90+': []
+    };
+
+    subs.forEach(sub=>{
+      const days = sub.days_to_renewal;
+      if(days <= 30) groups['0-30'].push(sub);
+      else if(days <= 60) groups['30-60'].push(sub);
+      else if(days <= 90) groups['60-90'].push(sub);
+      else groups['90+'].push(sub);
+    });
+
+    return groups;
+  }
+
+  showSummary(){
+    document.getElementById('sfDetailView').style.display = 'none';
+    document.getElementById('sfSummaryView').style.display = 'block';
+
+    const groups = this.groupedSubs;
+
+    for(const [key, subs] of Object.entries(groups)){
+      const count = subs.length;
+      const arr = subs.reduce((sum, s) => sum + s.arr_gbp, 0);
+      const arrK = (arr / 1000).toFixed(0);
+
+      document.getElementById(`sf${key}Count`).textContent = count;
+      document.getElementById(`sf${key}ARR`).textContent = arrK;
+    }
+  }
+
+  showDrilldown(group){
+    document.getElementById('sfSummaryView').style.display = 'none';
+    document.getElementById('sfDetailView').style.display = 'block';
+    document.getElementById('sfDrilldownTitle').textContent = `Renewals in ${group} days range`;
+
     const tbody = document.getElementById('sfSubscriptionsBody');
     tbody.innerHTML = '';
 
-    const top5 = subs.slice(0, 5);
-    top5.forEach(sub=>{
+    const subs = this.groupedSubs[group] || [];
+    subs.forEach(sub=>{
       const row = document.createElement('tr');
       row.style.borderBottom = '1px solid #e6e6e5';
-
       const statusColor = sub.status === 'Termination in Progress' ? '#d32f2f' : '#00be86';
 
       row.innerHTML = `
-        <td style="padding:10px 12px;color:#3c3c3b;">${sub.subscription_id.substring(0,8)}...</td>
+        <td style="padding:10px 12px;color:#3c3c3b;">${sub.product_category}</td>
         <td style="padding:10px 12px;text-align:right;color:#3c3c3b;font-weight:600;">£${sub.arr_gbp.toLocaleString()}</td>
         <td style="padding:10px 12px;color:#6d6d6c;font-size:11px;">${sub.service_type || '-'}</td>
         <td style="padding:10px 12px;color:${statusColor};font-weight:600;">${sub.status}</td>
