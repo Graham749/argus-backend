@@ -1085,11 +1085,15 @@ class Component extends DCLogic {
 
       if(countEl) {
         const typeBreakdown = Object.entries(group.byType)
-          .map(([type, data]) => `${type} (${data.count})`)
-          .join(', ');
-        countEl.textContent = `${count}\n${typeBreakdown}`;
-        countEl.style.whiteSpace = 'normal';
-        countEl.style.fontSize = '12px';
+          .map(([type, data]) => {
+            const typeArr = (data.arr / 1000).toFixed(0);
+            return `${type}: ${data.count} (£${typeArr}k)`;
+          })
+          .join('\n');
+        countEl.textContent = `${count} total\n${typeBreakdown}`;
+        countEl.style.whiteSpace = 'pre-wrap';
+        countEl.style.fontSize = '11px';
+        countEl.style.lineHeight = '1.3';
       }
       if(arrEl) arrEl.textContent = arrK;
     }
