@@ -789,27 +789,23 @@ input{font-family:inherit;}
             </div>
           </div>
 
-          <sc-if value="{{ Object.keys(integrationStatus).length > 0 }}" hint-placeholder-val="{{ false }}">
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px;">
-            <sc-for list="{{ Object.entries(integrationStatus) }}" as="item" hint-placeholder-count="3">
-              <div style="background:#f7f7f6;border-radius:8px;padding:12px;border-left:3px solid {{ item[1].color }};">
-                <div style="font-size:11px;font-weight:700;color:#288184;text-transform:uppercase;margin-bottom:4px;">{{ item[1].name }}</div>
-                <div style="font-size:14px;font-weight:700;color:{{ item[1].color }};">{{ item[1].status === 'integrated' ? '✓' : '◐' }}</div>
-                <div style="font-size:10px;color:#6d6d6c;margin-top:4px;">{{ item[1].description }}</div>
-              </div>
-            </sc-for>
-          </div>
-          </sc-if>
-          <sc-if value="{{ Object.keys(integrationStatus).length === 0 }}" hint-placeholder-val="{{ true }}">
-          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px;">
-            <div style="background:#f7f7f6;border-radius:8px;padding:12px;border-left:3px solid #ddd;opacity:0.5;">
-              <div style="font-size:11px;font-weight:700;color:#288184;text-transform:uppercase;margin-bottom:4px;">Loading...</div>
-              <div style="font-size:10px;color:#9d9d9d;margin-top:4px;">Fetching API status</div>
+            <div style="background:#f7f7f6;border-radius:8px;padding:12px;border-left:3px solid {{ integrationStatus.lakehouseStatus.color }};">
+              <div style="font-size:11px;font-weight:700;color:#288184;text-transform:uppercase;margin-bottom:4px;">{{ integrationStatus.lakehouseStatus.name }}</div>
+              <div style="font-size:14px;font-weight:700;color:{{ integrationStatus.lakehouseStatus.color }};">{{ integrationStatus.lakehouseStatus.status === 'integrated' ? '✓' : '◐' }}</div>
+              <div style="font-size:10px;color:#6d6d6c;margin-top:4px;">{{ integrationStatus.lakehouseStatus.description }}</div>
             </div>
-            <div style="background:#f7f7f6;border-radius:8px;padding:12px;border-left:3px solid #ddd;opacity:0.5;"></div>
-            <div style="background:#f7f7f6;border-radius:8px;padding:12px;border-left:3px solid #ddd;opacity:0.5;"></div>
+            <div style="background:#f7f7f6;border-radius:8px;padding:12px;border-left:3px solid {{ integrationStatus.productboardFeatures.color }};">
+              <div style="font-size:11px;font-weight:700;color:#288184;text-transform:uppercase;margin-bottom:4px;">{{ integrationStatus.productboardFeatures.name }}</div>
+              <div style="font-size:14px;font-weight:700;color:{{ integrationStatus.productboardFeatures.color }};">{{ integrationStatus.productboardFeatures.status === 'integrated' ? '✓' : '◐' }}</div>
+              <div style="font-size:10px;color:#6d6d6c;margin-top:4px;">{{ integrationStatus.productboardFeatures.description }}</div>
+            </div>
+            <div style="background:#f7f7f6;border-radius:8px;padding:12px;border-left:3px solid {{ integrationStatus.salesforce.color }};">
+              <div style="font-size:11px;font-weight:700;color:#288184;text-transform:uppercase;margin-bottom:4px;">{{ integrationStatus.salesforce.name }}</div>
+              <div style="font-size:14px;font-weight:700;color:{{ integrationStatus.salesforce.color }};">{{ integrationStatus.salesforce.status === 'integrated' ? '✓' : '◐' }}</div>
+              <div style="font-size:10px;color:#6d6d6c;margin-top:4px;">{{ integrationStatus.salesforce.description }}</div>
+            </div>
           </div>
-          </sc-if>
 
           <div style="font-size:10px;color:#9d9d9d;margin-top:8px;padding-top:8px;border-top:1px solid #e6e6e5;font-style:italic;line-height:1.5;">
             <strong>✓ Integrated</strong> = wired into Argus UI and serving live data. <strong>◐ API only</strong> = endpoint available but not yet connected to a dashboard widget.
