@@ -790,21 +790,13 @@ input{font-family:inherit;}
           </div>
 
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px;">
-            <div style="background:#f7f7f6;border-radius:8px;padding:12px;border-left:3px solid #00be86;">
-              <div style="font-size:11px;font-weight:700;color:#288184;text-transform:uppercase;margin-bottom:4px;">Lakehouse Status</div>
-              <div style="font-size:14px;font-weight:700;color:#00be86;">✓</div>
-              <div style="font-size:10px;color:#6d6d6c;margin-top:4px;">Build status UI</div>
-            </div>
-            <div style="background:#f7f7f6;border-radius:8px;padding:12px;border-left:3px solid #ffcc00;">
-              <div style="font-size:11px;font-weight:700;color:#288184;text-transform:uppercase;margin-bottom:4px;">Productboard Features</div>
-              <div style="font-size:14px;font-weight:700;color:#ffcc00;">◐</div>
-              <div style="font-size:10px;color:#6d6d6c;margin-top:4px;">API only (not wired)</div>
-            </div>
-            <div style="background:#f7f7f6;border-radius:8px;padding:12px;border-left:3px solid #ffcc00;">
-              <div style="font-size:11px;font-weight:700;color:#288184;text-transform:uppercase;margin-bottom:4px;">Salesforce</div>
-              <div style="font-size:14px;font-weight:700;color:#ffcc00;">◐</div>
-              <div style="font-size:10px;color:#6d6d6c;margin-top:4px;">Subscriptions API only</div>
-            </div>
+            <sc-for list="{{ Object.entries(integrationStatus) }}" as="item" hint-placeholder-count="3">
+              <div style="background:#f7f7f6;border-radius:8px;padding:12px;border-left:3px solid {{ item[1].color }};">
+                <div style="font-size:11px;font-weight:700;color:#288184;text-transform:uppercase;margin-bottom:4px;">{{ item[1].name }}</div>
+                <div style="font-size:14px;font-weight:700;color:{{ item[1].color }};">{{ item[1].status === 'integrated' ? '✓' : '◐' }}</div>
+                <div style="font-size:10px;color:#6d6d6c;margin-top:4px;">{{ item[1].description }}</div>
+              </div>
+            </sc-for>
           </div>
 
           <div style="font-size:10px;color:#9d9d9d;margin-top:8px;padding-top:8px;border-top:1px solid #e6e6e5;font-style:italic;line-height:1.5;">
@@ -833,6 +825,7 @@ class Component extends DCLogic {
       isLoading:false, loadingSeconds:0,
       showAboutModal:false,
       currentUser:{name:'Loading...',initials:'...'},
+      integrationStatus:{},
       buildStatus:{bronze:{count:0,label:'tables',rowLabel:'0 rows',productboardCount:0,salesforceCount:0,sourceGroups:[]},silver:{count:0,label:'views',productboardCount:0,salesforceCount:0,productOpsCount:0,views:[],sourceGroups:[]},gold:{count:0,label:'tables',productboardCount:0,salesforceCount:0,posthogCount:0,views:[],sourceGroups:[]},syncLabel:'Loading...'}
     };
   }
@@ -842,6 +835,7 @@ class Component extends DCLogic {
       this.refreshBuildStatus && this.refreshBuildStatus();
     }, 100);
     this.fetchCurrentUser();
+    this.fetchIntegrationStatus();
   }
 
   fetchCurrentUser(){
@@ -863,6 +857,19 @@ class Component extends DCLogic {
         clearTimeout(timeout);
         console.error('[Argus] Failed to fetch current user:', err.message);
         this.setState({currentUser:{name:'Aurora User',initials:'AU',email:'user@aurora.local'}});
+      });
+  }
+
+  fetchIntegrationStatus(){
+    console.log('[Argus] Fetching integration status...');
+    fetch('http://localhost:3001/api/integration-status')
+      .then(r=>r.json())
+      .then(status=>{
+        console.log('[Argus] Got integration status:', status);
+        this.setState({integrationStatus:status});
+      })
+      .catch(err=>{
+        console.error('[Argus] Failed to fetch integration status:', err.message);
       });
   }
 
