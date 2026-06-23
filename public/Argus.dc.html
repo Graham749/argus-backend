@@ -790,21 +790,13 @@ input{font-family:inherit;}
           </div>
 
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px;">
-            <div style="background:#f7f7f6;border-radius:8px;padding:12px;border-left:3px solid {{ integrationStatus.lakehouseStatus.color }};">
-              <div style="font-size:11px;font-weight:700;color:#288184;text-transform:uppercase;margin-bottom:4px;">{{ integrationStatus.lakehouseStatus.name }}</div>
-              <div style="font-size:14px;font-weight:700;color:{{ integrationStatus.lakehouseStatus.color }};">{{ integrationStatus.lakehouseStatus.symbol }}</div>
-              <div style="font-size:10px;color:#6d6d6c;margin-top:4px;">{{ integrationStatus.lakehouseStatus.description }}</div>
+            <sc-for list="{{ apis }}" as="api" hint-placeholder-count="3">
+            <div style="background:#f7f7f6;border-radius:8px;padding:12px;border-left:3px solid {{ api.color }};">
+              <div style="font-size:11px;font-weight:700;color:#288184;text-transform:uppercase;margin-bottom:4px;">{{ api.name }}</div>
+              <div style="font-size:14px;font-weight:700;color:{{ api.color }};">{{ api.symbol }}</div>
+              <div style="font-size:10px;color:#6d6d6c;margin-top:4px;">{{ api.description }}</div>
             </div>
-            <div style="background:#f7f7f6;border-radius:8px;padding:12px;border-left:3px solid {{ integrationStatus.productboardFeatures.color }};">
-              <div style="font-size:11px;font-weight:700;color:#288184;text-transform:uppercase;margin-bottom:4px;">{{ integrationStatus.productboardFeatures.name }}</div>
-              <div style="font-size:14px;font-weight:700;color:{{ integrationStatus.productboardFeatures.color }};">{{ integrationStatus.productboardFeatures.symbol }}</div>
-              <div style="font-size:10px;color:#6d6d6c;margin-top:4px;">{{ integrationStatus.productboardFeatures.description }}</div>
-            </div>
-            <div style="background:#f7f7f6;border-radius:8px;padding:12px;border-left:3px solid {{ integrationStatus.salesforce.color }};">
-              <div style="font-size:11px;font-weight:700;color:#288184;text-transform:uppercase;margin-bottom:4px;">{{ integrationStatus.salesforce.name }}</div>
-              <div style="font-size:14px;font-weight:700;color:{{ integrationStatus.salesforce.color }};">{{ integrationStatus.salesforce.symbol }}</div>
-              <div style="font-size:10px;color:#6d6d6c;margin-top:4px;">{{ integrationStatus.salesforce.description }}</div>
-            </div>
+            </sc-for>
           </div>
 
           <div style="font-size:10px;color:#9d9d9d;margin-top:8px;padding-top:8px;border-top:1px solid #e6e6e5;font-style:italic;line-height:1.5;">
@@ -833,7 +825,7 @@ class Component extends DCLogic {
       isLoading:false, loadingSeconds:0,
       showAboutModal:false,
       currentUser:{name:'Loading...',initials:'...'},
-      integrationStatus:{lakehouseStatus:{name:'Loading...',color:'#ddd',symbol:'...'},productboardFeatures:{name:'Loading...',color:'#ddd',symbol:'...'},salesforce:{name:'Loading...',color:'#ddd',symbol:'...'}},
+      apis:[],
       buildStatus:{bronze:{count:0,label:'tables',rowLabel:'0 rows',productboardCount:0,salesforceCount:0,sourceGroups:[]},silver:{count:0,label:'views',productboardCount:0,salesforceCount:0,productOpsCount:0,views:[],sourceGroups:[]},gold:{count:0,label:'tables',productboardCount:0,salesforceCount:0,posthogCount:0,views:[],sourceGroups:[]},syncLabel:'Loading...'}
     };
   }
@@ -855,8 +847,9 @@ class Component extends DCLogic {
       })
       .then(data=>{
         console.log('[Argus] Got integration status:', JSON.stringify(data, null, 2));
-        this.setState({integrationStatus: data});
-        console.log('[Argus] Updated state, checking:', this.state.integrationStatus);
+        const apiList = Object.values(data);
+        this.setState({apis: apiList});
+        console.log('[Argus] Updated apis state:', apiList);
       })
       .catch(err=>{
         console.error('[Argus] Failed to fetch integration status:', err);
