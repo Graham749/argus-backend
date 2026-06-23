@@ -833,7 +833,7 @@ class Component extends DCLogic {
       isLoading:false, loadingSeconds:0,
       showAboutModal:false,
       currentUser:{name:'Loading...',initials:'...'},
-      integrationStatus:{},
+      integrationStatus:{lakehouseStatus:{name:'Loading...',color:'#ddd',symbol:'...'},productboardFeatures:{name:'Loading...',color:'#ddd',symbol:'...'},salesforce:{name:'Loading...',color:'#ddd',symbol:'...'}},
       buildStatus:{bronze:{count:0,label:'tables',rowLabel:'0 rows',productboardCount:0,salesforceCount:0,sourceGroups:[]},silver:{count:0,label:'views',productboardCount:0,salesforceCount:0,productOpsCount:0,views:[],sourceGroups:[]},gold:{count:0,label:'tables',productboardCount:0,salesforceCount:0,posthogCount:0,views:[],sourceGroups:[]},syncLabel:'Loading...'}
     };
   }
