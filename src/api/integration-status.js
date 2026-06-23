@@ -15,9 +15,9 @@ async function getIntegrationStatus(req, res) {
       },
       salesforce: {
         name: 'Salesforce',
-        integrated: false,
-        description: 'Subscriptions API only',
-        color: '#ffcc00'
+        integrated: true,
+        description: 'Subscriptions UI live',
+        color: '#00be86'
       }
     };
 
