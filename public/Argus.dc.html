@@ -834,6 +834,7 @@ class Component extends DCLogic {
 
   componentDidMount(){
     console.log('[Argus] Component mounted. Initial state:', this.state);
+    this.apis = [{name:'Loading...',color:'#ddd',symbol:'...',description:''}];
     setTimeout(()=>{
       this.refreshBuildStatus && this.refreshBuildStatus();
     }, 100);
@@ -851,8 +852,9 @@ class Component extends DCLogic {
       .then(data=>{
         console.log('[Argus] Got integration status:', JSON.stringify(data, null, 2));
         const apiList = Object.values(data);
-        this.setState({apis: apiList});
-        console.log('[Argus] Updated apis state:', apiList);
+        this.apis = apiList;
+        this.forceUpdate();
+        console.log('[Argus] Updated apis property:', apiList);
       })
       .catch(err=>{
         console.error('[Argus] Failed to fetch integration status:', err);
