@@ -5,6 +5,7 @@ const lakehouseStatus = require('./api/lakehouse-status');
 const features = require('./api/features');
 const currentUser = require('./api/current-user');
 const accounts = require('./api/accounts');
+const accountsList = require('./api/accounts-list');
 const integrationStatus = require('./api/integration-status');
 
 const app = express();
@@ -31,6 +32,7 @@ app.get('/health', (req, res) => {
 app.get('/api/lakehouse-status', lakehouseStatus);
 app.get('/api/features', features);
 app.get('/api/current-user', currentUser);
+app.get('/api/accounts-list', accountsList);
 app.get('/api/accounts/:accountName', accounts);
 app.get('/api/integration-status', integrationStatus);
 

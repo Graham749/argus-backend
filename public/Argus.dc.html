@@ -100,7 +100,9 @@ input{font-family:inherit;}
 
           <div style="margin-bottom:16px;">
             <label style="font-size:11px;font-weight:700;color:#3c3c3b;display:block;margin-bottom:6px;">SELECT ACCOUNT</label>
-            <input id="sfAccountSelector" type="text" placeholder="e.g., TotalEnergies" style="width:100%;padding:8px 12px;border:1px solid #e6e6e5;border-radius:6px;font-size:12px;" />
+            <select id="sfAccountSelector" style="width:100%;padding:8px 12px;border:1px solid #e6e6e5;border-radius:6px;font-size:12px;cursor:pointer;">
+              <option value="">-- Loading accounts... --</option>
+            </select>
           </div>
 
           <div id="sfSubscriptionsTable" style="display:none;">
@@ -911,15 +913,36 @@ class Component extends DCLogic {
   }
 
   setupSalesforceSubscriptions(){
-    const input = document.getElementById('sfAccountSelector');
-    if(input){
-      input.addEventListener('keypress', (e)=>{
-        if(e.key === 'Enter'){
-          const accountName = input.value.trim();
-          if(accountName) this.fetchSalesforceSubscriptions(accountName);
-        }
+    const select = document.getElementById('sfAccountSelector');
+    if(select){
+      this.loadAccountsList();
+      select.addEventListener('change', (e)=>{
+        const accountName = e.target.value;
+        if(accountName) this.fetchSalesforceSubscriptions(accountName);
       });
     }
+  }
+
+  loadAccountsList(){
+    console.log('[Argus] Loading accounts list...');
+    fetch('http://localhost:3001/api/accounts-list')
+      .then(r=>r.json())
+      .then(data=>{
+        console.log('[Argus] Got accounts:', data.accounts);
+        const select = document.getElementById('sfAccountSelector');
+        select.innerHTML = '<option value="">-- Select Account --</option>';
+        data.accounts.forEach(acc=>{
+          const option = document.createElement('option');
+          option.value = acc.value;
+          option.textContent = acc.name;
+          select.appendChild(option);
+        });
+      })
+      .catch(err=>{
+        console.error('[Argus] Failed to load accounts:', err);
+        const select = document.getElementById('sfAccountSelector');
+        select.innerHTML = '<option value="">Error loading accounts</option>';
+      });
   }
 
   fetchSalesforceSubscriptions(accountName){
