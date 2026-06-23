@@ -4,6 +4,7 @@ const path = require('path');
 const lakehouseStatus = require('./api/lakehouse-status');
 const features = require('./api/features');
 const currentUser = require('./api/current-user');
+const accounts = require('./api/accounts');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -29,6 +30,7 @@ app.get('/health', (req, res) => {
 app.get('/api/lakehouse-status', lakehouseStatus);
 app.get('/api/features', features);
 app.get('/api/current-user', currentUser);
+app.get('/api/accounts/:accountName', accounts);
 
 // Serve Argus dashboard at root
 app.get('/', (req, res) => {
