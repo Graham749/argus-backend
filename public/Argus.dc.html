@@ -105,8 +105,7 @@ input{font-family:inherit;}
 
           <div style="margin-bottom:16px;">
             <label style="font-size:11px;font-weight:700;color:#3c3c3b;display:block;margin-bottom:6px;">SELECT ACCOUNT</label>
-            <input id="sfAccountSearch" type="text" placeholder="Search accounts..." style="width:100%;padding:8px 12px;border:1px solid #e6e6e5;border-radius:6px;font-size:12px;margin-bottom:8px;box-sizing:border-box;" />
-            <select id="sfAccountSelector" style="width:100%;padding:8px 12px;border:1px solid #e6e6e5;border-radius:6px;font-size:12px;cursor:pointer;max-height:300px;">
+            <select id="sfAccountSelector" style="width:100%;padding:8px 12px;border:1px solid #e6e6e5;border-radius:6px;font-size:12px;cursor:pointer;">
               <option value="">-- Loading accounts... --</option>
             </select>
           </div>
@@ -947,34 +946,12 @@ class Component extends DCLogic {
 
   setupSalesforceSubscriptions(){
     const select = document.getElementById('sfAccountSelector');
-    const search = document.getElementById('sfAccountSearch');
-
     if(select){
       this.loadAccountsList();
-
       select.addEventListener('change', (e)=>{
         const accountName = e.target.value;
         if(accountName) this.fetchSalesforceSubscriptions(accountName);
       });
-
-      if(search){
-        search.addEventListener('input', (e)=>{
-          const query = e.target.value.toLowerCase().trim();
-          const options = select.querySelectorAll('option');
-          let visibleCount = 0;
-
-          options.forEach(option=>{
-            if(option.value === '') return;
-            const matches = option.textContent.toLowerCase().includes(query);
-            if(matches && visibleCount < 10){
-              option.style.display = '';
-              visibleCount++;
-            } else if(option.value !== ''){
-              option.style.display = 'none';
-            }
-          });
-        });
-      }
     }
 
     // Add event listeners for summary cards
@@ -1189,7 +1166,7 @@ class Component extends DCLogic {
   showDrilldown(group){
     document.getElementById('sfSummaryView').style.display = 'none';
     document.getElementById('sfDetailView').style.display = 'block';
-    document.getElementById('sfDrilldownTitle').textContent = `Renewals in ${group} days range`;
+    document.getElementById('sfDrilldownTitle').textContent = `Top 5 by ARR — Renewals in ${group} days range`;
 
     const tbody = document.getElementById('sfSubscriptionsBody');
     tbody.innerHTML = '';
@@ -1197,7 +1174,9 @@ class Component extends DCLogic {
     const groupData = this.groupedSubs[group];
     const subs = groupData ? groupData.subs : [];
 
-    subs.forEach(sub=>{
+    const top5 = subs.sort((a, b) => b.arr_gbp - a.arr_gbp).slice(0, 5);
+
+    top5.forEach(sub=>{
       const row = document.createElement('tr');
       row.style.borderBottom = '1px solid #e6e6e5';
       const statusColor = sub.status === 'Termination in Progress' ? '#d32f2f' : '#00be86';
