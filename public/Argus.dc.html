@@ -1008,7 +1008,10 @@ class Component extends DCLogic {
         console.error('[Argus] Failed:', err);
         loading.style.display = 'none';
         error.style.display = 'block';
-        document.getElementById('sfErrorText').textContent = `Error: ${err.message}. Try "TotalEnergies"`;
+        const errorText = document.getElementById('sfErrorText');
+        if(errorText) {
+          errorText.textContent = `Error: ${err.message}. Try "TotalEnergies"`;
+        }
       });
   }
 
