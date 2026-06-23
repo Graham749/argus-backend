@@ -89,7 +89,9 @@ const medalion = {
       { name: 'v_silver_pb_note_tags', purpose: 'Note → tag assignments', sources: ['bronze_pb_notes'], source: 'Productboard', stage: 'validated' },
 
       // Cross-system integration
-      { name: 'v_silver_sf_account', purpose: 'Salesforce accounts (revenue data for weighting)', sources: ['bronze_sfapi_account'], source: 'Salesforce', stage: 'validated' }
+      { name: 'v_silver_sf_account', purpose: 'Salesforce accounts (revenue data for weighting)', sources: ['bronze_sfapi_account'], source: 'Salesforce', stage: 'validated' },
+      { name: 'v_silver_sf_products', purpose: 'Salesforce products with service type enrichment', sources: ['bronze_sfapi_product2'], source: 'Salesforce', stage: 'validated' },
+      { name: 'v_silver_sf_subscriptions', purpose: 'Salesforce subscriptions with product and service type details', sources: ['bronze_sfapi_subscripton__c', 'bronze_sfapi_product2'], source: 'Salesforce', stage: 'validated' }
     ]
   },
 
@@ -108,7 +110,9 @@ const medalion = {
       { name: 'v_gold_pb_path_feature_initiative', purpose: 'Feature → initiative paths (direct & via objective)', sources: ['v_silver_pb_path_feature_initiative'], source: 'Productboard', stage: 'ready-for-materialization' },
       { name: 'v_gold_pb_path_feature_objective', purpose: 'Feature → objective lineage', sources: ['v_silver_pb_path_feature_objective'], source: 'Productboard', stage: 'ready-for-materialization' },
       { name: 'v_gold_pb_path_feature_release', purpose: 'Feature & subfeature → release assignment', sources: ['v_silver_pb_path_feature_release'], source: 'Productboard', stage: 'ready-for-materialization' },
-      { name: 'v_gold_pb_path_feature_subfeature', purpose: 'Feature → subfeature parent-child', sources: ['v_silver_pb_path_feature_subfeature'], source: 'Productboard', stage: 'ready-for-materialization' }
+      { name: 'v_gold_pb_path_feature_subfeature', purpose: 'Feature → subfeature parent-child', sources: ['v_silver_pb_path_feature_subfeature'], source: 'Productboard', stage: 'ready-for-materialization' },
+      { name: 'v_gold_sf_subscriptions', purpose: 'Salesforce subscription analytics with renewals and service classification', sources: ['v_silver_sf_subscriptions', 'v_silver_sf_products'], source: 'Salesforce', stage: 'ready-for-materialization' },
+      { name: 'v_gold_sf_products', purpose: 'Salesforce product catalog with service types', sources: ['v_silver_sf_products'], source: 'Salesforce', stage: 'ready-for-materialization' }
     ]
   }
 };
