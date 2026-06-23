@@ -945,14 +945,19 @@ class Component extends DCLogic {
   }
 
   setupSalesforceSubscriptions(){
-    const select = document.getElementById('sfAccountSelector');
-    if(select){
-      this.loadAccountsList();
-      select.addEventListener('change', (e)=>{
-        const accountName = e.target.value;
-        if(accountName) this.fetchSalesforceSubscriptions(accountName);
-      });
-    }
+    const trySetup = () => {
+      const select = document.getElementById('sfAccountSelector');
+      if(select){
+        this.loadAccountsList();
+        select.addEventListener('change', (e)=>{
+          const accountName = e.target.value;
+          if(accountName) this.fetchSalesforceSubscriptions(accountName);
+        });
+      } else {
+        setTimeout(trySetup, 100);
+      }
+    };
+    trySetup();
 
     // Add event listeners for summary cards
     document.querySelectorAll('.sfSummaryCard').forEach(card=>{
