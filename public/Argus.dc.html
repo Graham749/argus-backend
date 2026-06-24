@@ -150,7 +150,9 @@ input{font-family:inherit;}
                     <th style="padding:10px 12px;text-align:left;font-weight:700;color:#3c3c3b;cursor:pointer;" data-sort="product_category">Product ▼</th>
                     <th style="padding:10px 12px;text-align:right;font-weight:700;color:#3c3c3b;cursor:pointer;" data-sort="arr_gbp">ARR (£) ▼</th>
                     <th style="padding:10px 12px;text-align:left;font-weight:700;color:#3c3c3b;cursor:pointer;" data-sort="service_type">Service Type ▼</th>
+                    <th style="padding:10px 12px;text-align:left;font-weight:700;color:#3c3c3b;cursor:pointer;" data-sort="contract_type">Contract ▼</th>
                     <th style="padding:10px 12px;text-align:left;font-weight:700;color:#3c3c3b;cursor:pointer;" data-sort="status">Status ▼</th>
+                    <th style="padding:10px 12px;text-align:left;font-weight:700;color:#3c3c3b;cursor:pointer;" data-sort="renewal_date_source">Renewal ▼</th>
                     <th style="padding:10px 12px;text-align:right;font-weight:700;color:#3c3c3b;cursor:pointer;" data-sort="days_to_renewal">Days ▼</th>
                   </tr>
                 </thead>
@@ -941,7 +943,10 @@ class Component extends DCLogic {
     }, 100);
     this.fetchCurrentUser();
     this.fetchIntegrationStatus();
-    this.setupSalesforceSubscriptions();
+    // Load Salesforce accounts after build status completes (avoid network contention)
+    setTimeout(()=>{
+      this.setupSalesforceSubscriptions();
+    }, 2000);
   }
 
   setupSalesforceSubscriptions(){
@@ -999,11 +1004,12 @@ class Component extends DCLogic {
     const select = document.getElementById('sfAccountSelector');
     select.innerHTML = '<option value="">-- Loading accounts... --</option>';
 
+    // Use lightweight accounts list (no ARR fetching for performance)
     fetch('http://localhost:3001/api/accounts-list')
       .then(r => r.json())
       .then(data => {
         const accounts = (data.accounts || []).sort((a, b) => a.name.localeCompare(b.name));
-        console.log('[Argus] Got accounts:', accounts.length);
+        console.log('[Argus] Loaded', accounts.length, 'accounts');
 
         if(accounts.length === 0){
           select.innerHTML = '<option value="">-- No accounts found --</option>';
@@ -1171,13 +1177,18 @@ class Component extends DCLogic {
         row.style.borderBottom = '1px solid #e6e6e5';
         const statusColor = sub.status === 'Termination in Progress' ? '#d32f2f' : '#00be86';
 
+        const daysColor = sub.days_to_renewal < 0 ? '#d32f2f' : sub.days_to_renewal < 90 ? '#ff9800' : '#00966b';
+        const contractLabel = (sub.contract_type || 'Unknown').replace('Rolling Anniversary', 'Rolling').replace('Fixed Period', 'Fixed');
+
         row.innerHTML = `
           <td style="padding:10px 12px;color:#3c3c3b;font-size:11px;"><a href="https://auroraer.lightning.force.com/lightning/r/Order/${sub.subscription_id}/view" target="_blank" style="color:#288184;text-decoration:underline;cursor:pointer;">${sub.subscription_id}</a></td>
           <td style="padding:10px 12px;color:#3c3c3b;">${sub.product_category}</td>
           <td style="padding:10px 12px;text-align:right;color:#3c3c3b;font-weight:600;">£${sub.arr_gbp.toLocaleString()}</td>
           <td style="padding:10px 12px;color:#6d6d6c;font-size:11px;">${sub.service_type || '-'}</td>
+          <td style="padding:10px 12px;color:#6d6d6c;font-size:11px;">${contractLabel}</td>
           <td style="padding:10px 12px;color:${statusColor};font-weight:600;">${sub.status}</td>
-          <td style="padding:10px 12px;text-align:right;color:#3c3c3b;">${sub.days_to_renewal}</td>
+          <td style="padding:10px 12px;color:#6d6d6c;font-size:11px;">${sub.renewal_date_source || '-'}</td>
+          <td style="padding:10px 12px;text-align:right;color:${daysColor};font-weight:600;">${sub.days_to_renewal}</td>
         `;
         tbody.appendChild(row);
       });
