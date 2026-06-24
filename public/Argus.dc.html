@@ -112,21 +112,6 @@ input{font-family:inherit;}
 
           <!-- Summary View (Risk Status Cards) -->
           <div id="sfSummaryView" style="display:none;">
-            <!-- Total Subscriptions Card -->
-            <div id="sfTotalCard" style="background:#f7f7f6;border-radius:8px;padding:12px;border:1px solid #e6e6e5;display:none;margin-bottom:12px;">
-              <div style="display:flex;align-items:center;gap:16px;">
-                <div>
-                  <div style="font-size:10px;font-weight:700;color:#6d6d6c;text-transform:uppercase;margin-bottom:2px;">Portfolio</div>
-                  <div style="font-size:20px;font-weight:700;color:#3c3c3b;" id="sf_total_Count">0</div>
-                  <div style="font-size:10px;color:#9d9d9d;">subscriptions</div>
-                </div>
-                <div id="sfArrSection" style="border-left:1px solid #e6e6e5;padding-left:16px;display:none;">
-                  <div style="font-size:10px;font-weight:700;color:#6d6d6c;text-transform:uppercase;margin-bottom:2px;">ARR</div>
-                  <div style="font-size:20px;font-weight:700;color:#3c3c3b;">£<span id="sf_total_ARR">0</span></div>
-                </div>
-              </div>
-            </div>
-
             <!-- Service Type Filter -->
             <div id="sfFilterContainer" style="display:flex;gap:8px;margin-bottom:12px;">
               <button class="sfServiceTypeFilter" data-type="all" style="padding:6px 12px;border-radius:6px;border:1px solid #288184;background:#288184;color:#fff;font-size:11px;font-weight:700;cursor:pointer;">All</button>
@@ -1207,37 +1192,17 @@ class Component extends DCLogic {
       totalArr += group.subs.reduce((sum, s) => sum + s.arr_gbp, 0);
     }
 
-    // Show/hide total card and no-data message
-    const totalCard = document.getElementById('sfTotalCard');
+    // Show/hide no-data message and risk cards
     const noDataMsg = document.getElementById('sfNoDataMessage');
     const riskCardsDiv = document.getElementById('sfRiskCardsContainer');
 
     if(totalCount === 0){
-      if(totalCard) totalCard.style.display = 'none';
       if(noDataMsg) noDataMsg.style.display = 'block';
       if(riskCardsDiv) riskCardsDiv.style.display = 'none';
       return;
     } else {
-      if(totalCard) totalCard.style.display = 'block';
       if(noDataMsg) noDataMsg.style.display = 'none';
       if(riskCardsDiv) riskCardsDiv.style.display = 'grid';
-    }
-
-    // Populate total portfolio card
-    const totalCountEl = document.getElementById('sf_total_Count');
-    const totalArrEl = document.getElementById('sf_total_ARR');
-    const arrSection = document.getElementById('sfArrSection');
-
-    if(totalCountEl) totalCountEl.textContent = totalCount;
-
-    if(totalArrEl && arrSection) {
-      const arrM = totalArr / 1000000;
-      if(arrM > 0){
-        totalArrEl.textContent = arrM.toFixed(1) + 'M';
-        arrSection.style.display = 'block';
-      } else {
-        arrSection.style.display = 'none';
-      }
     }
 
     // Populate risk status cards
