@@ -977,7 +977,10 @@ class Component extends DCLogic {
       // Add change listener
       select.addEventListener('change', (e) => {
         const accountName = e.target.value;
-        if(accountName) this.fetchSalesforceSubscriptions(accountName);
+        if(accountName) {
+          this.currentServiceTypeFilter = 'all';
+          this.fetchSalesforceSubscriptions(accountName);
+        }
       });
 
       // Add event listeners for summary cards
