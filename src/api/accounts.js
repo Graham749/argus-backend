@@ -96,11 +96,34 @@ async function getAccountSubscriptions(req, res) {
         renewal_date,
         renewal_date_source,
         contract_type,
-        DATEDIFF(DAY, GETDATE(), renewal_date) as days_to_renewal
+        DATEDIFF(DAY, GETDATE(), renewal_date) as days_to_renewal,
+        CASE
+          WHEN DATEDIFF(DAY, GETDATE(), renewal_date) < -365 THEN 'OVERDUE'
+          WHEN DATEDIFF(DAY, GETDATE(), renewal_date) < 0 THEN 'AT_RISK'
+          WHEN DATEDIFF(DAY, GETDATE(), renewal_date) < 90 THEN 'TO_WATCH'
+          ELSE 'HEALTHY'
+        END as renewal_status
       FROM [dbo].[v_silver_sf_subscriptions]
       WHERE account_name LIKE @accountName
         AND status IN ('Active', 'Termination in Progress')
-      ORDER BY subscription_end_date ASC
+      ORDER BY days_to_renewal ASC
+    `;
+
+    // Get contract type summary with risk counts
+    const contractSummaryQuery = `
+      SELECT
+        contract_type,
+        COUNT(*) as total,
+        SUM(CASE WHEN DATEDIFF(DAY, GETDATE(), renewal_date) < -365 THEN 1 ELSE 0 END) as overdue_count,
+        SUM(CASE WHEN DATEDIFF(DAY, GETDATE(), renewal_date) >= -365 AND DATEDIFF(DAY, GETDATE(), renewal_date) < 0 THEN 1 ELSE 0 END) as at_risk_count,
+        SUM(CASE WHEN DATEDIFF(DAY, GETDATE(), renewal_date) >= 0 AND DATEDIFF(DAY, GETDATE(), renewal_date) < 90 THEN 1 ELSE 0 END) as to_watch_count,
+        SUM(CASE WHEN DATEDIFF(DAY, GETDATE(), renewal_date) >= 90 THEN 1 ELSE 0 END) as healthy_count,
+        CAST(ROUND(SUM(CASE WHEN status = 'Active' THEN arr_gbp ELSE 0 END), 0) AS INT) as arr_gbp
+      FROM [dbo].[v_silver_sf_subscriptions]
+      WHERE account_name LIKE @accountName
+        AND status IN ('Active', 'Termination in Progress')
+      GROUP BY contract_type
+      ORDER BY total DESC
     `;
 
     const request = new sql.Request();
@@ -108,6 +131,7 @@ async function getAccountSubscriptions(req, res) {
 
     const summaryRows = await queryFabric(summaryQuery.replace('@accountName', `'%${accountName}%'`));
     const detailRows = await queryFabric(detailsQuery.replace('@accountName', `'%${accountName}%'`));
+    const contractSummaryRows = await queryFabric(contractSummaryQuery.replace('@accountName', `'%${accountName}%'`));
 
     const summary = summaryRows[0] || {
       total_subscriptions: 0,
@@ -128,6 +152,15 @@ async function getAccountSubscriptions(req, res) {
         renewals_next_90_days: summary.renewals_next_90_days,
         health_status: summary.health_status
       },
+      contract_cards: contractSummaryRows.map(card => ({
+        contract_type: card.contract_type || 'Unknown',
+        total: card.total,
+        overdue: card.overdue_count || 0,
+        at_risk: card.at_risk_count || 0,
+        to_watch: card.to_watch_count || 0,
+        healthy: card.healthy_count || 0,
+        arr_gbp: card.arr_gbp
+      })),
       subscriptions: detailRows
     });
   } catch (err) {
