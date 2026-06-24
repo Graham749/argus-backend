@@ -112,8 +112,15 @@ input{font-family:inherit;}
 
           <!-- Summary View (Risk Status Cards) -->
           <div id="sfSummaryView" style="display:none;">
+            <!-- Service Type Filter -->
+            <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+              <button class="sfServiceTypeFilter" data-type="all" style="padding:6px 12px;border-radius:6px;border:1px solid #288184;background:#288184;color:#fff;font-size:11px;font-weight:700;cursor:pointer;">All</button>
+              <button class="sfServiceTypeFilter" data-type="Software" style="padding:6px 12px;border-radius:6px;border:1px solid #e6e6e5;background:#fff;color:#288184;font-size:11px;font-weight:700;cursor:pointer;">Software</button>
+              <button class="sfServiceTypeFilter" data-type="Subscription Analytics" style="padding:6px 12px;border-radius:6px;border:1px solid #e6e6e5;background:#fff;color:#288184;font-size:11px;font-weight:700;cursor:pointer;">Subscription Analytics</button>
+            </div>
+
             <!-- Total Subscriptions Card -->
-            <div style="background:#f7f7f6;border-radius:8px;padding:16px;margin-bottom:12px;border:1px solid #e6e6e5;">
+            <div id="sfTotalCard" style="background:#f7f7f6;border-radius:8px;padding:16px;margin-bottom:12px;border:1px solid #e6e6e5;display:none;">
               <div style="display:flex;justify-content:space-between;align-items:flex-start;">
                 <div>
                   <div style="font-size:11px;font-weight:700;color:#6d6d6c;text-transform:uppercase;margin-bottom:4px;">Total Portfolio</div>
@@ -126,6 +133,11 @@ input{font-family:inherit;}
                   <div style="font-size:11px;color:#9d9d9d;margin-top:2px;">ARR</div>
                 </div>
               </div>
+            </div>
+
+            <!-- No Data Message -->
+            <div id="sfNoDataMessage" style="background:#fff3e0;border-radius:8px;padding:16px;margin-bottom:12px;border:1px solid #ffb74d;display:none;text-align:center;">
+              <div style="font-size:12px;color:#e65100;">No subscriptions found for this service type</div>
             </div>
 
             <!-- Risk Status Cards -->
@@ -1093,8 +1105,29 @@ class Component extends DCLogic {
 
   renderSubscriptions(subs){
     this.currentSubscriptions = subs;
+    this.currentServiceTypeFilter = 'all';
     this.groupedSubs = this.groupByRenewalDays(subs);
+    this.setupServiceTypeFilters();
     this.showSummary();
+  }
+
+  setupServiceTypeFilters(){
+    const filterBtns = document.querySelectorAll('.sfServiceTypeFilter');
+    filterBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        filterBtns.forEach(b => {
+          b.style.background = '#fff';
+          b.style.color = '#288184';
+          b.style.border = '1px solid #e6e6e5';
+        });
+        btn.style.background = '#288184';
+        btn.style.color = '#fff';
+        btn.style.border = '1px solid #288184';
+
+        this.currentServiceTypeFilter = btn.dataset.type;
+        this.showSummary();
+      });
+    });
   }
 
   groupByRenewalDays(subs){
@@ -1131,7 +1164,16 @@ class Component extends DCLogic {
     document.getElementById('sfDetailView').style.display = 'none';
     document.getElementById('sfSummaryView').style.display = 'block';
 
-    const groups = this.groupedSubs;
+    // Filter subscriptions by service type
+    let filteredSubs = this.currentSubscriptions;
+    if(this.currentServiceTypeFilter !== 'all'){
+      filteredSubs = this.currentSubscriptions.filter(s => s.service_type === this.currentServiceTypeFilter);
+    }
+
+    // Regroup based on filtered subscriptions and store for drilldown
+    const groups = this.groupByRenewalDays(filteredSubs);
+    this.currentGroupedSubs = groups;
+
     const idMap = {
       'OVERDUE': 'sf_overdue',
       'AT_RISK': 'sf_at_risk',
@@ -1145,6 +1187,22 @@ class Component extends DCLogic {
     for(const group of Object.values(groups)){
       totalCount += group.subs.length;
       totalArr += group.subs.reduce((sum, s) => sum + s.arr_gbp, 0);
+    }
+
+    // Show/hide total card and no-data message
+    const totalCard = document.getElementById('sfTotalCard');
+    const noDataMsg = document.getElementById('sfNoDataMessage');
+    const riskCardsDiv = document.querySelector('#sfSummaryView > div:last-of-type');
+
+    if(totalCount === 0){
+      if(totalCard) totalCard.style.display = 'none';
+      if(noDataMsg) noDataMsg.style.display = 'block';
+      if(riskCardsDiv) riskCardsDiv.style.display = 'none';
+      return;
+    } else {
+      if(totalCard) totalCard.style.display = 'block';
+      if(noDataMsg) noDataMsg.style.display = 'none';
+      if(riskCardsDiv) riskCardsDiv.style.display = 'grid';
     }
 
     // Populate total portfolio card
@@ -1182,9 +1240,9 @@ class Component extends DCLogic {
   showDrilldown(group){
     document.getElementById('sfSummaryView').style.display = 'none';
     document.getElementById('sfDetailView').style.display = 'block';
-    document.getElementById('sfDrilldownTitle').textContent = `Subscriptions by ARR — Renewals in ${group} days range`;
+    document.getElementById('sfDrilldownTitle').textContent = `${group} Subscriptions`;
 
-    const groupData = this.groupedSubs[group];
+    const groupData = (this.currentGroupedSubs || this.groupedSubs)[group];
     const allSubs = groupData ? groupData.subs : [];
 
     this.currentDrilldownSubs = allSubs;
