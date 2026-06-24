@@ -94,6 +94,8 @@ async function getAccountSubscriptions(req, res) {
         subscription_start_date,
         subscription_end_date,
         renewal_date,
+        renewal_date_source,
+        contract_type,
         DATEDIFF(DAY, GETDATE(), renewal_date) as days_to_renewal
       FROM [dbo].[v_silver_sf_subscriptions]
       WHERE account_name LIKE @accountName
