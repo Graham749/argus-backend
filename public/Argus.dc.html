@@ -112,29 +112,26 @@ input{font-family:inherit;}
 
           <!-- Summary View (Risk Status Cards) -->
           <div id="sfSummaryView" style="display:none;">
-            <!-- Filter and Total Card Row -->
-            <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:12px;flex-wrap:wrap;">
-              <!-- Service Type Filter -->
-              <div id="sfFilterContainer" style="display:flex;gap:8px;">
-                <button class="sfServiceTypeFilter" data-type="all" style="padding:6px 12px;border-radius:6px;border:1px solid #288184;background:#288184;color:#fff;font-size:11px;font-weight:700;cursor:pointer;">All</button>
-                <button class="sfServiceTypeFilter" data-type="Software" data-hidden="true" style="padding:6px 12px;border-radius:6px;border:1px solid #e6e6e5;background:#fff;color:#288184;font-size:11px;font-weight:700;cursor:pointer;display:none;">Software</button>
-                <button class="sfServiceTypeFilter" data-type="Subscription Analytics" data-hidden="true" style="padding:6px 12px;border-radius:6px;border:1px solid #e6e6e5;background:#fff;color:#288184;font-size:11px;font-weight:700;cursor:pointer;display:none;">Subscription Analytics</button>
-              </div>
-
-              <!-- Total Subscriptions Card -->
-              <div id="sfTotalCard" style="background:#f7f7f6;border-radius:8px;padding:12px;border:1px solid #e6e6e5;display:none;margin-left:auto;">
-                <div style="display:flex;align-items:center;gap:12px;">
-                  <div>
-                    <div style="font-size:10px;font-weight:700;color:#6d6d6c;text-transform:uppercase;margin-bottom:2px;">Portfolio</div>
-                    <div style="font-size:18px;font-weight:700;color:#3c3c3b;" id="sf_total_Count">0</div>
-                    <div style="font-size:10px;color:#9d9d9d;">subscriptions</div>
-                  </div>
-                  <div id="sfArrSection" style="text-align:right;">
-                    <div style="font-size:10px;font-weight:700;color:#6d6d6c;text-transform:uppercase;margin-bottom:2px;">ARR</div>
-                    <div style="font-size:18px;font-weight:700;color:#3c3c3b;">£<span id="sf_total_ARR">0</span></div>
-                  </div>
+            <!-- Total Subscriptions Card -->
+            <div id="sfTotalCard" style="background:#f7f7f6;border-radius:8px;padding:12px;border:1px solid #e6e6e5;display:none;margin-bottom:12px;">
+              <div style="display:flex;align-items:center;gap:16px;">
+                <div>
+                  <div style="font-size:10px;font-weight:700;color:#6d6d6c;text-transform:uppercase;margin-bottom:2px;">Portfolio</div>
+                  <div style="font-size:20px;font-weight:700;color:#3c3c3b;" id="sf_total_Count">0</div>
+                  <div style="font-size:10px;color:#9d9d9d;">subscriptions</div>
+                </div>
+                <div id="sfArrSection" style="border-left:1px solid #e6e6e5;padding-left:16px;display:none;">
+                  <div style="font-size:10px;font-weight:700;color:#6d6d6c;text-transform:uppercase;margin-bottom:2px;">ARR</div>
+                  <div style="font-size:20px;font-weight:700;color:#3c3c3b;">£<span id="sf_total_ARR">0</span></div>
                 </div>
               </div>
+            </div>
+
+            <!-- Service Type Filter -->
+            <div id="sfFilterContainer" style="display:flex;gap:8px;margin-bottom:12px;">
+              <button class="sfServiceTypeFilter" data-type="all" style="padding:6px 12px;border-radius:6px;border:1px solid #288184;background:#288184;color:#fff;font-size:11px;font-weight:700;cursor:pointer;">All</button>
+              <button class="sfServiceTypeFilter" data-type="Software" data-hidden="true" style="padding:6px 12px;border-radius:6px;border:1px solid #e6e6e5;background:#fff;color:#288184;font-size:11px;font-weight:700;cursor:pointer;display:none;">Software</button>
+              <button class="sfServiceTypeFilter" data-type="Subscription Analytics" data-hidden="true" style="padding:6px 12px;border-radius:6px;border:1px solid #e6e6e5;background:#fff;color:#288184;font-size:11px;font-weight:700;cursor:pointer;display:none;">Subscription Analytics</button>
             </div>
 
             <!-- No Data Message -->
