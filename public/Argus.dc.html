@@ -1111,6 +1111,23 @@ class Component extends DCLogic {
     this.showSummary();
   }
 
+  updateFilterButtonVisibility(){
+    const filterBtns = document.querySelectorAll('.sfServiceTypeFilter');
+    const serviceTypes = new Set();
+    this.currentSubscriptions.forEach(sub => {
+      if(sub.service_type) serviceTypes.add(sub.service_type);
+    });
+
+    filterBtns.forEach(btn => {
+      const btnType = btn.dataset.type;
+      if(btnType === 'all' || serviceTypes.has(btnType)){
+        btn.style.display = 'inline-block';
+      } else {
+        btn.style.display = 'none';
+      }
+    });
+  }
+
   setupServiceTypeFilters(){
     const filterBtns = document.querySelectorAll('.sfServiceTypeFilter');
 
@@ -1197,6 +1214,9 @@ class Component extends DCLogic {
   showSummary(){
     document.getElementById('sfDetailView').style.display = 'none';
     document.getElementById('sfSummaryView').style.display = 'block';
+
+    // Update filter button visibility based on current subscriptions
+    this.updateFilterButtonVisibility();
 
     // Filter subscriptions by service type
     let filteredSubs = this.currentSubscriptions;
