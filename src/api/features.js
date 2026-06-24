@@ -61,7 +61,8 @@ async function features(req, res) {
 SELECT
     feature_id AS featureId,
     feature_name AS featureName,
-    Criticality,
+    product_name AS productName,
+    efficiency_label AS criticalityLabel,
     efficiency_impact AS efficiencyImpact,
     prioritization_score AS prioritizationScore,
     priority_rank AS priorityRank,
