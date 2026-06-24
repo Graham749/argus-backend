@@ -112,6 +112,23 @@ input{font-family:inherit;}
 
           <!-- Summary View (Risk Status Cards) -->
           <div id="sfSummaryView" style="display:none;">
+            <!-- Total Subscriptions Card -->
+            <div style="background:#f7f7f6;border-radius:8px;padding:16px;margin-bottom:12px;border:1px solid #e6e6e5;">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+                <div>
+                  <div style="font-size:11px;font-weight:700;color:#6d6d6c;text-transform:uppercase;margin-bottom:4px;">Total Portfolio</div>
+                  <div style="font-size:24px;font-weight:700;color:#3c3c3b;" id="sf_total_Count">0</div>
+                  <div style="font-size:11px;color:#9d9d9d;margin-top:2px;">subscriptions</div>
+                </div>
+                <div style="text-align:right;">
+                  <div style="font-size:11px;font-weight:700;color:#6d6d6c;text-transform:uppercase;margin-bottom:4px;">Annual Value</div>
+                  <div style="font-size:24px;font-weight:700;color:#3c3c3b;">£<span id="sf_total_ARR">0</span></div>
+                  <div style="font-size:11px;color:#9d9d9d;margin-top:2px;">ARR</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Risk Status Cards -->
             <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;">
               <div class="sfSummaryCard" data-group="OVERDUE" style="background:#fdeee0;border-radius:8px;padding:12px;cursor:pointer;border:1px solid #e6e6e5;">
                 <div style="font-size:11px;font-weight:700;color:#c2600f;text-transform:uppercase;margin-bottom:4px;">Overdue</div>
@@ -1122,6 +1139,21 @@ class Component extends DCLogic {
       'HEALTHY': 'sf_healthy'
     };
 
+    // Calculate totals
+    let totalCount = 0;
+    let totalArr = 0;
+    for(const group of Object.values(groups)){
+      totalCount += group.subs.length;
+      totalArr += group.subs.reduce((sum, s) => sum + s.arr_gbp, 0);
+    }
+
+    // Populate total portfolio card
+    const totalCountEl = document.getElementById('sf_total_Count');
+    const totalArrEl = document.getElementById('sf_total_ARR');
+    if(totalCountEl) totalCountEl.textContent = totalCount;
+    if(totalArrEl) totalArrEl.textContent = (totalArr / 1000000).toFixed(1) + 'M';
+
+    // Populate risk status cards
     for(const [key, group] of Object.entries(groups)){
       const count = group.subs.length;
       const arr = group.subs.reduce((sum, s) => sum + s.arr_gbp, 0);
