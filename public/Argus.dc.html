@@ -1131,6 +1131,17 @@ class Component extends DCLogic {
         btn.dataset.hidden = 'true';
       }
 
+      // Set All button as highlighted by default
+      if(btnType === 'all'){
+        btn.style.background = '#288184';
+        btn.style.color = '#fff';
+        btn.style.border = '1px solid #288184';
+      } else {
+        btn.style.background = '#fff';
+        btn.style.color = '#288184';
+        btn.style.border = '1px solid #e6e6e5';
+      }
+
       btn.addEventListener('click', () => {
         filterBtns.forEach(b => {
           if(b.style.display !== 'none'){
