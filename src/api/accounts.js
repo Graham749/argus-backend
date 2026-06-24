@@ -70,10 +70,10 @@ async function getAccountSubscriptions(req, res) {
         COUNT(DISTINCT subscription_id) as total_subscriptions,
         COUNT(DISTINCT CASE WHEN status = 'Active' THEN subscription_id END) as active_subscriptions,
         ROUND(SUM(arr_gbp), 2) as total_arr_gbp,
-        COUNT(DISTINCT CASE WHEN DATEDIFF(DAY, GETDATE(), renewal_date) < 30 THEN subscription_id END) as renewals_next_30_days,
-        COUNT(DISTINCT CASE WHEN DATEDIFF(DAY, GETDATE(), renewal_date) < 90 THEN subscription_id END) as renewals_next_90_days,
+        COUNT(DISTINCT CASE WHEN DATEDIFF(DAY, GETDATE(), subscription_end_date) < 30 THEN subscription_id END) as renewals_next_30_days,
+        COUNT(DISTINCT CASE WHEN DATEDIFF(DAY, GETDATE(), subscription_end_date) < 90 THEN subscription_id END) as renewals_next_90_days,
         CASE
-          WHEN COUNT(DISTINCT CASE WHEN DATEDIFF(DAY, GETDATE(), renewal_date) < 30 THEN subscription_id END) > 0 THEN 'URGENT'
+          WHEN COUNT(DISTINCT CASE WHEN DATEDIFF(DAY, GETDATE(), subscription_end_date) < 30 THEN subscription_id END) > 0 THEN 'URGENT'
           WHEN COUNT(DISTINCT CASE WHEN status = 'Termination in Progress' THEN subscription_id END) > 0 THEN 'AT_RISK'
           ELSE 'HEALTHY'
         END as health_status
@@ -98,7 +98,7 @@ async function getAccountSubscriptions(req, res) {
       FROM [dbo].[v_silver_sf_subscriptions]
       WHERE account_name LIKE @accountName
         AND status IN ('Active', 'Termination in Progress')
-      ORDER BY renewal_date ASC
+      ORDER BY subscription_end_date ASC
     `;
 
     const request = new sql.Request();
