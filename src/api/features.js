@@ -57,30 +57,17 @@ async function queryLakehouse(query) {
 
 async function features(req, res) {
   try {
-    // TODO: Join with product name once data team provides bronze_pb_entity_fields_config
     const query = `
 SELECT
     feature_id AS featureId,
     feature_name AS featureName,
-    criticality,
-    criticality_score AS criticalityScore,
-    efficiency,
-    efficiency_score AS efficiencyScore,
-    rank_score AS rankScore,
-    regional_priority AS regionalPriority,
-    strategic_region_score AS strategicRegionScore,
-    region_market_count AS regionMarketCount,
-    region_factor AS regionFactor,
-    subfeature_count AS subfeatureCount,
-    max_subfeature_priority_score AS maxSubfeaturePriorityScore,
-    score_source AS scoreSource,
-    -- Compute final priority score (matches Argus frontend formula)
-    GREATEST(
-      (rank_score * 0.5 + criticality_score * 0.2 + efficiency_score * 0.2 + strategic_region_score * 0.1),
-      ISNULL(max_subfeature_priority_score, 0)
-    ) AS finalPriorityScore
+    Criticality,
+    efficiency_impact AS efficiencyImpact,
+    prioritization_score AS prioritizationScore,
+    priority_rank AS priorityRank,
+    strategic_region_count AS strategicRegionCount
 FROM dbo.v_gold_pb_feature_prioritization_final
-ORDER BY finalPriorityScore DESC
+ORDER BY prioritization_score DESC
     `;
 
     const rows = await queryLakehouse(query);
