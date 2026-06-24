@@ -957,10 +957,8 @@ class Component extends DCLogic {
     }, 100);
     this.fetchCurrentUser();
     this.fetchIntegrationStatus();
-    // Load Salesforce accounts after build status completes (avoid network contention)
-    setTimeout(()=>{
-      this.setupSalesforceSubscriptions();
-    }, 2000);
+    // Setup Salesforce subscriptions immediately (don't wait)
+    this.setupSalesforceSubscriptions();
   }
 
   setupSalesforceSubscriptions(){
