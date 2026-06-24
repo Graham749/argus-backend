@@ -1106,8 +1106,8 @@ class Component extends DCLogic {
   renderSubscriptions(subs){
     this.currentSubscriptions = subs;
     this.currentServiceTypeFilter = 'all';
-    this.groupedSubs = this.groupByRenewalDays(subs);
     this.setupServiceTypeFilters();
+    this.groupedSubs = this.groupByRenewalDays(subs);
     this.showSummary();
   }
 
@@ -1120,7 +1120,7 @@ class Component extends DCLogic {
       if(sub.service_type) serviceTypes.add(sub.service_type);
     });
 
-    // Show/hide filter buttons based on available service types
+    // Show/hide filter buttons and reset listeners
     filterBtns.forEach(btn => {
       const btnType = btn.dataset.type;
       if(btnType === 'all' || serviceTypes.has(btnType)){
@@ -1131,30 +1131,34 @@ class Component extends DCLogic {
         btn.dataset.hidden = 'true';
       }
 
+      // Clone to remove old listeners
+      const newBtn = btn.cloneNode(true);
+      btn.parentNode.replaceChild(newBtn, btn);
+
       // Set All button as highlighted by default
       if(btnType === 'all'){
-        btn.style.background = '#288184';
-        btn.style.color = '#fff';
-        btn.style.border = '1px solid #288184';
+        newBtn.style.background = '#288184';
+        newBtn.style.color = '#fff';
+        newBtn.style.border = '1px solid #288184';
       } else {
-        btn.style.background = '#fff';
-        btn.style.color = '#288184';
-        btn.style.border = '1px solid #e6e6e5';
+        newBtn.style.background = '#fff';
+        newBtn.style.color = '#288184';
+        newBtn.style.border = '1px solid #e6e6e5';
       }
 
-      btn.addEventListener('click', () => {
-        filterBtns.forEach(b => {
+      newBtn.addEventListener('click', () => {
+        document.querySelectorAll('.sfServiceTypeFilter').forEach(b => {
           if(b.style.display !== 'none'){
             b.style.background = '#fff';
             b.style.color = '#288184';
             b.style.border = '1px solid #e6e6e5';
           }
         });
-        btn.style.background = '#288184';
-        btn.style.color = '#fff';
-        btn.style.border = '1px solid #288184';
+        newBtn.style.background = '#288184';
+        newBtn.style.color = '#fff';
+        newBtn.style.border = '1px solid #288184';
 
-        this.currentServiceTypeFilter = btn.dataset.type;
+        this.currentServiceTypeFilter = newBtn.dataset.type;
         this.showSummary();
       });
     });
