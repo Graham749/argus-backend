@@ -113,24 +113,23 @@ input{font-family:inherit;}
           <!-- Summary View (Risk Status Cards) -->
           <div id="sfSummaryView" style="display:none;">
             <!-- Service Type Filter -->
-            <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+            <div id="sfFilterContainer" style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
               <button class="sfServiceTypeFilter" data-type="all" style="padding:6px 12px;border-radius:6px;border:1px solid #288184;background:#288184;color:#fff;font-size:11px;font-weight:700;cursor:pointer;">All</button>
-              <button class="sfServiceTypeFilter" data-type="Software" style="padding:6px 12px;border-radius:6px;border:1px solid #e6e6e5;background:#fff;color:#288184;font-size:11px;font-weight:700;cursor:pointer;">Software</button>
-              <button class="sfServiceTypeFilter" data-type="Subscription Analytics" style="padding:6px 12px;border-radius:6px;border:1px solid #e6e6e5;background:#fff;color:#288184;font-size:11px;font-weight:700;cursor:pointer;">Subscription Analytics</button>
+              <button class="sfServiceTypeFilter" data-type="Software" data-hidden="true" style="padding:6px 12px;border-radius:6px;border:1px solid #e6e6e5;background:#fff;color:#288184;font-size:11px;font-weight:700;cursor:pointer;display:none;">Software</button>
+              <button class="sfServiceTypeFilter" data-type="Subscription Analytics" data-hidden="true" style="padding:6px 12px;border-radius:6px;border:1px solid #e6e6e5;background:#fff;color:#288184;font-size:11px;font-weight:700;cursor:pointer;display:none;">Subscription Analytics</button>
             </div>
 
             <!-- Total Subscriptions Card -->
-            <div id="sfTotalCard" style="background:#f7f7f6;border-radius:8px;padding:16px;margin-bottom:12px;border:1px solid #e6e6e5;display:none;">
-              <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+            <div id="sfTotalCard" style="background:#f7f7f6;border-radius:8px;padding:12px;margin-bottom:12px;border:1px solid #e6e6e5;display:none;">
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
                 <div>
-                  <div style="font-size:11px;font-weight:700;color:#6d6d6c;text-transform:uppercase;margin-bottom:4px;">Total Portfolio</div>
-                  <div style="font-size:24px;font-weight:700;color:#3c3c3b;" id="sf_total_Count">0</div>
-                  <div style="font-size:11px;color:#9d9d9d;margin-top:2px;">subscriptions</div>
+                  <div style="font-size:10px;font-weight:700;color:#6d6d6c;text-transform:uppercase;margin-bottom:2px;">Portfolio</div>
+                  <div style="font-size:18px;font-weight:700;color:#3c3c3b;" id="sf_total_Count">0</div>
+                  <div style="font-size:10px;color:#9d9d9d;">subscriptions</div>
                 </div>
-                <div style="text-align:right;">
-                  <div style="font-size:11px;font-weight:700;color:#6d6d6c;text-transform:uppercase;margin-bottom:4px;">Annual Value</div>
-                  <div style="font-size:24px;font-weight:700;color:#3c3c3b;">£<span id="sf_total_ARR">0</span></div>
-                  <div style="font-size:11px;color:#9d9d9d;margin-top:2px;">ARR</div>
+                <div id="sfArrSection" style="text-align:right;">
+                  <div style="font-size:10px;font-weight:700;color:#6d6d6c;text-transform:uppercase;margin-bottom:2px;">ARR</div>
+                  <div style="font-size:18px;font-weight:700;color:#3c3c3b;">£<span id="sf_total_ARR">0</span></div>
                 </div>
               </div>
             </div>
@@ -1113,12 +1112,31 @@ class Component extends DCLogic {
 
   setupServiceTypeFilters(){
     const filterBtns = document.querySelectorAll('.sfServiceTypeFilter');
+
+    // Check which service types have data
+    const serviceTypes = new Set();
+    this.currentSubscriptions.forEach(sub => {
+      if(sub.service_type) serviceTypes.add(sub.service_type);
+    });
+
+    // Show/hide filter buttons based on available service types
     filterBtns.forEach(btn => {
+      const btnType = btn.dataset.type;
+      if(btnType === 'all' || serviceTypes.has(btnType)){
+        btn.style.display = 'inline-block';
+        btn.dataset.hidden = 'false';
+      } else {
+        btn.style.display = 'none';
+        btn.dataset.hidden = 'true';
+      }
+
       btn.addEventListener('click', () => {
         filterBtns.forEach(b => {
-          b.style.background = '#fff';
-          b.style.color = '#288184';
-          b.style.border = '1px solid #e6e6e5';
+          if(b.style.display !== 'none'){
+            b.style.background = '#fff';
+            b.style.color = '#288184';
+            b.style.border = '1px solid #e6e6e5';
+          }
         });
         btn.style.background = '#288184';
         btn.style.color = '#fff';
@@ -1208,10 +1226,18 @@ class Component extends DCLogic {
     // Populate total portfolio card
     const totalCountEl = document.getElementById('sf_total_Count');
     const totalArrEl = document.getElementById('sf_total_ARR');
+    const arrSection = document.getElementById('sfArrSection');
+
     if(totalCountEl) totalCountEl.textContent = totalCount;
-    if(totalArrEl) {
+
+    if(totalArrEl && arrSection) {
       const arrM = totalArr / 1000000;
-      totalArrEl.textContent = arrM > 0 ? arrM.toFixed(1) + 'M' : '0';
+      if(arrM > 0){
+        totalArrEl.textContent = arrM.toFixed(1) + 'M';
+        arrSection.style.display = 'block';
+      } else {
+        arrSection.style.display = 'none';
+      }
     }
 
     // Populate risk status cards
