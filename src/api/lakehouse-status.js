@@ -54,9 +54,9 @@ async function queryLakehouse(query) {
 }
 
 function getSourceFromName(name) {
+  if (name.includes('_lookup')) return 'Product Operations';
   if (name.includes('_sf')) return 'Salesforce';
   if (name.includes('_pb')) return 'Productboard';
-  if (name.includes('_lookup')) return 'Product Operations';
   return 'Unknown';
 }
 
