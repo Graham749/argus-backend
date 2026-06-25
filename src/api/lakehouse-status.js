@@ -62,8 +62,8 @@ function getSourceFromName(name) {
 
 async function lakelzouseStatus(req, res) {
   try {
-    // Count all bronze tables
-    const bronzeQuery = `SELECT COUNT(*) as count FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'dbo' AND TABLE_TYPE = 'BASE TABLE'`;
+    // Count all bronze tables (exclude gold-prefixed tables)
+    const bronzeQuery = `SELECT COUNT(*) as count FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'dbo' AND TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME NOT LIKE 'gold_%'`;
     const bronzeCount = await queryLakehouse(bronzeQuery);
 
     // Get all silver views with source derived from naming convention
@@ -78,8 +78,8 @@ async function lakelzouseStatus(req, res) {
     const goldTablesQuery = `SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'dbo' AND TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME LIKE 'gold_%' ORDER BY TABLE_NAME`;
     const goldTables = await queryLakehouse(goldTablesQuery);
 
-    // Get bronze table details
-    const bronzeDetailsQuery = `SELECT TABLE_NAME as name FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'dbo' AND TABLE_TYPE = 'BASE TABLE' ORDER BY TABLE_NAME`;
+    // Get bronze table details (exclude gold-prefixed tables)
+    const bronzeDetailsQuery = `SELECT TABLE_NAME as name FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'dbo' AND TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME NOT LIKE 'gold_%' ORDER BY TABLE_NAME`;
     const bronzeDetails = await queryLakehouse(bronzeDetailsQuery);
 
     // Build views with source from naming convention
