@@ -836,7 +836,7 @@ input{font-family:inherit;}
               <div style="font-size:11px;color:#6d6d6c;margin-top:4px;">Gold views</div>
             </div>
 
-            <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-bottom:12px;">
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;">
               <div style="background:#f7f7f6;border-radius:8px;padding:10px;text-align:center;">
                 <div style="font-size:18px;font-weight:700;color:#d4af37;">{{ buildStatus.gold.productboardCount }}</div>
                 <div style="font-size:10px;color:#d4af37;">Productboard</div>
@@ -852,6 +852,18 @@ input{font-family:inherit;}
               <div style="background:#f7f7f6;border-radius:8px;padding:10px;text-align:center;">
                 <div style="font-size:18px;font-weight:700;color:#d4af37;">{{ buildStatus.gold.financeCount }}</div>
                 <div style="font-size:10px;color:#d4af37;">Finance</div>
+              </div>
+              <div style="background:#f7f7f6;border-radius:8px;padding:10px;text-align:center;">
+                <div style="font-size:18px;font-weight:700;color:#d4af37;">{{ buildStatus.gold.posthogCount }}</div>
+                <div style="font-size:10px;color:#d4af37;">Posthog</div>
+              </div>
+              <div style="background:#f7f7f6;border-radius:8px;padding:10px;text-align:center;">
+                <div style="font-size:18px;font-weight:700;color:#d4af37;">{{ buildStatus.gold.zendeskCount }}</div>
+                <div style="font-size:10px;color:#d4af37;">Zendesk</div>
+              </div>
+              <div style="background:#f7f7f6;border-radius:8px;padding:10px;text-align:center;">
+                <div style="font-size:18px;font-weight:700;color:#d4af37;">{{ buildStatus.gold.jiraCount }}</div>
+                <div style="font-size:10px;color:#d4af37;">Jira</div>
               </div>
             </div>
 
@@ -947,7 +959,7 @@ class Component extends DCLogic {
       showAboutModal:false,
       currentUser:{name:'Loading...',initials:'...'},
       apis:[{name:'Loading...',color:'#ddd',symbol:'...',description:''}],
-      buildStatus:{bronze:{count:0,label:'tables',rowLabel:'0 rows',productboardCount:0,salesforceCount:0,sourceGroups:[]},silver:{count:0,label:'views',productboardCount:0,salesforceCount:0,productOpsCount:0,views:[],sourceGroups:[]},gold:{count:0,label:'tables',productboardCount:0,salesforceCount:0,productOpsCount:0,financeCount:0,posthogCount:0,views:[],tables:[],sourceGroups:[]},syncLabel:'Loading...'}
+      buildStatus:{bronze:{count:0,label:'tables',rowLabel:'0 rows',productboardCount:0,salesforceCount:0,sourceGroups:[]},silver:{count:0,label:'views',productboardCount:0,salesforceCount:0,productOpsCount:0,views:[],sourceGroups:[]},gold:{count:0,label:'tables',productboardCount:0,salesforceCount:0,productOpsCount:0,financeCount:0,posthogCount:0,zendeskCount:0,jiraCount:0,views:[],tables:[],sourceGroups:[]},syncLabel:'Loading...'}
     };
   }
 
@@ -1445,7 +1457,9 @@ class Component extends DCLogic {
             salesforceCount:((data.gold.views||[]).filter(v=>v.source==='Salesforce').length + (data.gold.tables||[]).filter(t=>t.source==='Salesforce').length),
             productOpsCount:((data.gold.views||[]).filter(v=>v.source==='Product Operations').length + (data.gold.tables||[]).filter(t=>t.source==='Product Operations').length),
             financeCount:((data.gold.tables||[]).filter(t=>t.source==='Finance').length),
-            posthogCount:(data.gold.views||[]).filter(v=>v.source==='Posthog').length,
+            posthogCount:((data.gold.views||[]).filter(v=>v.source==='Posthog').length + (data.gold.tables||[]).filter(t=>t.source==='Posthog').length),
+            zendeskCount:((data.gold.views||[]).filter(v=>v.source==='Zendesk').length + (data.gold.tables||[]).filter(t=>t.source==='Zendesk').length),
+            jiraCount:((data.gold.views||[]).filter(v=>v.source==='Jira').length + (data.gold.tables||[]).filter(t=>t.source==='Jira').length),
             sourceGroups:(() => {
               const sm={};
               (data.gold.views||[]).forEach(v=>{
