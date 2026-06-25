@@ -7,6 +7,9 @@ const currentUser = require('./api/current-user');
 const accounts = require('./api/accounts');
 const accountsList = require('./api/accounts-list');
 const integrationStatus = require('./api/integration-status');
+const buildStatus = require('./api/build-status');
+const dataSources = require('./api/data-sources');
+const dataSourcesMinimal = require('./api/data-sources-minimal');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -35,6 +38,9 @@ app.get('/api/test', (req, res) => {
 
 // API routes (MUST be before static files)
 app.get('/api/lakehouse-status', lakehouseStatus);
+app.get('/api/build-status', buildStatus);
+app.get('/api/data-sources', dataSources);
+app.get('/api/data-sources/minimal', dataSourcesMinimal);
 app.get('/api/features', features);
 app.get('/api/current-user', currentUser);
 app.get('/api/accounts-list', accountsList);
@@ -62,5 +68,6 @@ app.listen(PORT, () => {
   console.log(`Argus backend running on http://localhost:${PORT}`);
   console.log(`Health check: http://localhost:${PORT}/health`);
   console.log(`Lakehouse status: http://localhost:${PORT}/api/lakehouse-status`);
+  console.log(`Build status: http://localhost:${PORT}/api/build-status`);
   console.log(`Features: http://localhost:${PORT}/api/features`);
 });
