@@ -690,11 +690,11 @@ input{font-family:inherit;}
             </div>
 
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
-              <div style="background:#f7f7f6;border-radius:8px;padding:10px;text-align:center;cursor:pointer;" onClick="document.getElementById('bronze-productboard')?.scrollIntoView({behavior:'smooth'});">
+              <div style="background:#f7f7f6;border-radius:8px;padding:10px;text-align:center;cursor:pointer;" data-expand-layer="bronze" data-scroll-id="bronze-productboard">
                 <div style="font-size:18px;font-weight:700;color:#cd7f32;">{{ buildStatus.bronze.productboardCount }}</div>
                 <div style="font-size:10px;color:#cd7f32;">Productboard</div>
               </div>
-              <div style="background:#f7f7f6;border-radius:8px;padding:10px;text-align:center;cursor:pointer;" onClick="document.getElementById('bronze-salesforce')?.scrollIntoView({behavior:'smooth'});">
+              <div style="background:#f7f7f6;border-radius:8px;padding:10px;text-align:center;cursor:pointer;" data-expand-layer="bronze" data-scroll-id="bronze-salesforce">
                 <div style="font-size:18px;font-weight:700;color:#cd7f32;">{{ buildStatus.bronze.salesforceCount }}</div>
                 <div style="font-size:10px;color:#cd7f32;">Salesforce</div>
               </div>
@@ -761,15 +761,15 @@ input{font-family:inherit;}
             </div>
 
             <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px;">
-              <div style="background:#f7f7f6;border-radius:8px;padding:10px;text-align:center;cursor:pointer;" onClick="document.getElementById('silver-productboard')?.scrollIntoView({behavior:'smooth'});">
+              <div style="background:#f7f7f6;border-radius:8px;padding:10px;text-align:center;cursor:pointer;" data-expand-layer="silver" data-scroll-id="silver-productboard">
                 <div style="font-size:18px;font-weight:700;color:#c0c0c0;">{{ buildStatus.silver.productboardCount }}</div>
                 <div style="font-size:10px;color:#c0c0c0;">Productboard</div>
               </div>
-              <div style="background:#f7f7f6;border-radius:8px;padding:10px;text-align:center;cursor:pointer;" onClick="document.getElementById('silver-salesforce')?.scrollIntoView({behavior:'smooth'});">
+              <div style="background:#f7f7f6;border-radius:8px;padding:10px;text-align:center;cursor:pointer;" data-expand-layer="silver" data-scroll-id="silver-salesforce">
                 <div style="font-size:18px;font-weight:700;color:#c0c0c0;">{{ buildStatus.silver.salesforceCount }}</div>
                 <div style="font-size:10px;color:#c0c0c0;">Salesforce</div>
               </div>
-              <div style="background:#f7f7f6;border-radius:8px;padding:10px;text-align:center;cursor:pointer;" onClick="document.getElementById('silver-product-operations')?.scrollIntoView({behavior:'smooth'});">
+              <div style="background:#f7f7f6;border-radius:8px;padding:10px;text-align:center;cursor:pointer;" data-expand-layer="silver" data-scroll-id="silver-product-operations">
                 <div style="font-size:18px;font-weight:700;color:#c0c0c0;">{{ buildStatus.silver.productOpsCount }}</div>
                 <div style="font-size:10px;color:#c0c0c0;">Product Ops</div>
               </div>
@@ -837,31 +837,31 @@ input{font-family:inherit;}
             </div>
 
             <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;">
-              <div style="background:#f7f7f6;border-radius:8px;padding:10px;text-align:center;cursor:pointer;" onClick="document.getElementById('gold-productboard')?.scrollIntoView({behavior:'smooth'});" title="Click to scroll">
+              <div style="background:#f7f7f6;border-radius:8px;padding:10px;text-align:center;cursor:pointer;" data-expand-layer="gold" data-scroll-id="gold-productboard" title="Click to scroll">
                 <div style="font-size:18px;font-weight:700;color:#d4af37;">{{ buildStatus.gold.productboardCount }}</div>
                 <div style="font-size:10px;color:#d4af37;">Productboard</div>
               </div>
-              <div style="background:#f7f7f6;border-radius:8px;padding:10px;text-align:center;cursor:pointer;" onClick="document.getElementById('gold-salesforce')?.scrollIntoView({behavior:'smooth'});" title="Click to scroll">
+              <div style="background:#f7f7f6;border-radius:8px;padding:10px;text-align:center;cursor:pointer;" data-expand-layer="gold" data-scroll-id="gold-salesforce" title="Click to scroll">
                 <div style="font-size:18px;font-weight:700;color:#d4af37;">{{ buildStatus.gold.salesforceCount }}</div>
                 <div style="font-size:10px;color:#d4af37;">Salesforce</div>
               </div>
-              <div style="background:#f7f7f6;border-radius:8px;padding:10px;text-align:center;cursor:pointer;" onClick="document.getElementById('gold-product-operations')?.scrollIntoView({behavior:'smooth'});" title="Click to scroll">
+              <div style="background:#f7f7f6;border-radius:8px;padding:10px;text-align:center;cursor:pointer;" data-expand-layer="gold" data-scroll-id="gold-product-operations" title="Click to scroll">
                 <div style="font-size:18px;font-weight:700;color:#d4af37;">{{ buildStatus.gold.productOpsCount }}</div>
                 <div style="font-size:10px;color:#d4af37;">Product Ops</div>
               </div>
-              <div style="background:#f7f7f6;border-radius:8px;padding:10px;text-align:center;cursor:pointer;" onClick="document.getElementById('gold-finance')?.scrollIntoView({behavior:'smooth'});" title="Click to scroll">
+              <div style="background:#f7f7f6;border-radius:8px;padding:10px;text-align:center;cursor:pointer;" data-expand-layer="gold" data-scroll-id="gold-finance" title="Click to scroll">
                 <div style="font-size:18px;font-weight:700;color:#d4af37;">{{ buildStatus.gold.financeCount }}</div>
                 <div style="font-size:10px;color:#d4af37;">Finance</div>
               </div>
-              <div style="background:#f7f7f6;border-radius:8px;padding:10px;text-align:center;cursor:pointer;" onClick="document.getElementById('gold-posthog')?.scrollIntoView({behavior:'smooth'});" title="Click to scroll">
+              <div style="background:#f7f7f6;border-radius:8px;padding:10px;text-align:center;cursor:pointer;" data-expand-layer="gold" data-scroll-id="gold-posthog" title="Click to scroll">
                 <div style="font-size:18px;font-weight:700;color:#d4af37;">{{ buildStatus.gold.posthogCount }}</div>
                 <div style="font-size:10px;color:#d4af37;">Posthog</div>
               </div>
-              <div style="background:#f7f7f6;border-radius:8px;padding:10px;text-align:center;cursor:pointer;" onClick="document.getElementById('gold-zendesk')?.scrollIntoView({behavior:'smooth'});" title="Click to scroll">
+              <div style="background:#f7f7f6;border-radius:8px;padding:10px;text-align:center;cursor:pointer;" data-expand-layer="gold" data-scroll-id="gold-zendesk" title="Click to scroll">
                 <div style="font-size:18px;font-weight:700;color:#d4af37;">{{ buildStatus.gold.zendeskCount }}</div>
                 <div style="font-size:10px;color:#d4af37;">Zendesk</div>
               </div>
-              <div style="background:#f7f7f6;border-radius:8px;padding:10px;text-align:center;cursor:pointer;" onClick="document.getElementById('gold-jira')?.scrollIntoView({behavior:'smooth'});" title="Click to scroll">
+              <div style="background:#f7f7f6;border-radius:8px;padding:10px;text-align:center;cursor:pointer;" data-expand-layer="gold" data-scroll-id="gold-jira" title="Click to scroll">
                 <div style="font-size:18px;font-weight:700;color:#d4af37;">{{ buildStatus.gold.jiraCount }}</div>
                 <div style="font-size:10px;color:#d4af37;">Jira</div>
               </div>
@@ -944,6 +944,44 @@ input{font-family:inherit;}
   </div>
 </div>
 </x-dc>
+
+<script>
+document.addEventListener('click', function(e) {
+  const card = e.target.closest('[data-expand-layer][data-scroll-id]');
+  if (!card) return;
+
+  const layer = card.getAttribute('data-expand-layer');
+  const elementId = card.getAttribute('data-scroll-id');
+
+  const layerMap = { bronze: 0, silver: 1, gold: 2 };
+  const layerIndex = layerMap[layer];
+  if (layerIndex === undefined) return;
+
+  // Find and click the expand button for this layer
+  const buttons = document.querySelectorAll('button');
+  let clickCount = 0;
+
+  for (let btn of buttons) {
+    const text = btn.textContent.trim();
+    if (text.includes('Show detail') || text.includes('Hide detail')) {
+      if (clickCount === layerIndex && text.includes('Show detail')) {
+        btn.click();
+        break;
+      }
+      clickCount++;
+    }
+  }
+
+  // Scroll to element with padding from top
+  setTimeout(() => {
+    const el = document.getElementById(elementId);
+    if (el) {
+      el.scrollIntoView({behavior: 'smooth', block: 'center'});
+    }
+  }, 100);
+});
+</script>
+
 <script type="text/x-dc" data-dc-script>
 class Component extends DCLogic {
   constructor(props){
