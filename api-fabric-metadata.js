@@ -367,6 +367,69 @@ app.get('/api/lakehouse-status', async (req, res) => {
   }
 });
 
+// GET /api/build-status — Build Status widget format (primary/secondary sections)
+app.get('/api/build-status', async (req, res) => {
+  try {
+    const { silverViews, goldViews, tables } = await getMetadata();
+
+    // Combine all views
+    const allViews = [...silverViews, ...goldViews];
+
+    // Get gold tables
+    const goldTables = tables.filter(t => !t.name.startsWith('bronze_') &&
+                                          (t.name.startsWith('gold_') || t.name === 'gold_exchangeratetable'));
+
+    // Group views and tables by source
+    const sources = {};
+
+    allViews.forEach(v => {
+      if (!sources[v.source]) sources[v.source] = { views: 0, tables: 0 };
+      sources[v.source].views++;
+    });
+
+    goldTables.forEach(t => {
+      const source = categorizeTable(t.name);
+      if (!sources[source]) sources[source] = { views: 0, tables: 0 };
+      sources[source].tables++;
+    });
+
+    // Separate primary (Productboard, Salesforce) and secondary (Product Operations, Finance, etc)
+    const primarySources = {};
+    const secondarySources = {};
+
+    const primaryOrder = ['Productboard', 'Salesforce'];
+    const secondaryOrder = ['Product Operations', 'Finance', 'Posthog', 'Zendesk', 'Jira', 'Other'];
+
+    primaryOrder.forEach(source => {
+      if (sources[source]) primarySources[source] = sources[source];
+    });
+
+    secondaryOrder.forEach(source => {
+      if (sources[source]) secondarySources[source] = sources[source];
+    });
+
+    // Also include any sources not in the predefined lists
+    Object.entries(sources).forEach(([source, data]) => {
+      if (!primarySources[source] && !secondarySources[source]) {
+        secondarySources[source] = data;
+      }
+    });
+
+    res.json({
+      primary: {
+        title: 'Primary Data Sources',
+        sources: primarySources
+      },
+      secondary: {
+        title: 'Supporting Data',
+        sources: secondarySources
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ status: 'error', message: err.message });
+  }
+});
+
 // GET /api/health — Connectivity check
 app.get('/api/health', async (req, res) => {
   try {
