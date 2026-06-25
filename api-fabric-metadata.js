@@ -152,22 +152,36 @@ async function getMetadata() {
 
 // API Endpoints
 
-// GET /api/data-sources — Full metadata for all sources
+// GET /api/data-sources — Full metadata for all sources (views and tables)
 app.get('/api/data-sources', async (req, res) => {
   try {
-    const { silverViews, goldViews, secondaryViews } = await getMetadata();
-    const allViews = [...silverViews, ...goldViews, ...secondaryViews];
+    const { silverViews, goldViews, secondaryViews, tables } = await getMetadata();
+    const allViews = [...silverViews, ...goldViews, secondaryViews];
 
-    // Group by source
+    // Group views by source
     const dataSources = {};
     allViews.forEach(v => {
       if (!dataSources[v.source]) dataSources[v.source] = [];
       dataSources[v.source].push(v);
     });
 
+    // Add gold tables (not bronze, not silver)
+    const goldTables = tables.filter(t => !t.name.startsWith('bronze_') &&
+                                          (t.name.startsWith('gold_') || t.name === 'gold_exchangeratetable'));
+    goldTables.forEach(t => {
+      const source = categorizeTable(t.name);
+      if (!dataSources[source]) dataSources[source] = [];
+      dataSources[source].push({
+        name: t.name,
+        schema: t.schema,
+        source: source,
+        type: 'TABLE'
+      });
+    });
+
     // Reorder to put primary sources first
     const ordered = {};
-    const priority = ['Productboard', 'Salesforce', 'Product Operations', 'Posthog', 'Zendesk', 'Jira', 'Other'];
+    const priority = ['Productboard', 'Salesforce', 'Product Operations', 'Finance', 'Posthog', 'Zendesk', 'Jira', 'Other'];
 
     priority.forEach(source => {
       if (dataSources[source]) {
@@ -180,7 +194,7 @@ app.get('/api/data-sources', async (req, res) => {
       timestamp: new Date().toISOString(),
       dataSources: ordered,
       summary: {
-        total: Object.values(ordered).reduce((sum, views) => sum + views.length, 0),
+        total: Object.values(ordered).reduce((sum, items) => sum + items.length, 0),
         sources: Object.keys(ordered).length
       }
     });
@@ -192,18 +206,27 @@ app.get('/api/data-sources', async (req, res) => {
 // GET /api/data-sources/minimal — Just view names grouped by source (for UI)
 app.get('/api/data-sources/minimal', async (req, res) => {
   try {
-    const { silverViews, goldViews, secondaryViews } = await getMetadata();
+    const { silverViews, goldViews, secondaryViews, tables } = await getMetadata();
     const allViews = [...silverViews, ...goldViews, ...secondaryViews];
 
-    // Group by source
+    // Group views by source
     const dataSources = {};
     allViews.forEach(v => {
       if (!dataSources[v.source]) dataSources[v.source] = [];
       dataSources[v.source].push(v.name);
     });
 
+    // Add gold tables
+    const goldTables = tables.filter(t => !t.name.startsWith('bronze_') &&
+                                          (t.name.startsWith('gold_') || t.name === 'gold_exchangeratetable'));
+    goldTables.forEach(t => {
+      const source = categorizeTable(t.name);
+      if (!dataSources[source]) dataSources[source] = [];
+      dataSources[source].push(t.name);
+    });
+
     const minimal = {};
-    const priority = ['Productboard', 'Salesforce', 'Product Operations', 'Posthog', 'Zendesk', 'Jira'];
+    const priority = ['Productboard', 'Salesforce', 'Product Operations', 'Finance', 'Posthog', 'Zendesk', 'Jira'];
 
     priority.forEach(source => {
       if (dataSources[source]) {
