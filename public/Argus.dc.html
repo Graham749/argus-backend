@@ -875,7 +875,7 @@ input{font-family:inherit;}
               <div style="border-top:1px solid #e6e6e5;padding-top:12px;">
                 <sc-for list="{{ buildStatus.gold.sourceGroups }}" as="src" hint-placeholder-count="2">
                   <div style="margin-bottom:12px;">
-                    <div style="font-size:11px;font-weight:700;color:#d4af37;text-transform:uppercase;margin-bottom:6px;">{{ src.name }} ({{ src.count }} <sc-if value="{{ src.tables.length > 0 && src.views.length === 0 }}" hint-placeholder-val="{{ false }}">table<sc-else>views</sc-else></sc-if>)</div>
+                    <div style="font-size:11px;font-weight:700;color:#d4af37;text-transform:uppercase;margin-bottom:6px;">{{ src.name }} ({{ src.count }} {{ src.label }})</div>
                     <sc-for list="{{ src.views }}" as="v" hint-placeholder-count="5">
                       <div style="padding:8px;background:#f7f7f6;border-radius:6px;margin-bottom:4px;font-size:11px;">
                         <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
@@ -1471,6 +1471,9 @@ class Component extends DCLogic {
                 if(!sm[t.source]) sm[t.source]={name:t.source,count:0,views:[],tables:[]};
                 sm[t.source].count++;
                 sm[t.source].tables.push(t);
+              });
+              Object.values(sm).forEach(src=>{
+                src.label = (src.tables.length > 0 && src.views.length === 0) ? 'table' : 'views';
               });
               return Object.values(sm).sort((a,b)=>b.count-a.count);
             })()
