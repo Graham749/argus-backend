@@ -74,6 +74,10 @@ async function lakelzouseStatus(req, res) {
     const goldQuery = `SELECT TABLE_NAME FROM INFORMATION_SCHEMA.VIEWS WHERE TABLE_SCHEMA = 'dbo' AND TABLE_NAME LIKE 'v_gold_%' ORDER BY TABLE_NAME`;
     const goldViews = await queryLakehouse(goldQuery);
 
+    // Get all gold tables (provided by data team, e.g., gold_exchangeratetable)
+    const goldTablesQuery = `SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'dbo' AND TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME LIKE 'gold_%' ORDER BY TABLE_NAME`;
+    const goldTables = await queryLakehouse(goldTablesQuery);
+
     // Get bronze table details
     const bronzeDetailsQuery = `SELECT TABLE_NAME as name FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'dbo' AND TABLE_TYPE = 'BASE TABLE' ORDER BY TABLE_NAME`;
     const bronzeDetails = await queryLakehouse(bronzeDetailsQuery);
@@ -89,6 +93,11 @@ async function lakelzouseStatus(req, res) {
       name: v.TABLE_NAME,
       source: getSourceFromName(v.TABLE_NAME),
       purpose: `${v.TABLE_NAME} analytical view`
+    }));
+
+    const goldTablesWithSource = goldTables.map(t => ({
+      name: t.TABLE_NAME,
+      source: getSourceFromName(t.TABLE_NAME) === 'Unknown' && t.TABLE_NAME === 'gold_exchangeratetable' ? 'Finance' : getSourceFromName(t.TABLE_NAME)
     }));
 
     const bronzeTablesWithSource = bronzeDetails.map(b => ({
@@ -107,6 +116,10 @@ async function lakelzouseStatus(req, res) {
 
     goldViewsWithSource.forEach(v => {
       goldBySource[v.source] = (goldBySource[v.source] || 0) + 1;
+    });
+
+    goldTablesWithSource.forEach(t => {
+      goldBySource[t.source] = (goldBySource[t.source] || 0) + 1;
     });
 
     bronzeTablesWithSource.forEach(b => {
@@ -135,13 +148,14 @@ async function lakelzouseStatus(req, res) {
       },
       gold: {
         layer: 'Gold',
-        count: goldViews.length,
+        count: goldViews.length + goldTables.length,
         totalRows: null,
         countBySource: goldBySource,
         label: 'Gold Layer',
         description: 'Materialized analytical tables and views.',
         status: 'production-ready',
-        views: goldViewsWithSource
+        views: goldViewsWithSource,
+        tables: goldTablesWithSource
       },
       lastUpdated: new Date().toISOString()
     };
