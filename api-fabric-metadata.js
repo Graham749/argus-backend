@@ -67,6 +67,16 @@ function categorizeView(viewName) {
   return { layer, source };
 }
 
+// Categorize tables (bronze and gold tables, not views)
+function categorizeTable(tableName) {
+  let source = 'Other';
+  if (tableName === 'gold_exchangeratetable') source = 'Finance';
+  else if (tableName.includes('_pb')) source = 'Productboard';
+  else if (tableName.includes('_sfapi')) source = 'Salesforce';
+
+  return source;
+}
+
 // Get all views and tables with metadata (combined for performance)
 async function getMetadata() {
   try {
@@ -234,14 +244,16 @@ app.get('/api/lakehouse-status', async (req, res) => {
     });
 
     // Filter and categorize bronze tables (only those starting with 'bronze_')
+    // and gold tables (like gold_exchangeratetable)
     const bronzeTables = tables.filter(t => t.name.startsWith('bronze_'));
+    const goldTables = tables.filter(t => !t.name.startsWith('bronze_') &&
+                                          (t.name.startsWith('gold_') || t.name === 'gold_exchangeratetable'));
     const bronzeBySource = {};
+    const goldBySourceTables = {};
 
     // Prepare table objects with HTML-expected properties
     const bronzeTableDetails = bronzeTables.map(t => {
-      let source = 'Other';
-      if (t.name.includes('_pb')) source = 'Productboard';
-      else if (t.name.includes('_sfapi')) source = 'Salesforce';
+      const source = categorizeTable(t.name);
 
       if (!bronzeBySource[source]) bronzeBySource[source] = [];
 
@@ -276,6 +288,23 @@ app.get('/api/lakehouse-status', async (req, res) => {
       tables: tables
     }));
 
+    // Process gold tables (like gold_exchangeratetable)
+    const goldTableDetails = goldTables.map(t => {
+      const source = categorizeTable(t.name);
+
+      if (!goldBySourceTables[source]) goldBySourceTables[source] = [];
+
+      const tableDetail = {
+        name: t.name,
+        source: source,
+        lastRefresh: t.lastModified ? new Date(t.lastModified).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: '2-digit' }) : 'Unknown',
+        rowCount: t.rowCount || 0
+      };
+
+      goldBySourceTables[source].push(tableDetail);
+      return tableDetail;
+    });
+
     const buildStatus = {
       bronze: {
         count: bronzeTables.length,
@@ -297,12 +326,15 @@ app.get('/api/lakehouse-status', async (req, res) => {
         productOpsCount: (silverBySource['Product Operations'] || []).length
       },
       gold: {
-        count: goldViews.length,
+        count: goldViews.length + goldTableDetails.length,
         description: 'Materialized tables',
         status: 'ready',
         views: goldViews,
+        tables: goldTableDetails,
         productboardCount: (goldBySource['Productboard'] || []).length,
-        salesforceCount: (goldBySource['Salesforce'] || []).length
+        salesforceCount: (goldBySource['Salesforce'] || []).length,
+        productOpsCount: (goldBySource['Product Operations'] || []).length,
+        financeCount: (goldBySourceTables['Finance'] || []).length
       }
     };
 
