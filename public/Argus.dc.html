@@ -837,31 +837,31 @@ input{font-family:inherit;}
             </div>
 
             <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;">
-              <div style="background:#f7f7f6;border-radius:8px;padding:10px;text-align:center;">
+              <div style="background:#f7f7f6;border-radius:8px;padding:10px;text-align:center;cursor:pointer;" onClick="document.getElementById('gold-section-Productboard')?.scrollIntoView({behavior:'smooth'});">
                 <div style="font-size:18px;font-weight:700;color:#d4af37;">{{ buildStatus.gold.productboardCount }}</div>
                 <div style="font-size:10px;color:#d4af37;">Productboard</div>
               </div>
-              <div style="background:#f7f7f6;border-radius:8px;padding:10px;text-align:center;">
+              <div style="background:#f7f7f6;border-radius:8px;padding:10px;text-align:center;cursor:pointer;" onClick="document.getElementById('gold-section-Salesforce')?.scrollIntoView({behavior:'smooth'});">
                 <div style="font-size:18px;font-weight:700;color:#d4af37;">{{ buildStatus.gold.salesforceCount }}</div>
                 <div style="font-size:10px;color:#d4af37;">Salesforce</div>
               </div>
-              <div style="background:#f7f7f6;border-radius:8px;padding:10px;text-align:center;">
+              <div style="background:#f7f7f6;border-radius:8px;padding:10px;text-align:center;cursor:pointer;" onClick="document.getElementById('gold-section-Product Operations')?.scrollIntoView({behavior:'smooth'});">
                 <div style="font-size:18px;font-weight:700;color:#d4af37;">{{ buildStatus.gold.productOpsCount }}</div>
                 <div style="font-size:10px;color:#d4af37;">Product Ops</div>
               </div>
-              <div style="background:#f7f7f6;border-radius:8px;padding:10px;text-align:center;">
+              <div style="background:#f7f7f6;border-radius:8px;padding:10px;text-align:center;cursor:pointer;" onClick="document.getElementById('gold-section-Finance')?.scrollIntoView({behavior:'smooth'});">
                 <div style="font-size:18px;font-weight:700;color:#d4af37;">{{ buildStatus.gold.financeCount }}</div>
                 <div style="font-size:10px;color:#d4af37;">Finance</div>
               </div>
-              <div style="background:#f7f7f6;border-radius:8px;padding:10px;text-align:center;">
+              <div style="background:#f7f7f6;border-radius:8px;padding:10px;text-align:center;cursor:pointer;" onClick="document.getElementById('gold-section-Posthog')?.scrollIntoView({behavior:'smooth'});">
                 <div style="font-size:18px;font-weight:700;color:#d4af37;">{{ buildStatus.gold.posthogCount }}</div>
                 <div style="font-size:10px;color:#d4af37;">Posthog</div>
               </div>
-              <div style="background:#f7f7f6;border-radius:8px;padding:10px;text-align:center;">
+              <div style="background:#f7f7f6;border-radius:8px;padding:10px;text-align:center;cursor:pointer;" onClick="document.getElementById('gold-section-Zendesk')?.scrollIntoView({behavior:'smooth'});">
                 <div style="font-size:18px;font-weight:700;color:#d4af37;">{{ buildStatus.gold.zendeskCount }}</div>
                 <div style="font-size:10px;color:#d4af37;">Zendesk</div>
               </div>
-              <div style="background:#f7f7f6;border-radius:8px;padding:10px;text-align:center;">
+              <div style="background:#f7f7f6;border-radius:8px;padding:10px;text-align:center;cursor:pointer;" onClick="document.getElementById('gold-section-Jira')?.scrollIntoView({behavior:'smooth'});">
                 <div style="font-size:18px;font-weight:700;color:#d4af37;">{{ buildStatus.gold.jiraCount }}</div>
                 <div style="font-size:10px;color:#d4af37;">Jira</div>
               </div>
@@ -875,7 +875,7 @@ input{font-family:inherit;}
               <div style="border-top:1px solid #e6e6e5;padding-top:12px;">
                 <sc-for list="{{ buildStatus.gold.sourceGroups }}" as="src" hint-placeholder-count="2">
                   <div style="margin-bottom:12px;">
-                    <div style="font-size:11px;font-weight:700;color:#d4af37;text-transform:uppercase;margin-bottom:6px;">{{ src.name }} ({{ src.count }} {{ src.label }})</div>
+                    <div id="gold-section-{{ src.name }}" style="font-size:11px;font-weight:700;color:#d4af37;text-transform:uppercase;margin-bottom:6px;">{{ src.name }} ({{ src.count }} {{ src.label }})</div>
                     <sc-for list="{{ src.views }}" as="v" hint-placeholder-count="5">
                       <div style="padding:8px;background:#f7f7f6;border-radius:6px;margin-bottom:4px;font-size:11px;">
                         <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
