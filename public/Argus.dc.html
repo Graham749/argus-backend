@@ -879,6 +879,14 @@ input{font-family:inherit;}
                         <div style="padding-left:8px;color:#9d9d9d;font-size:10px;border-left:1px solid #e6e6e5;">{{ v.purpose }}</div>
                       </div>
                     </sc-for>
+                    <sc-for list="{{ src.tables }}" as="t" hint-placeholder-count="5">
+                      <div style="padding:8px;background:#f7f7f6;border-radius:6px;margin-bottom:4px;font-size:11px;">
+                        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+                          <span style="background:#c27803;color:#fff;font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;white-space:nowrap;">Table</span>
+                          <a href="https://app.powerbi.com/groups/{{ fabricWorkspaceId }}/mirroredwarehouses/{{ fabricLakehouseId }}?experience=power-bi&selectedNodePath={{ fabricLakehouseId }}%2FLakewarehouse%2FSchemasFolder%2Fdbo%2FTables%2F{{ t.name }}&selectedNodeDisplayValue={{ t.name }}" target="_blank" style="color:#3c3c3b;flex:1;font-weight:600;text-decoration:none;cursor:pointer;" title="Open Lakehouse in Fabric">{{ t.name }}</a>
+                        </div>
+                      </div>
+                    </sc-for>
                   </div>
                 </sc-for>
               </div>
@@ -945,7 +953,7 @@ class Component extends DCLogic {
       showAboutModal:false,
       currentUser:{name:'Loading...',initials:'...'},
       apis:[{name:'Loading...',color:'#ddd',symbol:'...',description:''}],
-      buildStatus:{bronze:{count:0,label:'tables',rowLabel:'0 rows',productboardCount:0,salesforceCount:0,sourceGroups:[]},silver:{count:0,label:'views',productboardCount:0,salesforceCount:0,productOpsCount:0,views:[],sourceGroups:[]},gold:{count:0,label:'tables',productboardCount:0,salesforceCount:0,posthogCount:0,views:[],sourceGroups:[]},syncLabel:'Loading...'}
+      buildStatus:{bronze:{count:0,label:'tables',rowLabel:'0 rows',productboardCount:0,salesforceCount:0,sourceGroups:[]},silver:{count:0,label:'views',productboardCount:0,salesforceCount:0,productOpsCount:0,views:[],sourceGroups:[]},gold:{count:0,label:'tables',productboardCount:0,salesforceCount:0,posthogCount:0,views:[],tables:[],sourceGroups:[]},syncLabel:'Loading...'}
     };
   }
 
@@ -1444,9 +1452,14 @@ class Component extends DCLogic {
             sourceGroups:(() => {
               const sm={};
               (data.gold.views||[]).forEach(v=>{
-                if(!sm[v.source]) sm[v.source]={name:v.source,count:0,views:[]};
+                if(!sm[v.source]) sm[v.source]={name:v.source,count:0,views:[],tables:[]};
                 sm[v.source].count++;
                 sm[v.source].views.push(v);
+              });
+              (data.gold.tables||[]).forEach(t=>{
+                if(!sm[t.source]) sm[t.source]={name:t.source,count:0,views:[],tables:[]};
+                sm[t.source].count++;
+                sm[t.source].tables.push(t);
               });
               return Object.values(sm).sort((a,b)=>b.count-a.count);
             })()
