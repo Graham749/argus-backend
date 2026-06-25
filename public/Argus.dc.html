@@ -722,7 +722,7 @@ input{font-family:inherit;}
               <div style="border-top:1px solid #e6e6e5;padding-top:12px;">
                 <sc-for list="{{ buildStatus.bronze.sourceGroups }}" as="src" hint-placeholder-count="2">
                   <div style="margin-bottom:12px;">
-                    <div id="bronze-{{ src.name.replace(/ /g, '-').toLowerCase() }}" style="font-size:11px;font-weight:700;color:#cd7f32;text-transform:uppercase;margin-bottom:6px;">{{ src.name }} ({{ src.count }} tables)</div>
+                    <div id="{{ src.id }}" style="font-size:11px;font-weight:700;color:#cd7f32;text-transform:uppercase;margin-bottom:6px;">{{ src.name }} ({{ src.count }} tables)</div>
                     <sc-for list="{{ src.tables }}" as="t" hint-placeholder-count="5">
                       <div style="padding:8px;background:#f7f7f6;border-radius:6px;margin-bottom:4px;font-size:12px;">
                         <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
@@ -797,7 +797,7 @@ input{font-family:inherit;}
               <div style="border-top:1px solid #e6e6e5;padding-top:12px;">
                 <sc-for list="{{ buildStatus.silver.sourceGroups }}" as="src" hint-placeholder-count="2">
                   <div style="margin-bottom:12px;">
-                    <div id="silver-{{ src.name.replace(/ /g, '-').toLowerCase() }}" style="font-size:11px;font-weight:700;color:#c0c0c0;text-transform:uppercase;margin-bottom:6px;">{{ src.name }} ({{ src.count }} views)</div>
+                    <div id="{{ src.id }}" style="font-size:11px;font-weight:700;color:#c0c0c0;text-transform:uppercase;margin-bottom:6px;">{{ src.name }} ({{ src.count }} views)</div>
                     <sc-for list="{{ src.views }}" as="v" hint-placeholder-count="5">
                       <div style="padding:8px;background:#f7f7f6;border-radius:6px;margin-bottom:4px;font-size:11px;">
                         <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
@@ -837,31 +837,31 @@ input{font-family:inherit;}
             </div>
 
             <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;">
-              <div style="background:#f7f7f6;border-radius:8px;padding:10px;text-align:center;cursor:pointer;" onClick="document.getElementById('gold-productboard')?.scrollIntoView({behavior:'smooth'});">
+              <div style="background:#f7f7f6;border-radius:8px;padding:10px;text-align:center;cursor:pointer;" onClick="document.getElementById('gold-productboard')?.scrollIntoView({behavior:'smooth'});" title="Click to scroll">
                 <div style="font-size:18px;font-weight:700;color:#d4af37;">{{ buildStatus.gold.productboardCount }}</div>
                 <div style="font-size:10px;color:#d4af37;">Productboard</div>
               </div>
-              <div style="background:#f7f7f6;border-radius:8px;padding:10px;text-align:center;cursor:pointer;" onClick="document.getElementById('gold-salesforce')?.scrollIntoView({behavior:'smooth'});">
+              <div style="background:#f7f7f6;border-radius:8px;padding:10px;text-align:center;cursor:pointer;" onClick="document.getElementById('gold-salesforce')?.scrollIntoView({behavior:'smooth'});" title="Click to scroll">
                 <div style="font-size:18px;font-weight:700;color:#d4af37;">{{ buildStatus.gold.salesforceCount }}</div>
                 <div style="font-size:10px;color:#d4af37;">Salesforce</div>
               </div>
-              <div style="background:#f7f7f6;border-radius:8px;padding:10px;text-align:center;cursor:pointer;" onClick="document.getElementById('gold-product-operations')?.scrollIntoView({behavior:'smooth'});">
+              <div style="background:#f7f7f6;border-radius:8px;padding:10px;text-align:center;cursor:pointer;" onClick="document.getElementById('gold-product-operations')?.scrollIntoView({behavior:'smooth'});" title="Click to scroll">
                 <div style="font-size:18px;font-weight:700;color:#d4af37;">{{ buildStatus.gold.productOpsCount }}</div>
                 <div style="font-size:10px;color:#d4af37;">Product Ops</div>
               </div>
-              <div style="background:#f7f7f6;border-radius:8px;padding:10px;text-align:center;cursor:pointer;" onClick="document.getElementById('gold-finance')?.scrollIntoView({behavior:'smooth'});">
+              <div style="background:#f7f7f6;border-radius:8px;padding:10px;text-align:center;cursor:pointer;" onClick="document.getElementById('gold-finance')?.scrollIntoView({behavior:'smooth'});" title="Click to scroll">
                 <div style="font-size:18px;font-weight:700;color:#d4af37;">{{ buildStatus.gold.financeCount }}</div>
                 <div style="font-size:10px;color:#d4af37;">Finance</div>
               </div>
-              <div style="background:#f7f7f6;border-radius:8px;padding:10px;text-align:center;cursor:pointer;" onClick="document.getElementById('gold-posthog')?.scrollIntoView({behavior:'smooth'});">
+              <div style="background:#f7f7f6;border-radius:8px;padding:10px;text-align:center;cursor:pointer;" onClick="document.getElementById('gold-posthog')?.scrollIntoView({behavior:'smooth'});" title="Click to scroll">
                 <div style="font-size:18px;font-weight:700;color:#d4af37;">{{ buildStatus.gold.posthogCount }}</div>
                 <div style="font-size:10px;color:#d4af37;">Posthog</div>
               </div>
-              <div style="background:#f7f7f6;border-radius:8px;padding:10px;text-align:center;cursor:pointer;" onClick="document.getElementById('gold-zendesk')?.scrollIntoView({behavior:'smooth'});">
+              <div style="background:#f7f7f6;border-radius:8px;padding:10px;text-align:center;cursor:pointer;" onClick="document.getElementById('gold-zendesk')?.scrollIntoView({behavior:'smooth'});" title="Click to scroll">
                 <div style="font-size:18px;font-weight:700;color:#d4af37;">{{ buildStatus.gold.zendeskCount }}</div>
                 <div style="font-size:10px;color:#d4af37;">Zendesk</div>
               </div>
-              <div style="background:#f7f7f6;border-radius:8px;padding:10px;text-align:center;cursor:pointer;" onClick="document.getElementById('gold-jira')?.scrollIntoView({behavior:'smooth'});">
+              <div style="background:#f7f7f6;border-radius:8px;padding:10px;text-align:center;cursor:pointer;" onClick="document.getElementById('gold-jira')?.scrollIntoView({behavior:'smooth'});" title="Click to scroll">
                 <div style="font-size:18px;font-weight:700;color:#d4af37;">{{ buildStatus.gold.jiraCount }}</div>
                 <div style="font-size:10px;color:#d4af37;">Jira</div>
               </div>
@@ -875,7 +875,7 @@ input{font-family:inherit;}
               <div style="border-top:1px solid #e6e6e5;padding-top:12px;">
                 <sc-for list="{{ buildStatus.gold.sourceGroups }}" as="src" hint-placeholder-count="2">
                   <div style="margin-bottom:12px;">
-                    <div id="gold-{{ src.name.replace(/ /g, '-').toLowerCase() }}" style="font-size:11px;font-weight:700;color:#d4af37;text-transform:uppercase;margin-bottom:6px;">{{ src.name }} ({{ src.count }} {{ src.label }})</div>
+                    <div id="{{ src.id }}" style="font-size:11px;font-weight:700;color:#d4af37;text-transform:uppercase;margin-bottom:6px;">{{ src.name }} ({{ src.count }} {{ src.label }})</div>
                     <sc-for list="{{ src.views }}" as="v" hint-placeholder-count="5">
                       <div style="padding:8px;background:#f7f7f6;border-radius:6px;margin-bottom:4px;font-size:11px;">
                         <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
@@ -1412,7 +1412,11 @@ class Component extends DCLogic {
           const rc=t.rowCount||0;
           sourceMap[t.source].tables.push({name:t.name,source:t.source,lastRefresh:t.lastRefresh||'Unknown',rowCount:rc,loadLabel:rc===1?'load':'loads'});
         });
-        const sourceGroups=Object.values(sourceMap).sort((a,b)=>b.count-a.count);
+        sourceMap[Object.keys(sourceMap)[0]] = sourceMap[Object.keys(sourceMap)[0]]; // ensure all sources are processed
+        const sourceGroups=Object.values(sourceMap).map(src=>({
+          ...src,
+          id: 'bronze-' + src.name.toLowerCase().replace(/ /g, '-')
+        })).sort((a,b)=>b.count-a.count);
 
         const bs={
           syncLabel:`Synced ${new Date().toLocaleTimeString()}`,
@@ -1442,6 +1446,9 @@ class Component extends DCLogic {
                 if(!sm[v.source]) sm[v.source]={name:v.source,count:0,views:[]};
                 sm[v.source].count++;
                 sm[v.source].views.push(v);
+              });
+              Object.values(sm).forEach(src=>{
+                src.id = 'silver-' + src.name.toLowerCase().replace(/ /g, '-');
               });
               return Object.values(sm).sort((a,b)=>b.count-a.count);
             })()
@@ -1474,6 +1481,7 @@ class Component extends DCLogic {
               });
               Object.values(sm).forEach(src=>{
                 src.label = (src.tables.length > 0 && src.views.length === 0) ? 'table' : 'views';
+                src.id = 'gold-' + src.name.toLowerCase().replace(/ /g, '-');
               });
               return Object.values(sm).sort((a,b)=>b.count-a.count);
             })()
@@ -1790,19 +1798,19 @@ class Component extends DCLogic {
       bronzeButtonStyle:S.bronzeExpanded
         ? {width:'100%',fontSize:'12px',fontWeight:700,padding:'8px 12px',borderRadius:'8px',border:'1.5px solid #cd7f32',background:'#f5ece0',color:'#cd7f32',cursor:'pointer',marginBottom:'8px',userSelect:'none',WebkitUserSelect:'none'}
         : {width:'100%',fontSize:'12px',fontWeight:700,padding:'8px 12px',borderRadius:'8px',border:'1.5px solid #e6e6e5',background:'#fff',color:'#cd7f32',cursor:'pointer',marginBottom:'8px',userSelect:'none',WebkitUserSelect:'none'},
-      bronzeButtonLabel:S.bronzeExpanded ? '▼ Hide tables' : '▶ Show tables',
+      bronzeButtonLabel:S.bronzeExpanded ? '▼ Hide detail' : '▶ Show detail',
       silverExpanded:S.silverExpanded,
       toggleSilverExpand:()=>this.setV({silverExpanded:!S.silverExpanded}),
       silverButtonStyle:S.silverExpanded
         ? {width:'100%',fontSize:'12px',fontWeight:700,padding:'8px 12px',borderRadius:'8px',border:'1.5px solid #c0c0c0',background:'#f0f0f0',color:'#708090',cursor:'pointer',marginBottom:'8px',userSelect:'none',WebkitUserSelect:'none'}
         : {width:'100%',fontSize:'12px',fontWeight:700,padding:'8px 12px',borderRadius:'8px',border:'1.5px solid #e6e6e5',background:'#fff',color:'#c0c0c0',cursor:'pointer',marginBottom:'8px',userSelect:'none',WebkitUserSelect:'none'},
-      silverButtonLabel:S.silverExpanded ? '▼ Hide views' : '▶ Show views',
+      silverButtonLabel:S.silverExpanded ? '▼ Hide detail' : '▶ Show detail',
       goldExpanded:S.goldExpanded,
       toggleGoldExpand:()=>this.setV({goldExpanded:!S.goldExpanded}),
       goldButtonStyle:S.goldExpanded
         ? {width:'100%',fontSize:'12px',fontWeight:700,padding:'8px 12px',borderRadius:'8px',border:'1.5px solid #d4af37',background:'#fefbf3',color:'#d4af37',cursor:'pointer',marginBottom:'8px',userSelect:'none',WebkitUserSelect:'none'}
         : {width:'100%',fontSize:'12px',fontWeight:700,padding:'8px 12px',borderRadius:'8px',border:'1.5px solid #e6e6e5',background:'#fff',color:'#d4af37',cursor:'pointer',marginBottom:'8px',userSelect:'none',WebkitUserSelect:'none'},
-      goldButtonLabel:S.goldExpanded ? '▼ Hide views' : '▶ Show views',
+      goldButtonLabel:S.goldExpanded ? '▼ Hide detail' : '▶ Show detail',
       refreshBuildStatus:()=>this.refreshBuildStatus(),
       fabricWorkspaceId:'48f4c481-18b4-4596-8920-2461ec44e621',
       fabricLakehouseId:'9136d03f-b4d3-4d49-8429-a803114c114e',
