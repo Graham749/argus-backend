@@ -1147,9 +1147,17 @@ class Component extends DCLogic {
     const select = document.getElementById('sfAccountSelector');
     select.innerHTML = '<option value="">-- Loading accounts... --</option>';
 
+    const timeout = setTimeout(() => {
+      console.error('[Argus] Accounts list timeout (5s)');
+      select.innerHTML = '<option value="">-- Timeout loading accounts --</option>';
+    }, 5000);
+
     // Use lightweight accounts list (no ARR fetching for performance)
     fetch(`http://localhost:3001/api/accounts-list?t=${Date.now()}`)
-      .then(r => r.json())
+      .then(r => {
+        clearTimeout(timeout);
+        return r.json();
+      })
       .then(data => {
         const accounts = (data.accounts || []).sort((a, b) => a.name.localeCompare(b.name));
         console.log('[Argus] Loaded', accounts.length, 'accounts');
@@ -1168,6 +1176,7 @@ class Component extends DCLogic {
         });
       })
       .catch(err => {
+        clearTimeout(timeout);
         console.error('[Argus] Failed to load accounts list:', err);
         select.innerHTML = '<option value="">-- Error loading accounts --</option>';
       });
