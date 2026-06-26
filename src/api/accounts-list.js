@@ -53,11 +53,14 @@ async function queryFabric(query) {
 
 async function getAccountsList(req, res) {
   try {
+    // Only show parent accounts (no parent_account_id) that have subscriptions
     const query = `
-      SELECT DISTINCT account_name
-      FROM [dbo].[v_silver_sf_subscriptions]
-      WHERE account_name IS NOT NULL
-      ORDER BY account_name ASC
+      SELECT DISTINCT ca.account_name
+      FROM [dbo].[v_silver_sf_subscriptions] s
+      INNER JOIN [dbo].[v_silver_sf_customer_accounts] ca ON s.account_id = ca.account_id
+      WHERE ca.parent_account_id IS NULL
+        AND s.account_name IS NOT NULL
+      ORDER BY ca.account_name ASC
     `;
 
     const results = await queryFabric(query);
