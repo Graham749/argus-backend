@@ -141,13 +141,13 @@ input{font-family:inherit;}
             </div>
 
             <!-- ARR At Risk Summary Card -->
-            <div id="sfArrAtRiskCard" style="background:#fdeee0;border-radius:8px;padding:16px;margin-bottom:12px;border:1px solid #d32f2f;display:flex;justify-content:space-between;align-items:center;">
-              <div>
-                <div style="font-size:12px;font-weight:700;color:#d32f2f;text-transform:uppercase;margin-bottom:4px;">⚠️ ARR AT RISK</div>
-                <div style="font-size:24px;font-weight:700;color:#d32f2f;">£<span id="sfArrAtRiskAmount">0</span>k</div>
-                <div style="font-size:11px;color:#c2600f;margin-top:4px;"><span id="sfArrAtRiskPercent">0</span>% of portfolio</div>
+            <div id="sfArrAtRiskCard" style="background:#fdeee0;border-radius:8px;padding:10px 14px;margin-bottom:12px;border:1px solid #d32f2f;display:flex;justify-content:space-between;align-items:center;gap:16px;">
+              <div style="flex:1;">
+                <div style="font-size:11px;font-weight:700;color:#d32f2f;text-transform:uppercase;margin-bottom:2px;">⚠️ ARR AT RISK</div>
+                <div style="font-size:18px;font-weight:700;color:#d32f2f;">£<span id="sfArrAtRiskAmount">0</span>k</div>
+                <div style="font-size:10px;color:#c2600f;margin-top:2px;"><span id="sfArrAtRiskPercent">0</span>% of portfolio</div>
               </div>
-              <button id="sfViewAtRiskBtn" style="padding:8px 16px;border-radius:6px;border:1px solid #d32f2f;background:#fff;color:#d32f2f;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;">View At-Risk Report →</button>
+              <button id="sfViewAtRiskBtn" style="padding:6px 12px;border-radius:6px;border:1px solid #d32f2f;background:#fff;color:#d32f2f;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;">View Report →</button>
             </div>
 
             <!-- Risk Status Cards -->
@@ -1416,6 +1416,16 @@ class Component extends DCLogic {
       totalArr += group.subs.reduce((sum, s) => sum + s.arr_gbp, 0);
     }
 
+    // Calculate and display ARR at risk (OVERDUE + AT_RISK) - always show even if zero
+    const atRiskSubs = [...(groups['OVERDUE']?.subs || []), ...(groups['AT_RISK']?.subs || [])];
+    const atRiskArr = atRiskSubs.reduce((sum, s) => sum + s.arr_gbp, 0);
+    const atRiskArrK = (atRiskArr / 1000).toFixed(0);
+    const portfolioArr = Object.values(groups).reduce((sum, g) => sum + g.subs.reduce((s, sub) => s + sub.arr_gbp, 0), 0);
+    const atRiskPercent = portfolioArr > 0 ? ((atRiskArr / portfolioArr) * 100).toFixed(1) : 0;
+
+    document.getElementById('sfArrAtRiskAmount').textContent = atRiskArrK;
+    document.getElementById('sfArrAtRiskPercent').textContent = atRiskPercent;
+
     // Show/hide no-data message and risk cards
     const noDataMsg = document.getElementById('sfNoDataMessage');
     const riskCardsDiv = document.getElementById('sfRiskCardsContainer');
@@ -1447,17 +1457,6 @@ class Component extends DCLogic {
       }
       if(arrEl) arrEl.textContent = arrK;
     }
-
-    // Calculate and display ARR at risk (OVERDUE + AT_RISK)
-    const atRiskSubs = [...(groups['OVERDUE']?.subs || []), ...(groups['AT_RISK']?.subs || [])];
-    const atRiskArr = atRiskSubs.reduce((sum, s) => sum + s.arr_gbp, 0);
-    const atRiskArrK = (atRiskArr / 1000).toFixed(0);
-    const portfolioArr = Object.values(groups).reduce((sum, g) => sum + g.subs.reduce((s, sub) => s + sub.arr_gbp, 0), 0);
-    const atRiskPercent = portfolioArr > 0 ? ((atRiskArr / portfolioArr) * 100).toFixed(1) : 0;
-
-    const atRiskCard = document.getElementById('sfArrAtRiskCard');
-    document.getElementById('sfArrAtRiskAmount').textContent = atRiskArrK;
-    document.getElementById('sfArrAtRiskPercent').textContent = atRiskPercent;
 
     // Wire up the "View At-Risk Report" button
     const atRiskBtn = document.getElementById('sfViewAtRiskBtn');
