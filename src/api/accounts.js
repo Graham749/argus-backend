@@ -122,35 +122,37 @@ async function getAccountSubscriptions(req, res) {
         AND status IN ('Active', 'Termination in Progress')
     `;
 
-    // Get subscription details (with account name for drilldown)
+    // Get subscription details (use reporting account name for consistency)
     const detailsQuery = `
       SELECT
-        subscription_id,
-        account_name,
-        Service__c as product_category,
-        Service_Type__c as service_type,
-        status,
-        CAST(currency AS VARCHAR(3)) as currency,
-        ROUND(arr_gbp, 2) as arr_gbp,
-        subscription_start_date,
-        subscription_end_date,
-        renewal_date,
-        renewal_date_source,
-        contract_type,
-        DATEDIFF(DAY, GETDATE(), renewal_date) as days_to_renewal,
+        s.subscription_id,
+        COALESCE(p.account_name, s.account_name) as account_name,
+        s.Service__c as product_category,
+        s.Service_Type__c as service_type,
+        s.status,
+        CAST(s.currency AS VARCHAR(3)) as currency,
+        ROUND(s.arr_gbp, 2) as arr_gbp,
+        s.subscription_start_date,
+        s.subscription_end_date,
+        s.renewal_date,
+        s.renewal_date_source,
+        s.contract_type,
+        DATEDIFF(DAY, GETDATE(), s.renewal_date) as days_to_renewal,
         CASE
-          WHEN DATEDIFF(DAY, GETDATE(), renewal_date) < -365 THEN 'OVERDUE'
-          WHEN DATEDIFF(DAY, GETDATE(), renewal_date) < 0 THEN 'AT_RISK'
-          WHEN DATEDIFF(DAY, GETDATE(), renewal_date) < 90 THEN 'TO_WATCH'
+          WHEN DATEDIFF(DAY, GETDATE(), s.renewal_date) < -365 THEN 'OVERDUE'
+          WHEN DATEDIFF(DAY, GETDATE(), s.renewal_date) < 0 THEN 'AT_RISK'
+          WHEN DATEDIFF(DAY, GETDATE(), s.renewal_date) < 90 THEN 'TO_WATCH'
           ELSE 'HEALTHY'
         END as renewal_status
-      FROM [dbo].[v_silver_sf_subscriptions]
-      WHERE account_id IN (
+      FROM [dbo].[v_silver_sf_subscriptions] s
+      LEFT JOIN [dbo].[v_silver_sf_customer_accounts] ca ON s.account_id = ca.account_id
+      LEFT JOIN [dbo].[v_silver_sf_customer_accounts] p ON ca.parent_account_id = p.account_id
+      WHERE s.account_id IN (
         SELECT account_id FROM [dbo].[v_silver_sf_customer_accounts]
         WHERE account_id = '${reportingAccountId.replace(/'/g, "''")}'
           OR parent_account_id = '${reportingAccountId.replace(/'/g, "''")}'
       )
-        AND status IN ('Active', 'Termination in Progress')
+        AND s.status IN ('Active', 'Termination in Progress')
       ORDER BY days_to_renewal ASC
     `;
 
