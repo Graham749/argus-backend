@@ -1077,25 +1077,16 @@ class Component extends DCLogic {
   }
 
   setupSalesforceSubscriptions(){
-    // Wait for DOM to be fully ready, then load accounts and setup listeners
+    // Load accounts immediately in background
+    this.loadAccountsList();
+
+    // Wait for DOM to be fully ready, then setup change listener
     const waitForDOM = () => {
       const select = document.getElementById('sfAccountSelector');
       if(!select) {
         setTimeout(waitForDOM, 100);
         return;
       }
-
-      // Load accounts on first focus/click instead of page load
-      let accountsLoaded = false;
-      const loadOnDemand = () => {
-        if(!accountsLoaded){
-          accountsLoaded = true;
-          this.loadAccountsList();
-        }
-      };
-
-      select.addEventListener('focus', loadOnDemand);
-      select.addEventListener('click', loadOnDemand);
 
       // Add change listener
       select.addEventListener('change', (e) => {
@@ -1152,80 +1143,28 @@ class Component extends DCLogic {
   }
 
   loadAccountsList(){
-    console.log('[Argus] Loading accounts list...');
     const select = document.getElementById('sfAccountSelector');
+    if(!select) return;
 
-    if(!select){
-      console.warn('[Argus] Select element not found!');
-      return;
-    }
-
-    // Try to load from cache first
-    const cached = localStorage.getItem('sfAccountsCache');
-    console.log('[Argus] Cache check - exists:', !!cached, 'size:', cached ? cached.length : 0);
-
-    if(cached) {
-      try {
-        const accounts = JSON.parse(cached);
-        console.log('[Argus] Populating from cache with', accounts.length, 'accounts');
-        this.populateAccountsSelect(select, accounts);
-        console.log('[Argus] ✓ Loaded accounts from cache');
-      } catch(e) {
-        console.warn('[Argus] Cache parse error:', e);
-        select.innerHTML = '<option value="">-- Loading accounts... --</option>';
-      }
-    } else {
-      console.log('[Argus] No cache, showing loading message');
-      select.innerHTML = '<option value="">-- Loading accounts... --</option>';
-    }
-
-    const timeout = setTimeout(() => {
-      console.error('[Argus] Accounts list timeout (5s)');
-      if(select) select.innerHTML = '<option value="">-- Timeout loading accounts --</option>';
-    }, 5000);
-
-    // Fetch fresh data and cache it
     fetch(`http://localhost:3001/api/accounts-list?t=${Date.now()}`)
-      .then(r => {
-        console.log('[Argus] API response:', r.status);
-        clearTimeout(timeout);
-        return r.json();
-      })
+      .then(r => r.json())
       .then(data => {
         const accounts = (data.accounts || []).sort((a, b) => a.name.localeCompare(b.name));
-        console.log('[Argus] ✓ Loaded', accounts.length, 'accounts from API');
-        localStorage.setItem('sfAccountsCache', JSON.stringify(accounts));
-        console.log('[Argus] ✓ Cached', accounts.length, 'accounts');
-        this.populateAccountsSelect(select, accounts);
+        if(accounts.length === 0){
+          select.innerHTML = '<option value="">-- No accounts found --</option>';
+          return;
+        }
+        select.innerHTML = '<option value="">-- Select Account --</option>';
+        accounts.forEach(acc => {
+          const option = document.createElement('option');
+          option.value = acc.name;
+          option.textContent = acc.name;
+          select.appendChild(option);
+        });
       })
       .catch(err => {
-        clearTimeout(timeout);
-        console.error('[Argus] API failed:', err.message);
-        if(select) select.innerHTML = '<option value="">-- Error loading accounts --</option>';
+        console.error('[Argus] Failed to load accounts:', err);
       });
-  }
-
-  populateAccountsSelect(select, accounts){
-    console.log('[Argus] populateAccountsSelect called with', accounts.length, 'accounts, select exists:', !!select);
-
-    if(!select){
-      console.warn('[Argus] Select element not available for population');
-      return;
-    }
-
-    if(accounts.length === 0){
-      select.innerHTML = '<option value="">-- No accounts found --</option>';
-      return;
-    }
-
-    select.innerHTML = '<option value="">-- Select Account --</option>';
-    accounts.forEach(acc => {
-      const option = document.createElement('option');
-      option.value = acc.name;
-      option.textContent = acc.name;
-      select.appendChild(option);
-    });
-    console.log('[Argus] ✓ Dropdown populated with', select.options.length - 1, 'accounts');
   }
 
   fetchSalesforceSubscriptions(accountName){
