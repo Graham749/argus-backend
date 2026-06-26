@@ -58,34 +58,124 @@ Help Aurora account managers:
 
 ---
 
+## 🎯 Critical Context: Fabric Lakehouse as Single Source of Truth
+
+**All Argus data flows from the Microsoft Fabric Lakehouse.**
+
+The Fabric Lakehouse uses a **medallion architecture** (Bronze→Silver→Gold) where:
+- Raw data is ingested and deduplicated
+- Business logic and transformations happen in middle layers
+- Curated views power analytics and applications like Argus
+
+**This is non-negotiable for production:** Argus must remain a consumer of Fabric views, not duplicate data or create alternative data pipelines. The Lakehouse is the enterprise truth source.
+
+---
+
+## What We've Built (June 2026)
+
+### Fabric Medallion Data Platform
+**Status:** Core infrastructure COMPLETE ✅
+
+| Layer | Purpose | Status | Scale |
+|-------|---------|--------|-------|
+| **Bronze** | Raw ingestion from Salesforce, Posthog, Zendesk, ProductBoard | Deployed | 20 tables |
+| **Silver** | Validated, deduplicated business views (Product Ops owns this) | Deployed | 41 views |
+| **Gold** | Curated analytics views (powers Argus, BI tools) | Deployed | 5 views |
+
+**Key Gold Views Powering Argus:**
+- `v_gold_sf_subscriptions` — Account subscriptions with FX conversion (live)
+- `v_gold_lookup_fxrates` — Multi-currency ARR calculations (live)
+- `v_gold_pb_feature_prioritization` — Feature context for briefings (deployed)
+
+### Argus Application
+**Status:** Production-ready prototype ✅
+
+**Backend (Node.js):**
+- ✅ `/api/accounts/:accountName` — Subscription details + health
+- ✅ `/api/accounts-list` — All accounts (100+ loaded)
+- ✅ `/api/build-status` — Medallion layer metrics
+- ✅ `/api/features` — Feature prioritization data
+- ✅ Real-time data — Syncs from Fabric every 5 minutes
+
+**Frontend (x-dc template engine):**
+- ✅ Client health card — Salesforce + Posthog + Zendesk signals
+- ✅ Pre-call briefing — Auto-generated account context
+- ✅ Ask Argus — Chat interface for cross-portfolio insights
+- ✅ Build Status widget — Medallion architecture transparency
+- ✅ Responsive sidebar — Fixed navigation, collapse toggle
+- ✅ Multi-currency ARR — Live FX conversion (EUR, AUD, GBP, etc.)
+
+### UI/UX Polish (June 25-26)
+- ✅ Fixed sidebar navigation (stays visible while scrolling)
+- ✅ Sidebar collapse toggle (persistent user preference)
+- ✅ Build Status clickable cards (expand to view detail sections)
+- ✅ Argus Logo in banner (branded)
+- ✅ Responsive layouts (desktop-first, mobile TBD)
+
+---
+
 ## Technical Architecture
 
 ```
 Aurora Data Sources (Salesforce, Posthog, Zendesk, ProductBoard)
             ↓
-   Fabric Lakehouse (Medallion)
+   Fabric Lakehouse (Medallion) ← SINGLE SOURCE OF TRUTH
      Bronze → Silver → Gold
             ↓
-   Argus Backend (Node.js)
+   Argus Backend (Node.js) ← Reads from Gold layer only
         /api/* endpoints
             ↓
-   Argus Frontend (React-like x-dc template engine)
+   Argus Frontend (x-dc template engine) ← Consumes backend APIs
         Dashboard UI
 ```
 
-**Medallion Layers:**
-- **Bronze:** Raw data ingestion (20 tables deployed)
-- **Silver:** Validated business views (41 views deployed)
-- **Gold:** Curated analytics views (5 views deployed, powering Argus)
+**Medallion Architecture Detail:**
+- **Bronze (20 tables):** Raw from Salesforce, Posthog, Zendesk, ProductBoard
+  - No transformations, minimal deduplication
+  - Full audit trail of ingestion timestamps
+  
+- **Silver (41 views):** Business-logic layer (Product Ops maintains)
+  - Deduplicates by latest timestamp
+  - Extracts nested JSON fields
+  - Validates data quality
+  - Joins products to subscriptions
+  
+- **Gold (5 views):** Analytics-ready curated layer
+  - Multi-currency ARR with live FX conversion
+  - Account health scoring
+  - Renewal date logic (3 sources, best pick)
+  - Feature prioritization with region weighting
 
 ---
 
-## Key Metrics (as of 2026-06-26)
+## Implementation Status (as of 2026-06-26)
 
-- 🟢 **API Status:** Live (accounts, build-status, features endpoints)
-- 🟢 **Data Coverage:** 100+ accounts loaded from Salesforce
-- 🟢 **Subscription Data:** Real-time FX conversion (multi-currency ARR → GBP)
-- 🟢 **Health Dashboard:** Shows churn risk, renewals, contract types per account
+### Data Platform
+- 🟢 **Fabric Lakehouse:** Live and syncing (5-minute refresh)
+- 🟢 **Bronze:** 20 tables, all ingesting cleanly
+- 🟢 **Silver:** 41 views, deduplicated and validated
+- 🟢 **Gold:** 5 views powering analytics/BI/Argus
+
+### Argus Application
+- 🟢 **Backend APIs:** 5 endpoints live, zero errors
+- 🟢 **Salesforce Integration:** 100+ accounts, real subscriptions
+- 🟢 **Multi-currency Support:** Live FX rates (EUR, AUD, USD, JPY, etc.)
+- 🟢 **Account Health:** Churn risk (URGENT/AT_RISK/HEALTHY)
+- 🟢 **Renewal Logic:** 3-source best-pick (ContractSecuredUntilDate, End_Date, NoticeDate)
+- 🟢 **Dashboard:** 3 views + Build Status widget working
+
+### Code Quality & Ops
+- 🟢 **Git tracked:** 60+ commits, clean main branch
+- 🟢 **UI/UX complete:** Fixed sidebar, responsive layouts, logo branding
+- 🟢 **Error handling:** Proper HTTP status codes, timeout management
+- 🟢 **Monitoring:** Syncedago timestamp, API health checks
+
+### Known Gaps (Ready for Azure team)
+- 🔄 **Production deployment:** Needs App Service configuration
+- 🔄 **Authentication:** Hardcoded to localhost; needs Azure AD
+- 🔄 **Data persistence:** Local testing only; needs Fabric connection pooling
+- 🔄 **Mobile:** Desktop-first responsive, mobile UX not tested
+- 🔄 **Monitoring/Alerts:** Application Insights integration needed
 
 ---
 
