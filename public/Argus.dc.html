@@ -1085,8 +1085,17 @@ class Component extends DCLogic {
         return;
       }
 
-      // Load accounts immediately
-      this.loadAccountsList();
+      // Load accounts on first focus/click instead of page load
+      let accountsLoaded = false;
+      const loadOnDemand = () => {
+        if(!accountsLoaded){
+          accountsLoaded = true;
+          this.loadAccountsList();
+        }
+      };
+
+      select.addEventListener('focus', loadOnDemand);
+      select.addEventListener('click', loadOnDemand);
 
       // Add change listener
       select.addEventListener('change', (e) => {
