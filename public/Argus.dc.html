@@ -1416,15 +1416,21 @@ class Component extends DCLogic {
       totalArr += group.subs.reduce((sum, s) => sum + s.arr_gbp, 0);
     }
 
-    // Calculate and display ARR at risk (OVERDUE + AT_RISK) - always show even if zero
+    // Calculate and display ARR at risk (OVERDUE + AT_RISK)
     const atRiskSubs = [...(groups['OVERDUE']?.subs || []), ...(groups['AT_RISK']?.subs || [])];
     const atRiskArr = atRiskSubs.reduce((sum, s) => sum + s.arr_gbp, 0);
     const atRiskArrK = (atRiskArr / 1000).toFixed(0);
     const portfolioArr = Object.values(groups).reduce((sum, g) => sum + g.subs.reduce((s, sub) => s + sub.arr_gbp, 0), 0);
     const atRiskPercent = portfolioArr > 0 ? ((atRiskArr / portfolioArr) * 100).toFixed(1) : 0;
 
-    document.getElementById('sfArrAtRiskAmount').textContent = atRiskArrK;
-    document.getElementById('sfArrAtRiskPercent').textContent = atRiskPercent;
+    const atRiskCard = document.getElementById('sfArrAtRiskCard');
+    if(atRiskArr > 0) {
+      document.getElementById('sfArrAtRiskAmount').textContent = atRiskArrK;
+      document.getElementById('sfArrAtRiskPercent').textContent = atRiskPercent;
+      if(atRiskCard) atRiskCard.style.display = 'flex';
+    } else {
+      if(atRiskCard) atRiskCard.style.display = 'none';
+    }
 
     // Show/hide no-data message and risk cards
     const noDataMsg = document.getElementById('sfNoDataMessage');
