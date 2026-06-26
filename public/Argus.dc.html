@@ -165,6 +165,11 @@ input{font-family:inherit;}
               <button id="sfBackButton" style="padding:6px 12px;border-radius:6px;border:1px solid #e6e6e5;background:#fff;color:#288184;font-size:11px;font-weight:700;cursor:pointer;">← Back to Summary</button>
               <span style="margin-left:12px;font-size:12px;color:#6d6d6c;" id="sfDrilldownTitle"></span>
             </div>
+            <!-- Account Filter Buttons -->
+            <div id="sfAccountFilters" style="margin-bottom:12px;display:none;gap:8px;display:flex;flex-wrap:wrap;">
+              <span style="font-size:11px;color:#6d6d6c;align-self:center;margin-right:4px;">Filter by account:</span>
+              <div id="sfFilterButtons"></div>
+            </div>
             <div style="overflow-x:auto;border:1px solid #e6e6e5;border-radius:8px;">
               <table style="width:100%;border-collapse:collapse;font-size:12px;">
                 <thead style="background:#f7f7f6;border-bottom:1px solid #e6e6e5;">
@@ -1377,12 +1382,68 @@ class Component extends DCLogic {
     this.currentDrilldownSubs = allSubs;
     this.currentSortField = 'arr_gbp';
     this.currentSortDir = -1;
+    this.currentAccountFilter = null;
+
+    // Detect unique accounts and create filter buttons if child accounts exist
+    const uniqueAccounts = [...new Set(allSubs.map(s => s.account_name))].sort();
+    const filtersDiv = document.getElementById('sfAccountFilters');
+    const filterButtonsDiv = document.getElementById('sfFilterButtons');
+
+    if (uniqueAccounts.length > 1) {
+      filtersDiv.style.display = 'flex';
+      filterButtonsDiv.innerHTML = '';
+
+      // Add "All" button first
+      const allBtn = document.createElement('button');
+      allBtn.textContent = 'All Accounts';
+      allBtn.style.cssText = 'padding:6px 12px;border-radius:4px;border:1px solid #e6e6e5;background:#fff;color:#3c3c3b;font-size:11px;font-weight:700;cursor:pointer;';
+      allBtn.onclick = () => {
+        this.currentAccountFilter = null;
+        document.querySelectorAll('#sfFilterButtons button').forEach(b => {
+          b.style.background = '#fff';
+          b.style.color = '#3c3c3b';
+          b.style.borderColor = '#e6e6e5';
+        });
+        allBtn.style.background = '#288184';
+        allBtn.style.color = '#fff';
+        allBtn.style.borderColor = '#288184';
+        renderRows();
+      };
+      filterButtonsDiv.appendChild(allBtn);
+
+      // Add account buttons (parent first, then children)
+      uniqueAccounts.forEach(acct => {
+        const btn = document.createElement('button');
+        btn.textContent = acct;
+        btn.style.cssText = 'padding:6px 12px;border-radius:4px;border:1px solid #e6e6e5;background:#fff;color:#3c3c3b;font-size:11px;font-weight:700;cursor:pointer;';
+        btn.onclick = () => {
+          this.currentAccountFilter = acct;
+          document.querySelectorAll('#sfFilterButtons button').forEach(b => {
+            b.style.background = '#fff';
+            b.style.color = '#3c3c3b';
+            b.style.borderColor = '#e6e6e5';
+          });
+          btn.style.background = '#288184';
+          btn.style.color = '#fff';
+          btn.style.borderColor = '#288184';
+          renderRows();
+        };
+        filterButtonsDiv.appendChild(btn);
+      });
+    } else {
+      filtersDiv.style.display = 'none';
+    }
 
     const renderRows = () => {
       const tbody = document.getElementById('sfSubscriptionsBody');
       tbody.innerHTML = '';
 
-      const sorted = [...this.currentDrilldownSubs].sort((a, b) => {
+      // Filter by account if selected
+      const filtered = this.currentAccountFilter
+        ? this.currentDrilldownSubs.filter(s => s.account_name === this.currentAccountFilter)
+        : this.currentDrilldownSubs;
+
+      const sorted = [...filtered].sort((a, b) => {
         const aVal = a[this.currentSortField];
         const bVal = b[this.currentSortField];
         if(typeof aVal === 'string') {
