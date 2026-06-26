@@ -1450,14 +1450,15 @@ class Component extends DCLogic {
       const count = group.subs.length;
       const arr = group.subs.reduce((sum, s) => sum + s.arr_gbp, 0);
       const arrK = (arr / 1000).toFixed(0);
+      const countPercent = totalCount > 0 ? ((count / totalCount) * 100).toFixed(1) : 0;
 
       const idPrefix = idMap[key];
       const countEl = document.getElementById(`${idPrefix}_Count`);
       const arrEl = document.getElementById(`${idPrefix}_ARR`);
 
       if(countEl) {
-        countEl.textContent = count;
-        countEl.style.whiteSpace = 'normal';
+        countEl.textContent = `${count}\n(${countPercent}%)`;
+        countEl.style.whiteSpace = 'pre-wrap';
         countEl.style.fontSize = '16px';
         countEl.style.lineHeight = '1';
       }
