@@ -1152,6 +1152,9 @@ class Component extends DCLogic {
       return;
     }
 
+    // Set loading state
+    select.innerHTML = '<option value="">-- Loading accounts... --</option>';
+
     console.log('[Argus] Fetching accounts...');
     fetch(`http://localhost:3001/api/accounts-list?t=${Date.now()}`)
       .then(r => {
@@ -1168,7 +1171,13 @@ class Component extends DCLogic {
           return;
         }
 
-        select.innerHTML = '<option value="">-- Select Account --</option>';
+        // Clear and repopulate completely
+        select.innerHTML = '';
+        const placeholderOption = document.createElement('option');
+        placeholderOption.value = '';
+        placeholderOption.textContent = '-- Select Account --';
+        select.appendChild(placeholderOption);
+
         accounts.forEach(acc => {
           const option = document.createElement('option');
           option.value = acc.name;
@@ -1179,6 +1188,7 @@ class Component extends DCLogic {
       })
       .catch(err => {
         console.error('[Argus] Failed to load accounts:', err);
+        select.innerHTML = '<option value="">-- Error loading accounts --</option>';
       });
   }
 
