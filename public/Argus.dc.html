@@ -1452,8 +1452,8 @@ class Component extends DCLogic {
     const atRiskSubs = [...(groups['OVERDUE']?.subs || []), ...(groups['AT_RISK']?.subs || [])];
     const atRiskArr = atRiskSubs.reduce((sum, s) => sum + s.arr_gbp, 0);
     const atRiskArrK = (atRiskArr / 1000).toFixed(0);
-    const totalArr = Object.values(groups).reduce((sum, g) => sum + g.subs.reduce((s, sub) => s + sub.arr_gbp, 0), 0);
-    const atRiskPercent = totalArr > 0 ? ((atRiskArr / totalArr) * 100).toFixed(1) : 0;
+    const portfolioArr = Object.values(groups).reduce((sum, g) => sum + g.subs.reduce((s, sub) => s + sub.arr_gbp, 0), 0);
+    const atRiskPercent = portfolioArr > 0 ? ((atRiskArr / portfolioArr) * 100).toFixed(1) : 0;
 
     const atRiskCard = document.getElementById('sfArrAtRiskCard');
     document.getElementById('sfArrAtRiskAmount').textContent = atRiskArrK;
