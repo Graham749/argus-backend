@@ -1062,6 +1062,17 @@ class Component extends DCLogic {
       apis:[{name:'Loading...',color:'#ddd',symbol:'...',description:''}],
       buildStatus:{bronze:{count:0,label:'tables',rowLabel:'0 rows',productboardCount:0,salesforceCount:0,sourceGroups:[]},silver:{count:0,label:'views',productboardCount:0,salesforceCount:0,productOpsCount:0,views:[],sourceGroups:[]},gold:{count:0,label:'tables',productboardCount:0,salesforceCount:0,productOpsCount:0,financeCount:0,posthogCount:0,zendeskCount:0,jiraCount:0,views:[],tables:[],sourceGroups:[]},syncLabel:'Loading...'}
     };
+
+    // Load accounts immediately on construction (survives navigation remount)
+    setTimeout(() => this.loadAccountsList(), 10);
+
+    // Poll to detect navigation remount and reload accounts
+    this.pollTimer = setInterval(() => {
+      const select = document.getElementById('sfAccountSelector');
+      if(select && select.options.length === 1) {
+        this.loadAccountsList();
+      }
+    }, 500);
   }
 
   componentDidMount(){
