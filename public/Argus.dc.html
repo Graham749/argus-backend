@@ -1362,8 +1362,8 @@ class Component extends DCLogic {
       const type = sub.service_type || 'Other';
       let groupKey;
 
-      if(days < -365) groupKey = 'OVERDUE';
-      else if(days < 0) groupKey = 'AT_RISK';
+      if(days < 0) groupKey = 'OVERDUE';
+      else if(days < 30) groupKey = 'AT_RISK';
       else if(days < 90) groupKey = 'TO_WATCH';
       else groupKey = 'HEALTHY';
 
