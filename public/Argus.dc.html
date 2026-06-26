@@ -1385,9 +1385,11 @@ class Component extends DCLogic {
     this.currentAccountFilter = null;
 
     // Detect unique accounts and create filter buttons if child accounts exist
-    const uniqueAccounts = [...new Set(allSubs.map(s => s.account_name))].sort();
+    const uniqueAccounts = [...new Set(allSubs.map(s => s.account_name).filter(Boolean))].sort();
     const filtersDiv = document.getElementById('sfAccountFilters');
     const filterButtonsDiv = document.getElementById('sfFilterButtons');
+
+    console.log('[Argus] Drilldown accounts:', uniqueAccounts, 'Sample sub:', allSubs[0]);
 
     if (uniqueAccounts.length > 1) {
       filtersDiv.style.display = 'flex';
