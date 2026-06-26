@@ -1088,6 +1088,11 @@ class Component extends DCLogic {
         return;
       }
 
+      // Ensure accounts are loaded when select is visible
+      if(select.options.length === 1) {
+        this.loadAccountsList();
+      }
+
       // Add change listener
       select.addEventListener('change', (e) => {
         const accountName = e.target.value;
@@ -1151,8 +1156,11 @@ class Component extends DCLogic {
       return;
     }
 
+    // If already has accounts (not loading), don't reload
+    if(select.options.length > 1) return;
+
     // Use cache if available
-    if(this.cachedAccounts){
+    if(this.cachedAccounts && this.cachedAccounts.length > 0){
       this.populateAccountsDropdown(select, this.cachedAccounts);
       return;
     }
