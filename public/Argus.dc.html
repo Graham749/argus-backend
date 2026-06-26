@@ -1148,7 +1148,7 @@ class Component extends DCLogic {
     select.innerHTML = '<option value="">-- Loading accounts... --</option>';
 
     // Use lightweight accounts list (no ARR fetching for performance)
-    fetch('http://localhost:3001/api/accounts-list')
+    fetch(`http://localhost:3001/api/accounts-list?t=${Date.now()}`)
       .then(r => r.json())
       .then(data => {
         const accounts = (data.accounts || []).sort((a, b) => a.name.localeCompare(b.name));
@@ -1194,7 +1194,7 @@ class Component extends DCLogic {
 
     console.log('[Argus] Updated UI to show loading...');
 
-    fetch(`http://localhost:3001/api/accounts/${encodeURIComponent(accountName)}`)
+    fetch(`http://localhost:3001/api/accounts/${encodeURIComponent(accountName)}?t=${Date.now()}`)
       .then(r=>{
         console.log('[Argus] Response status:', r.status);
         if(!r.ok) throw new Error('Account not found');
@@ -1614,7 +1614,7 @@ class Component extends DCLogic {
 
   fetchIntegrationStatus(){
     console.log('[Argus] Fetching integration status...');
-    fetch('http://localhost:3001/api/integration-status')
+    fetch(`http://localhost:3001/api/integration-status?t=${Date.now()}`)
       .then(r => r.json())
       .then(data => {
         console.log('[Argus] Got integration status:', data);
@@ -1629,7 +1629,7 @@ class Component extends DCLogic {
     const controller = new AbortController();
     const timeout = setTimeout(()=>controller.abort(), 5000);
 
-    fetch('http://localhost:3001/api/current-user', {signal: controller.signal})
+    fetch(`http://localhost:3001/api/current-user?t=${Date.now()}`, {signal: controller.signal})
       .then(r=>{
         console.log('[Argus] Current user response:', r.status);
         return r.json();
@@ -1655,7 +1655,7 @@ class Component extends DCLogic {
       this.setState({loadingSeconds:elapsed});
     }, 100);
 
-    fetch('http://localhost:3001/api/lakehouse-status')
+    fetch(`http://localhost:3001/api/lakehouse-status?t=${Date.now()}`)
       .then(r=>r.json())
       .then(data=>{
         clearInterval(loadingInterval);
