@@ -140,6 +140,16 @@ input{font-family:inherit;}
               <div style="font-size:12px;color:#e65100;">No subscriptions found for this service type</div>
             </div>
 
+            <!-- ARR At Risk Summary Card -->
+            <div id="sfArrAtRiskCard" style="background:#fdeee0;border-radius:8px;padding:16px;margin-bottom:12px;border:1px solid #d32f2f;display:flex;justify-content:space-between;align-items:center;">
+              <div>
+                <div style="font-size:12px;font-weight:700;color:#d32f2f;text-transform:uppercase;margin-bottom:4px;">⚠️ ARR AT RISK</div>
+                <div style="font-size:24px;font-weight:700;color:#d32f2f;">£<span id="sfArrAtRiskAmount">0</span>k</div>
+                <div style="font-size:11px;color:#c2600f;margin-top:4px;"><span id="sfArrAtRiskPercent">0</span>% of portfolio</div>
+              </div>
+              <button id="sfViewAtRiskBtn" style="padding:8px 16px;border-radius:6px;border:1px solid #d32f2f;background:#fff;color:#d32f2f;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;">View At-Risk Report →</button>
+            </div>
+
             <!-- Risk Status Cards -->
             <div id="sfRiskCardsContainer" style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;">
               <div class="sfSummaryCard" data-group="OVERDUE" style="background:#fdeee0;border-radius:8px;padding:12px;cursor:pointer;border:1px solid #e6e6e5;">
@@ -188,6 +198,9 @@ input{font-family:inherit;}
                     <th style="padding:10px 12px;text-align:left;font-weight:700;color:#3c3c3b;cursor:pointer;" data-sort="status">Status ▼</th>
                     <th style="padding:10px 12px;text-align:left;font-weight:700;color:#3c3c3b;cursor:pointer;" data-sort="renewal_date_source">Renewal ▼</th>
                     <th style="padding:10px 12px;text-align:right;font-weight:700;color:#3c3c3b;cursor:pointer;" data-sort="days_to_renewal">Days ▼</th>
+                    <th style="padding:10px 12px;text-align:left;font-weight:700;color:#3c3c3b;cursor:pointer;" data-sort="subscription_start_date">Start Date ▼</th>
+                    <th style="padding:10px 12px;text-align:left;font-weight:700;color:#3c3c3b;cursor:pointer;" data-sort="renewal_date">Renewal Date ▼</th>
+                    <th style="padding:10px 12px;text-align:left;font-weight:700;color:#3c3c3b;cursor:pointer;" data-sort="subscription_end_date">End Date ▼</th>
                   </tr>
                 </thead>
                 <tbody id="sfSubscriptionsBody"></tbody>
@@ -1434,6 +1447,31 @@ class Component extends DCLogic {
       }
       if(arrEl) arrEl.textContent = arrK;
     }
+
+    // Calculate and display ARR at risk (OVERDUE + AT_RISK)
+    const atRiskSubs = [...(groups['OVERDUE']?.subs || []), ...(groups['AT_RISK']?.subs || [])];
+    const atRiskArr = atRiskSubs.reduce((sum, s) => sum + s.arr_gbp, 0);
+    const atRiskArrK = (atRiskArr / 1000).toFixed(0);
+    const totalArr = Object.values(groups).reduce((sum, g) => sum + g.subs.reduce((s, sub) => s + sub.arr_gbp, 0), 0);
+    const atRiskPercent = totalArr > 0 ? ((atRiskArr / totalArr) * 100).toFixed(1) : 0;
+
+    const atRiskCard = document.getElementById('sfArrAtRiskCard');
+    document.getElementById('sfArrAtRiskAmount').textContent = atRiskArrK;
+    document.getElementById('sfArrAtRiskPercent').textContent = atRiskPercent;
+
+    // Wire up the "View At-Risk Report" button
+    const atRiskBtn = document.getElementById('sfViewAtRiskBtn');
+    if(atRiskBtn) {
+      atRiskBtn.onclick = () => {
+        this.currentDrilldownSubs = atRiskSubs;
+        this.currentSortField = 'days_to_renewal';
+        this.currentSortDir = 1;
+        document.getElementById('sfSummaryView').style.display = 'none';
+        document.getElementById('sfDetailView').style.display = 'block';
+        document.getElementById('sfDrilldownTitle').textContent = 'At-Risk Subscriptions Report';
+        this.renderRows();
+      };
+    }
   }
 
   showDrilldown(group){
@@ -1529,6 +1567,12 @@ class Component extends DCLogic {
         const daysColor = sub.days_to_renewal < 0 ? '#d32f2f' : sub.days_to_renewal < 90 ? '#ff9800' : '#00966b';
         const contractLabel = (sub.contract_type || 'Unknown').replace('Rolling Anniversary', 'Rolling').replace('Fixed Period', 'Fixed');
 
+        const formatDate = (dateStr) => {
+          if(!dateStr) return '-';
+          const d = new Date(dateStr);
+          return d.toLocaleDateString('en-GB', {year:'2-digit', month:'short', day:'numeric'});
+        };
+
         row.innerHTML = `
           <td style="padding:10px 12px;color:#3c3c3b;font-size:11px;"><a href="https://auroraer.lightning.force.com/lightning/r/Order/${sub.subscription_id}/view" target="_blank" style="color:#288184;text-decoration:underline;cursor:pointer;">${sub.account_name}</a></td>
           <td style="padding:10px 12px;color:#3c3c3b;">${sub.product_category}</td>
@@ -1538,6 +1582,9 @@ class Component extends DCLogic {
           <td style="padding:10px 12px;color:${statusColor};font-weight:600;">${sub.status}</td>
           <td style="padding:10px 12px;color:#6d6d6c;font-size:11px;">${sub.renewal_date_source || '-'}</td>
           <td style="padding:10px 12px;text-align:right;color:${daysColor};font-weight:600;">${sub.days_to_renewal}</td>
+          <td style="padding:10px 12px;color:#6d6d6c;font-size:11px;">${formatDate(sub.subscription_start_date)}</td>
+          <td style="padding:10px 12px;color:#6d6d6c;font-size:11px;">${formatDate(sub.renewal_date)}</td>
+          <td style="padding:10px 12px;color:#6d6d6c;font-size:11px;">${formatDate(sub.subscription_end_date)}</td>
         `;
         tbody.appendChild(row);
       });
