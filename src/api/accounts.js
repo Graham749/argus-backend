@@ -122,10 +122,11 @@ async function getAccountSubscriptions(req, res) {
         AND status IN ('Active', 'Termination in Progress')
     `;
 
-    // Get subscription details
+    // Get subscription details (with account name for drilldown)
     const detailsQuery = `
       SELECT
         subscription_id,
+        account_name,
         Service__c as product_category,
         Service_Type__c as service_type,
         status,
