@@ -1384,13 +1384,15 @@ class Component extends DCLogic {
     this.currentSortDir = -1;
     this.currentAccountFilter = null;
 
-    // Get all unique accounts from ALL subscriptions (not just filtered ones)
-    const allUniqueAccounts = [...new Set(this.currentSubscriptions.map(s => s.account_name).filter(Boolean))].sort();
+    // Get all unique accounts from ALL subscriptions (original full dataset, not filtered)
+    // This ensures buttons appear even if current risk card has 0 subscriptions
+    const allUniqueAccounts = [...new Set((this.currentSubscriptions || []).map(s => s.account_name).filter(Boolean))].sort();
     const filtersDiv = document.getElementById('sfAccountFilters');
     const filterButtonsDiv = document.getElementById('sfFilterButtons');
 
-    console.log('[Argus] All accounts available:', allUniqueAccounts, 'Current drill-down accounts:', [...new Set(allSubs.map(s => s.account_name))]);
+    console.log('[Argus] All accounts available:', allUniqueAccounts, 'Current drill-down subs:', allSubs.length);
 
+    // Show buttons if there are parent + child accounts (regardless of current risk card count)
     if (allUniqueAccounts.length > 1) {
       filtersDiv.style.display = 'flex';
       filterButtonsDiv.innerHTML = '';
