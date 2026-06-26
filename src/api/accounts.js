@@ -122,11 +122,11 @@ async function getAccountSubscriptions(req, res) {
         AND status IN ('Active', 'Termination in Progress')
     `;
 
-    // Get subscription details (use reporting account name for consistency)
+    // Get subscription details (show actual account: parent or child)
     const detailsQuery = `
       SELECT
         s.subscription_id,
-        COALESCE(p.account_name, s.account_name) as account_name,
+        s.account_name,
         s.Service__c as product_category,
         s.Service_Type__c as service_type,
         s.status,
@@ -145,8 +145,6 @@ async function getAccountSubscriptions(req, res) {
           ELSE 'HEALTHY'
         END as renewal_status
       FROM [dbo].[v_silver_sf_subscriptions] s
-      LEFT JOIN [dbo].[v_silver_sf_customer_accounts] ca ON s.account_id = ca.account_id
-      LEFT JOIN [dbo].[v_silver_sf_customer_accounts] p ON ca.parent_account_id = p.account_id
       WHERE s.account_id IN (
         SELECT account_id FROM [dbo].[v_silver_sf_customer_accounts]
         WHERE account_id = '${reportingAccountId.replace(/'/g, "''")}'
