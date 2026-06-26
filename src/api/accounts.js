@@ -64,7 +64,43 @@ async function getAccountSubscriptions(req, res) {
       return res.status(400).json({ error: 'accountName parameter required' });
     }
 
-    // Get summary stats
+    // Step 1: Look up account by exact name and check if it's a child account
+    const accountLookupQuery = `
+      SELECT TOP 1
+        account_id,
+        account_name,
+        parent_account_id
+      FROM [dbo].[v_silver_sf_customer_accounts]
+      WHERE account_name = '${accountName.replace(/'/g, "''")}'
+    `;
+
+    const accountLookupRows = await queryFabric(accountLookupQuery);
+
+    if (accountLookupRows.length === 0) {
+      return res.status(404).json({ error: `Account not found: ${accountName}` });
+    }
+
+    const account = accountLookupRows[0];
+
+    // Determine the reporting account (parent if child, else self)
+    let reportingAccountId = account.account_id;
+    let queryAccountName = accountName;
+
+    if (account.parent_account_id) {
+      reportingAccountId = account.parent_account_id;
+      // Look up parent's name
+      const parentLookupQuery = `
+        SELECT TOP 1 account_name
+        FROM [dbo].[v_silver_sf_customer_accounts]
+        WHERE account_id = '${account.parent_account_id.replace(/'/g, "''")}'
+      `;
+      const parentLookupRows = await queryFabric(parentLookupQuery);
+      if (parentLookupRows.length > 0) {
+        queryAccountName = parentLookupRows[0].account_name;
+      }
+    }
+
+    // Step 2: Query subscriptions for the reporting account and its children
     const summaryQuery = `
       SELECT
         COUNT(DISTINCT subscription_id) as total_subscriptions,
@@ -78,7 +114,11 @@ async function getAccountSubscriptions(req, res) {
           ELSE 'HEALTHY'
         END as health_status
       FROM [dbo].[v_silver_sf_subscriptions]
-      WHERE account_name LIKE @accountName
+      WHERE account_id IN (
+        SELECT account_id FROM [dbo].[v_silver_sf_customer_accounts]
+        WHERE account_id = '${reportingAccountId.replace(/'/g, "''")}'
+          OR parent_account_id = '${reportingAccountId.replace(/'/g, "''")}'
+      )
         AND status IN ('Active', 'Termination in Progress')
     `;
 
@@ -104,7 +144,11 @@ async function getAccountSubscriptions(req, res) {
           ELSE 'HEALTHY'
         END as renewal_status
       FROM [dbo].[v_silver_sf_subscriptions]
-      WHERE account_name LIKE @accountName
+      WHERE account_id IN (
+        SELECT account_id FROM [dbo].[v_silver_sf_customer_accounts]
+        WHERE account_id = '${reportingAccountId.replace(/'/g, "''")}'
+          OR parent_account_id = '${reportingAccountId.replace(/'/g, "''")}'
+      )
         AND status IN ('Active', 'Termination in Progress')
       ORDER BY days_to_renewal ASC
     `;
@@ -120,18 +164,19 @@ async function getAccountSubscriptions(req, res) {
         SUM(CASE WHEN DATEDIFF(DAY, GETDATE(), renewal_date) >= 90 THEN 1 ELSE 0 END) as healthy_count,
         CAST(ROUND(SUM(CASE WHEN status = 'Active' THEN arr_gbp ELSE 0 END), 0) AS INT) as arr_gbp
       FROM [dbo].[v_silver_sf_subscriptions]
-      WHERE account_name LIKE @accountName
+      WHERE account_id IN (
+        SELECT account_id FROM [dbo].[v_silver_sf_customer_accounts]
+        WHERE account_id = '${reportingAccountId.replace(/'/g, "''")}'
+          OR parent_account_id = '${reportingAccountId.replace(/'/g, "''")}'
+      )
         AND status IN ('Active', 'Termination in Progress')
       GROUP BY contract_type
       ORDER BY total DESC
     `;
 
-    const request = new sql.Request();
-    request.input('accountName', sql.VarChar, `%${accountName}%`);
-
-    const summaryRows = await queryFabric(summaryQuery.replace('@accountName', `'%${accountName}%'`));
-    const detailRows = await queryFabric(detailsQuery.replace('@accountName', `'%${accountName}%'`));
-    const contractSummaryRows = await queryFabric(contractSummaryQuery.replace('@accountName', `'%${accountName}%'`));
+    const summaryRows = await queryFabric(summaryQuery);
+    const detailRows = await queryFabric(detailsQuery);
+    const contractSummaryRows = await queryFabric(contractSummaryQuery);
 
     const summary = summaryRows[0] || {
       total_subscriptions: 0,
@@ -143,7 +188,7 @@ async function getAccountSubscriptions(req, res) {
     };
 
     res.json({
-      account: accountName,
+      account: queryAccountName,
       summary: {
         total_subscriptions: summary.total_subscriptions,
         active_subscriptions: summary.active_subscriptions,
