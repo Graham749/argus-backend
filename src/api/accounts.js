@@ -139,7 +139,7 @@ async function getAccountSubscriptions(req, res) {
         s.contract_type,
         DATEDIFF(DAY, GETDATE(), s.renewal_date) as days_to_renewal,
         CASE
-          WHEN DATEDIFF(DAY, GETDATE(), s.renewal_date) < -7 THEN 'OVERDUE'
+          WHEN DATEDIFF(DAY, GETDATE(), s.renewal_date) < -30 THEN 'OVERDUE'
           WHEN DATEDIFF(DAY, GETDATE(), s.renewal_date) < 0 THEN 'AT_RISK'
           WHEN DATEDIFF(DAY, GETDATE(), s.renewal_date) < 90 THEN 'TO_WATCH'
           ELSE 'HEALTHY'
