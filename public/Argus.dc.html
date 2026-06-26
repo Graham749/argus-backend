@@ -1384,16 +1384,16 @@ class Component extends DCLogic {
     this.currentSortDir = -1;
     this.currentAccountFilter = null;
 
-    // Get all unique accounts from ALL subscriptions (original full dataset, not filtered)
-    // This ensures buttons appear even if current risk card has 0 subscriptions
-    const allUniqueAccounts = [...new Set((this.currentSubscriptions || []).map(s => s.account_name).filter(Boolean))].sort();
+    // Get unique accounts from the FILTERED subscriptions (by service type + risk category)
+    // Shows buttons only if this filtered view has multiple accounts
+    const filteredUniqueAccounts = [...new Set(allSubs.map(s => s.account_name).filter(Boolean))].sort();
     const filtersDiv = document.getElementById('sfAccountFilters');
     const filterButtonsDiv = document.getElementById('sfFilterButtons');
 
-    console.log('[Argus] All accounts available:', allUniqueAccounts, 'Current drill-down subs:', allSubs.length);
+    console.log('[Argus] Filtered accounts in this view:', filteredUniqueAccounts, 'Total subs in this group:', allSubs.length);
 
-    // Show buttons if there are parent + child accounts (regardless of current risk card count)
-    if (allUniqueAccounts.length > 1) {
+    // Show buttons if this filtered view has parent + child accounts
+    if (filteredUniqueAccounts.length > 1) {
       filtersDiv.style.display = 'flex';
       filterButtonsDiv.innerHTML = '';
 
@@ -1416,7 +1416,7 @@ class Component extends DCLogic {
       filterButtonsDiv.appendChild(allBtn);
 
       // Add account buttons (parent first, then children)
-      allUniqueAccounts.forEach(acct => {
+      filteredUniqueAccounts.forEach(acct => {
         const btn = document.createElement('button');
         btn.textContent = acct;
         btn.style.cssText = 'padding:6px 12px;border-radius:4px;border:1px solid #e6e6e5;background:#fff;color:#3c3c3b;font-size:11px;font-weight:700;cursor:pointer;';
