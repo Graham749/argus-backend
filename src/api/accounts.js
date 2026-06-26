@@ -137,6 +137,7 @@ async function getAccountSubscriptions(req, res) {
         s.renewal_date,
         s.renewal_date_source,
         s.contract_type,
+        s.product_development_opt_out_clause,
         DATEDIFF(DAY, GETDATE(), s.renewal_date) as days_to_renewal,
         CASE
           WHEN DATEDIFF(DAY, GETDATE(), s.renewal_date) < 0 THEN 'OVERDUE'
