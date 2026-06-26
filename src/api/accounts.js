@@ -139,9 +139,9 @@ async function getAccountSubscriptions(req, res) {
         s.contract_type,
         DATEDIFF(DAY, GETDATE(), s.renewal_date) as days_to_renewal,
         CASE
-          WHEN DATEDIFF(DAY, GETDATE(), s.renewal_date) < -30 THEN 'OVERDUE'
-          WHEN DATEDIFF(DAY, GETDATE(), s.renewal_date) >= -30 AND DATEDIFF(DAY, GETDATE(), s.renewal_date) < 0 THEN 'AT_RISK'
-          WHEN DATEDIFF(DAY, GETDATE(), s.renewal_date) >= 0 AND DATEDIFF(DAY, GETDATE(), s.renewal_date) < 90 THEN 'TO_WATCH'
+          WHEN DATEDIFF(DAY, GETDATE(), s.renewal_date) < 0 THEN 'OVERDUE'
+          WHEN DATEDIFF(DAY, GETDATE(), s.renewal_date) >= 0 AND DATEDIFF(DAY, GETDATE(), s.renewal_date) < 30 THEN 'AT_RISK'
+          WHEN DATEDIFF(DAY, GETDATE(), s.renewal_date) >= 30 AND DATEDIFF(DAY, GETDATE(), s.renewal_date) < 90 THEN 'TO_WATCH'
           ELSE 'HEALTHY'
         END as renewal_status
       FROM [dbo].[v_silver_sf_subscriptions] s
