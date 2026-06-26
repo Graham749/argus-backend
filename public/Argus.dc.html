@@ -1466,12 +1466,60 @@ class Component extends DCLogic {
         this.currentDrilldownSubs = atRiskSubs;
         this.currentSortField = 'days_to_renewal';
         this.currentSortDir = 1;
+        this.currentAccountFilter = null;
         document.getElementById('sfSummaryView').style.display = 'none';
         document.getElementById('sfDetailView').style.display = 'block';
         document.getElementById('sfDrilldownTitle').textContent = 'At-Risk Subscriptions Report';
-        this.renderRows();
+        this.showDetailView();
       };
     }
+  }
+
+  showDetailView(){
+    const tbody = document.getElementById('sfSubscriptionsBody');
+    tbody.innerHTML = '';
+
+    const filtered = this.currentAccountFilter && this.currentAccountFilter !== 'all'
+      ? this.currentDrilldownSubs.filter(s => s.account_name === this.currentAccountFilter)
+      : this.currentDrilldownSubs;
+
+    const sorted = [...filtered].sort((a, b) => {
+      const aVal = a[this.currentSortField];
+      const bVal = b[this.currentSortField];
+      if(typeof aVal === 'string') {
+        return this.currentSortDir * aVal.localeCompare(bVal);
+      }
+      return this.currentSortDir * (aVal - bVal);
+    });
+
+    sorted.forEach(sub=>{
+      const row = document.createElement('tr');
+      row.style.borderBottom = '1px solid #e6e6e5';
+      const statusColor = sub.status === 'Termination in Progress' ? '#d32f2f' : '#00be86';
+      const daysColor = sub.days_to_renewal < 0 ? '#d32f2f' : sub.days_to_renewal < 90 ? '#ff9800' : '#00966b';
+      const contractLabel = (sub.contract_type || 'Unknown').replace('Rolling Anniversary', 'Rolling').replace('Fixed Period', 'Fixed');
+
+      const formatDate = (dateStr) => {
+        if(!dateStr) return '-';
+        const d = new Date(dateStr);
+        return d.toLocaleDateString('en-GB', {year:'2-digit', month:'short', day:'numeric'});
+      };
+
+      row.innerHTML = `
+        <td style="padding:10px 12px;color:#3c3c3b;font-size:11px;"><a href="https://auroraer.lightning.force.com/lightning/r/Order/${sub.subscription_id}/view" target="_blank" style="color:#288184;text-decoration:underline;cursor:pointer;">${sub.account_name}</a></td>
+        <td style="padding:10px 12px;color:#3c3c3b;">${sub.product_category}</td>
+        <td style="padding:10px 12px;text-align:right;color:#3c3c3b;font-weight:600;">£${sub.arr_gbp.toLocaleString()}</td>
+        <td style="padding:10px 12px;color:#6d6d6c;font-size:11px;">${sub.service_type || '-'}</td>
+        <td style="padding:10px 12px;color:#6d6d6c;font-size:11px;">${contractLabel}</td>
+        <td style="padding:10px 12px;color:${statusColor};font-weight:600;">${sub.status}</td>
+        <td style="padding:10px 12px;color:#6d6d6c;font-size:11px;">${sub.renewal_date_source || '-'}</td>
+        <td style="padding:10px 12px;text-align:right;color:${daysColor};font-weight:600;">${sub.days_to_renewal}</td>
+        <td style="padding:10px 12px;color:#6d6d6c;font-size:11px;">${formatDate(sub.subscription_start_date)}</td>
+        <td style="padding:10px 12px;color:#6d6d6c;font-size:11px;">${formatDate(sub.renewal_date)}</td>
+        <td style="padding:10px 12px;color:#6d6d6c;font-size:11px;">${formatDate(sub.subscription_end_date)}</td>
+      `;
+      tbody.appendChild(row);
+    });
   }
 
   showDrilldown(group){
@@ -1514,7 +1562,7 @@ class Component extends DCLogic {
         allBtn.style.background = '#288184';
         allBtn.style.color = '#fff';
         allBtn.style.borderColor = '#288184';
-        renderRows();
+        this.showDetailView();
       };
       filterButtonsDiv.appendChild(allBtn);
 
@@ -1533,7 +1581,7 @@ class Component extends DCLogic {
           btn.style.background = '#288184';
           btn.style.color = '#fff';
           btn.style.borderColor = '#288184';
-          renderRows();
+          this.showDetailView();
         };
         filterButtonsDiv.appendChild(btn);
       });
@@ -1541,56 +1589,7 @@ class Component extends DCLogic {
       filtersDiv.style.display = 'none';
     }
 
-    const renderRows = () => {
-      const tbody = document.getElementById('sfSubscriptionsBody');
-      tbody.innerHTML = '';
-
-      // Filter by account if selected
-      const filtered = this.currentAccountFilter
-        ? this.currentDrilldownSubs.filter(s => s.account_name === this.currentAccountFilter)
-        : this.currentDrilldownSubs;
-
-      const sorted = [...filtered].sort((a, b) => {
-        const aVal = a[this.currentSortField];
-        const bVal = b[this.currentSortField];
-        if(typeof aVal === 'string') {
-          return this.currentSortDir * aVal.localeCompare(bVal);
-        }
-        return this.currentSortDir * (aVal - bVal);
-      });
-
-      sorted.forEach(sub=>{
-        const row = document.createElement('tr');
-        row.style.borderBottom = '1px solid #e6e6e5';
-        const statusColor = sub.status === 'Termination in Progress' ? '#d32f2f' : '#00be86';
-
-        const daysColor = sub.days_to_renewal < 0 ? '#d32f2f' : sub.days_to_renewal < 90 ? '#ff9800' : '#00966b';
-        const contractLabel = (sub.contract_type || 'Unknown').replace('Rolling Anniversary', 'Rolling').replace('Fixed Period', 'Fixed');
-
-        const formatDate = (dateStr) => {
-          if(!dateStr) return '-';
-          const d = new Date(dateStr);
-          return d.toLocaleDateString('en-GB', {year:'2-digit', month:'short', day:'numeric'});
-        };
-
-        row.innerHTML = `
-          <td style="padding:10px 12px;color:#3c3c3b;font-size:11px;"><a href="https://auroraer.lightning.force.com/lightning/r/Order/${sub.subscription_id}/view" target="_blank" style="color:#288184;text-decoration:underline;cursor:pointer;">${sub.account_name}</a></td>
-          <td style="padding:10px 12px;color:#3c3c3b;">${sub.product_category}</td>
-          <td style="padding:10px 12px;text-align:right;color:#3c3c3b;font-weight:600;">£${sub.arr_gbp.toLocaleString()}</td>
-          <td style="padding:10px 12px;color:#6d6d6c;font-size:11px;">${sub.service_type || '-'}</td>
-          <td style="padding:10px 12px;color:#6d6d6c;font-size:11px;">${contractLabel}</td>
-          <td style="padding:10px 12px;color:${statusColor};font-weight:600;">${sub.status}</td>
-          <td style="padding:10px 12px;color:#6d6d6c;font-size:11px;">${sub.renewal_date_source || '-'}</td>
-          <td style="padding:10px 12px;text-align:right;color:${daysColor};font-weight:600;">${sub.days_to_renewal}</td>
-          <td style="padding:10px 12px;color:#6d6d6c;font-size:11px;">${formatDate(sub.subscription_start_date)}</td>
-          <td style="padding:10px 12px;color:#6d6d6c;font-size:11px;">${formatDate(sub.renewal_date)}</td>
-          <td style="padding:10px 12px;color:#6d6d6c;font-size:11px;">${formatDate(sub.subscription_end_date)}</td>
-        `;
-        tbody.appendChild(row);
-      });
-    };
-
-    renderRows();
+    this.showDetailView();
 
     const headers = document.querySelectorAll('#sfTableHeaders th');
     headers.forEach(header => {
@@ -1602,7 +1601,7 @@ class Component extends DCLogic {
           this.currentSortField = field;
           this.currentSortDir = field === 'arr_gbp' ? -1 : 1;
         }
-        renderRows();
+        this.showDetailView();
       };
     });
   }
