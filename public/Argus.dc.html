@@ -139,15 +139,6 @@ input{font-family:inherit;}
               <div style="font-size:12px;color:#e65100;">No subscriptions found for this service type</div>
             </div>
 
-            <!-- ARR At Risk Summary Card -->
-            <div id="sfArrAtRiskCard" style="background:#fdeee0;border-radius:8px;padding:10px 14px;margin-bottom:12px;border:1px solid #d32f2f;display:flex;justify-content:space-between;align-items:center;gap:16px;">
-              <div style="flex:1;">
-                <div style="font-size:11px;font-weight:700;color:#d32f2f;text-transform:uppercase;margin-bottom:2px;">⚠️ ARR AT RISK</div>
-                <div style="font-size:18px;font-weight:700;color:#d32f2f;">£<span id="sfArrAtRiskAmount">0</span>k</div>
-                <div style="font-size:10px;color:#c2600f;margin-top:2px;"><span id="sfArrAtRiskPercent">0</span>% of portfolio</div>
-              </div>
-              <button id="sfViewAtRiskBtn" style="padding:6px 12px;border-radius:6px;border:1px solid #d32f2f;background:#fff;color:#d32f2f;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;">View Report →</button>
-            </div>
 
             <!-- Risk Status Cards -->
             <div id="sfRiskCardsContainer" style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;">
@@ -1457,22 +1448,6 @@ class Component extends DCLogic {
       totalArr += group.subs.reduce((sum, s) => sum + s.arr_gbp, 0);
     }
 
-    // Calculate and display ARR at risk (OVERDUE + AT_RISK)
-    const atRiskSubs = [...(groups['OVERDUE']?.subs || []), ...(groups['AT_RISK']?.subs || [])];
-    const atRiskArr = atRiskSubs.reduce((sum, s) => sum + s.arr_gbp, 0);
-    const atRiskArrK = (atRiskArr / 1000).toFixed(0);
-    const portfolioArr = Object.values(groups).reduce((sum, g) => sum + g.subs.reduce((s, sub) => s + sub.arr_gbp, 0), 0);
-    const atRiskPercent = portfolioArr > 0 ? ((atRiskArr / portfolioArr) * 100).toFixed(1) : 0;
-
-    const atRiskCard = document.getElementById('sfArrAtRiskCard');
-    if(atRiskArr > 0) {
-      document.getElementById('sfArrAtRiskAmount').textContent = atRiskArrK;
-      document.getElementById('sfArrAtRiskPercent').textContent = atRiskPercent;
-      if(atRiskCard) atRiskCard.style.display = 'flex';
-    } else {
-      if(atRiskCard) atRiskCard.style.display = 'none';
-    }
-
     // Show/hide no-data message and risk cards
     const noDataMsg = document.getElementById('sfNoDataMessage');
     const riskCardsDiv = document.getElementById('sfRiskCardsContainer');
@@ -1506,20 +1481,6 @@ class Component extends DCLogic {
       if(arrEl) arrEl.textContent = arrK;
     }
 
-    // Wire up the "View At-Risk Report" button
-    const atRiskBtn = document.getElementById('sfViewAtRiskBtn');
-    if(atRiskBtn) {
-      atRiskBtn.onclick = () => {
-        this.currentDrilldownSubs = atRiskSubs;
-        this.currentSortField = 'days_to_renewal';
-        this.currentSortDir = 1;
-        this.currentAccountFilter = null;
-        document.getElementById('sfSummaryView').style.display = 'none';
-        document.getElementById('sfDetailView').style.display = 'block';
-        document.getElementById('sfDrilldownTitle').textContent = 'At-Risk Subscriptions Report';
-        this.showDetailView();
-      };
-    }
   }
 
   showDetailView(){
