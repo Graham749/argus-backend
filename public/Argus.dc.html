@@ -801,9 +801,9 @@ input{font-family:inherit;}
                 <div style="font-size:18px;font-weight:700;color:#c0c0c0;">{{ buildStatus.silver.salesforceCount }}</div>
                 <div style="font-size:10px;color:#c0c0c0;">Salesforce</div>
               </div>
-              <div style="background:#f7f7f6;border-radius:8px;padding:10px;text-align:center;cursor:pointer;" data-expand-layer="silver" data-scroll-id="silver-product-operations">
+              <div style="background:#f7f7f6;border-radius:8px;padding:10px;text-align:center;cursor:pointer;" data-expand-layer="silver" data-scroll-id="silver-mdm">
                 <div style="font-size:18px;font-weight:700;color:#c0c0c0;">{{ buildStatus.silver.productOpsCount }}</div>
-                <div style="font-size:10px;color:#c0c0c0;">Product Ops</div>
+                <div style="font-size:10px;color:#c0c0c0;">MDM</div>
               </div>
             </div>
             <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;">
@@ -877,9 +877,9 @@ input{font-family:inherit;}
                 <div style="font-size:18px;font-weight:700;color:#d4af37;">{{ buildStatus.gold.salesforceCount }}</div>
                 <div style="font-size:10px;color:#d4af37;">Salesforce</div>
               </div>
-              <div style="background:#f7f7f6;border-radius:8px;padding:10px;text-align:center;cursor:pointer;" data-expand-layer="gold" data-scroll-id="gold-product-operations" title="Click to scroll">
+              <div style="background:#f7f7f6;border-radius:8px;padding:10px;text-align:center;cursor:pointer;" data-expand-layer="gold" data-scroll-id="gold-mdm" title="Click to scroll">
                 <div style="font-size:18px;font-weight:700;color:#d4af37;">{{ buildStatus.gold.productOpsCount }}</div>
-                <div style="font-size:10px;color:#d4af37;">Product Ops</div>
+                <div style="font-size:10px;color:#d4af37;">MDM</div>
               </div>
               <div style="background:#f7f7f6;border-radius:8px;padding:10px;text-align:center;cursor:pointer;" data-expand-layer="gold" data-scroll-id="gold-finance" title="Click to scroll">
                 <div style="font-size:18px;font-weight:700;color:#d4af37;">{{ buildStatus.gold.financeCount }}</div>
@@ -1741,9 +1741,10 @@ class Component extends DCLogic {
             salesforceCount:(data.silver.views||[]).filter(v=>v.source==='Salesforce').length,
             productOpsCount:(data.silver.views||[]).filter(v=>v.source==='Product Operations').length,
             sourceGroups:(() => {
+              const displayNameMap = { 'Product Operations': 'MDM' };
               const sm={};
               (data.silver.views||[]).forEach(v=>{
-                if(!sm[v.source]) sm[v.source]={name:v.source,count:0,views:[]};
+                if(!sm[v.source]) sm[v.source]={name:displayNameMap[v.source]||v.source,count:0,views:[]};
                 sm[v.source].count++;
                 sm[v.source].views.push(v);
               });
@@ -1768,14 +1769,15 @@ class Component extends DCLogic {
             zendeskCount:((data.gold.views||[]).filter(v=>v.source==='Zendesk').length + (data.gold.tables||[]).filter(t=>t.source==='Zendesk').length),
             jiraCount:((data.gold.views||[]).filter(v=>v.source==='Jira').length + (data.gold.tables||[]).filter(t=>t.source==='Jira').length),
             sourceGroups:(() => {
+              const displayNameMap = { 'Product Operations': 'MDM' };
               const sm={};
               (data.gold.views||[]).forEach(v=>{
-                if(!sm[v.source]) sm[v.source]={name:v.source,count:0,views:[],tables:[]};
+                if(!sm[v.source]) sm[v.source]={name:displayNameMap[v.source]||v.source,count:0,views:[],tables:[]};
                 sm[v.source].count++;
                 sm[v.source].views.push(v);
               });
               (data.gold.tables||[]).forEach(t=>{
-                if(!sm[t.source]) sm[t.source]={name:t.source,count:0,views:[],tables:[]};
+                if(!sm[t.source]) sm[t.source]={name:displayNameMap[t.source]||t.source,count:0,views:[],tables:[]};
                 sm[t.source].count++;
                 sm[t.source].tables.push(t);
               });
