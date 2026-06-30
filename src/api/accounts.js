@@ -4,6 +4,10 @@ const sql = require('mssql');
 let cachedToken = null;
 let tokenExpiry = null;
 
+// Account lookup cache: { accountName: { accountId, parentAccountId, parentAccountName, cachedAt } }
+const accountCache = {};
+const ACCOUNT_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
 async function getAccessToken() {
   const now = Date.now();
 
@@ -64,65 +68,56 @@ async function getAccountSubscriptions(req, res) {
       return res.status(400).json({ error: 'accountName parameter required' });
     }
 
-    // Step 1: Look up account by exact name and check if it's a child account
-    const accountLookupQuery = `
-      SELECT TOP 1
-        account_id,
-        account_name,
-        parent_account_id
-      FROM [dbo].[v_silver_sf_customer_accounts]
-      WHERE account_name = '${accountName.replace(/'/g, "''")}'
-    `;
+    const now = Date.now();
+    let accountLookup = accountCache[accountName];
 
-    const accountLookupRows = await queryFabric(accountLookupQuery);
-
-    if (accountLookupRows.length === 0) {
-      return res.status(404).json({ error: `Account not found: ${accountName}` });
-    }
-
-    const account = accountLookupRows[0];
-
-    // Determine the reporting account (parent if child, else self)
-    let reportingAccountId = account.account_id;
-    let queryAccountName = accountName;
-
-    if (account.parent_account_id) {
-      reportingAccountId = account.parent_account_id;
-      // Look up parent's name
-      const parentLookupQuery = `
-        SELECT TOP 1 account_name
-        FROM [dbo].[v_silver_sf_customer_accounts]
-        WHERE account_id = '${account.parent_account_id.replace(/'/g, "''")}'
+    // Check if cached result is still valid
+    if (accountLookup && (now - accountLookup.cachedAt) < ACCOUNT_CACHE_TTL) {
+      console.log(`[accounts] Using cached account lookup for ${accountName}`);
+    } else {
+      // Cache miss or expired - query the database
+      console.log(`[accounts] Cache ${accountLookup ? 'expired' : 'miss'} for ${accountName}, querying...`);
+      const accountLookupQuery = `
+        WITH account_info AS (
+          SELECT TOP 1
+            account_id,
+            account_name,
+            parent_account_id
+          FROM [dbo].[v_silver_sf_customer_accounts]
+          WHERE account_name = '${accountName.replace(/'/g, "''")}'
+        ),
+        parent_info AS (
+          SELECT TOP 1
+            account_id,
+            account_name
+          FROM [dbo].[v_silver_sf_customer_accounts]
+          WHERE account_id = (SELECT parent_account_id FROM account_info WHERE parent_account_id IS NOT NULL)
+        )
+        SELECT
+          (SELECT account_id FROM account_info) as account_id,
+          (SELECT account_name FROM account_info) as account_name,
+          (SELECT parent_account_id FROM account_info) as parent_account_id,
+          (SELECT account_name FROM parent_info) as parent_account_name
       `;
-      const parentLookupRows = await queryFabric(parentLookupQuery);
-      if (parentLookupRows.length > 0) {
-        queryAccountName = parentLookupRows[0].account_name;
+
+      const rows = await queryFabric(accountLookupQuery);
+      if (!rows || rows.length === 0 || !rows[0].account_id) {
+        return res.status(404).json({ error: `Account not found: ${accountName}` });
       }
+
+      accountLookup = {
+        accountId: rows[0].account_id,
+        parentAccountId: rows[0].parent_account_id,
+        parentAccountName: rows[0].parent_account_name,
+        cachedAt: now
+      };
+      accountCache[accountName] = accountLookup;
     }
 
-    // Step 2: Query subscriptions for the reporting account and its children
-    const summaryQuery = `
-      SELECT
-        COUNT(DISTINCT subscription_id) as total_subscriptions,
-        COUNT(DISTINCT CASE WHEN status = 'Active' THEN subscription_id END) as active_subscriptions,
-        ROUND(SUM(arr_gbp), 2) as total_arr_gbp,
-        COUNT(DISTINCT CASE WHEN DATEDIFF(DAY, GETDATE(), subscription_end_date) < 30 THEN subscription_id END) as renewals_next_30_days,
-        COUNT(DISTINCT CASE WHEN DATEDIFF(DAY, GETDATE(), subscription_end_date) < 90 THEN subscription_id END) as renewals_next_90_days,
-        CASE
-          WHEN COUNT(DISTINCT CASE WHEN DATEDIFF(DAY, GETDATE(), subscription_end_date) < 30 THEN subscription_id END) > 0 THEN 'URGENT'
-          WHEN COUNT(DISTINCT CASE WHEN status = 'Termination in Progress' THEN subscription_id END) > 0 THEN 'AT_RISK'
-          ELSE 'HEALTHY'
-        END as health_status
-      FROM [dbo].[v_silver_sf_subscriptions]
-      WHERE account_id IN (
-        SELECT account_id FROM [dbo].[v_silver_sf_customer_accounts]
-        WHERE account_id = '${reportingAccountId.replace(/'/g, "''")}'
-          OR parent_account_id = '${reportingAccountId.replace(/'/g, "''")}'
-      )
-        AND status IN ('Active', 'Termination in Progress')
-    `;
+    const reportingAccountId = accountLookup.parentAccountId || accountLookup.accountId;
+    const queryAccountName = accountLookup.parentAccountName || accountName;
 
-    // Get subscription details (show actual account: parent or child)
+    // Single query to get all subscription data + calculated fields
     const detailsQuery = `
       SELECT
         s.subscription_id,
@@ -155,59 +150,58 @@ async function getAccountSubscriptions(req, res) {
       ORDER BY days_to_renewal ASC
     `;
 
-    // Get contract type summary with risk counts
-    const contractSummaryQuery = `
-      SELECT
-        contract_type,
-        COUNT(*) as total,
-        SUM(CASE WHEN DATEDIFF(DAY, GETDATE(), renewal_date) < -365 THEN 1 ELSE 0 END) as overdue_count,
-        SUM(CASE WHEN DATEDIFF(DAY, GETDATE(), renewal_date) >= -365 AND DATEDIFF(DAY, GETDATE(), renewal_date) < 0 THEN 1 ELSE 0 END) as at_risk_count,
-        SUM(CASE WHEN DATEDIFF(DAY, GETDATE(), renewal_date) >= 0 AND DATEDIFF(DAY, GETDATE(), renewal_date) < 90 THEN 1 ELSE 0 END) as to_watch_count,
-        SUM(CASE WHEN DATEDIFF(DAY, GETDATE(), renewal_date) >= 90 THEN 1 ELSE 0 END) as healthy_count,
-        CAST(ROUND(SUM(CASE WHEN status = 'Active' THEN arr_gbp ELSE 0 END), 0) AS INT) as arr_gbp
-      FROM [dbo].[v_silver_sf_subscriptions]
-      WHERE account_id IN (
-        SELECT account_id FROM [dbo].[v_silver_sf_customer_accounts]
-        WHERE account_id = '${reportingAccountId.replace(/'/g, "''")}'
-          OR parent_account_id = '${reportingAccountId.replace(/'/g, "''")}'
-      )
-        AND status IN ('Active', 'Termination in Progress')
-      GROUP BY contract_type
-      ORDER BY total DESC
-    `;
-
-    const summaryRows = await queryFabric(summaryQuery);
     const detailRows = await queryFabric(detailsQuery);
-    const contractSummaryRows = await queryFabric(contractSummaryQuery);
 
-    const summary = summaryRows[0] || {
-      total_subscriptions: 0,
-      active_subscriptions: 0,
-      total_arr_gbp: 0,
-      renewals_next_30_days: 0,
-      renewals_next_90_days: 0,
+    // Calculate summary and contract data from the detail rows in application code
+    const summaryData = {
+      total_subscriptions: detailRows.length,
+      active_subscriptions: detailRows.filter(s => s.status === 'Active').length,
+      total_arr_gbp: Math.round(detailRows.reduce((sum, s) => sum + s.arr_gbp, 0) * 100) / 100,
+      renewals_next_30_days: detailRows.filter(s => s.days_to_renewal < 30 && s.days_to_renewal >= 0).length,
+      renewals_next_90_days: detailRows.filter(s => s.days_to_renewal < 90 && s.days_to_renewal >= 0).length,
       health_status: 'HEALTHY'
     };
 
+    // Calculate health status
+    if (detailRows.some(s => s.days_to_renewal < 30 && s.days_to_renewal >= 0)) {
+      summaryData.health_status = 'URGENT';
+    } else if (detailRows.some(s => s.status === 'Termination in Progress')) {
+      summaryData.health_status = 'AT_RISK';
+    }
+
+    // Group by contract type for contract summary cards
+    const contractMap = {};
+    detailRows.forEach(sub => {
+      const ct = sub.contract_type || 'Unknown';
+      if (!contractMap[ct]) {
+        contractMap[ct] = {
+          contract_type: ct,
+          total: 0,
+          overdue: 0,
+          at_risk: 0,
+          to_watch: 0,
+          healthy: 0,
+          arr_gbp: 0
+        };
+      }
+      contractMap[ct].total++;
+      contractMap[ct].arr_gbp += sub.status === 'Active' ? sub.arr_gbp : 0;
+
+      if (sub.days_to_renewal < -365) contractMap[ct].overdue++;
+      else if (sub.days_to_renewal >= -365 && sub.days_to_renewal < 0) contractMap[ct].at_risk++;
+      else if (sub.days_to_renewal >= 0 && sub.days_to_renewal < 90) contractMap[ct].to_watch++;
+      else contractMap[ct].healthy++;
+    });
+
+    const contractSummaryRows = Object.values(contractMap).sort((a, b) => b.total - a.total);
+    contractSummaryRows.forEach(card => {
+      card.arr_gbp = Math.round(card.arr_gbp);
+    });
+
     res.json({
       account: queryAccountName,
-      summary: {
-        total_subscriptions: summary.total_subscriptions,
-        active_subscriptions: summary.active_subscriptions,
-        total_arr_gbp: summary.total_arr_gbp,
-        renewals_next_30_days: summary.renewals_next_30_days,
-        renewals_next_90_days: summary.renewals_next_90_days,
-        health_status: summary.health_status
-      },
-      contract_cards: contractSummaryRows.map(card => ({
-        contract_type: card.contract_type || 'Unknown',
-        total: card.total,
-        overdue: card.overdue_count || 0,
-        at_risk: card.at_risk_count || 0,
-        to_watch: card.to_watch_count || 0,
-        healthy: card.healthy_count || 0,
-        arr_gbp: card.arr_gbp
-      })),
+      summary: summaryData,
+      contract_cards: contractSummaryRows,
       subscriptions: detailRows
     });
   } catch (err) {
