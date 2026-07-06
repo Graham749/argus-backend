@@ -42,7 +42,8 @@ async function queryLakehouse(query) {
     options: {
       encrypt: true,
       trustServerCertificate: false,
-      connectionTimeout: 30000
+      connectionTimeout: 30000,
+      requestTimeout: 120000
     }
   });
 
@@ -81,7 +82,24 @@ SELECT
     prioritization_score    AS prioritizationScore,
     score_source            AS scoreSource,
     priority_rank           AS priorityRank,
-    matched_booster_detail  AS matchedBoosterDetail
+    matched_booster_detail  AS matchedBoosterDetail,
+    matched_region_detail   AS matchedRegionDetail,
+    best_subfeature_id      AS bestSubfeatureId,
+    best_subfeature_name    AS bestSubfeatureName,
+    sub_raw_regional_priority AS subRawRegionalPriority,
+    sub_rank_score          AS subRankScore,
+    sub_criticality_score   AS subCriticalityScore,
+    sub_efficiency_score    AS subEfficiencyScore,
+    sub_strategic_region_score AS subStrategicRegionScore,
+    sub_rank_weighted       AS subRankWeighted,
+    sub_criticality_weighted AS subCriticalityWeighted,
+    sub_efficiency_weighted AS subEfficiencyWeighted,
+    sub_strategic_region_weighted AS subStrategicRegionWeighted,
+    sub_region_market_count AS subRegionMarketCount,
+    sub_region_multiplier   AS subRegionMultiplier,
+    sub_criticality         AS subCriticality,
+    sub_efficiency          AS subEfficiency,
+    sub_region_text         AS subRegionText
 FROM dbo.v_gold_pb_feature_prioritization_final
 ORDER BY prioritization_score DESC
     `;

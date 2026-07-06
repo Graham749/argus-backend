@@ -419,6 +419,15 @@ input{font-family:inherit;}
           </div>
         </div>
 
+        <div style="position:relative;margin-bottom:14px;">
+          <input value="{{ featSearch }}" onInput="{{ onFeatSearch }}"
+            placeholder="Search by feature name or paste feature ID…"
+            style="width:100%;box-sizing:border-box;padding:9px 40px 9px 14px;border:1.5px solid #cecece;border-radius:8px;font-size:13px;outline:none;font-family:inherit;color:#1a1a19;">
+          <sc-if test="{{ hasFeatSearch }}">
+            <button onClick="{{ clearFeatSearch }}" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#9d9d9d;font-size:18px;line-height:1;padding:0;">×</button>
+          </sc-if>
+        </div>
+
         <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:8px;">
           <sc-for list="{{ featTabs }}" as="t" hint-placeholder-count="5">
             <button onClick="{{ t.onClick }}" style="{{ t.style }}">{{ t.label }}</button>
@@ -999,7 +1008,7 @@ class Component extends DCLogic {
     const savedView = typeof localStorage !== 'undefined' ? localStorage.getItem('argusView') : 'health';
     this.state = {
       view: savedView || 'health', healthClient:'rwe', range:'3m', briefClient:'rwe',
-      featProduct:'all', featAtRisk:false, drills:{}, featuresLoaded:false, features:[],
+      featProduct:'all', featAtRisk:false, featSearch:'', drills:{}, featuresLoaded:false, features:[],
       chat:[{role:'argus', html:'Hello — I can brief you on any client account, or help you spot patterns across your portfolio. Try asking about a specific client, or a cross-portfolio question like &ldquo;which clients are at churn risk?&rdquo;'}],
       chatInput:'', typing:false, started:false,
       bronzeExpanded:false, silverExpanded:false, goldExpanded:false,
@@ -1821,7 +1830,24 @@ class Component extends DCLogic {
         scoreSource:      f.scoreSource || 'feature',
         priorityRank:     Number(f.priorityRank) || 0,
         productName:      f.productName || '',
-        matchedBoosters:  (f.matchedBoosterDetail || '').split('||').filter(Boolean).map(s=>{ const p=s.split('~'); return {tag:p[0]||'', score:Number(p[1])||0}; })
+        matchedBoosters:  (f.matchedBoosterDetail || '').split('||').filter(Boolean).map(s=>{ const p=s.split('~'); return {tag:p[0]||'', score:Number(p[1])||0}; }),
+        matchedRegions:   (f.matchedRegionDetail  || '').split('||').filter(Boolean).map(s=>{ const p=s.split('~'); return {name:p[0]||'', isZone:p[1]==='1', count:Number(p[2])||1}; }),
+        subId:            f.bestSubfeatureId   || '',
+        subName:          f.bestSubfeatureName || '',
+        subRawPriority:   f.subRawRegionalPriority !== null && f.subRawRegionalPriority !== undefined ? Number(f.subRawRegionalPriority) : null,
+        subRankScore:     Number(f.subRankScore)               || 0,
+        subCritScore:     Number(f.subCriticalityScore)        || 0,
+        subEffScore:      Number(f.subEfficiencyScore)         || 0,
+        subSrScore:       Number(f.subStrategicRegionScore)    || 0,
+        subRankW:         Number(f.subRankWeighted)            || 0,
+        subCritW:         Number(f.subCriticalityWeighted)     || 0,
+        subEffW:          Number(f.subEfficiencyWeighted)      || 0,
+        subSrW:           Number(f.subStrategicRegionWeighted) || 0,
+        subMktCount:      Number(f.subRegionMarketCount)       || 0,
+        subMultiplier:    Number(f.subRegionMultiplier)        || 1,
+        subCriticality:   f.subCriticality || '',
+        subEfficiency:    f.subEfficiency  || '',
+        subRegionText:    f.subRegionText  || ''
       }));
       this.setState({features, featuresLoaded: true});
     } catch(e) {
@@ -1949,9 +1975,9 @@ class Component extends DCLogic {
     }));
     const critRank={Critical:4,High:3,Medium:2,Low:1};
     const fTabBase={fontSize:'13px',fontWeight:500,padding:'7px 14px',borderRadius:'8px',border:'1.5px solid #cecece',background:'#fff',color:'#3c3c3b',cursor:'pointer'};
-    const featTabs=[['All','all'],['Critical','Critical'],['High','High'],['Medium','Medium'],['Low','Low']].map(([label,key])=>({
-      label, onClick:()=>this.setV({featProduct:key}),
-      style: S.featProduct===key?{...fTabBase,borderColor:'#ffcc00',background:'#fff8e1',fontWeight:700}:fTabBase }));
+    const featTabs=['all','EOS AI','EOS Platform','Lumus','Origin','Pantheon'].map(key=>({
+      label:key==='all'?'All':key, onClick:()=>this.setV({featProduct:key}),
+      style:S.featProduct===key?{...fTabBase,borderColor:'#ffcc00',background:'#fff8e1',fontWeight:700}:fTabBase }));
     const atRiskToggleStyle={display:'inline-flex',alignItems:'center',gap:'8px',fontSize:'12px',fontWeight:700,padding:'7px 14px',borderRadius:'8px',cursor:'pointer',
       border:'1.5px solid '+(S.featAtRisk?'#d23f3f':'#cecece'),background:S.featAtRisk?'#fbeaea':'#fff',color:S.featAtRisk?'#d23f3f':'#6d6d6c'};
 
@@ -1960,8 +1986,17 @@ class Component extends DCLogic {
     const regionStyle={fontSize:'11px',fontWeight:700,padding:'2px 9px',borderRadius:'20px',background:'#e9f2f2',color:'#288184'};
     const compBar=(pts,cap,col)=>({display:'block',height:'100%',borderRadius:'3px',width:Math.round(pts/cap*100)+'%',background:col});
 
+    const featSearchTerm = S.featSearch.trim().toLowerCase();
+    const isIdSearch = featSearchTerm.length >= 8 && /^[0-9a-f-]+$/i.test(featSearchTerm);
     const filtered=scored
-      .filter(f=> (S.featProduct==='all'||f.criticality===S.featProduct) && (!S.featAtRisk || f.criticality==='Critical' || f.criticality==='High'))
+      .filter(f=> {
+        if(featSearchTerm) {
+          if(isIdSearch) return f.id.toLowerCase().startsWith(featSearchTerm);
+          return f.name.toLowerCase().includes(featSearchTerm);
+        }
+        return true;
+      })
+      .filter(f=> (S.featProduct==='all'||f.productName===S.featProduct) && (!S.featAtRisk || f.criticality==='Critical' || f.criticality==='High'))
       .sort((a,b)=> b.finalScore-a.finalScore || (critRank[b.criticality]-critRank[a.criticality]));
     const feats=filtered.map((f,i)=>{
       const expanded=!!S.drills['feat_'+f.id];
@@ -2000,18 +2035,78 @@ class Component extends DCLogic {
           const cc = critColor[f.criticality] || ['#f1f1f0','#6d6d6c'];
           const ec = effColor[f.efficiency] || ['#f1f1f0','#6d6d6c'];
           const scoreBarPct = Math.min(f.finalScore * 10, 100);
-          const baseScore = (Number(f.rankWeighted)+Number(f.criticalityWeighted)+Number(f.efficiencyWeighted)+Number(f.strategicRegionWeighted)).toFixed(2);
+          const isSubScore = f.fromSub && !!f.subId;
+          const activeRankW  = isSubScore ? f.subRankW  : f.rankWeighted;
+          const activeCritW  = isSubScore ? f.subCritW  : f.criticalityWeighted;
+          const activeEffW   = isSubScore ? f.subEffW   : f.efficiencyWeighted;
+          const activeSrW    = isSubScore ? f.subSrW    : f.strategicRegionWeighted;
+          const activeRankScore = isSubScore ? f.subRankScore : f.rankScore;
+          const activeCritScore = isSubScore ? f.subCritScore : f.criticalityScore;
+          const activeEffScore  = isSubScore ? f.subEffScore  : f.efficiencyScore;
+          const activeSrScore   = isSubScore ? f.subSrScore   : f.strategicRegionScore;
+          const activeMktCount  = isSubScore ? f.subMktCount  : f.regionMarketCount;
+          const activeMultiplier= isSubScore ? f.subMultiplier: f.regionMultiplier;
+          const activeCrit      = isSubScore ? f.subCriticality : f.criticality;
+          const activeEff       = isSubScore ? f.subEfficiency  : f.efficiency;
+          const activeRawPri    = isSubScore ? f.subRawPriority : f.rawRegionalPriority;
+          const baseScore = (Number(activeRankW)+Number(activeCritW)+Number(activeEffW)+Number(activeSrW)).toFixed(2);
           const boosterTtId = 'btt_'+f.id;
+          const rttId = 'rtt_'+f.id;
+          const cttId = 'ctt_'+f.id;
+          const ettId = 'ett_'+f.id;
+          const rawPriVal = (activeRawPri !== null && activeRawPri !== undefined) ? activeRawPri : null;
+          const curCrit = (activeCrit||'').toUpperCase();
+          const curEff  = (activeEff||'').toUpperCase();
+          const _ttTh  = 'text-align:left;padding:3px 8px 6px;color:#9d9d9d;font-weight:600;border-bottom:1px solid #f1f1f0;font-size:11px;';
+          const _ttThR = 'text-align:right;padding:3px 8px 6px;color:#9d9d9d;font-weight:600;border-bottom:1px solid #f1f1f0;font-size:11px;';
+          const _ttTd  = 'padding:3px 8px;font-size:11px;color:#3c3c3b;';
+          const _ttTdR = 'text-align:right;padding:3px 8px;font-size:11px;color:#3c3c3b;';
+          const _ttHl  = 'background:#fffbe6;font-weight:700;';
+          const _ttDiv = 'display:none;position:absolute;bottom:calc(100% + 8px);left:0;z-index:9999;background:#fff;border:1px solid #e6e6e5;border-radius:10px;padding:14px 16px;box-shadow:0 6px 24px rgba(60,60,59,0.16);min-width:300px;cursor:default;';
+          const rankTtHtml = (function(){
+            var rows=[['0 – 3 (highest priority)',10,'5.00',function(v){return v!==null&&v>=0&&v<=3;}],['4 – 6',7,'3.50',function(v){return v!==null&&v>=4&&v<=6;}],['7 – 10',3,'1.50',function(v){return v!==null&&v>=7&&v<=10;}],['11+',1,'0.50',function(v){return v!==null&&v>10;}],['NULL / not set',0,'0.00',function(v){return v===null||v===undefined;}]];
+            return '<p style="font-size:10px;font-weight:600;color:#9d9d9d;margin-bottom:10px;font-family:monospace;">v_silver_lookup_regional_priority_rank</p>'
+              +'<table style="font-size:11px;border-collapse:collapse;width:100%;"><thead><tr>'
+              +'<th style="'+_ttTh+'">Priority Range</th><th style="'+_ttThR+'">Score</th><th style="'+_ttThR+'">Weight</th><th style="'+_ttThR+'">Max pts</th>'
+              +'</tr></thead><tbody>'
+              +rows.map(function(r){var hl=r[3](rawPriVal)?_ttHl:'';return '<tr style="'+hl+'"><td style="'+_ttTd+'">'+r[0]+'</td><td style="'+_ttTdR+'">'+r[1]+'</td><td style="'+_ttTdR+'">×50%</td><td style="'+_ttTdR+'">'+r[2]+'</td></tr>';}).join('')
+              +'</tbody></table><p style="font-size:10px;color:#9d9d9d;margin-top:8px;">This feature: Regional Priority = '+(rawPriVal!==null?rawPriVal:'NULL (not set)')+'</p>';
+          })();
+          const critTtHtml = (function(){
+            var rows=[['Blocker',4,'0.80','BLOCKER'],['High',2,'0.40','HIGH'],['Medium',1,'0.20','MEDIUM'],['Low',0,'0.00','LOW'],['Low/NA',0,'0.00','LOW/NA']];
+            return '<p style="font-size:10px;font-weight:600;color:#9d9d9d;margin-bottom:10px;font-family:monospace;">v_silver_lookup_criticality_score</p>'
+              +'<table style="font-size:11px;border-collapse:collapse;width:100%;"><thead><tr>'
+              +'<th style="'+_ttTh+'">Criticality Level</th><th style="'+_ttThR+'">Score</th><th style="'+_ttThR+'">Weight</th><th style="'+_ttThR+'">Max pts</th>'
+              +'</tr></thead><tbody>'
+              +rows.map(function(r){var hl=curCrit===r[3]?_ttHl:'';return '<tr style="'+hl+'"><td style="'+_ttTd+'">'+r[0]+'</td><td style="'+_ttTdR+'">'+r[1]+'</td><td style="'+_ttTdR+'">×20%</td><td style="'+_ttTdR+'">'+r[2]+'</td></tr>';}).join('')
+              +'</tbody></table><p style="font-size:10px;color:#9d9d9d;margin-top:8px;">This feature: '+(f.criticality||'— (not set)')+'</p>';
+          })();
+          const effTtHtml = (function(){
+            var rows=[['High',4,'0.80','HIGH'],['Medium',2,'0.40','MEDIUM'],['Low',0,'0.00','LOW']];
+            return '<p style="font-size:10px;font-weight:600;color:#9d9d9d;margin-bottom:10px;font-family:monospace;">v_silver_lookup_efficiency_score</p>'
+              +'<table style="font-size:11px;border-collapse:collapse;width:100%;"><thead><tr>'
+              +'<th style="'+_ttTh+'">Efficiency Impact</th><th style="'+_ttThR+'">Score</th><th style="'+_ttThR+'">Weight</th><th style="'+_ttThR+'">Max pts</th>'
+              +'</tr></thead><tbody>'
+              +rows.map(function(r){var hl=curEff===r[3]?_ttHl:'';return '<tr style="'+hl+'"><td style="'+_ttTd+'">'+r[0]+'</td><td style="'+_ttTdR+'">'+r[1]+'</td><td style="'+_ttTdR+'">×20%</td><td style="'+_ttTdR+'">'+r[2]+'</td></tr>';}).join('')
+              +'</tbody></table><p style="font-size:10px;color:#9d9d9d;margin-top:8px;">This feature: '+(f.efficiency||'— (not set)')+'</p>';
+          })();
           const breakdown = expanded ? `
             <div style="margin-top:14px;padding-top:14px;border-top:1px solid #f1f1f0;">
-              <p style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#9d9d9d;margin-bottom:10px;">Priority score breakdown</p>
+              <p style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#9d9d9d;margin-bottom:${isSubScore?'4px':'10px'};">Priority score breakdown</p>
+              ${isSubScore ? `<p style="font-size:11px;color:#7030a0;font-weight:600;margin-bottom:10px;padding:5px 9px;background:#f5f0fa;border-radius:6px;">↑ Score from subfeature: ${f.subName}</p>` : ''}
               ${[
-                {label:'Rank',        raw:'regional priority '+(f.rawRegionalPriority !== null ? f.rawRegionalPriority : '—')+' · score '+Number(f.rankScore).toFixed(1), wt:'×50%', pts:Number(f.rankWeighted).toFixed(2), barPct:Math.round(f.rankWeighted/5*100), col:'#ffcc00'},
-                {label:'Criticality', raw:(f.criticality||'—')+' ('+Number(f.criticalityScore).toFixed(1)+')', wt:'×20%', pts:Number(f.criticalityWeighted).toFixed(2), barPct:Math.round(f.criticalityWeighted/2*100), col:'#ee791a'},
-                {label:'Efficiency',  raw:(f.efficiency||'—')+' ('+Number(f.efficiencyScore).toFixed(1)+')', wt:'×20%', pts:Number(f.efficiencyWeighted).toFixed(2), barPct:Math.round(f.efficiencyWeighted/2*100), col:'#288184'}
+                {label:'Rank',        raw:'regional priority '+(activeRawPri !== null ? activeRawPri : '—')+' · score '+Number(activeRankScore).toFixed(1), wt:'×50%', pts:Number(activeRankW).toFixed(2), barPct:Math.round(activeRankW/5*100), col:'#ffcc00', ttId:rttId, ttHtml:rankTtHtml},
+                {label:'Criticality', raw:(activeCrit||'—')+' ('+Number(activeCritScore).toFixed(1)+')', wt:'×20%', pts:Number(activeCritW).toFixed(2), barPct:Math.round(activeCritW/2*100), col:'#ee791a', ttId:cttId, ttHtml:critTtHtml},
+                {label:'Efficiency',  raw:(activeEff||'—')+' ('+Number(activeEffScore).toFixed(1)+')', wt:'×20%', pts:Number(activeEffW).toFixed(2), barPct:Math.round(activeEffW/2*100), col:'#288184', ttId:ettId, ttHtml:effTtHtml}
               ].map(d=>`
                 <div style="display:flex;align-items:center;gap:12px;padding:5px 0;">
-                  <span style="font-size:12px;color:#3c3c3b;min-width:120px;">${d.label}</span>
+                  <div style="position:relative;min-width:120px;display:inline-flex;align-items:center;gap:4px;cursor:help;"
+                    onmouseenter="var t=document.getElementById('${d.ttId}');if(t)t.style.display='block'"
+                    onmouseleave="var t=document.getElementById('${d.ttId}');if(t)t.style.display='none'">
+                    <span style="font-size:12px;color:#3c3c3b;">${d.label}</span>
+                    <img src="/assets/Info Icon.svg" style="width:14px;height:14px;opacity:0.7;vertical-align:middle;" alt="info">
+                    <div id="${d.ttId}" style="${_ttDiv}">${d.ttHtml}</div>
+                  </div>
                   <span style="font-size:11px;color:#9d9d9d;min-width:160px;">${d.raw}</span>
                   <span style="font-size:11px;color:#9d9d9d;min-width:38px;">${d.wt}</span>
                   <div style="flex:1;height:6px;background:#f1f1f0;border-radius:3px;overflow:hidden;min-width:80px;">${bar(d.barPct,d.col)}</div>
@@ -2046,24 +2141,76 @@ class Component extends DCLogic {
                     <p style="font-size:10px;color:#9d9d9d;margin-top:8px;">Each matched strategic region adds 2 pts · weighted at ×10%</p>
                   </div>
                 </div>
-                <span style="font-size:11px;color:#9d9d9d;min-width:160px;">${Number(f.strategicRegionScore).toFixed(0)} pts${Number(f.strategicRegionScore)>0?' matched':' (none matched)'}</span>
+                <span style="font-size:11px;color:#9d9d9d;min-width:160px;">${Number(activeSrScore).toFixed(0)} pts${Number(activeSrScore)>0?' matched':' (none matched)'}</span>
                 <span style="font-size:11px;color:#9d9d9d;min-width:38px;">×10%</span>
-                <div style="flex:1;height:6px;background:#f1f1f0;border-radius:3px;overflow:hidden;min-width:80px;">${bar(Math.round(Number(f.strategicRegionWeighted)/1.6*100),'#7030a0')}</div>
-                <span style="font-size:12px;font-weight:700;min-width:38px;text-align:right;">${Number(f.strategicRegionWeighted).toFixed(2)}</span>
+                <div style="flex:1;height:6px;background:#f1f1f0;border-radius:3px;overflow:hidden;min-width:80px;">${bar(Math.round(Number(activeSrW)/1.6*100),'#7030a0')}</div>
+                <span style="font-size:12px;font-weight:700;min-width:38px;text-align:right;">${Number(activeSrW).toFixed(2)}</span>
               </div>
               <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px;padding-top:8px;border-top:1px solid #f1f1f0;">
                 <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:#9d9d9d;">Base score</span>
                 <span style="font-size:13px;font-weight:700;color:#3c3c3b;">${baseScore}</span>
               </div>
               <div style="background:#f5f0fa;border-radius:8px;padding:10px 14px;margin-top:8px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-                <span style="font-size:12px;font-weight:700;color:#7030a0;min-width:130px;">Scalar adjustment</span>
-                <span style="font-size:11px;color:#9d9d9d;">Region market score ${f.regionMarketCount}</span>
-                <span style="font-size:13px;font-weight:900;color:#7030a0;">×${Number(f.regionMultiplier).toFixed(1)}</span>
-                <span style="font-size:11px;color:#9d9d9d;margin-left:auto;">${baseScore} × ${Number(f.regionMultiplier).toFixed(1)} =</span>
-                <span style="font-size:13px;font-weight:700;color:#3c3c3b;">${Number(f.featureScore).toFixed(2)}</span>
+                ${(function(){
+                  const sttId = 'stt_'+f.id;
+                  const rmc = Number(activeMktCount)||0;
+                  const tiers=[['≥ 16 markets',1.5,rmc>=16],['≥ 6 markets',1.3,rmc>=6&&rmc<16],['≥ 2 markets',1.2,rmc>=2&&rmc<6],['0 – 1 markets',1.0,rmc<2]];
+                  const _sTh='text-align:left;padding:3px 8px 6px;color:#9d9d9d;font-weight:600;border-bottom:1px solid #f1f1f0;font-size:11px;';
+                  const _sThR='text-align:right;padding:3px 8px 6px;color:#9d9d9d;font-weight:600;border-bottom:1px solid #f1f1f0;font-size:11px;';
+                  const _sTd='padding:3px 8px;font-size:11px;color:#3c3c3b;';
+                  const _sTdR='text-align:right;padding:3px 8px;font-size:11px;color:#3c3c3b;';
+                  const tierHtml='<p style="font-size:10px;font-weight:600;color:#9d9d9d;margin-bottom:10px;font-family:monospace;">v_silver_lookup_region_factor → multiplier tiers</p>'
+                    +'<table style="font-size:11px;border-collapse:collapse;width:100%;"><thead><tr>'
+                    +'<th style="'+_sTh+'">Total Market Count</th><th style="'+_sThR+'">Multiplier</th>'
+                    +'</tr></thead><tbody>'
+                    +tiers.map(function(t){var hl=t[2]?'background:#f0e8ff;font-weight:700;':'';return '<tr style="'+hl+'"><td style="'+_sTd+'">'+t[0]+'</td><td style="'+_sTdR+'">×'+t[1].toFixed(1)+'</td></tr>';}).join('')
+                    +'</tbody></table>'
+                    +'<p style="font-size:10px;color:#9d9d9d;margin-top:10px;line-height:1.5;"><strong>Zone-flag precedence:</strong> if any regional grouping (EMEA, APAC, NORAM, LATAM, WORLDWIDE, CORE, NODAL) is tagged, only grouping counts are summed — individual markets are excluded. Otherwise individual markets each count as 1.</p>'
+                    +'<p style="font-size:10px;color:#9d9d9d;margin-top:6px;">This feature: region market count = <strong>'+rmc+'</strong></p>'
+                    +(function(){
+                        if(isSubScore) {
+                          var txt=(f.subRegionText||'').trim();
+                          if(!txt) return '';
+                          var names=txt.split(',').map(function(s){return s.trim();}).filter(Boolean);
+                          var rows=names.map(function(n){return '<tr><td style="padding:2px 8px;font-size:11px;color:#3c3c3b;">'+n+'</td></tr>';}).join('');
+                          return '<p style="font-size:10px;font-weight:600;color:#9d9d9d;margin-top:12px;margin-bottom:6px;">Subfeature region markets</p>'
+                            +'<table style="width:100%;border-collapse:collapse;font-size:11px;"><tbody>'+rows+'</tbody></table>';
+                        }
+                        var regions=f.matchedRegions||[];
+                        if(!regions.length) return '';
+                        var hasZone=regions.some(function(r){return r.isZone;});
+                        var rows=regions.map(function(r){
+                          var active=hasZone?r.isZone:true;
+                          var bg=active?(r.isZone?'background:#f0e8ff;':'background:#f7f7f6;'):'background:#fafafa;';
+                          var col=active?'color:#3c3c3b;':'color:#c0c0c0;';
+                          var badge=r.isZone?'<span style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:3px;background:#e0d0f0;color:#7030a0;margin-left:4px;">zone ×'+r.count+'</span>':'';
+                          var dim=active?'':'text-decoration:line-through;';
+                          return '<tr style="'+bg+'"><td style="padding:2px 8px;font-size:11px;'+col+dim+'">'+r.name+badge+'</td><td style="text-align:right;padding:2px 8px;font-size:11px;font-weight:700;'+col+'">'+( active ? '+'+r.count : '—' )+'</td></tr>';
+                        }).join('');
+                        return '<p style="font-size:10px;font-weight:600;color:#9d9d9d;margin-top:12px;margin-bottom:6px;">Matched region markets</p>'
+                          +'<table style="width:100%;border-collapse:collapse;font-size:11px;"><thead><tr>'
+                          +'<th style="text-align:left;padding:2px 8px 4px;font-size:10px;font-weight:600;color:#9d9d9d;border-bottom:1px solid #f1f1f0;">Region</th>'
+                          +'<th style="text-align:right;padding:2px 8px 4px;font-size:10px;font-weight:600;color:#9d9d9d;border-bottom:1px solid #f1f1f0;">Count</th>'
+                          +'</tr></thead><tbody>'+rows+'</tbody></table>';
+                      })();
+                  return '<div style="position:relative;display:inline-flex;align-items:center;gap:4px;cursor:help;min-width:130px;"'
+                    +' onmouseenter="var t=document.getElementById(\''+sttId+'\');if(t)t.style.display=\'block\'"'
+                    +' onmouseleave="var t=document.getElementById(\''+sttId+'\');if(t)t.style.display=\'none\'">'
+                    +'<span style="font-size:12px;font-weight:700;color:#7030a0;">Scalar adjustment</span>'
+                    +'<img src="/assets/Info Icon.svg" style="width:14px;height:14px;opacity:0.6;vertical-align:middle;" alt="info">'
+                    +'<div id="'+sttId+'" style="display:none;position:absolute;bottom:calc(100% + 8px);left:0;z-index:9999;background:#fff;border:1px solid #e6e6e5;border-radius:10px;padding:14px 16px;box-shadow:0 6px 24px rgba(60,60,59,0.16);min-width:340px;cursor:default;">'+tierHtml+'</div>'
+                    +'</div>';
+                })()}
+                <span style="font-size:11px;color:#9d9d9d;">Region market score ${activeMktCount}</span>
+                <span style="font-size:13px;font-weight:900;color:#7030a0;">×${Number(activeMultiplier).toFixed(1)}</span>
+                <span style="font-size:11px;color:#9d9d9d;margin-left:auto;">${baseScore} × ${Number(activeMultiplier).toFixed(1)} =</span>
+                <span style="font-size:13px;font-weight:700;color:#3c3c3b;">${Number(f.finalScore).toFixed(2)}</span>
               </div>
               <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding-top:10px;border-top:1px solid #f1f1f0;flex-wrap:wrap;gap:8px;">
-                <span style="font-size:11px;color:#b5b5b4;font-family:monospace;">feature_id ${f.id}</span>
+                <div style="display:flex;flex-direction:column;gap:3px;">
+                  <a href="https://auroraer.productboard.com/detail/${f.id}" target="_blank" style="font-size:11px;color:#b5b5b4;font-family:monospace;text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">feature_id ${f.id} ↗</a>
+                  ${isSubScore ? `<a href="https://auroraer.productboard.com/detail/${f.subId}" target="_blank" style="font-size:11px;color:#9d7fc0;font-family:monospace;text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">subfeature_id ${f.subId} ↗</a>` : ''}
+                </div>
                 <span style="font-size:12px;color:#6d6d6c;">Feature ${Number(f.featureScore).toFixed(2)} · best subfeature ${Number(f.maxSubScore).toFixed(2)} · final ${Number(f.finalScore).toFixed(2)}${f.fromSub?' ↑ sub':''}</span>
               </div>
             </div>` : '';
@@ -2074,10 +2221,10 @@ class Component extends DCLogic {
                 <div style="flex:1;min-width:0;">
                   <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
                     <span style="font-size:15px;font-weight:700;">${f.name}</span>
-                    ${badge(f.criticality||'—', cc[0], cc[1])}
-                    ${badge((f.efficiency||'—')+' efficiency', ec[0], ec[1])}
-                    ${f.fromSub ? badge('↑ subfeature','#f0e9f7','#7030a0') : ''}
                     ${f.productName ? badge(f.productName,'#eef2ff','#3730a3') : ''}
+                    ${badge(f.efficiency ? f.efficiency+' - Efficiency' : 'Efficiency', ec[0], ec[1])}
+                    ${badge(f.criticality ? f.criticality+' - Criticality' : 'Criticality', cc[0], cc[1])}
+                    ${f.fromSub ? badge('↑ subfeature','#f0e9f7','#7030a0') : ''}
                   </div>
                   <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-top:12px;">
                     <div style="flex:1;min-width:200px;">
@@ -2143,6 +2290,7 @@ class Component extends DCLogic {
       toggleUsers:()=>this.toggleDrill('users_'+S.healthClient), drillUsers:!!S.drills['users_'+S.healthClient],
       toggleSubs:()=>this.toggleDrill('subs_'+S.healthClient), drillSubs:!!S.drills['subs_'+S.healthClient],
       featTabs, atRiskToggleStyle, toggleFeatAtRisk:()=>this.setV({featAtRisk:!S.featAtRisk}), feats, featSummary, featEmpty:feats.length===0, featsHtml, onFeatClick,
+      featSearch:S.featSearch, onFeatSearch:(e)=>this.setV({featSearch:e.target.value}), clearFeatSearch:()=>{ const inp=document.querySelector('[placeholder*="Search by feature"]'); if(inp)inp.value=''; this.setV({featSearch:''}); }, hasFeatSearch:!!S.featSearch.trim(),
       featRowsLabel:`${S.features.length} rows · synced 4 min ago`,
       chat, typing:S.typing, showSuggestions:!S.started, suggestions,
       chatInput:S.chatInput, onChatInput:(e)=>this.setV({chatInput:e.target.value}), onChatKey:(e)=>{ if(e.key==='Enter') this.send(); }, sendChat:()=>this.send(),
