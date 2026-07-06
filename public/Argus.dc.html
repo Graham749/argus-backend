@@ -431,50 +431,7 @@ input{font-family:inherit;}
           </button>
         </div>
 
-        <sc-for list="{{ feats }}" as="f" hint-placeholder-count="6">
-          <div style="background:#fff;border:1px solid #e6e6e5;border-radius:12px;padding:18px 20px;margin-bottom:12px;box-shadow:0 1px 3px rgba(60,60,59,0.07);">
-            <div style="display:flex;align-items:flex-start;gap:16px;">
-              <div style="font-size:15px;font-weight:900;color:#cecece;min-width:26px;text-align:center;margin-top:2px;">{{ f.rank }}</div>
-              <div style="flex:1;min-width:0;">
-                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-                  <span style="font-size:15px;font-weight:700;">{{ f.name }}</span>
-                  <span style="{{ f.critStyle }}">{{ f.critLabel }}</span>
-                  <span style="{{ f.effStyle }}">{{ f.effLabel }}</span>
-                  <span style="{{ f.regionStyle }}">{{ f.region }}</span>
-                  <sc-if value="{{ f.fromSub }}" hint-placeholder-val="{{ false }}"><span style="font-size:11px;font-weight:700;padding:2px 9px;border-radius:20px;background:#f0e9f7;color:#7030a0;">Scored from subfeature</span></sc-if>
-                </div>
-                <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-top:12px;">
-                  <div style="flex:1;min-width:200px;">
-                    <div style="display:flex;justify-content:space-between;font-size:11px;color:#6d6d6c;margin-bottom:4px;"><span>Final priority score</span><span style="font-weight:700;color:#3c3c3b;">{{ f.score }}</span></div>
-                    <div style="height:8px;background:#f1f1f0;border-radius:4px;overflow:hidden;"><div style="{{ f.scoreBarStyle }}"></div></div>
-                  </div>
-                  <div style="font-size:12px;color:#6d6d6c;">{{ f.subLabel }}</div>
-                  <div style="font-size:12px;color:#6d6d6c;">{{ f.marketLabel }}</div>
-                  <button onClick="{{ f.onToggle }}" style="margin-left:auto;font-size:12px;font-weight:700;color:#288184;background:none;border:none;cursor:pointer;">{{ f.toggleLabel }}</button>
-                </div>
-                <sc-if value="{{ f.expanded }}" hint-placeholder-val="{{ false }}">
-                  <div style="margin-top:14px;padding-top:14px;border-top:1px solid #f1f1f0;">
-                    <p style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#9d9d9d;margin-bottom:10px;">Priority score breakdown</p>
-                    <sc-for list="{{ f.detail }}" as="d" hint-placeholder-count="4">
-                      <div style="display:flex;align-items:center;gap:12px;padding:5px 0;">
-                        <span style="font-size:12px;color:#3c3c3b;min-width:118px;">{{ d.label }}</span>
-                        <span style="font-size:11px;color:#9d9d9d;min-width:118px;">{{ d.rawLabel }}</span>
-                        <span style="font-size:11px;color:#9d9d9d;min-width:38px;">{{ d.weightLabel }}</span>
-                        <div style="flex:1;height:6px;background:#f1f1f0;border-radius:3px;overflow:hidden;min-width:80px;"><div style="{{ d.barStyle }}"></div></div>
-                        <span style="font-size:12px;font-weight:700;min-width:38px;text-align:right;">{{ d.points }}</span>
-                      </div>
-                    </sc-for>
-                    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;padding-top:10px;border-top:1px solid #f1f1f0;flex-wrap:wrap;gap:8px;">
-                      <span style="font-size:11px;color:#b5b5b4;font-family:monospace;">{{ f.featureId }}</span>
-                      <span style="font-size:12px;color:#6d6d6c;">{{ f.summaryLine }}</span>
-                    </div>
-                  </div>
-                </sc-if>
-              </div>
-            </div>
-          </div>
-        </sc-for>
-        <sc-if value="{{ featEmpty }}" hint-placeholder-val="{{ false }}"><div style="text-align:center;padding:48px;color:#9d9d9d;font-size:14px;">No features match this filter.</div></sc-if>
+        <div onclick="{{ onFeatClick }}" dangerouslySetInnerHTML="{{ featsHtml }}"></div>
       </div>
       </sc-if>
 
@@ -1042,7 +999,7 @@ class Component extends DCLogic {
     const savedView = typeof localStorage !== 'undefined' ? localStorage.getItem('argusView') : 'health';
     this.state = {
       view: savedView || 'health', healthClient:'rwe', range:'3m', briefClient:'rwe',
-      featProduct:'all', featAtRisk:false, drills:{},
+      featProduct:'all', featAtRisk:false, drills:{}, featuresLoaded:false, features:[],
       chat:[{role:'argus', html:'Hello — I can brief you on any client account, or help you spot patterns across your portfolio. Try asking about a specific client, or a cross-portfolio question like &ldquo;which clients are at churn risk?&rdquo;'}],
       chatInput:'', typing:false, started:false,
       bronzeExpanded:false, silverExpanded:false, goldExpanded:false,
@@ -1073,6 +1030,7 @@ class Component extends DCLogic {
     }, 100);
     this.fetchCurrentUser();
     this.fetchIntegrationStatus();
+    this.loadFeatures();
     // Setup Salesforce subscriptions immediately (don't wait)
     this.setupSalesforceSubscriptions();
   }
@@ -1833,22 +1791,43 @@ class Component extends DCLogic {
       actions:[{text:'Respond to the Red Sea solar irradiance coverage gap — resolving this directly supports the MENA expansion conversation and demonstrates responsiveness.',owner:'Client Solutions · This week'},{text:'Close the MENA regional data expansion (£28k, Stage 3) — Masdar\u2019s consumption is at 84% of allowance and they have a clear appetite for more coverage.',owner:'Account manager Omar Al-Rashidi · This call'},{text:'Scenario Explorer adoption is only 12% — if Masdar\u2019s team is doing multi-scenario project finance modelling, a targeted demo could unlock meaningful upsell.',owner:'Client Solutions · Explore on call'}]}
   };
 
-  // Rows mirror the Fabric gold table `gold_feature_priority`.
-  // Raw inputs (rank_score, criticality_score, efficiency_score, strategic_region_score, region_market_count,
-  // subfeature_count, max_subfeature_priority_score) drive the weighted final_priority_score computed in renderVals.
-  // Scores here are illustrative pending the live feed — the schema and formula are faithful.
-  features = [
-    {id:'c084622a-b04a-48bd-b31b-ba120d49ec15',name:'Provide more Aurora-curated scenarios ("Sensitivity Library")',criticality:'High',criticalityScore:0.75,efficiency:'High',efficiencyScore:1.0,rankScore:0.92,regionalPriority:'Global',strategicRegionScore:1.0,regionMarketCount:6,subfeatureCount:4,maxSubScore:78},
-    {id:'243164a4-37bb-438e-a642-981c281a4ccf',name:'Assess cannibalisation risk of their assets',criticality:'High',criticalityScore:0.75,efficiency:'High',efficiencyScore:1.0,rankScore:0.74,regionalPriority:'EMEA',strategicRegionScore:0.8,regionMarketCount:4,subfeatureCount:3,maxSubScore:82},
-    {id:'f5ffb231-72b4-4a17-911e-d588123c02fd',name:'[ERC] Consideration of Battery SoC in scarcity pricing',criticality:'Critical',criticalityScore:1.0,efficiency:'Medium',efficiencyScore:0.6,rankScore:0.80,regionalPriority:'North America',strategicRegionScore:0.7,regionMarketCount:2,subfeatureCount:2,maxSubScore:71},
-    {id:'22590778-647c-4766-8f62-9760c86f7c6a',name:'Exact MCC and MCL attribution outputs for the nodal basis script',criticality:'High',criticalityScore:0.75,efficiency:'Medium',efficiencyScore:0.6,rankScore:0.68,regionalPriority:'North America',strategicRegionScore:0.7,regionMarketCount:3,subfeatureCount:1,maxSubScore:0},
-    {id:'c2d51c8b-5065-4bd4-9e34-3a7daabef6e0',name:'Degradation based on incorrect cycle definition',criticality:'Critical',criticalityScore:1.0,efficiency:'Low',efficiencyScore:0.3,rankScore:0.60,regionalPriority:'Global',strategicRegionScore:1.0,regionMarketCount:5,subfeatureCount:0,maxSubScore:0},
-    {id:'2208fc31-980b-4b77-bc01-73fe6b6a9f29',name:'P0: Launch EMEA beta social media video campaign',criticality:'High',criticalityScore:0.75,efficiency:'Low',efficiencyScore:0.3,rankScore:0.72,regionalPriority:'EMEA',strategicRegionScore:0.8,regionMarketCount:1,subfeatureCount:0,maxSubScore:0},
-    {id:'2b705d16-c10c-4a69-b7db-c4fbb2f34cf8',name:'Waterfall results: tolling agreements',criticality:'Medium',criticalityScore:0.5,efficiency:'High',efficiencyScore:1.0,rankScore:0.54,regionalPriority:'EMEA',strategicRegionScore:0.8,regionMarketCount:3,subfeatureCount:2,maxSubScore:58},
-    {id:'7872223d-b364-4154-bd9d-2ed767417c4a',name:'GitLab integration: commit origin input changes to GitLab / Branch',criticality:'Medium',criticalityScore:0.5,efficiency:'Medium',efficiencyScore:0.6,rankScore:0.50,regionalPriority:'Global',strategicRegionScore:1.0,regionMarketCount:4,subfeatureCount:1,maxSubScore:0},
-    {id:'449e65da-7123-48e8-aed7-502b6efe777b',name:'Launcher (UI): map "statefile" to "Market Scenario" when copying an old run',criticality:'Low',criticalityScore:0.25,efficiency:'High',efficiencyScore:1.0,rankScore:0.42,regionalPriority:'Global',strategicRegionScore:1.0,regionMarketCount:5,subfeatureCount:0,maxSubScore:0},
-    {id:'8ebd943b-e2da-44a6-bed9-6bf2ccde564e',name:'Remove dependency on LocationIQ',criticality:'Medium',criticalityScore:0.5,efficiency:'Medium',efficiencyScore:0.6,rankScore:0.38,regionalPriority:'Global',strategicRegionScore:1.0,regionMarketCount:6,subfeatureCount:0,maxSubScore:0}
-  ];
+  // Live data from v_gold_pb_feature_prioritization_final via /api/features
+  // Loaded async in componentDidMount — scores are pre-computed by gold layer (0-10 scale)
+  async loadFeatures(){
+    try {
+      const res = await fetch('/api/features');
+      if(!res.ok) throw new Error('HTTP '+res.status);
+      const data = await res.json();
+      const features = (data.features || []).map(f => ({
+        id:               f.featureId,
+        name:             f.featureName,
+        criticality:      f.criticalityLabel || '—',
+        efficiency:       f.efficiencyImpact || '—',
+        rawRegionalPriority: f.rawRegionalPriority !== null && f.rawRegionalPriority !== undefined ? Number(f.rawRegionalPriority) : null,
+        rankScore:        Number(f.rankScore) || 0,
+        criticalityScore: Number(f.criticalityScore) || 0,
+        efficiencyScore:  Number(f.efficiencyScore) || 0,
+        strategicRegionScore: Number(f.strategicRegionScore) || 0,
+        rankWeighted:     Number(f.rankWeighted) || 0,
+        criticalityWeighted: Number(f.criticalityWeighted) || 0,
+        efficiencyWeighted:  Number(f.efficiencyWeighted) || 0,
+        strategicRegionWeighted: Number(f.strategicRegionWeighted) || 0,
+        regionMultiplier: Number(f.regionMultiplier) || 1,
+        regionMarketCount: Number(f.strategicRegionCount) || 0,
+        subfeatureCount:  Number(f.subfeatureCount) || 0,
+        featureScore:     Number(f.featureScore) || 0,
+        maxSubScore:      Number(f.bestSubfeatureScore) || 0,
+        finalScore:       Number(f.prioritizationScore) || 0,
+        scoreSource:      f.scoreSource || 'feature',
+        priorityRank:     Number(f.priorityRank) || 0,
+        productName:      f.productName || '',
+        matchedBoosters:  (f.matchedBoosterDetail || '').split('||').filter(Boolean).map(s=>{ const p=s.split('~'); return {tag:p[0]||'', score:Number(p[1])||0}; })
+      }));
+      this.setState({features, featuresLoaded: true});
+    } catch(e) {
+      console.error('[Argus] loadFeatures failed:', e);
+    }
+  }
 
   // ── helpers ──
   pct(u,o){ return Math.round(u/o*100); }
@@ -1956,14 +1935,18 @@ class Component extends DCLogic {
       intel:c.intel
     };
 
-    // ── feature priority view-model (mirrors Fabric gold table) ──
-    const scored=this.features.map(f=>{
-      const rw=f.rankScore*50, cw=f.criticalityScore*20, ew=f.efficiencyScore*20, srw=f.strategicRegionScore*10;
-      const base=Math.round(rw+cw+ew+srw);
-      const finalScore=Math.max(base,f.maxSubScore);
-      const fromSub=f.maxSubScore>base;
-      return {...f, rw, cw, ew, srw, base, finalScore, fromSub};
-    });
+    // ── feature priority view-model (live from v_gold_pb_feature_prioritization_final) ──
+    // Scores are pre-computed by gold layer on 0-10 scale — no client-side re-calculation
+    const scored=S.features.map(f=>({
+      ...f,
+      rw:  f.rankWeighted,
+      cw:  f.criticalityWeighted,
+      ew:  f.efficiencyWeighted,
+      srw: f.strategicRegionWeighted,
+      base: f.featureScore,
+      finalScore: f.finalScore,
+      fromSub: f.scoreSource === 'subfeature'
+    }));
     const critRank={Critical:4,High:3,Medium:2,Low:1};
     const fTabBase={fontSize:'13px',fontWeight:500,padding:'7px 14px',borderRadius:'8px',border:'1.5px solid #cecece',background:'#fff',color:'#3c3c3b',cursor:'pointer'};
     const featTabs=[['All','all'],['Critical','Critical'],['High','High'],['Medium','Medium'],['Low','Low']].map(([label,key])=>({
@@ -1972,8 +1955,8 @@ class Component extends DCLogic {
     const atRiskToggleStyle={display:'inline-flex',alignItems:'center',gap:'8px',fontSize:'12px',fontWeight:700,padding:'7px 14px',borderRadius:'8px',cursor:'pointer',
       border:'1.5px solid '+(S.featAtRisk?'#d23f3f':'#cecece'),background:S.featAtRisk?'#fbeaea':'#fff',color:S.featAtRisk?'#d23f3f':'#6d6d6c'};
 
-    const critStyleFor=(lvl)=>{ const m={Critical:['#fbeaea','#d23f3f'],High:['#fdeee0','#c2600f'],Medium:['#f1f1f0','#6d6d6c'],Low:['#f1f1f0','#9d9d9d']}[lvl]; return {fontSize:'11px',fontWeight:700,padding:'2px 9px',borderRadius:'20px',background:m[0],color:m[1]}; };
-    const effStyleFor=(lvl)=>{ const m={High:['#e6f7f1','#00966b'],Medium:['#f1f1f0','#6d6d6c'],Low:['#f1f1f0','#9d9d9d']}[lvl]; return {fontSize:'11px',fontWeight:700,padding:'2px 9px',borderRadius:'20px',background:m[0],color:m[1]}; };
+    const critStyleFor=(lvl)=>{ const m={Critical:['#fbeaea','#d23f3f'],High:['#fdeee0','#c2600f'],Medium:['#f1f1f0','#6d6d6c'],Low:['#f1f1f0','#9d9d9d']}[lvl]||['#f1f1f0','#9d9d9d']; return {fontSize:'11px',fontWeight:700,padding:'2px 9px',borderRadius:'20px',background:m[0],color:m[1]}; };
+    const effStyleFor=(lvl)=>{ const m={High:['#e6f7f1','#00966b'],Medium:['#f1f1f0','#6d6d6c'],Low:['#f1f1f0','#9d9d9d']}[lvl]||['#f1f1f0','#9d9d9d']; return {fontSize:'11px',fontWeight:700,padding:'2px 9px',borderRadius:'20px',background:m[0],color:m[1]}; };
     const regionStyle={fontSize:'11px',fontWeight:700,padding:'2px 9px',borderRadius:'20px',background:'#e9f2f2',color:'#288184'};
     const compBar=(pts,cap,col)=>({display:'block',height:'100%',borderRadius:'3px',width:Math.round(pts/cap*100)+'%',background:col});
 
@@ -1986,23 +1969,132 @@ class Component extends DCLogic {
         rank:i+1, name:f.name, score:f.finalScore, fromSub:f.fromSub,
         critLabel:f.criticality, effLabel:f.efficiency+' efficiency', region:f.regionalPriority,
         critStyle:critStyleFor(f.criticality), effStyle:effStyleFor(f.efficiency), regionStyle,
-        scoreBarStyle:{height:'100%',borderRadius:'4px',width:f.finalScore+'%',background:'#ffcc00'},
+        scoreBarStyle:{height:'100%',borderRadius:'4px',width:(f.finalScore*10)+'%',background:'#ffcc00'},
         subLabel: f.subfeatureCount>0 ? (f.subfeatureCount+(f.subfeatureCount===1?' subfeature':' subfeatures')) : 'No subfeatures',
         marketLabel: f.regionMarketCount+(f.regionMarketCount===1?' market':' markets'),
         onToggle:()=>this.toggleDrill('feat_'+f.id),
         toggleLabel:expanded?'Hide breakdown':'Scoring breakdown',
         expanded,
         featureId:'feature_id '+f.id,
-        summaryLine:`Base ${f.base} · best subfeature ${f.maxSubScore} · final ${f.finalScore}`,
+        sourceLabel: f.fromSub ? '↑ subfeature' : 'feature',
+        summaryLine:`Feature ${Number(f.base).toFixed(2)} · best subfeature ${Number(f.maxSubScore).toFixed(2)} · final ${Number(f.finalScore).toFixed(2)}`,
         detail:[
-          {label:'Rank', rawLabel:'rank_score '+f.rankScore.toFixed(2), weightLabel:'×50%', points:f.rw.toFixed(1), barStyle:compBar(f.rw,50,'#ffcc00')},
-          {label:'Criticality', rawLabel:f.criticality+' ('+f.criticalityScore.toFixed(2)+')', weightLabel:'×20%', points:f.cw.toFixed(1), barStyle:compBar(f.cw,20,'#ee791a')},
-          {label:'Efficiency impact', rawLabel:f.efficiency+' ('+f.efficiencyScore.toFixed(2)+')', weightLabel:'×20%', points:f.ew.toFixed(1), barStyle:compBar(f.ew,20,'#288184')},
-          {label:'Strategic region', rawLabel:f.regionalPriority+' ('+f.strategicRegionScore.toFixed(2)+')', weightLabel:'×10%', points:f.srw.toFixed(1), barStyle:compBar(f.srw,10,'#6d6d6c')}
+          {label:'Rank', rawLabel:'regional priority '+(f.rawRegionalPriority !== null ? f.rawRegionalPriority : '—')+' · score '+Number(f.rankScore).toFixed(1)+' × weight 0.50', weightLabel:'×50%', points:Number(f.rw).toFixed(2), barStyle:compBar(f.rw,5,'#ffcc00')},
+          {label:'Criticality', rawLabel:(f.criticality||'—')+' ('+Number(f.criticalityScore).toFixed(1)+')', weightLabel:'×20%', points:Number(f.cw).toFixed(2), barStyle:compBar(f.cw,2,'#ee791a')},
+          {label:'Efficiency impact', rawLabel:(f.efficiency||'—')+' ('+Number(f.efficiencyScore).toFixed(1)+')', weightLabel:'×20%', points:Number(f.ew).toFixed(2), barStyle:compBar(f.ew,2,'#288184')},
+          {label:'Strategic region', rawLabel:Number(f.strategicRegionScore).toFixed(1)+' pts ×'+Number(f.regionMultiplier).toFixed(1)+'x', weightLabel:'×10%', points:Number(f.srw).toFixed(2), barStyle:compBar(f.srw,1,'#6d6d6c')}
         ]
       };
     });
-    const featSummary={ total:this.features.length, criticalCount:this.features.filter(f=>f.criticality==='Critical'||f.criticality==='High').length, topScore:Math.max(...scored.map(f=>f.finalScore)) };
+    const featSummary={ total:S.features.length, criticalCount:S.features.filter(f=>f.criticality==='Critical'||f.criticality==='High').length, topScore:scored.length ? Math.max(...scored.map(f=>f.finalScore)) : 0 };
+
+    const critColor={Critical:['#fbeaea','#d23f3f'],High:['#fdeee0','#c2600f'],Medium:['#f1f1f0','#6d6d6c'],Low:['#f1f1f0','#9d9d9d']};
+    const effColor={High:['#e6f7f1','#00966b'],Medium:['#f1f1f0','#6d6d6c'],Low:['#f1f1f0','#9d9d9d']};
+    const badge=(label,bg,col)=>`<span style="font-size:11px;font-weight:700;padding:2px 9px;border-radius:20px;background:${bg};color:${col};">${label}</span>`;
+    const bar=(pct,col)=>`<div style="display:block;height:100%;border-radius:3px;width:${Math.min(Math.round(pct),100)}%;background:${col};"></div>`;
+
+    const featsRows = filtered.length === 0
+      ? `<div style="text-align:center;padding:48px;color:#9d9d9d;font-size:14px;">${S.featuresLoaded===false||S.features.length===0 ? 'Loading features...' : 'No features match this filter.'}</div>`
+      : filtered.map((f,i)=>{
+          const expanded = !!S.drills['feat_'+f.id];
+          const cc = critColor[f.criticality] || ['#f1f1f0','#6d6d6c'];
+          const ec = effColor[f.efficiency] || ['#f1f1f0','#6d6d6c'];
+          const scoreBarPct = Math.min(f.finalScore * 10, 100);
+          const baseScore = (Number(f.rankWeighted)+Number(f.criticalityWeighted)+Number(f.efficiencyWeighted)+Number(f.strategicRegionWeighted)).toFixed(2);
+          const boosterTtId = 'btt_'+f.id;
+          const breakdown = expanded ? `
+            <div style="margin-top:14px;padding-top:14px;border-top:1px solid #f1f1f0;">
+              <p style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#9d9d9d;margin-bottom:10px;">Priority score breakdown</p>
+              ${[
+                {label:'Rank',        raw:'regional priority '+(f.rawRegionalPriority !== null ? f.rawRegionalPriority : '—')+' · score '+Number(f.rankScore).toFixed(1), wt:'×50%', pts:Number(f.rankWeighted).toFixed(2), barPct:Math.round(f.rankWeighted/5*100), col:'#ffcc00'},
+                {label:'Criticality', raw:(f.criticality||'—')+' ('+Number(f.criticalityScore).toFixed(1)+')', wt:'×20%', pts:Number(f.criticalityWeighted).toFixed(2), barPct:Math.round(f.criticalityWeighted/2*100), col:'#ee791a'},
+                {label:'Efficiency',  raw:(f.efficiency||'—')+' ('+Number(f.efficiencyScore).toFixed(1)+')', wt:'×20%', pts:Number(f.efficiencyWeighted).toFixed(2), barPct:Math.round(f.efficiencyWeighted/2*100), col:'#288184'}
+              ].map(d=>`
+                <div style="display:flex;align-items:center;gap:12px;padding:5px 0;">
+                  <span style="font-size:12px;color:#3c3c3b;min-width:120px;">${d.label}</span>
+                  <span style="font-size:11px;color:#9d9d9d;min-width:160px;">${d.raw}</span>
+                  <span style="font-size:11px;color:#9d9d9d;min-width:38px;">${d.wt}</span>
+                  <div style="flex:1;height:6px;background:#f1f1f0;border-radius:3px;overflow:hidden;min-width:80px;">${bar(d.barPct,d.col)}</div>
+                  <span style="font-size:12px;font-weight:700;min-width:38px;text-align:right;">${d.pts}</span>
+                </div>`).join('')}
+              <div style="display:flex;align-items:center;gap:12px;padding:5px 0;">
+                <div style="position:relative;min-width:120px;display:inline-flex;align-items:center;gap:4px;cursor:help;"
+                  onmouseenter="var t=document.getElementById('${boosterTtId}');if(t)t.style.display='block'"
+                  onmouseleave="var t=document.getElementById('${boosterTtId}');if(t)t.style.display='none'">
+                  <span style="font-size:12px;color:#3c3c3b;">Priority Booster</span>
+                  <img src="/assets/Info Icon.svg" style="width:14px;height:14px;opacity:0.7;vertical-align:middle;" alt="info">
+                  <div id="${boosterTtId}" style="display:none;position:absolute;bottom:calc(100% + 8px);left:0;z-index:999;background:#fff;border:1px solid #e6e6e5;border-radius:10px;padding:14px 16px;box-shadow:0 6px 24px rgba(60,60,59,0.16);min-width:360px;cursor:default;">
+                    ${f.productName ? `<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid #f1f1f0;"><span style="font-size:11px;color:#9d9d9d;min-width:60px;">Product</span><span style="font-size:11px;font-weight:700;color:#3c3c3b;">${f.productName}</span></div>` : ''}
+                    <p style="font-size:10px;font-weight:600;color:#9d9d9d;margin-bottom:10px;font-family:monospace;">v_silver_lookup_priority_booster</p>
+                    <table style="font-size:11px;border-collapse:collapse;width:100%;">
+                      <thead><tr>
+                        <th style="text-align:left;padding:3px 8px 6px;color:#9d9d9d;font-weight:600;border-bottom:1px solid #f1f1f0;">Productboard Value</th>
+                        <th style="text-align:right;padding:3px 8px 6px;color:#9d9d9d;font-weight:600;border-bottom:1px solid #f1f1f0;">Region Market Score</th>
+                        <th style="text-align:right;padding:3px 8px 6px;color:#9d9d9d;font-weight:600;border-bottom:1px solid #f1f1f0;">Weighted</th>
+                      </tr></thead>
+                      <tbody>
+                        ${f.matchedBoosters.length > 0
+                          ? f.matchedBoosters.map(b=>`<tr><td style="padding:3px 8px;color:#3c3c3b;">${b.tag}${f.productName?' <span style="color:#9d9d9d;">- '+f.productName+'</span>':''}</td><td style="text-align:right;padding:3px 8px;">${b.score}</td><td style="text-align:right;padding:3px 8px;">${(b.score*0.1).toFixed(2)}</td></tr>`).join('')
+                          : `<tr><td colspan="3" style="padding:6px 8px;color:#9d9d9d;font-style:italic;">No strategic regions matched</td></tr>`}
+                      </tbody>
+                      <tfoot><tr style="border-top:2px solid #f1f1f0;">
+                        <td style="padding:6px 8px 3px;font-weight:700;color:#3c3c3b;">Total</td>
+                        <td style="text-align:right;padding:6px 8px 3px;font-weight:700;color:#7030a0;">${Number(f.strategicRegionScore).toFixed(0)}</td>
+                        <td style="text-align:right;padding:6px 8px 3px;font-weight:700;color:#7030a0;">${Number(f.strategicRegionWeighted).toFixed(2)}</td>
+                      </tr></tfoot>
+                    </table>
+                    <p style="font-size:10px;color:#9d9d9d;margin-top:8px;">Each matched strategic region adds 2 pts · weighted at ×10%</p>
+                  </div>
+                </div>
+                <span style="font-size:11px;color:#9d9d9d;min-width:160px;">${Number(f.strategicRegionScore).toFixed(0)} pts${Number(f.strategicRegionScore)>0?' matched':' (none matched)'}</span>
+                <span style="font-size:11px;color:#9d9d9d;min-width:38px;">×10%</span>
+                <div style="flex:1;height:6px;background:#f1f1f0;border-radius:3px;overflow:hidden;min-width:80px;">${bar(Math.round(Number(f.strategicRegionWeighted)/1.6*100),'#7030a0')}</div>
+                <span style="font-size:12px;font-weight:700;min-width:38px;text-align:right;">${Number(f.strategicRegionWeighted).toFixed(2)}</span>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px;padding-top:8px;border-top:1px solid #f1f1f0;">
+                <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:#9d9d9d;">Base score</span>
+                <span style="font-size:13px;font-weight:700;color:#3c3c3b;">${baseScore}</span>
+              </div>
+              <div style="background:#f5f0fa;border-radius:8px;padding:10px 14px;margin-top:8px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                <span style="font-size:12px;font-weight:700;color:#7030a0;min-width:130px;">Scalar adjustment</span>
+                <span style="font-size:11px;color:#9d9d9d;">Region market score ${f.regionMarketCount}</span>
+                <span style="font-size:13px;font-weight:900;color:#7030a0;">×${Number(f.regionMultiplier).toFixed(1)}</span>
+                <span style="font-size:11px;color:#9d9d9d;margin-left:auto;">${baseScore} × ${Number(f.regionMultiplier).toFixed(1)} =</span>
+                <span style="font-size:13px;font-weight:700;color:#3c3c3b;">${Number(f.featureScore).toFixed(2)}</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding-top:10px;border-top:1px solid #f1f1f0;flex-wrap:wrap;gap:8px;">
+                <span style="font-size:11px;color:#b5b5b4;font-family:monospace;">feature_id ${f.id}</span>
+                <span style="font-size:12px;color:#6d6d6c;">Feature ${Number(f.featureScore).toFixed(2)} · best subfeature ${Number(f.maxSubScore).toFixed(2)} · final ${Number(f.finalScore).toFixed(2)}${f.fromSub?' ↑ sub':''}</span>
+              </div>
+            </div>` : '';
+          return `
+            <div style="background:#fff;border:1px solid #e6e6e5;border-radius:12px;padding:18px 20px;margin-bottom:12px;box-shadow:0 1px 3px rgba(60,60,59,0.07);">
+              <div style="display:flex;align-items:flex-start;gap:16px;">
+                <div style="font-size:15px;font-weight:900;color:#cecece;min-width:26px;text-align:center;margin-top:2px;">${f.priorityRank}</div>
+                <div style="flex:1;min-width:0;">
+                  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                    <span style="font-size:15px;font-weight:700;">${f.name}</span>
+                    ${badge(f.criticality||'—', cc[0], cc[1])}
+                    ${badge((f.efficiency||'—')+' efficiency', ec[0], ec[1])}
+                    ${f.fromSub ? badge('↑ subfeature','#f0e9f7','#7030a0') : ''}
+                    ${f.productName ? badge(f.productName,'#eef2ff','#3730a3') : ''}
+                  </div>
+                  <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-top:12px;">
+                    <div style="flex:1;min-width:200px;">
+                      <div style="display:flex;justify-content:space-between;font-size:11px;color:#6d6d6c;margin-bottom:4px;"><span>Final priority score</span><span style="font-weight:700;color:#3c3c3b;">${Number(f.finalScore).toFixed(2)}</span></div>
+                      <div style="height:8px;background:#f1f1f0;border-radius:4px;overflow:hidden;">${bar(scoreBarPct,'#ffcc00')}</div>
+                    </div>
+                    <div style="font-size:12px;color:#6d6d6c;">${f.subfeatureCount>0 ? f.subfeatureCount+(f.subfeatureCount===1?' subfeature':' subfeatures') : 'No subfeatures'}</div>
+                    <button data-toggle-id="feat_${f.id}" style="margin-left:auto;font-size:12px;font-weight:700;color:#288184;background:none;border:none;cursor:pointer;">${expanded?'Hide breakdown':'Scoring breakdown'}</button>
+                  </div>
+                  ${breakdown}
+                </div>
+              </div>
+            </div>`;
+        }).join('');
+
+    const featsHtml = {__html: featsRows};
+    const onFeatClick = (e) => { const btn = e.target.closest('[data-toggle-id]'); if(btn) this.toggleDrill(btn.dataset.toggleId); };
 
     // ── assistant view-model ──
     const chat=S.chat.map(m=>({
@@ -2050,8 +2142,8 @@ class Component extends DCLogic {
       healthTabs, ranges, hc,
       toggleUsers:()=>this.toggleDrill('users_'+S.healthClient), drillUsers:!!S.drills['users_'+S.healthClient],
       toggleSubs:()=>this.toggleDrill('subs_'+S.healthClient), drillSubs:!!S.drills['subs_'+S.healthClient],
-      featTabs, atRiskToggleStyle, toggleFeatAtRisk:()=>this.setV({featAtRisk:!S.featAtRisk}), feats, featSummary, featEmpty:feats.length===0,
-      featRowsLabel:`${this.features.length} rows · synced 4 min ago`,
+      featTabs, atRiskToggleStyle, toggleFeatAtRisk:()=>this.setV({featAtRisk:!S.featAtRisk}), feats, featSummary, featEmpty:feats.length===0, featsHtml, onFeatClick,
+      featRowsLabel:`${S.features.length} rows · synced 4 min ago`,
       chat, typing:S.typing, showSuggestions:!S.started, suggestions,
       chatInput:S.chatInput, onChatInput:(e)=>this.setV({chatInput:e.target.value}), onChatKey:(e)=>{ if(e.key==='Enter') this.send(); }, sendChat:()=>this.send(),
       briefTabs, bc, briefStamp:'17 Jun 2025 · 09:14',

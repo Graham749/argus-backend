@@ -59,14 +59,29 @@ async function features(req, res) {
   try {
     const query = `
 SELECT
-    feature_id AS featureId,
-    feature_name AS featureName,
-    product_name AS productName,
-    efficiency_label AS criticalityLabel,
-    efficiency_impact AS efficiencyImpact,
-    prioritization_score AS prioritizationScore,
-    priority_rank AS priorityRank,
-    strategic_region_count AS strategicRegionCount
+    feature_id              AS featureId,
+    feature_name            AS featureName,
+    product_name            AS productName,
+    efficiency_label        AS criticalityLabel,
+    efficiency_impact       AS efficiencyImpact,
+    raw_regional_priority   AS rawRegionalPriority,
+    rank_score              AS rankScore,
+    criticality_score       AS criticalityScore,
+    efficiency_score        AS efficiencyScore,
+    strategic_region_score  AS strategicRegionScore,
+    rank_weighted           AS rankWeighted,
+    criticality_weighted    AS criticalityWeighted,
+    efficiency_weighted     AS efficiencyWeighted,
+    strategic_region_weighted AS strategicRegionWeighted,
+    region_multiplier       AS regionMultiplier,
+    strategic_region_count  AS strategicRegionCount,
+    feature_score           AS featureScore,
+    best_subfeature_score   AS bestSubfeatureScore,
+    subfeature_count        AS subfeatureCount,
+    prioritization_score    AS prioritizationScore,
+    score_source            AS scoreSource,
+    priority_rank           AS priorityRank,
+    matched_booster_detail  AS matchedBoosterDetail
 FROM dbo.v_gold_pb_feature_prioritization_final
 ORDER BY prioritization_score DESC
     `;
