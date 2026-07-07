@@ -405,17 +405,17 @@ input{font-family:inherit;}
         </div>
 
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:22px;">
-          <div style="background:#fff;border:1px solid #e6e6e5;border-radius:12px;padding:16px 18px;box-shadow:0 1px 3px rgba(60,60,59,0.07);">
+          <div onClick="{{ summaryCards.all.onClick }}" style="{{ summaryCards.all.style }}">
             <div style="font-size:11px;color:#6d6d6c;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;">Features scored</div>
             <div style="font-size:28px;font-weight:700;">{{ featSummary.total }}</div>
           </div>
-          <div style="background:#fff;border:1px solid #e6e6e5;border-radius:12px;padding:16px 18px;box-shadow:0 1px 3px rgba(60,60,59,0.07);">
-            <div style="font-size:11px;color:#6d6d6c;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;">Critical &amp; high</div>
-            <div style="font-size:28px;font-weight:700;color:#d23f3f;">{{ featSummary.criticalCount }}</div>
+          <div onClick="{{ summaryCards.blockerCritical.onClick }}" style="{{ summaryCards.blockerCritical.style }}">
+            <div style="font-size:11px;color:#6d6d6c;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;">Blocker &amp; critical</div>
+            <div style="font-size:28px;font-weight:700;color:#d23f3f;">{{ featSummary.blockerCriticalCount }}</div>
           </div>
-          <div style="background:#fff;border:1px solid #e6e6e5;border-radius:12px;padding:16px 18px;box-shadow:0 1px 3px rgba(60,60,59,0.07);">
-            <div style="font-size:11px;color:#6d6d6c;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;">Top priority score</div>
-            <div style="font-size:28px;font-weight:700;">{{ featSummary.topScore }}</div>
+          <div onClick="{{ summaryCards.highEff.onClick }}" style="{{ summaryCards.highEff.style }}">
+            <div style="font-size:11px;color:#6d6d6c;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;">High efficiency</div>
+            <div style="font-size:28px;font-weight:700;color:#00966b;">{{ featSummary.highEffCount }}</div>
           </div>
         </div>
 
@@ -433,11 +433,17 @@ input{font-family:inherit;}
             <button onClick="{{ t.onClick }}" style="{{ t.style }}">{{ t.label }}</button>
           </sc-for>
         </div>
-        <div style="margin-bottom:18px;">
-          <button onClick="{{ toggleFeatAtRisk }}" style="{{ atRiskToggleStyle }}">
-            <span style="width:7px;height:7px;border-radius:50%;background:#d23f3f;display:inline-block;"></span>
-            Only critical &amp; high criticality
-          </button>
+        <div style="margin-bottom:18px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+          <span style="font-size:11px;font-weight:600;color:#9d9d9d;margin-right:2px;">Criticality</span>
+          <sc-for list="{{ critFilterBtns }}" as="b" hint-placeholder-count="5">
+            <button onClick="{{ b.onClick }}" style="{{ b.style }}">{{ b.label }}</button>
+          </sc-for>
+        </div>
+        <div style="margin-bottom:18px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+          <span style="font-size:11px;font-weight:600;color:#9d9d9d;margin-right:2px;">Efficiency</span>
+          <sc-for list="{{ effFilterBtns }}" as="b" hint-placeholder-count="3">
+            <button onClick="{{ b.onClick }}" style="{{ b.style }}">{{ b.label }}</button>
+          </sc-for>
         </div>
 
         <div onclick="{{ onFeatClick }}" dangerouslySetInnerHTML="{{ featsHtml }}"></div>
@@ -1008,7 +1014,7 @@ class Component extends DCLogic {
     const savedView = typeof localStorage !== 'undefined' ? localStorage.getItem('argusView') : 'health';
     this.state = {
       view: savedView || 'health', healthClient:'rwe', range:'3m', briefClient:'rwe',
-      featProduct:'all', featAtRisk:false, featSearch:'', drills:{}, featuresLoaded:false, features:[],
+      featProduct:'all', featCritFilter:null, featEffFilter:null, featSearch:'', drills:{}, featuresLoaded:false, features:[],
       chat:[{role:'argus', html:'Hello — I can brief you on any client account, or help you spot patterns across your portfolio. Try asking about a specific client, or a cross-portfolio question like &ldquo;which clients are at churn risk?&rdquo;'}],
       chatInput:'', typing:false, started:false,
       bronzeExpanded:false, silverExpanded:false, goldExpanded:false,
@@ -1973,13 +1979,27 @@ class Component extends DCLogic {
       finalScore: f.finalScore,
       fromSub: f.scoreSource === 'subfeature'
     }));
-    const critRank={Critical:4,High:3,Medium:2,Low:1};
+    const critRank={Blocker:5,Critical:4,High:3,Medium:2,Low:1};
     const fTabBase={fontSize:'13px',fontWeight:500,padding:'7px 14px',borderRadius:'8px',border:'1.5px solid #cecece',background:'#fff',color:'#3c3c3b',cursor:'pointer'};
     const featTabs=['all','EOS AI','EOS Platform','Lumus','Origin','Pantheon'].map(key=>({
       label:key==='all'?'All':key, onClick:()=>this.setV({featProduct:key}),
       style:S.featProduct===key?{...fTabBase,borderColor:'#ffcc00',background:'#fff8e1',fontWeight:700}:fTabBase }));
-    const atRiskToggleStyle={display:'inline-flex',alignItems:'center',gap:'8px',fontSize:'12px',fontWeight:700,padding:'7px 14px',borderRadius:'8px',cursor:'pointer',
-      border:'1.5px solid '+(S.featAtRisk?'#d23f3f':'#cecece'),background:S.featAtRisk?'#fbeaea':'#fff',color:S.featAtRisk?'#d23f3f':'#6d6d6c'};
+    const critBtnColors={Blocker:['#f5e6f5','#7030a0'],Critical:['#fbeaea','#d23f3f'],High:['#fdeee0','#c2600f'],Medium:['#f1f1f0','#6d6d6c'],Low:['#f1f1f0','#9d9d9d']};
+    const critFilterBtns=['Blocker','Critical','High','Medium','Low'].map(lvl=>{
+      const active=S.featCritFilter===lvl;
+      const [bg,col]=critBtnColors[lvl];
+      return {label:lvl,onClick:()=>this.setV({featCritFilter:active?null:lvl}),
+        style:{display:'inline-flex',alignItems:'center',fontSize:'12px',fontWeight:700,padding:'5px 12px',borderRadius:'8px',cursor:'pointer',
+          border:'1.5px solid '+(active?col:'#cecece'),background:active?bg:'#fff',color:active?col:'#6d6d6c'}};
+    });
+    const effBtnColors={High:['#e6f7f1','#00966b'],Medium:['#f1f1f0','#6d6d6c'],Low:['#f1f1f0','#9d9d9d']};
+    const effFilterBtns=['High','Medium','Low'].map(lvl=>{
+      const active=S.featEffFilter===lvl;
+      const [bg,col]=effBtnColors[lvl];
+      return {label:lvl,onClick:()=>this.setV({featEffFilter:active?null:lvl}),
+        style:{display:'inline-flex',alignItems:'center',fontSize:'12px',fontWeight:700,padding:'5px 12px',borderRadius:'8px',cursor:'pointer',
+          border:'1.5px solid '+(active?col:'#cecece'),background:active?bg:'#fff',color:active?col:'#6d6d6c'}};
+    });
 
     const critStyleFor=(lvl)=>{ const m={Critical:['#fbeaea','#d23f3f'],High:['#fdeee0','#c2600f'],Medium:['#f1f1f0','#6d6d6c'],Low:['#f1f1f0','#9d9d9d']}[lvl]||['#f1f1f0','#9d9d9d']; return {fontSize:'11px',fontWeight:700,padding:'2px 9px',borderRadius:'20px',background:m[0],color:m[1]}; };
     const effStyleFor=(lvl)=>{ const m={High:['#e6f7f1','#00966b'],Medium:['#f1f1f0','#6d6d6c'],Low:['#f1f1f0','#9d9d9d']}[lvl]||['#f1f1f0','#9d9d9d']; return {fontSize:'11px',fontWeight:700,padding:'2px 9px',borderRadius:'20px',background:m[0],color:m[1]}; };
@@ -1996,7 +2016,7 @@ class Component extends DCLogic {
         }
         return true;
       })
-      .filter(f=> (S.featProduct==='all'||f.productName===S.featProduct) && (!S.featAtRisk || f.criticality==='Critical' || f.criticality==='High'))
+      .filter(f=> (S.featProduct==='all'||f.productName===S.featProduct) && (!S.featCritFilter || (S.featCritFilter==='Blocker+Critical'?(f.criticality==='Blocker'||f.criticality==='Critical'):f.criticality===S.featCritFilter)) && (!S.featEffFilter || f.efficiency===S.featEffFilter))
       .sort((a,b)=> b.finalScore-a.finalScore || (critRank[b.criticality]-critRank[a.criticality]));
     const feats=filtered.map((f,i)=>{
       const expanded=!!S.drills['feat_'+f.id];
@@ -2021,9 +2041,15 @@ class Component extends DCLogic {
         ]
       };
     });
-    const featSummary={ total:S.features.length, criticalCount:S.features.filter(f=>f.criticality==='Critical'||f.criticality==='High').length, topScore:scored.length ? Math.max(...scored.map(f=>f.finalScore)) : 0 };
+    const featSummary={ total:S.features.length, blockerCriticalCount:S.features.filter(f=>f.criticality==='Blocker'||f.criticality==='Critical').length, highEffCount:S.features.filter(f=>f.efficiency==='High').length, topScore:scored.length ? Math.max(...scored.map(f=>f.finalScore)) : 0 };
+    const _cardBase='background:#fff;border:1.5px solid #e6e6e5;border-radius:12px;padding:16px 18px;box-shadow:0 1px 3px rgba(60,60,59,0.07);cursor:pointer;transition:border-color .15s;';
+    const summaryCards={
+      all:{onClick:()=>this.setV({featCritFilter:null,featEffFilter:null}),style:_cardBase+(!S.featCritFilter&&!S.featEffFilter?'border-color:#3c3c3b;':'')},
+      blockerCritical:{onClick:()=>this.setV({featCritFilter:S.featCritFilter==='Blocker+Critical'?null:'Blocker+Critical',featEffFilter:null}),style:_cardBase+(S.featCritFilter==='Blocker+Critical'?'border-color:#d23f3f;background:#fbeaea;':'')},
+      highEff:{onClick:()=>this.setV({featEffFilter:S.featEffFilter==='High'?null:'High',featCritFilter:null}),style:_cardBase+(S.featEffFilter==='High'?'border-color:#00966b;background:#e6f7f1;':'')}
+    };
 
-    const critColor={Critical:['#fbeaea','#d23f3f'],High:['#fdeee0','#c2600f'],Medium:['#f1f1f0','#6d6d6c'],Low:['#f1f1f0','#9d9d9d']};
+    const critColor={Blocker:['#f5e6f5','#7030a0'],Critical:['#fbeaea','#d23f3f'],High:['#fdeee0','#c2600f'],Medium:['#f1f1f0','#6d6d6c'],Low:['#f1f1f0','#9d9d9d']};
     const effColor={High:['#e6f7f1','#00966b'],Medium:['#f1f1f0','#6d6d6c'],Low:['#f1f1f0','#9d9d9d']};
     const badge=(label,bg,col)=>`<span style="font-size:11px;font-weight:700;padding:2px 9px;border-radius:20px;background:${bg};color:${col};">${label}</span>`;
     const bar=(pct,col)=>`<div style="display:block;height:100%;border-radius:3px;width:${Math.min(Math.round(pct),100)}%;background:${col};"></div>`;
@@ -2217,7 +2243,7 @@ class Component extends DCLogic {
           return `
             <div style="background:#fff;border:1px solid #e6e6e5;border-radius:12px;padding:18px 20px;margin-bottom:12px;box-shadow:0 1px 3px rgba(60,60,59,0.07);">
               <div style="display:flex;align-items:flex-start;gap:16px;">
-                <div style="font-size:15px;font-weight:900;color:#cecece;min-width:26px;text-align:center;margin-top:2px;">${f.priorityRank}</div>
+                <div style="font-size:15px;font-weight:900;color:#cecece;min-width:26px;text-align:center;margin-top:2px;">${i+1}</div>
                 <div style="flex:1;min-width:0;">
                   <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
                     <span style="font-size:15px;font-weight:700;">${f.name}</span>
@@ -2289,7 +2315,7 @@ class Component extends DCLogic {
       healthTabs, ranges, hc,
       toggleUsers:()=>this.toggleDrill('users_'+S.healthClient), drillUsers:!!S.drills['users_'+S.healthClient],
       toggleSubs:()=>this.toggleDrill('subs_'+S.healthClient), drillSubs:!!S.drills['subs_'+S.healthClient],
-      featTabs, atRiskToggleStyle, toggleFeatAtRisk:()=>this.setV({featAtRisk:!S.featAtRisk}), feats, featSummary, featEmpty:feats.length===0, featsHtml, onFeatClick,
+      featTabs, critFilterBtns, effFilterBtns, feats, featSummary, summaryCards, featEmpty:feats.length===0, featsHtml, onFeatClick,
       featSearch:S.featSearch, onFeatSearch:(e)=>this.setV({featSearch:e.target.value}), clearFeatSearch:()=>{ const inp=document.querySelector('[placeholder*="Search by feature"]'); if(inp)inp.value=''; this.setV({featSearch:''}); }, hasFeatSearch:!!S.featSearch.trim(),
       featRowsLabel:`${S.features.length} rows · synced 4 min ago`,
       chat, typing:S.typing, showSuggestions:!S.started, suggestions,
