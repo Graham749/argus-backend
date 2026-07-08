@@ -1024,7 +1024,7 @@ class Component extends DCLogic {
     const savedRange        = ls.getItem('argusRange')        || '3m';
     this.state = {
       view: savedView, healthClient: savedHealthClient, range: savedRange, briefClient:'rwe',
-      featProduct:'all', featCritFilter:null, featEffFilter:null, featScoreSource:null, featSearch:'', drills:{}, featuresLoaded:false, features:[],
+      featProduct:'all', featCritFilter:null, featEffFilter:null, featScoreSource:null, featSearch:'', drills:{}, featuresLoaded:false, featLoading:false, features:[],
       mdmLoaded:false, mdmLoading:false, mdmSummary:null, mdmDuplicates:[],
       chat:[{role:'argus', html:'Hello — I can brief you on any client account, or help you spot patterns across your portfolio. Try asking about a specific client, or a cross-portfolio question like &ldquo;which clients are at churn risk?&rdquo;'}],
       chatInput:'', typing:false, started:false,
@@ -1867,6 +1867,21 @@ class Component extends DCLogic {
   // Live data from v_gold_pb_feature_prioritization_final via /api/features
   // Loaded async in componentDidMount — scores are pre-computed by gold layer (0-10 scale)
   async loadFeatures(){
+    // Use shared shuffle queue (fallback init if loadMdm hasn't run yet)
+    if (!window.__argusNextMsg) window.__argusNextMsg = (function(){
+      const _all=["Argus had 100 eyes — all of them are bloodshot right now","The Oracle is consulting... if only it was a materialised table and not a view","Hermes is on his way — he stopped for coffee","Please bear with us — this is a Proof of Concept","Hephaestus is forging your insights — craftsmanship takes time","The Fates are measuring your metrics — they're very thorough","100 eyes, one slow query","Zeus is reviewing the figures — he has notes","Athena didn't build Athens in a day","The Titans are crunching numbers — there are a lot of numbers","Consulting the Oracle... the query is still running","Good things come to those who wait. So does this reload","Argus is swimming in the data lake — all 100 eyes open underwater","Diving deep into the data lake — Argus forgot his goggles","Something is swimming in the data lake — Argus is investigating","The data lake is murky today — even Argus can't see the bottom","Argus took a dip in the data lake — give him a moment to dry off"];
+      let _q=[];
+      return function(){if(!_q.length){_q=_all.slice();for(let i=_q.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));const t=_q[i];_q[i]=_q[j];_q[j]=t;}}return _q.pop();};
+    })();
+    clearInterval(window.__featMsgInterval);
+    window.__featCurrentMsg = window.__argusNextMsg();
+    window.__featMsgInterval = setInterval(function() {
+      window.__featCurrentMsg = window.__argusNextMsg();
+      const el = document.getElementById('feat-loading-msg');
+      if (!el) { clearInterval(window.__featMsgInterval); return; }
+      el.textContent = window.__featCurrentMsg;
+    }, 6000);
+    this.setState({featLoading: true});
     try {
       const res = await fetch('/api/features');
       if(!res.ok) throw new Error('HTTP '+res.status);
@@ -1913,9 +1928,12 @@ class Component extends DCLogic {
         subEfficiency:    f.subEfficiency  || '',
         subRegionText:    f.subRegionText  || ''
       }));
-      this.setState({features, featuresLoaded: true});
+      clearInterval(window.__featMsgInterval);
+      this.setState({features, featuresLoaded: true, featLoading: false});
     } catch(e) {
+      clearInterval(window.__featMsgInterval);
       console.error('[Argus] loadFeatures failed:', e);
+      this.setState({featLoading: false});
     }
   }
 
@@ -2194,8 +2212,17 @@ class Component extends DCLogic {
     const badge=(label,bg,col)=>`<span style="font-size:11px;font-weight:700;padding:2px 9px;border-radius:20px;background:${bg};color:${col};">${label}</span>`;
     const bar=(pct,col)=>`<div style="display:block;height:100%;border-radius:3px;width:${Math.min(Math.round(pct),100)}%;background:${col};"></div>`;
 
-    const featsRows = filtered.length === 0
-      ? `<div style="text-align:center;padding:48px;color:#9d9d9d;font-size:14px;">${S.featuresLoaded===false||S.features.length===0 ? 'Loading features...' : 'No features match this filter.'}</div>`
+    const featsRows = (S.featLoading || !S.featuresLoaded)
+      ? ('<style>@keyframes featProg{from{width:0%}to{width:88%}}</style>'
+        +'<div style="max-width:520px;margin:60px auto;padding:32px;text-align:center;">'
+          +'<div style="font-size:15px;font-weight:600;color:#3c3c3b;margin-bottom:16px;">Loading feature priority from Fabric</div>'
+          +'<div style="height:5px;border-radius:3px;background:#f1f1f0;overflow:hidden;margin-bottom:20px;">'
+            +'<div style="height:100%;border-radius:3px;background:linear-gradient(90deg,#288184,#00be86);animation:featProg 7s ease-out forwards;"></div>'
+          +'</div>'
+          +'<div id="feat-loading-msg" style="font-size:13px;color:#9d9d9d;font-style:italic;min-height:20px;">'+(window.__featCurrentMsg||'Loading feature data…')+'</div>'
+        +'</div>')
+      : filtered.length === 0
+      ? `<div style="text-align:center;padding:48px;color:#9d9d9d;font-size:14px;">No features match this filter.</div>`
       : filtered.map((f,i)=>{
           const expanded = !!S.drills['feat_'+f.id];
           const scoreBarPct = Math.min(f.finalScore * 10, 100);
