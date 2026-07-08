@@ -1900,6 +1900,29 @@ class Component extends DCLogic {
       setTimeout(() => window.__mdmRefresh && window.__mdmRefresh(), 0);
       return;
     }
+    // Start message cycling before setState so the interval runs exactly once
+    clearInterval(window.__mdmMsgInterval);
+    window.__mdmMsgs = [
+      "Argus had 100 eyes — all of them are bloodshot right now",
+      "The Oracle is consulting... if only it was a materialised table and not a view",
+      "Hermes is on his way — he stopped for coffee",
+      "Please bear with us — this is a Proof of Concept",
+      "Hephaestus is forging your insights — craftsmanship takes time",
+      "The Fates are measuring your metrics — they're very thorough",
+      "100 eyes, one slow query",
+      "Zeus is reviewing the figures — he has notes",
+      "Athena didn't build Athens in a day",
+      "The Titans are crunching numbers — there are a lot of numbers",
+      "Consulting the Oracle... the query is still running",
+      "Good things come to those who wait. So does this reload"
+    ];
+    window.__mdmMsgIdx = Math.floor(Math.random() * window.__mdmMsgs.length);
+    window.__mdmMsgInterval = setInterval(function() {
+      window.__mdmMsgIdx = (window.__mdmMsgIdx + 1) % window.__mdmMsgs.length;
+      const el = document.getElementById('mdm-loading-msg');
+      if (!el) { clearInterval(window.__mdmMsgInterval); return; }
+      el.textContent = window.__mdmMsgs[window.__mdmMsgIdx];
+    }, 6000);
     this.setState({mdmLoading: true});
     try {
       const res = await fetch('/api/mdm-accounts');
@@ -2439,38 +2462,10 @@ class Component extends DCLogic {
       mdmHtml: (()=>{
         const sm = S.mdmSummary;
 
-        // Loading state — animated progress bar with rotating messages
+        // Loading state — animated progress bar with rotating messages (interval managed by loadMdm)
         if(S.mdmLoading || (!S.mdmLoaded && !sm)) {
           const isLoading = S.mdmLoading;
-          const loadingMessages = [
-            "Argus had 100 eyes — all of them are bloodshot right now",
-            "The Oracle is consulting... if only it was a materialised table and not a view",
-            "Hermes is on his way — he stopped for coffee",
-            "Please bear with us — this is a Proof of Concept",
-            "Hephaestus is forging your insights — craftsmanship takes time",
-            "The Fates are measuring your metrics — they're very thorough",
-            "100 eyes, one slow query",
-            "Zeus is reviewing the figures — he has notes",
-            "Athena didn't build Athens in a day",
-            "The Titans are crunching numbers — there are a lot of numbers",
-            "Consulting the Oracle... the query is still running",
-            "Good things come to those who wait. So does this reload"
-          ];
-          const startIdx = Math.floor(Math.random() * loadingMessages.length);
-          // Cycle messages via setInterval after render — interval self-clears when element is gone
-          if (isLoading) {
-            clearInterval(window.__mdmMsgInterval);
-            setTimeout(function() {
-              var msgs = loadingMessages;
-              var i = (startIdx + 1) % msgs.length;
-              window.__mdmMsgInterval = setInterval(function() {
-                var el = document.getElementById('mdm-loading-msg');
-                if (!el) { clearInterval(window.__mdmMsgInterval); return; }
-                el.textContent = msgs[i];
-                i = (i + 1) % msgs.length;
-              }, 6000);
-            }, 6000);
-          }
+          const currentMsg = (window.__mdmMsgs && window.__mdmMsgs[window.__mdmMsgIdx]) || 'Loading account data…';
           return {__html:
             '<style>@keyframes mdmProg{from{width:0%}to{width:88%}}</style>'
             +'<div style="max-width:520px;margin:80px auto;padding:32px;text-align:center;">'
@@ -2480,7 +2475,7 @@ class Component extends DCLogic {
                   ? '<div style="height:100%;border-radius:3px;background:linear-gradient(90deg,#288184,#00be86);animation:mdmProg 7s ease-out forwards;"></div>'
                   : '<div style="height:100%;width:0%;background:#288184;"></div>')
               +'</div>'
-              +'<div id="mdm-loading-msg" style="font-size:13px;color:#9d9d9d;font-style:italic;min-height:20px;">'+loadingMessages[startIdx]+'</div>'
+              +'<div id="mdm-loading-msg" style="font-size:13px;color:#9d9d9d;font-style:italic;min-height:20px;">'+currentMsg+'</div>'
             +'</div>'
           };
         }
