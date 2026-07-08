@@ -2492,7 +2492,7 @@ class Component extends DCLogic {
 
         const rows = filtered.slice(0,300).map(a=>{
           const isExp = S.mdmExpandedId === a.sfAccountId;
-          const toggleId = JSON.stringify(a.sfAccountId);
+          const toggleId = "'"+a.sfAccountId+"'";
 
           const nameCell = '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">'
             +'<span style="font-size:13px;font-weight:500;">'+a.sfAccountName+'</span>'
@@ -2505,14 +2505,13 @@ class Component extends DCLogic {
             +'<td style="padding:9px 10px;">'+nameCell+'</td>'
             +'<td style="padding:9px 10px;">'+zdPill(a.zdMatchConfidence)+'</td>'
             +'<td style="padding:9px 10px;">'+pbPill(a)+'</td>'
-            +'<td style="padding:9px 14px;text-align:right;font-size:12px;font-weight:700;color:#3c3c3b;white-space:nowrap;">'+(a.sfAccountArr?fmt(a.sfAccountArr):'<span style="color:#c0c0c0;">—</span>')+'</td>'
             +'<td style="padding:9px 10px;text-align:center;color:#9d9d9d;font-size:14px;">'+(isExp?'▴':'▾')+'</td>'
             +'</tr>';
 
           if(!isExp) return mainRow;
 
           const detailRow = '<tr style="background:#fafafa;">'
-            +'<td colspan="5" style="padding:0 12px 16px 12px;">'
+            +'<td colspan="4" style="padding:0 12px 16px 12px;">'
             +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;padding:14px;background:#fff;border:1px solid #f1f1f0;border-radius:8px;">'
 
             // SF section
@@ -2845,10 +2844,9 @@ class Component extends DCLogic {
                 +'<th style="text-align:left;padding:10px 10px;font-size:11px;font-weight:700;color:#9d9d9d;text-transform:uppercase;letter-spacing:0.06em;">SF Account</th>'
                 +'<th style="text-align:left;padding:10px 10px;font-size:11px;font-weight:700;color:#288184;text-transform:uppercase;letter-spacing:0.06em;">Zendesk</th>'
                 +'<th style="text-align:left;padding:10px 10px;font-size:11px;font-weight:700;color:#7030a0;text-transform:uppercase;letter-spacing:0.06em;">Productboard</th>'
-                +'<th style="text-align:right;padding:10px 10px;font-size:11px;font-weight:700;color:#9d9d9d;text-transform:uppercase;letter-spacing:0.06em;">ARR</th>'
                 +'<th style="width:32px;"></th>'
               +'</tr></thead>'
-              +'<tbody>'+(rows||'<tr><td colspan="5" style="padding:32px;text-align:center;color:#9d9d9d;">No accounts match this filter</td></tr>')+'</tbody>'
+              +'<tbody>'+(rows||'<tr><td colspan="4" style="padding:32px;text-align:center;color:#9d9d9d;">No accounts match this filter</td></tr>')+'</tbody>'
             +'</table></div>'
           +'</div>';
 
