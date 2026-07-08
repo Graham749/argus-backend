@@ -2614,16 +2614,34 @@ class Component extends DCLogic {
           const detailRow = '<tr style="background:#fafafa;">'
             +'<td colspan="4" style="padding:0 12px 16px 12px;">'
             +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;padding:14px;background:#fff;border:1px solid #f1f1f0;border-radius:8px;">'
-              +'<div>'
-                +'<div style="font-size:10px;font-weight:700;color:#3c3c3b;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">Salesforce</div>'
-                +dc('Account ID', a.sfAccountId)
-                +dc('Status', a.sfAccountStatus)
-                +dc('Account Type', a.sfAccountType==='lone'?'Standalone':(a.sfAccountType==='parent'?'Parent':'Child'))
-                +(a.sfAccountType==='child'?dc('Parent Account', a.parentAccountName):'')
-                +(a.childCount>0?dc('Child Accounts', a.childCount+' subsidiaries'):'')
-                +dc('Website Domain', a.sfWebsiteDomain)
-                +dc('Active Subs', a.sfActiveSubscriptions||'—')
-              +'</div>'
+              +(function(){
+                  const accountLink = function(id, name) {
+                    return '<span style="font-size:11px;color:#288184;cursor:pointer;text-decoration:underline;" onclick="(function(){window.__mdmSearch=\''+id+'\';var inp=document.getElementById(\'mdm-search\');if(inp)inp.value=\''+id+'\';window.__mdmExpandedId=null;window.__mdmRefresh&&window.__mdmRefresh();})()">'+name+'</span>';
+                  };
+                  const children = a.sfAccountType==='parent'
+                    ? (window.__mdmAccounts||[]).filter(function(x){ return x.parentAccountId===a.sfAccountId; })
+                    : [];
+                  return '<div>'
+                    +'<div style="font-size:10px;font-weight:700;color:#3c3c3b;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">Salesforce</div>'
+                    +dc('Account ID', a.sfAccountId)
+                    +dc('Status', a.sfAccountStatus)
+                    +dc('Account Type', a.sfAccountType==='lone'?'Standalone':(a.sfAccountType==='parent'?'Parent':'Child'))
+                    +dc('Website Domain', a.sfWebsiteDomain)
+                    +dc('Active Subs', a.sfActiveSubscriptions||'—')
+                    +(a.sfAccountType==='child'&&a.parentAccountId
+                      ? '<div style="margin-top:10px;padding-top:10px;border-top:1px solid #f1f1f0;">'
+                          +'<div style="font-size:10px;font-weight:700;color:#9d9d9d;margin-bottom:6px;">Parent Account</div>'
+                          +accountLink(a.parentAccountId, a.parentAccountName||a.parentAccountId)
+                        +'</div>'
+                      : '')
+                    +(children.length>0
+                      ? '<div style="margin-top:10px;padding-top:10px;border-top:1px solid #f1f1f0;">'
+                          +'<div style="font-size:10px;font-weight:700;color:#9d9d9d;margin-bottom:6px;">'+children.length+' Subsidiar'+(children.length===1?'y':'ies')+'</div>'
+                          +children.map(function(c){ return '<div style="margin-bottom:4px;">'+accountLink(c.sfAccountId, c.sfAccountName)+'</div>'; }).join('')
+                        +'</div>'
+                      : '')
+                    +'</div>';
+                })()
               +'<div>'
                 +'<div style="font-size:10px;font-weight:700;color:#288184;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">Zendesk</div>'
                 +(a.hasZdOrg
