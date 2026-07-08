@@ -2652,7 +2652,9 @@ class Component extends DCLogic {
             return (a.sfAccountName && a.sfAccountName.toLowerCase().includes(s))
               || (a.sfAccountId && a.sfAccountId.toLowerCase().includes(s))
               || (a.zdOrgName && a.zdOrgName.toLowerCase().includes(s))
-              || (a.pbCompanyName && a.pbCompanyName.toLowerCase().includes(s));
+              || (a.zdOrgId && String(a.zdOrgId).includes(s))
+              || (a.pbCompanyName && a.pbCompanyName.toLowerCase().includes(s))
+              || (a.pbCompanyId && String(a.pbCompanyId).toLowerCase().includes(s));
           });
           if (cf) filtered = filtered.filter(function(a){ return a.zdMatchConfidence === cf; });
           const total = filtered.length;
@@ -2944,7 +2946,7 @@ class Component extends DCLogic {
           // Search + filter bar — committed on Enter or Search button, not live
           +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;">'
             +'<div style="display:flex;flex:1;min-width:220px;border:1.5px solid #e6e6e5;border-radius:8px;overflow:hidden;background:#fff;">'
-              +'<input id="mdm-search" type="text" placeholder="Search by SF name, SF ID, Zendesk or Productboard…" value="'+(window.__mdmSearch||'')+'" '
+              +'<input id="mdm-search" type="text" placeholder="Search by SF name, SF ID, ZD org name, ZD org ID, PB company…" value="'+(window.__mdmSearch||'')+'" '
                 +'onkeydown="(function(e){if(e.key===\'Enter\'){window.__mdmSearch=e.target.value;window.__mdmRefresh&&window.__mdmRefresh();}})(event)" '
                 +'style="flex:1;padding:8px 12px;border:none;font-size:13px;font-family:inherit;outline:none;min-width:0;" />'
               +'<button onclick="(function(){var v=document.getElementById(\'mdm-search\').value;window.__mdmSearch=v;window.__mdmRefresh&&window.__mdmRefresh();})()" '
