@@ -2430,7 +2430,7 @@ class Component extends DCLogic {
         const sm = S.mdmSummary;
         if(!S.mdmLoaded || !sm) return {__html:'<div style="text-align:center;padding:64px;color:#9d9d9d;font-size:14px;">Loading account MDM data…</div>'};
 
-        const pct = (n,d) => { if(!d) return '—'; const v=n/d*100; return v>0&&v<1 ? v.toFixed(1)+'%' : Math.round(v)+'%'; };
+        const pct = (n,d) => d ? (n/d*100).toFixed(1)+'%' : '—';
         const fmt = (n) => n==null ? '—' : n>=1000000 ? '£'+(n/1000000).toFixed(1)+'M' : n>=1000 ? '£'+(n/1000).toFixed(0)+'K' : '£'+Math.round(n);
 
         const highPct  = sm.total ? sm.highCount/sm.total   : 0;
@@ -2626,7 +2626,7 @@ class Component extends DCLogic {
                 +'<div style="font-size:11px;color:#9d9d9d;padding-left:16px;">'+pct(pbNoMatch,sm.pbTotal)+' of PB · no SF account found</div>'
               +'</div>'
             +'</div>'
-            +(sm.nameCollisions?'<div style="margin-top:12px;padding-top:12px;border-top:1px solid #f1f1f0;font-size:12px;color:#e07000;">⚠ '+sm.nameCollisions+' SF accounts share a name with at least one other SF account. Where Productboard matching fell back to name-only, the link may point to the wrong account — domain-based matching removes this ambiguity.</div>':'')
+            +(sm.nameCollisions?'<div style="margin-top:12px;padding-top:12px;border-top:1px solid #f1f1f0;font-size:12px;color:#e07000;">⚠ '+sm.nameCollisions+' account names appear more than once in Salesforce (e.g. two separate accounts both named "Shell"). For any Productboard name-fallback matches on these accounts, the link may have been assigned to the wrong duplicate — review these manually.</div>':'')
           +'</div>'
 
           // Search + filter bar
