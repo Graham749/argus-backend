@@ -2433,9 +2433,8 @@ class Component extends DCLogic {
         const pct = (n,d) => d ? (n/d*100).toFixed(1)+'%' : '—';
         const fmt = (n) => n==null ? '—' : n>=1000000 ? '£'+(n/1000000).toFixed(1)+'M' : n>=1000 ? '£'+(n/1000).toFixed(0)+'K' : '£'+Math.round(n);
 
-        const highPct  = sm.total ? sm.highCount/sm.total   : 0;
-        const medPct   = sm.total ? sm.mediumCount/sm.total : 0;
-        const noZdPct  = sm.total ? sm.noZdCount/sm.total   : 0;
+        const highPct  = sm.zdLinked ? sm.highCount/sm.zdLinked   : 0;
+        const medPct   = sm.zdLinked ? sm.mediumCount/sm.zdLinked : 0;
 
         const confColor = {'HIGH':'#00be86','MEDIUM':'#ffcc00','NO_ZD_MATCH':'#e6e6e5'};
         const confLabel = {'HIGH':'HIGH','MEDIUM':'MEDIUM','NO_ZD_MATCH':'No ZD'};
@@ -2577,7 +2576,6 @@ class Component extends DCLogic {
                   +'<div style="margin-left:28px;display:flex;flex-direction:column;gap:4px;padding:8px 10px;background:#f7f7f6;border-radius:6px;font-size:11px;color:#6d6d6c;">'
                     +'<div><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#00be86;margin-right:5px;vertical-align:middle;"></span><strong>High</strong> — name matched + domain confirmed</div>'
                     +'<div><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ffcc00;margin-right:5px;vertical-align:middle;"></span><strong>Medium</strong> — name matched, no domain</div>'
-                    +'<div><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#b0b0b0;margin-right:5px;vertical-align:middle;"></span><strong>Not in Zendesk</strong> — no Zendesk org found for this SF account</div>'
                   +'</div>'
                 +'</div>'
               +'</div>'
@@ -2601,20 +2599,20 @@ class Component extends DCLogic {
 
           // Zendesk Match Confidence Distribution
           +'<div style="background:#fff;border:1px solid #e6e6e5;border-radius:12px;padding:20px;margin-bottom:16px;box-shadow:0 1px 3px rgba(60,60,59,0.07);">'
-            +'<div style="font-size:12px;font-weight:700;color:#6d6d6c;margin-bottom:12px;text-transform:uppercase;letter-spacing:0.08em;">Zendesk Match Confidence Distribution</div>'
+            +'<div style="font-size:12px;font-weight:700;color:#6d6d6c;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.08em;">Zendesk Match Confidence</div>'
+            +'<div style="font-size:11px;color:#9d9d9d;margin-bottom:12px;">Quality of the '+sm.zdLinked.toLocaleString()+' SF accounts matched to Zendesk</div>'
             +'<div style="display:flex;height:12px;border-radius:6px;overflow:hidden;background:#f1f1f0;">'
               +'<div style="width:'+Math.round(highPct*100)+'%;background:#00be86;" title="HIGH: '+sm.highCount+'"></div>'
               +'<div style="width:'+Math.round(medPct*100)+'%;background:#ffcc00;" title="MEDIUM: '+sm.mediumCount+'"></div>'
-              +'<div style="width:'+Math.round(noZdPct*100)+'%;background:#e6e6e5;" title="No ZD: '+sm.noZdCount+'"></div>'
             +'</div>'
-            +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:14px;">'
+            +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px;">'
               +'<div style="display:flex;flex-direction:column;gap:3px;">'
                 +'<div style="display:flex;align-items:center;gap:6px;">'
                   +'<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#00be86;flex-shrink:0;"></span>'
                   +'<span style="font-size:12px;font-weight:700;color:#3c3c3b;">High</span>'
                 +'</div>'
                 +'<div style="font-size:20px;font-weight:900;color:#00be86;padding-left:16px;">'+sm.highCount.toLocaleString()+'</div>'
-                +'<div style="font-size:11px;color:#9d9d9d;padding-left:16px;">'+pct(sm.highCount,sm.total)+' · name + domain confirmed</div>'
+                +'<div style="font-size:11px;color:#9d9d9d;padding-left:16px;">'+pct(sm.highCount,sm.zdLinked)+' of matched · name + domain confirmed</div>'
               +'</div>'
               +'<div style="display:flex;flex-direction:column;gap:3px;">'
                 +'<div style="display:flex;align-items:center;gap:6px;">'
@@ -2622,15 +2620,7 @@ class Component extends DCLogic {
                   +'<span style="font-size:12px;font-weight:700;color:#3c3c3b;">Medium</span>'
                 +'</div>'
                 +'<div style="font-size:20px;font-weight:900;color:#b89400;padding-left:16px;">'+sm.mediumCount.toLocaleString()+'</div>'
-                +'<div style="font-size:11px;color:#9d9d9d;padding-left:16px;">'+pct(sm.mediumCount,sm.total)+' · name match only</div>'
-              +'</div>'
-              +'<div style="display:flex;flex-direction:column;gap:3px;">'
-                +'<div style="display:flex;align-items:center;gap:6px;">'
-                  +'<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#b0b0b0;flex-shrink:0;"></span>'
-                  +'<span style="font-size:12px;font-weight:700;color:#3c3c3b;">Not in Zendesk</span>'
-                +'</div>'
-                +'<div style="font-size:20px;font-weight:900;color:#9d9d9d;padding-left:16px;">'+sm.noZdCount.toLocaleString()+'</div>'
-                +'<div style="font-size:11px;color:#9d9d9d;padding-left:16px;">'+pct(sm.noZdCount,sm.total)+' · SF accounts with no Zendesk record</div>'
+                +'<div style="font-size:11px;color:#9d9d9d;padding-left:16px;">'+pct(sm.mediumCount,sm.zdLinked)+' of matched · name only, no domain</div>'
               +'</div>'
             +'</div>'
           +'</div>'
