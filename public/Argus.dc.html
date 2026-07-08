@@ -417,6 +417,10 @@ input{font-family:inherit;}
             <div style="font-size:11px;color:#6d6d6c;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;">High efficiency</div>
             <div style="font-size:28px;font-weight:700;color:#00966b;">{{ featSummary.highEffCount }}</div>
           </div>
+          <div onClick="{{ summaryCards.subWin.onClick }}" style="{{ summaryCards.subWin.style }}">
+            <div style="font-size:11px;color:#6d6d6c;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;">Subfeature elevated</div>
+            <div style="font-size:28px;font-weight:700;color:#7030a0;">{{ featSummary.subWinCount }}</div>
+          </div>
         </div>
 
         <div style="position:relative;margin-bottom:14px;">
@@ -442,6 +446,12 @@ input{font-family:inherit;}
         <div style="margin-bottom:18px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
           <span style="font-size:11px;font-weight:600;color:#9d9d9d;margin-right:2px;">Efficiency</span>
           <sc-for list="{{ effFilterBtns }}" as="b" hint-placeholder-count="3">
+            <button onClick="{{ b.onClick }}" style="{{ b.style }}">{{ b.label }}</button>
+          </sc-for>
+        </div>
+        <div style="margin-bottom:18px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+          <span style="font-size:11px;font-weight:600;color:#9d9d9d;margin-right:2px;">Score source</span>
+          <sc-for list="{{ srcBtns }}" as="b" hint-placeholder-count="2">
             <button onClick="{{ b.onClick }}" style="{{ b.style }}">{{ b.label }}</button>
           </sc-for>
         </div>
@@ -1014,7 +1024,7 @@ class Component extends DCLogic {
     const savedView = typeof localStorage !== 'undefined' ? localStorage.getItem('argusView') : 'health';
     this.state = {
       view: savedView || 'health', healthClient:'rwe', range:'3m', briefClient:'rwe',
-      featProduct:'all', featCritFilter:null, featEffFilter:null, featSearch:'', drills:{}, featuresLoaded:false, features:[],
+      featProduct:'all', featCritFilter:null, featEffFilter:null, featScoreSource:null, featSearch:'', drills:{}, featuresLoaded:false, features:[],
       chat:[{role:'argus', html:'Hello — I can brief you on any client account, or help you spot patterns across your portfolio. Try asking about a specific client, or a cross-portfolio question like &ldquo;which clients are at churn risk?&rdquo;'}],
       chatInput:'', typing:false, started:false,
       bronzeExpanded:false, silverExpanded:false, goldExpanded:false,
@@ -2000,6 +2010,12 @@ class Component extends DCLogic {
         style:{display:'inline-flex',alignItems:'center',fontSize:'12px',fontWeight:700,padding:'5px 12px',borderRadius:'8px',cursor:'pointer',
           border:'1.5px solid '+(active?col:'#cecece'),background:active?bg:'#fff',color:active?col:'#6d6d6c'}};
     });
+    const srcBtns=[{val:'feature',label:'Won by feature',bg:'#eef2ff',col:'#3730a3'},{val:'subfeature',label:'Won by subfeature',bg:'#f5f0fa',col:'#7030a0'}].map(s=>{
+      const active=S.featScoreSource===s.val;
+      return {label:s.label,onClick:()=>this.setV({featScoreSource:active?null:s.val,featCritFilter:null,featEffFilter:null}),
+        style:{display:'inline-flex',alignItems:'center',fontSize:'12px',fontWeight:700,padding:'5px 12px',borderRadius:'8px',cursor:'pointer',
+          border:'1.5px solid '+(active?s.col:'#cecece'),background:active?s.bg:'#fff',color:active?s.col:'#6d6d6c'}};
+    });
 
     const critStyleFor=(lvl)=>{ const m={Critical:['#fbeaea','#d23f3f'],High:['#fdeee0','#c2600f'],Medium:['#f1f1f0','#6d6d6c'],Low:['#f1f1f0','#9d9d9d']}[lvl]||['#f1f1f0','#9d9d9d']; return {fontSize:'11px',fontWeight:700,padding:'2px 9px',borderRadius:'20px',background:m[0],color:m[1]}; };
     const effStyleFor=(lvl)=>{ const m={High:['#e6f7f1','#00966b'],Medium:['#f1f1f0','#6d6d6c'],Low:['#f1f1f0','#9d9d9d']}[lvl]||['#f1f1f0','#9d9d9d']; return {fontSize:'11px',fontWeight:700,padding:'2px 9px',borderRadius:'20px',background:m[0],color:m[1]}; };
@@ -2016,7 +2032,7 @@ class Component extends DCLogic {
         }
         return true;
       })
-      .filter(f=> (S.featProduct==='all'||f.productName===S.featProduct) && (!S.featCritFilter || (S.featCritFilter==='Blocker+Critical'?(f.criticality==='Blocker'||f.criticality==='Critical'):f.criticality===S.featCritFilter)) && (!S.featEffFilter || f.efficiency===S.featEffFilter))
+      .filter(f=> (S.featProduct==='all'||f.productName===S.featProduct) && (!S.featCritFilter || (S.featCritFilter==='Blocker+Critical'?(f.criticality==='Blocker'||f.criticality==='Critical'):f.criticality===S.featCritFilter)) && (!S.featEffFilter || f.efficiency===S.featEffFilter) && (!S.featScoreSource || f.scoreSource===S.featScoreSource))
       .sort((a,b)=> b.finalScore-a.finalScore || (critRank[b.criticality]-critRank[a.criticality]));
     const feats=filtered.map((f,i)=>{
       const expanded=!!S.drills['feat_'+f.id];
@@ -2041,12 +2057,13 @@ class Component extends DCLogic {
         ]
       };
     });
-    const featSummary={ total:S.features.length, blockerCriticalCount:S.features.filter(f=>f.criticality==='Blocker'||f.criticality==='Critical').length, highEffCount:S.features.filter(f=>f.efficiency==='High').length, topScore:scored.length ? Math.max(...scored.map(f=>f.finalScore)) : 0 };
+    const featSummary={ total:S.features.length, blockerCriticalCount:S.features.filter(f=>f.criticality==='Blocker'||f.criticality==='Critical').length, highEffCount:S.features.filter(f=>f.efficiency==='High').length, subWinCount:S.features.filter(f=>f.scoreSource==='subfeature').length, topScore:scored.length ? Math.max(...scored.map(f=>f.finalScore)) : 0 };
     const _cardBase='background:#fff;border:1.5px solid #e6e6e5;border-radius:12px;padding:16px 18px;box-shadow:0 1px 3px rgba(60,60,59,0.07);cursor:pointer;transition:border-color .15s;';
     const summaryCards={
-      all:{onClick:()=>this.setV({featCritFilter:null,featEffFilter:null}),style:_cardBase+(!S.featCritFilter&&!S.featEffFilter?'border-color:#3c3c3b;':'')},
-      blockerCritical:{onClick:()=>this.setV({featCritFilter:S.featCritFilter==='Blocker+Critical'?null:'Blocker+Critical',featEffFilter:null}),style:_cardBase+(S.featCritFilter==='Blocker+Critical'?'border-color:#d23f3f;background:#fbeaea;':'')},
-      highEff:{onClick:()=>this.setV({featEffFilter:S.featEffFilter==='High'?null:'High',featCritFilter:null}),style:_cardBase+(S.featEffFilter==='High'?'border-color:#00966b;background:#e6f7f1;':'')}
+      all:{onClick:()=>this.setV({featCritFilter:null,featEffFilter:null,featScoreSource:null}),style:_cardBase+(!S.featCritFilter&&!S.featEffFilter&&!S.featScoreSource?'border-color:#3c3c3b;':'')},
+      blockerCritical:{onClick:()=>this.setV({featCritFilter:S.featCritFilter==='Blocker+Critical'?null:'Blocker+Critical',featEffFilter:null,featScoreSource:null}),style:_cardBase+(S.featCritFilter==='Blocker+Critical'?'border-color:#d23f3f;background:#fbeaea;':'')},
+      highEff:{onClick:()=>this.setV({featEffFilter:S.featEffFilter==='High'?null:'High',featCritFilter:null,featScoreSource:null}),style:_cardBase+(S.featEffFilter==='High'?'border-color:#00966b;background:#e6f7f1;':'')},
+      subWin:{onClick:()=>this.setV({featScoreSource:S.featScoreSource==='subfeature'?null:'subfeature',featCritFilter:null,featEffFilter:null}),style:_cardBase+(S.featScoreSource==='subfeature'?'border-color:#7030a0;background:#f5f0fa;':'')}
     };
 
     const critColor={Blocker:['#f5e6f5','#7030a0'],Critical:['#fbeaea','#d23f3f'],High:['#fdeee0','#c2600f'],Medium:['#f1f1f0','#6d6d6c'],Low:['#f1f1f0','#9d9d9d']};
@@ -2330,7 +2347,7 @@ class Component extends DCLogic {
       healthTabs, ranges, hc,
       toggleUsers:()=>this.toggleDrill('users_'+S.healthClient), drillUsers:!!S.drills['users_'+S.healthClient],
       toggleSubs:()=>this.toggleDrill('subs_'+S.healthClient), drillSubs:!!S.drills['subs_'+S.healthClient],
-      featTabs, critFilterBtns, effFilterBtns, feats, featSummary, summaryCards, featEmpty:feats.length===0, featsHtml, onFeatClick,
+      featTabs, critFilterBtns, effFilterBtns, srcBtns, feats, featSummary, summaryCards, featEmpty:feats.length===0, featsHtml, onFeatClick,
       featSearch:S.featSearch, onFeatSearch:(e)=>this.setV({featSearch:e.target.value}), clearFeatSearch:()=>{ const inp=document.querySelector('[placeholder*="Search by feature"]'); if(inp)inp.value=''; this.setV({featSearch:''}); }, hasFeatSearch:!!S.featSearch.trim(),
       featRowsLabel:`${S.features.length} rows · synced 4 min ago`,
       chat, typing:S.typing, showSuggestions:!S.started, suggestions,
