@@ -2657,9 +2657,9 @@ class Component extends DCLogic {
           if (cf) filtered = filtered.filter(function(a){ return a.zdMatchConfidence === cf; });
           const total = filtered.length;
           const lbl = document.getElementById('mdm-count-label');
-          if (lbl) lbl.textContent = 'Showing ' + Math.min(total, 300) + ' of ' + total + ' accounts';
+          if (lbl) lbl.textContent = total + ' accounts' + (total < (window.__mdmAccounts||[]).length ? ' (filtered)' : '');
           tbody.innerHTML = total
-            ? filtered.slice(0, 300).map(window.__mdmRow).join('')
+            ? filtered.map(window.__mdmRow).join('')
             : '<tr><td colspan="4" style="padding:32px;text-align:center;color:#9d9d9d;">No accounts match this filter</td></tr>';
         };
 
