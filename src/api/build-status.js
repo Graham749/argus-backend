@@ -12,6 +12,11 @@ async function getBuildStatus(req, res) {
       lakehouseStatus(mockReq, mockRes).catch(reject);
     });
 
+    // Guard: lakehouseStatus may return {error:...} when auth fails
+    if (!data || !data.gold) {
+      return res.status(503).json({ error: 'Lakehouse unavailable — Azure AD token may have expired' });
+    }
+
     // Extract primary sources
     const primarySources = {};
     ['Productboard', 'Salesforce'].forEach(source => {

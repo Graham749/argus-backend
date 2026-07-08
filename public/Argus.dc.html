@@ -211,19 +211,9 @@ input{font-family:inherit;}
           </div>
         </div>
 
-        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:20px;">
-          <sc-for list="{{ healthTabs }}" as="t" hint-placeholder-count="6">
-            <div onClick="{{ t.onClick }}" style="{{ t.style }}">
-              <span style="{{ t.dotStyle }}"></span>{{ t.name }}
-            </div>
-          </sc-for>
-        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:20px;" dangerouslySetInnerHTML="{{ healthTabsHtml }}"></div>
 
-        <div style="display:flex;gap:4px;margin-bottom:22px;">
-          <sc-for list="{{ ranges }}" as="r" hint-placeholder-count="3">
-            <button onClick="{{ r.onClick }}" style="{{ r.style }}">{{ r.label }}</button>
-          </sc-for>
-        </div>
+        <div style="display:flex;gap:4px;margin-bottom:22px;" dangerouslySetInnerHTML="{{ rangesHtml }}"></div>
 
         <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:20px;">
           <div style="display:flex;align-items:center;gap:14px;">
@@ -951,7 +941,7 @@ input{font-family:inherit;}
 
       <!-- ============ ACCOUNT MDM ============ -->
       <sc-if value="{{ isMdm }}" hint-placeholder-val="{{ false }}">
-      <div style="padding:32px;max-width:1200px;animation:argusFade .25s ease;" data-dc-html="{{ mdmPageHtml }}"></div>
+      <div style="padding:32px;max-width:1200px;animation:argusFade .25s ease;" dangerouslySetInnerHTML="{{ mdmHtml }}"></div>
       </sc-if>
 
     </main>
@@ -1030,9 +1020,12 @@ document.addEventListener('click', function(e) {
 class Component extends DCLogic {
   constructor(props){
     super(props);
-    const savedView = typeof localStorage !== 'undefined' ? localStorage.getItem('argusView') : 'health';
+    const ls = typeof localStorage !== 'undefined' ? localStorage : {getItem:()=>null};
+    const savedView         = ls.getItem('argusView')         || 'health';
+    const savedHealthClient = ls.getItem('argusHealthClient') || 'rwe';
+    const savedRange        = ls.getItem('argusRange')        || '3m';
     this.state = {
-      view: savedView || 'health', healthClient:'rwe', range:'3m', briefClient:'rwe',
+      view: savedView, healthClient: savedHealthClient, range: savedRange, briefClient:'rwe',
       featProduct:'all', featCritFilter:null, featEffFilter:null, featScoreSource:null, featSearch:'', drills:{}, featuresLoaded:false, features:[],
       mdmLoaded:false, mdmAccounts:[], mdmSummary:null, mdmSearch:'', mdmConfFilter:null,
       chat:[{role:'argus', html:'Hello — I can brief you on any client account, or help you spot patterns across your portfolio. Try asking about a specific client, or a cross-portfolio question like &ldquo;which clients are at churn risk?&rdquo;'}],
@@ -1067,6 +1060,7 @@ class Component extends DCLogic {
     this.fetchCurrentUser();
     this.fetchIntegrationStatus();
     this.loadFeatures();
+    this.loadMdm();
     // Setup Salesforce subscriptions immediately (don't wait)
     this.setupSalesforceSubscriptions();
   }
@@ -1092,6 +1086,7 @@ class Component extends DCLogic {
       select.addEventListener('change', (e) => {
         const accountName = e.target.value;
         if(accountName) {
+          try{ localStorage.setItem('argusHealthAccount', accountName); }catch(e){}
           this.currentServiceTypeFilter = 'all';
           // Reset button styling to show All selected
           const filterBtns = document.querySelectorAll('.sfServiceTypeFilter');
@@ -1197,6 +1192,19 @@ class Component extends DCLogic {
       option.textContent = acc.name;
       select.appendChild(option);
     });
+
+    // Restore previously selected account — DOM guard prevents double-firing from multiple poll timers
+    if(!select.dataset.restored){
+      select.dataset.restored = '1';
+      const saved = localStorage.getItem('argusHealthAccount');
+      if(saved){
+        select.value = saved;
+        if(select.value === saved){
+          // Call directly — dispatchEvent won't work if the change listener isn't attached yet
+          setTimeout(() => this.fetchSalesforceSubscriptions(saved), 100);
+        }
+      }
+    }
   }
 
   fetchSalesforceSubscriptions(accountName){
@@ -1656,6 +1664,10 @@ class Component extends DCLogic {
       .then(data=>{
         clearInterval(loadingInterval);
         this.setState({isLoading:false});
+        if(data.error || !data.gold){
+          this.setState({buildStatus:{...this.state.buildStatus,syncLabel:'Fabric auth expired — restart server'}});
+          return;
+        }
         const topGoldTables=(data.gold.views||[]).slice(0,3).map(v=>({name:v.name,desc:v.purpose}));
 
         // Group bronze tables by source system
@@ -1746,7 +1758,7 @@ class Component extends DCLogic {
         };
         this.setState({buildStatus:bs});
       })
-      .catch(err=>{console.error('Build status fetch failed:',err);this.setState({buildStatus:{...S.buildStatus,syncLabel:'Failed to fetch (API down?)'}});})
+      .catch(err=>{console.error('Build status fetch failed:',err);clearInterval(loadingInterval);this.setState({isLoading:false,buildStatus:{...this.state.buildStatus,syncLabel:'Server offline'}});})
   }
 
   productColor = { Chronos:'#0089b3', Origin:'#00966b', Reports:'#c2600f', 'Scenario Explorer':'#7030a0', Platform:'#6d6d6c' };
@@ -1913,7 +1925,11 @@ class Component extends DCLogic {
   utilPctStyle(p){ return {fontSize:'11px',marginLeft:'6px',fontWeight:p>100?700:400,color:p>100?'#d23f3f':'#9d9d9d'}; }
 
   setV(patch){
-    if(patch.view && typeof localStorage !== 'undefined') localStorage.setItem('argusView', patch.view);
+    if(typeof localStorage !== 'undefined'){
+      if(patch.view)         localStorage.setItem('argusView',         patch.view);
+      if(patch.healthClient) localStorage.setItem('argusHealthClient', patch.healthClient);
+      if(patch.range)        localStorage.setItem('argusRange',        patch.range);
+    }
     this.setState(patch);
   }
   toggleDrill(id){ this.setState(s=>({drills:{...s.drills,[id]:!s.drills[id]}})); }
@@ -1950,20 +1966,25 @@ class Component extends DCLogic {
     const navBase={display:'flex',alignItems:'center',gap:'10px',padding:'8px 20px',fontSize:'13px',textDecoration:'none',borderLeft:'3px solid transparent',cursor:'pointer',fontWeight:600};
     const navStyle=(v)=> S.view===v ? {...navBase,background:'rgba(255,204,0,0.16)',color:'#fff',borderLeftColor:'#ffcc00'} : {...navBase,color:'rgba(255,255,255,0.65)'};
 
-    // ── health tabs ──
-    const tabBase={display:'flex',alignItems:'center',gap:'8px',padding:'7px 14px',borderRadius:'8px',border:'1.5px solid #cecece',background:'#fff',fontSize:'13px',fontWeight:500,color:'#3c3c3b',cursor:'pointer'};
-    const healthTabs=order.map(k=>{
+    // ── health tabs (dangerouslySetInnerHTML — sc-for style bindings don't update reliably) ──
+    const tabBase='display:flex;align-items:center;gap:8px;padding:7px 14px;border-radius:8px;border:1.5px solid #cecece;background:#fff;font-size:13px;font-weight:500;color:#3c3c3b;cursor:pointer;';
+    const tabActive='display:flex;align-items:center;gap:8px;padding:7px 14px;border-radius:8px;border:1.5px solid #ffcc00;background:#fff8e1;font-size:13px;font-weight:500;color:#3c3c3b;cursor:pointer;';
+    const healthTabsHtml = {__html: order.map(k=>{
       const c=this.clients[k];
-      return {name:c.name, onClick:()=>this.setV({healthClient:k}),
-        style: S.healthClient===k?{...tabBase,borderColor:'#ffcc00',background:'#fff8e1'}:tabBase,
-        dotStyle:{width:'8px',height:'8px',borderRadius:'50%',background:this.churnColor(c.churnPct)}};
-    });
+      const dot=`<span style="width:8px;height:8px;border-radius:50%;background:${this.churnColor(c.churnPct)};flex-shrink:0;"></span>`;
+      const st=S.healthClient===k?tabActive:tabBase;
+      return `<div onclick="window.__argus&&window.__argus.setV({healthClient:'${k}'})" style="${st}">${dot}${c.name}</div>`;
+    }).join('')};
 
     // ── ranges ──
-    const rBase={fontSize:'12px',fontWeight:700,padding:'5px 12px',borderRadius:'8px',border:'1.5px solid #cecece',background:'#fff',color:'#6d6d6c',cursor:'pointer'};
-    const ranges=[['3 months','3m'],['6 months','6m'],['12 months','12m']].map(([label,key])=>({
-      label, onClick:()=>this.setV({range:key}),
-      style: S.range===key?{...rBase,background:'#3c3c3b',color:'#fff',borderColor:'#3c3c3b'}:rBase}));
+    const rBase='font-size:12px;font-weight:700;padding:5px 12px;border-radius:8px;border:1.5px solid #cecece;background:#fff;color:#6d6d6c;cursor:pointer;';
+    const rActive='font-size:12px;font-weight:700;padding:5px 12px;border-radius:8px;border:1.5px solid #3c3c3b;background:#3c3c3b;color:#fff;cursor:pointer;';
+    const rangesHtml = {__html: [['3 months','3m'],['6 months','6m'],['12 months','12m']].map(([label,key])=>{
+      const st=S.range===key?rActive:rBase;
+      return `<button onclick="window.__argus&&window.__argus.setV({range:'${key}'})" style="${st}">${label}</button>`;
+    }).join('')};
+    // keep empty arrays for any remaining template refs
+    const ranges=[], healthTabs=[];
 
     // ── health card view-model ──
     const c=this.clients[S.healthClient], u=c.usage[S.range];
@@ -2215,15 +2236,15 @@ class Component extends DCLogic {
                           : `<tr><td colspan="3" style="padding:6px 8px;color:#9d9d9d;font-style:italic;">No strategic regions matched</td></tr>`}
                       </tbody>
                       <tfoot><tr style="border-top:2px solid #f1f1f0;">
-                        <td style="padding:6px 8px 3px;font-weight:700;color:#3c3c3b;">Total</td>
+                        <td style="padding:6px 8px 3px;font-weight:700;color:#3c3c3b;">Total (capped — 1 match counts)</td>
                         <td style="text-align:right;padding:6px 8px 3px;font-weight:700;color:#7030a0;">${Number(f.strategicRegionScore).toFixed(0)}</td>
                         <td style="text-align:right;padding:6px 8px 3px;font-weight:700;color:#7030a0;">${Number(f.strategicRegionWeighted).toFixed(2)}</td>
                       </tr></tfoot>
                     </table>
-                    <p style="font-size:10px;color:#9d9d9d;margin-top:8px;">Each matched strategic region adds 2 pts · weighted at ×10%</p>
+                    <p style="font-size:10px;color:#9d9d9d;margin-top:8px;">Any strategic region match = 2 pts · max one boost per feature · weighted at ×10%</p>
                   </div>
                 </div>
-                <span style="font-size:11px;color:#9d9d9d;min-width:160px;">${Number(activeSrScore).toFixed(0)} pts${Number(activeSrScore)>0?' matched':' (none matched)'}</span>
+                <span style="font-size:11px;color:#9d9d9d;min-width:160px;">${Number(activeSrScore)>0 ? Number(activeSrScore).toFixed(0)+' pts matched (capped)' : '— (none matched)'}</span>
                 <span style="font-size:11px;color:#9d9d9d;min-width:38px;">×10%</span>
                 <div style="flex:1;height:6px;background:#f1f1f0;border-radius:3px;overflow:hidden;min-width:80px;">${bar(Math.round(Number(activeSrW)/1.6*100),'#7030a0')}</div>
                 <span style="font-size:12px;font-weight:700;min-width:38px;text-align:right;">${Number(activeSrW).toFixed(2)}</span>
@@ -2366,10 +2387,10 @@ class Component extends DCLogic {
       goAssistant:(e)=>{e&&e.preventDefault();this.setV({view:'assistant'});},
       goBriefing:(e)=>{e&&e.preventDefault();this.setV({view:'briefing'});},
       goBuildStatus:(e)=>{e&&e.preventDefault();this.setV({view:'buildStatus'});},
-      goMdm:(e)=>{e&&e.preventDefault();this.setV({view:'mdm',mdmConfFilter:null,mdmSearch:''});if(!S.mdmLoaded)this.loadMdm();},
+      goMdm:(e)=>{e&&e.preventDefault();this.setV({view:'mdm',mdmConfFilter:null,mdmSearch:''}); },
       navStyleHealth:navStyle('health'), navStyleFeatures:navStyle('features'), navStyleAssistant:navStyle('assistant'), navStyleBriefing:navStyle('briefing'), navStyleBuildStatus:navStyle('buildStatus'), navStyleMdm:navStyle('mdm'),
       isHealth:S.view==='health', isFeatures:S.view==='features', isAssistant:S.view==='assistant', isBriefing:S.view==='briefing', isBuildStatus:S.view==='buildStatus', isMdm:S.view==='mdm',
-      healthTabs, ranges, hc,
+      healthTabsHtml, rangesHtml, healthTabs, ranges, hc,
       toggleUsers:()=>this.toggleDrill('users_'+S.healthClient), drillUsers:!!S.drills['users_'+S.healthClient],
       toggleSubs:()=>this.toggleDrill('subs_'+S.healthClient), drillSubs:!!S.drills['subs_'+S.healthClient],
       featTabs, critFilterBtns, effFilterBtns, srcBtns, feats, featSummary, summaryCards, featEmpty:feats.length===0, featsHtml, onFeatClick,
@@ -2405,9 +2426,9 @@ class Component extends DCLogic {
       showAboutModal:S.showAboutModal,
       toggleAboutModal:()=>this.setV({showAboutModal:!S.showAboutModal}),
       currentUser:S.currentUser,
-      mdmPageHtml: (()=>{
+      mdmHtml: (()=>{
         const sm = S.mdmSummary;
-        if(!S.mdmLoaded || !sm) return '<div style="text-align:center;padding:64px;color:#9d9d9d;font-size:14px;">Loading account MDM data…</div>';
+        if(!S.mdmLoaded || !sm) return {__html:'<div style="text-align:center;padding:64px;color:#9d9d9d;font-size:14px;">Loading account MDM data…</div>'};
 
         const pct = (n,d) => d ? Math.round(n/d*100)+'%' : '—';
         const fmt = (n) => n==null ? '—' : n>=1000000 ? '£'+(n/1000000).toFixed(1)+'M' : n>=1000 ? '£'+(n/1000).toFixed(0)+'K' : '£'+Math.round(n);
@@ -2481,7 +2502,7 @@ class Component extends DCLogic {
               {label:'SF Accounts',     val:sm.total.toLocaleString(),          sub:'Master system of record',              col:'#3c3c3b'},
               {label:'ZD Linked',        val:sm.zdLinked.toLocaleString()+' ('+pct(sm.zdLinked,sm.total)+')',  sub:'Zendesk org matched by name',         col:'#288184'},
               {label:'HIGH Confidence',  val:sm.highCount.toLocaleString()+' ('+pct(sm.highCount,sm.total)+')',sub:'Name + domain confirmed',             col:'#00be86'},
-              {label:'PB Linked',        val:sm.pbLinked.toLocaleString()+' ('+pct(sm.pbLinked,sm.total)+')', sub:'ProductBoard company matched',         col:'#7030a0'},
+              {label:'PB Companies',     val:sm.pbCompaniesMatched.toLocaleString()+' of '+sm.pbTotal.toLocaleString()+' ('+pct(sm.pbCompaniesMatched,sm.pbTotal)+')', sub:'PB companies matched to SF accounts', col:'#7030a0'},
             ].map(c=>'<div style="background:#fff;border:1px solid #e6e6e5;border-radius:12px;padding:18px;box-shadow:0 1px 3px rgba(60,60,59,0.07);">'
               +'<div style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#9d9d9d;margin-bottom:8px;">'+c.label+'</div>'
               +'<div style="font-size:22px;font-weight:900;color:'+c.col+';">'+c.val+'</div>'
@@ -2504,11 +2525,12 @@ class Component extends DCLogic {
             +'</div>'
 
             // PB sub-row
-            +'<div style="margin-top:14px;padding-top:14px;border-top:1px solid #f1f1f0;font-size:12px;color:#6d6d6c;display:flex;gap:20px;">'
-              +'<span style="font-weight:700;color:#7030a0;">PB coverage:</span>'
-              +'<span>Website domain: '+sm.pbWebsite+'</span>'
-              +'<span>EOS domain: '+sm.pbEos+'</span>'
-              +'<span>Name fallback: '+sm.pbName+'</span>'
+            +'<div style="margin-top:14px;padding-top:14px;border-top:1px solid #f1f1f0;font-size:12px;color:#6d6d6c;display:flex;gap:24px;flex-wrap:wrap;align-items:center;">'
+              +'<span style="font-weight:700;color:#7030a0;">PB match method</span>'
+              +'<span title="SF nebc__Website_Domain__c = PB normalised_domain"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#7030a0;margin-right:5px;vertical-align:middle;opacity:0.9;"></span>Website domain: <strong>'+sm.pbWebsite+'</strong></span>'
+              +'<span title="SF Domains_with_EOS_Access__c contains PB normalised_domain"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#9d60c8;margin-right:5px;vertical-align:middle;opacity:0.9;"></span>EOS domain: <strong>'+sm.pbEos+'</strong></span>'
+              +'<span title="Case-insensitive name match (fallback when no domain)"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#c9a0e0;margin-right:5px;vertical-align:middle;opacity:0.9;"></span>Name fallback: <strong>'+sm.pbName+'</strong></span>'
+              +'<span style="color:#9d9d9d;font-size:11px;">· '+sm.pbTotal+' PB companies total · '+sm.pbLinked+' SF accounts with a PB match</span>'
               +(sm.nameCollisions?'<span style="color:#e07000;margin-left:auto;">⚠ '+sm.nameCollisions+' SF name collisions need review</span>':'')
             +'</div>'
           +'</div>'
@@ -2539,7 +2561,7 @@ class Component extends DCLogic {
             +'</table></div>'
           +'</div>';
 
-        return html;
+        return {__html: html};
       })()
     };
   }

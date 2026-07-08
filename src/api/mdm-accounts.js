@@ -27,6 +27,12 @@ async function queryLakehouse(query) {
     await conn.connect();
     const result = await conn.request().query(query);
     return result.recordset;
+  } catch (err) {
+    if (err.message && (err.message.includes('Could not login') || err.message.includes('authentication failed') || err.message.includes('token'))) {
+      cachedToken = null;
+      tokenExpiry = null;
+    }
+    throw err;
   } finally {
     await conn.close();
   }
@@ -46,10 +52,12 @@ async function mdmAccounts(req, res) {
           SUM(has_zd_org)                                                       AS zdLinked,
           SUM(zd_domain_confirmed)                                              AS zdDomainConfirmed,
           SUM(has_pb_company)                                                   AS pbLinked,
+          COUNT(DISTINCT pb_company_id)                                         AS pbCompaniesMatched,
           SUM(CASE WHEN pb_match_method = 'website_domain'   THEN 1 ELSE 0 END) AS pbWebsite,
           SUM(CASE WHEN pb_match_method = 'eos_domain'       THEN 1 ELSE 0 END) AS pbEos,
           SUM(CASE WHEN pb_match_method = 'name'             THEN 1 ELSE 0 END) AS pbName,
-          SUM(sf_name_collision)                                                AS nameCollisions
+          SUM(sf_name_collision)                                                AS nameCollisions,
+          (SELECT COUNT(*) FROM v_silver_pb_companies)                         AS pbTotal
         FROM v_silver_mdm_account
       `),
       queryLakehouse(`
@@ -107,10 +115,12 @@ async function mdmAccounts(req, res) {
         noZdCount:         Number(summary.noZdCount)        || 0,
         zdLinked:          Number(summary.zdLinked)         || 0,
         zdDomainConfirmed: Number(summary.zdDomainConfirmed)|| 0,
-        pbLinked:          Number(summary.pbLinked)         || 0,
-        pbWebsite:         Number(summary.pbWebsite)        || 0,
-        pbEos:             Number(summary.pbEos)            || 0,
-        pbName:            Number(summary.pbName)           || 0,
+        pbLinked:          Number(summary.pbLinked)          || 0,
+        pbCompaniesMatched:Number(summary.pbCompaniesMatched)|| 0,
+        pbTotal:           Number(summary.pbTotal)           || 0,
+        pbWebsite:         Number(summary.pbWebsite)         || 0,
+        pbEos:             Number(summary.pbEos)             || 0,
+        pbName:            Number(summary.pbName)            || 0,
         nameCollisions:    Number(summary.nameCollisions)   || 0
       },
       accounts,
