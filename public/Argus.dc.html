@@ -2585,7 +2585,7 @@ class Component extends DCLogic {
           };
           const nameCell = '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">'
             +'<span style="font-size:13px;font-weight:500;">'+a.sfAccountName+'</span>'
-            +(a.sfAccountType!=='lone'?'<span style="'+typeStyle[a.sfAccountType]+'">'+{parent:'Parent',child:'Child'}[a.sfAccountType]+'</span>':'')
+            +(a.sfAccountType==='parent'||a.sfAccountType==='child'?'<span style="'+(typeStyle[a.sfAccountType]||'')+'">'+({parent:'Parent',child:'Child'}[a.sfAccountType]||'')+'</span>':'')
             +(a.sfAccountType==='child'&&a.parentAccountName?'<span style="font-size:10px;color:#9d9d9d;">↑ '+a.parentAccountName+'</span>':'')
             +(a.sfNameCollision?'<span style="font-size:9px;color:#e07000;" title="Duplicate SF name">⚠</span>':'')
             +'</div>';
@@ -2616,18 +2616,17 @@ class Component extends DCLogic {
             +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;padding:14px;background:#fff;border:1px solid #f1f1f0;border-radius:8px;">'
               +(function(){
                   const accountLink = function(id, name) {
-                    return '<span style="font-size:11px;color:#288184;cursor:pointer;text-decoration:underline;" onclick="(function(){window.__mdmSearch=\''+id+'\';var inp=document.getElementById(\'mdm-search\');if(inp)inp.value=\''+id+'\';window.__mdmExpandedId=null;window.__mdmRefresh&&window.__mdmRefresh();})()">'+name+'</span>';
+                    return '<span style="font-size:11px;color:#288184;cursor:pointer;text-decoration:underline;" onclick="(function(){window.__mdmSearch=\''+id+'\';window.__mdmExpandedId=\''+id+'\';var inp=document.getElementById(\'mdm-search\');if(inp)inp.value=\''+id+'\';window.__mdmRefresh&&window.__mdmRefresh();})()">'+name+'</span>';
                   };
                   const children = a.sfAccountType==='parent'
                     ? (window.__mdmAccounts||[]).filter(function(x){ return x.parentAccountId===a.sfAccountId; })
                     : [];
                   return '<div>'
                     +'<div style="font-size:10px;font-weight:700;color:#3c3c3b;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">Salesforce</div>'
+                    +dc('Account Name', a.sfAccountName)
                     +dc('Account ID', a.sfAccountId)
                     +dc('Status', a.sfAccountStatus)
-                    +dc('Account Type', a.sfAccountType==='lone'?'Standalone':(a.sfAccountType==='parent'?'Parent':'Child'))
-                    +dc('Website Domain', a.sfWebsiteDomain)
-                    +dc('Active Subs', a.sfActiveSubscriptions||'—')
+                    +dc('Primary Domain', a.sfWebsiteDomain)
                     +(a.sfAccountType==='child'&&a.parentAccountId
                       ? '<div style="margin-top:10px;padding-top:10px;border-top:1px solid #f1f1f0;">'
                           +'<div style="font-size:10px;font-weight:700;color:#9d9d9d;margin-bottom:6px;">Parent Account</div>'
@@ -2645,13 +2644,13 @@ class Component extends DCLogic {
               +'<div>'
                 +'<div style="font-size:10px;font-weight:700;color:#288184;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">Zendesk</div>'
                 +(a.hasZdOrg
-                  ? dc('Org Name',a.zdOrgName)+dc('Org ID',a.zdOrgId)+dc('Primary Domain',a.zdPrimaryDomain)+dc('Confidence',a.zdMatchConfidence==='HIGH'?'High — name + domain':'Medium — name only')+dc('Domain Confirmed',a.zdDomainConfirmed?'Yes':'No')
+                  ? dc('Org Name',a.zdOrgName)+dc('Org ID',a.zdOrgId)+dc('Primary Domain',a.zdPrimaryDomain)+dc('Match Method',a.zdMatchConfidence==='HIGH'?'Name + Domain':a.zdMatchConfidence==='MEDIUM'?'Name only':'—')
                   : '<div style="font-size:11px;color:#9d9d9d;">No Zendesk organisation found</div>')
               +'</div>'
               +'<div>'
                 +'<div style="font-size:10px;font-weight:700;color:#7030a0;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">Productboard</div>'
                 +(a.hasPbCompany
-                  ? dc('Company Name',a.pbCompanyName)+dc('Company ID',a.pbCompanyId)+dc('Domain',a.pbCompanyDomain)+dc('Match Method',a.pbMatchMethod==='website_domain'?'Website domain':a.pbMatchMethod==='eos_domain'?'EOS domain':'Name fallback')
+                  ? dc('Company Name',a.pbCompanyName)+dc('Company ID',a.pbCompanyId)+dc('Primary Domain',a.pbCompanyDomain)+dc('Match Method',a.pbMatchMethod==='website_domain'?'Website Domain':a.pbMatchMethod==='eos_domain'?'EOS Domain':'Name only')
                   : '<div style="font-size:11px;color:#9d9d9d;">No Productboard company matched</div>')
               +'</div>'
             +'</div>'
@@ -2913,50 +2912,73 @@ class Component extends DCLogic {
               identical:   {label:'SF merge needed',col:'#d32f2f',bg:'#fdecea', desc:'Both accounts share the same domain — identical records in Salesforce'},
             };
 
-            const confDot = c => {
-              const col = c==='HIGH'?'#00be86':c==='MEDIUM'?'#b89400':'#b0b0b0';
-              return '<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:'+col+';margin-right:4px;vertical-align:middle;"></span>';
-            };
+            const zdPill = c => c==='HIGH'
+              ? '<span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;background:#e6faf4;color:#00966b;white-space:nowrap;">Name + Domain</span>'
+              : c==='MEDIUM'
+              ? '<span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;background:#fff8e1;color:#b89400;white-space:nowrap;">Name only</span>'
+              : '<span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;background:#f1f1f0;color:#9d9d9d;white-space:nowrap;">No match</span>';
+
+            const dupAccLink = id => '<span style="font-size:10px;color:#288184;cursor:pointer;text-decoration:underline;font-family:monospace;" '
+              +'onclick="(function(){window.__mdmSearch=\''+id+'\';window.__mdmExpandedId=\''+id+'\';'
+              +'var inp=document.getElementById(\'mdm-search\');if(inp)inp.value=\''+id+'\';'
+              +'window.__mdmRefresh&&window.__mdmRefresh();'
+              +'var el=document.getElementById(\'mdm-tbody\');if(el)el.scrollIntoView({behavior:\'smooth\'});'
+              +'})()">'+id+'</span>';
 
             const rows = dups.map(d=>{
               const r = resLabel[d.resolution];
               const badge = '<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:'+r.bg+';color:'+r.col+';white-space:nowrap;">'+r.label+'</span>';
               const accCells = d.accounts.map(a=>
                 '<td style="padding:6px 10px;vertical-align:top;">'
-                  +'<div style="font-size:11px;color:#6d6d6c;font-family:monospace;">'+(a.sfWebsiteDomain||'<span style="color:#c0c0c0;">no domain</span>')+'</div>'
-                  +'<div style="font-size:10px;color:#9d9d9d;margin-top:2px;">'+confDot(a.zdMatchConfidence)+a.zdMatchConfidence+(a.zdDomainConfirmed?' ✓':'')+(a.pbCompanyName?' · PB: '+a.pbCompanyName:'')+'</div>'
-                  +'<div style="font-size:10px;color:#c0c0c0;margin-top:1px;font-family:monospace;">'+a.sfAccountId+'</div>'
+                  +'<div style="font-size:11px;color:#6d6d6c;font-family:monospace;">'+(a.sfWebsiteDomain||'<span style="color:#c0c0c0;font-style:italic;font-family:inherit;">no domain</span>')+'</div>'
+                  +'<div style="margin-top:4px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">'+zdPill(a.zdMatchConfidence)+(a.pbCompanyName?'<span style="font-size:10px;color:#7030a0;">PB: '+a.pbCompanyName+'</span>':'')+'</div>'
+                  +'<div style="margin-top:3px;">'+dupAccLink(a.sfAccountId)+'</div>'
                 +'</td>'
-              ).join('<td style="padding:6px 4px;color:#c0c0c0;font-size:12px;vertical-align:middle;">vs</td>');
+              ).join('<td style="padding:6px 4px;color:#d0d0d0;font-size:11px;font-weight:600;vertical-align:middle;text-align:center;">vs</td>');
               return '<tr style="border-bottom:1px solid #f1f1f0;">'
-                +'<td style="padding:8px 10px;font-size:13px;font-weight:600;white-space:nowrap;">'+d.name+'</td>'
+                +'<td style="padding:8px 10px;font-size:13px;font-weight:600;white-space:nowrap;vertical-align:top;">'+d.name+'</td>'
                 +accCells
-                +'<td style="padding:8px 10px;text-align:right;">'+badge+'</td>'
+                +'<td style="padding:8px 10px;text-align:right;vertical-align:top;">'+badge+'</td>'
                 +'</tr>';
             }).join('');
 
-            return '<div style="background:#fff;border:1px solid #e6e6e5;border-radius:12px;padding:20px;margin-bottom:20px;box-shadow:0 1px 3px rgba(60,60,59,0.07);">'
-              +'<div style="display:flex;align-items:baseline;gap:12px;margin-bottom:4px;">'
-                +'<div style="font-size:12px;font-weight:700;color:#6d6d6c;text-transform:uppercase;letter-spacing:0.08em;">Salesforce Duplicate Accounts</div>'
+            const dupOpen = !!window.__mdmDupExpanded;
+            const dupToggle = '(function(){window.__mdmDupExpanded=!window.__mdmDupExpanded;'
+              +'var b=document.getElementById(\'mdm-dup-body\');'
+              +'var c=document.getElementById(\'mdm-dup-chev\');'
+              +'if(b)b.style.display=window.__mdmDupExpanded?\'block\':\'none\';'
+              +'if(c)c.textContent=window.__mdmDupExpanded?\'▴\':\'▾\';'
+              +'})()';
+            return '<div style="background:#fff;border:1px solid #e6e6e5;border-radius:12px;margin-bottom:20px;box-shadow:0 1px 3px rgba(60,60,59,0.07);overflow:hidden;">'
+              // Always-visible clickable header
+              +'<div onclick="'+dupToggle+'" style="padding:16px 20px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;user-select:none;" '
+                +'onmouseenter="this.style.background=\'#fafafa\'" onmouseleave="this.style.background=\'\'">'
+                +'<div>'
+                  +'<div style="font-size:12px;font-weight:700;color:#6d6d6c;text-transform:uppercase;letter-spacing:0.08em;">Salesforce Duplicate Accounts</div>'
+                  +'<div style="font-size:12px;color:#6d6d6c;margin-top:3px;">'
+                    +dups.length+' duplicate name groups &nbsp;·&nbsp; '
+                    +'<span style="color:#00be86;font-weight:600;">'+resolvable+' domain rule</span>'
+                    +(manual?' &nbsp;·&nbsp; <span style="color:#e07000;font-weight:600;">'+manual+' manual review</span>':'')
+                    +(identical?' &nbsp;·&nbsp; <span style="color:#d32f2f;font-weight:600;">'+identical+' SF merge needed</span>':'')
+                  +'</div>'
+                +'</div>'
+                +'<span id="mdm-dup-chev" style="font-size:16px;color:#9d9d9d;">'+(dupOpen?'▴':'▾')+'</span>'
               +'</div>'
-              +'<div style="font-size:12px;color:#6d6d6c;margin-bottom:16px;">'
-                +dups.length+' duplicate name groups detected &nbsp;·&nbsp; '
-                +'<span style="color:#00be86;font-weight:600;">'+resolvable+' resolvable by domain rule</span>'
-                +(manual?' &nbsp;·&nbsp; <span style="color:#e07000;font-weight:600;">'+manual+' need manual review</span>':'')
-                +(identical?' &nbsp;·&nbsp; <span style="color:#d32f2f;font-weight:600;">'+identical+' identical — SF merge needed</span>':'')
-              +'</div>'
-              +'<div style="overflow-x:auto;">'
-              +'<table style="width:100%;border-collapse:collapse;font-size:13px;">'
-                +'<thead><tr style="border-bottom:2px solid #f1f1f0;background:#fafafa;">'
-                  +'<th style="text-align:left;padding:8px 10px;font-size:11px;font-weight:700;color:#9d9d9d;text-transform:uppercase;letter-spacing:0.06em;">Account Name</th>'
-                  +'<th style="text-align:left;padding:8px 10px;font-size:11px;font-weight:700;color:#9d9d9d;text-transform:uppercase;letter-spacing:0.06em;" colspan="3">Duplicate Records</th>'
-                  +'<th style="text-align:right;padding:8px 10px;font-size:11px;font-weight:700;color:#9d9d9d;text-transform:uppercase;letter-spacing:0.06em;">Resolution</th>'
-                +'</tr></thead>'
-                +'<tbody>'+rows+'</tbody>'
-              +'</table>'
-              +'</div>'
-              +'<div style="margin-top:12px;padding-top:12px;border-top:1px solid #f1f1f0;display:flex;gap:20px;flex-wrap:wrap;">'
-                +Object.values(resLabel).map(r=>'<span style="font-size:11px;color:#6d6d6c;"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+r.col+';margin-right:5px;vertical-align:middle;"></span><strong>'+r.label+'</strong> — '+r.desc+'</span>').join('')
+              // Collapsible body — state persists in window.__mdmDupExpanded across re-renders
+              +'<div id="mdm-dup-body" style="display:'+(dupOpen?'block':'none')+';border-top:1px solid #f1f1f0;">'
+                +'<div style="overflow-x:auto;padding:0 20px;">'
+                +'<table style="width:100%;border-collapse:collapse;font-size:13px;">'
+                  +'<thead><tr style="border-bottom:2px solid #f1f1f0;background:#fafafa;">'
+                    +'<th style="text-align:left;padding:8px 10px;font-size:11px;font-weight:700;color:#9d9d9d;text-transform:uppercase;letter-spacing:0.06em;">Account Name</th>'
+                    +'<th style="text-align:left;padding:8px 10px;font-size:11px;font-weight:700;color:#9d9d9d;text-transform:uppercase;letter-spacing:0.06em;" colspan="3">Duplicate Records</th>'
+                    +'<th style="text-align:right;padding:8px 10px;font-size:11px;font-weight:700;color:#9d9d9d;text-transform:uppercase;letter-spacing:0.06em;">Resolution</th>'
+                  +'</tr></thead>'
+                  +'<tbody>'+rows+'</tbody>'
+                +'</table>'
+                +'</div>'
+                +'<div style="margin:12px 20px 16px;padding-top:12px;border-top:1px solid #f1f1f0;display:flex;gap:20px;flex-wrap:wrap;">'
+                  +Object.values(resLabel).map(r=>'<span style="font-size:11px;color:#6d6d6c;"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+r.col+';margin-right:5px;vertical-align:middle;"></span><strong>'+r.label+'</strong> — '+r.desc+'</span>').join('')
+                +'</div>'
               +'</div>'
             +'</div>';
           })()

@@ -21,7 +21,9 @@ async function queryLakehouse(query) {
   const conn = new sql.ConnectionPool({
     server: process.env.FABRIC_SERVER || 'pv6dzlli723u5jswg27zhty5be-qhcpisfudclelcjaerq6yrhgee.datawarehouse.fabric.microsoft.com',
     authentication: { type: 'azure-active-directory-access-token', options: { token } },
-    options: { encrypt: true, trustServerCertificate: false, connectionTimeout: 30000, requestTimeout: 180000 }
+    requestTimeout: 180000,
+    connectionTimeout: 30000,
+    options: { encrypt: true, trustServerCertificate: false }
   });
   try {
     await conn.connect();
@@ -40,9 +42,7 @@ async function queryLakehouse(query) {
 
 async function mdmAccounts(req, res) {
   try {
-    const search = (req.query.search || '').trim();
-
-    const [summaryRows, accountRows, dupRows] = await Promise.all([
+    const [summaryRows, accountRows, hierarchyRows, dupRows] = await Promise.all([
       queryLakehouse(`
         SELECT
           COUNT(*)                                                              AS total,
@@ -57,97 +57,87 @@ async function mdmAccounts(req, res) {
           SUM(CASE WHEN pb_match_method = 'eos_domain'       THEN 1 ELSE 0 END) AS pbEos,
           SUM(CASE WHEN pb_match_method = 'name'             THEN 1 ELSE 0 END) AS pbName,
           SUM(sf_name_collision)                                                AS nameCollisions,
-          (SELECT COUNT(*) FROM v_silver_pb_companies)                                                    AS pbTotalAll,
+          (SELECT COUNT(*) FROM v_silver_pb_companies)                                                   AS pbTotalAll,
           (SELECT COUNT(*) FROM v_silver_pb_companies WHERE silver_entity_classification = 'External')  AS pbTotal
         FROM v_silver_mdm_account
       `),
+      // Simple flat query — no JOINs, returns all 12k accounts reliably
       queryLakehouse(`
         SELECT
-          a.sf_account_id,
-          a.sf_account_name,
-          a.sf_account_status,
-          a.sf_account_arr,
-          a.sf_active_subscriptions,
-          a.sf_website_domain,
-          a.zd_org_id,
-          a.zd_org_name,
-          a.zd_primary_email_domain,
-          a.zd_match_confidence,
-          a.zd_domain_confirmed,
-          a.has_zd_org,
-          a.pb_company_id,
-          a.pb_company_name,
-          a.pb_company_domain,
-          a.pb_match_method,
-          a.has_pb_company,
-          a.sf_name_collision,
-          ca.parent_account_id,
-          parent_ca.account_name AS parent_account_name,
-          COALESCE(ch.child_count, 0) AS child_count
-        FROM v_silver_mdm_account a
-        LEFT JOIN v_silver_sf_customer_accounts ca ON ca.account_id = a.sf_account_id
-        LEFT JOIN v_silver_sf_customer_accounts parent_ca ON parent_ca.account_id = ca.parent_account_id
-        LEFT JOIN (
-          SELECT parent_account_id, COUNT(*) AS child_count
-          FROM v_silver_sf_customer_accounts
-          WHERE parent_account_id IS NOT NULL
-          GROUP BY parent_account_id
-        ) ch ON ch.parent_account_id = a.sf_account_id
-        WHERE a.sf_account_name IS NOT NULL
-          ${search ? `AND (
-            LOWER(a.sf_account_name) LIKE '%${search.toLowerCase().replace(/'/g, "''")}%'
-            OR LOWER(a.sf_account_id) LIKE '%${search.toLowerCase().replace(/'/g, "''")}%'
-            OR LOWER(a.zd_org_name) LIKE '%${search.toLowerCase().replace(/'/g, "''")}%'
-            OR LOWER(a.pb_company_name) LIKE '%${search.toLowerCase().replace(/'/g, "''")}%'
-          )` : ''}
-        ORDER BY COALESCE(TRY_CAST(a.sf_account_arr AS FLOAT), 0) DESC
+          sf_account_id, sf_account_name, sf_account_status, sf_account_arr,
+          sf_active_subscriptions, sf_website_domain,
+          zd_org_id, zd_org_name, zd_primary_email_domain,
+          zd_match_confidence, zd_domain_confirmed, has_zd_org,
+          pb_company_id, pb_company_name, pb_company_domain, pb_match_method, has_pb_company,
+          sf_name_collision
+        FROM v_silver_mdm_account
+        WHERE sf_account_name IS NOT NULL
+        ORDER BY COALESCE(TRY_CAST(sf_account_arr AS FLOAT), 0) DESC
+      `),
+      // Hierarchy lookup — small table, fast
+      queryLakehouse(`
+        SELECT account_id, parent_account_id, account_name
+        FROM v_silver_sf_customer_accounts
+        WHERE account_id IS NOT NULL AND LEN(TRIM(account_id)) > 0
       `),
       queryLakehouse(`
         SELECT
-          sf_account_id,
-          sf_account_name,
-          sf_account_status,
-          sf_website_domain,
-          zd_match_confidence,
-          zd_domain_confirmed,
-          pb_company_name,
-          pb_match_method
+          sf_account_id, sf_account_name, sf_account_status, sf_website_domain,
+          zd_match_confidence, zd_domain_confirmed, pb_company_name, pb_match_method
         FROM v_silver_mdm_account
-        WHERE sf_name_collision = 1
-          AND sf_account_name IS NOT NULL
+        WHERE sf_name_collision = 1 AND sf_account_name IS NOT NULL
         ORDER BY sf_account_name,
                  CASE WHEN sf_website_domain IS NOT NULL THEN 0 ELSE 1 END,
                  CASE zd_match_confidence WHEN 'HIGH' THEN 0 WHEN 'MEDIUM' THEN 1 ELSE 2 END
       `)
     ]);
 
-    const summary = summaryRows[0] || {};
-    const accounts = accountRows.map(r => ({
-      sfAccountId:        r.sf_account_id,
-      sfAccountName:      r.sf_account_name,
-      sfAccountStatus:    r.sf_account_status,
-      sfAccountArr:       r.sf_account_arr ? Number(r.sf_account_arr) : null,
-      sfWebsiteDomain:    r.sf_website_domain,
-      zdOrgId:            r.zd_org_id,
-      zdOrgName:          r.zd_org_name,
-      zdPrimaryDomain:    r.zd_primary_email_domain,
-      zdMatchConfidence:  r.zd_match_confidence,
-      zdDomainConfirmed:  r.zd_domain_confirmed === true || r.zd_domain_confirmed === 1,
-      hasZdOrg:           r.has_zd_org === true || r.has_zd_org === 1,
-      pbCompanyId:        r.pb_company_id,
-      pbCompanyName:      r.pb_company_name,
-      pbCompanyDomain:    r.pb_company_domain,
-      pbMatchMethod:      r.pb_match_method,
-      hasPbCompany:       r.has_pb_company === true || r.has_pb_company === 1,
-      sfNameCollision:    r.sf_name_collision === true || r.sf_name_collision === 1,
-      sfActiveSubscriptions: r.sf_active_subscriptions ? Number(r.sf_active_subscriptions) : 0,
-      parentAccountId:    r.parent_account_id || null,
-      parentAccountName:  r.parent_account_name || null,
-      childCount:         Number(r.child_count) || 0,
-      sfAccountType:      (Number(r.child_count) > 0) ? 'parent' : (r.parent_account_id ? 'child' : 'lone'),
-    }));
+    // Build hierarchy maps in JavaScript — O(1) lookup, no DB join needed
+    const hierById = {};
+    hierarchyRows.forEach(r => {
+      hierById[r.account_id] = {
+        parentAccountId: (r.parent_account_id && r.parent_account_id.trim()) ? r.parent_account_id.trim() : null,
+        accountName: r.account_name
+      };
+    });
+    const childCounts = {};
+    hierarchyRows.forEach(r => {
+      const pid = r.parent_account_id && r.parent_account_id.trim();
+      if (pid) childCounts[pid] = (childCounts[pid] || 0) + 1;
+    });
 
-    // Group collision rows by name and determine resolution
+    const summary = summaryRows[0] || {};
+    const accounts = accountRows.map(r => {
+      const hier = hierById[r.sf_account_id] || {};
+      const parentAccountId = hier.parentAccountId || null;
+      const parentInfo = parentAccountId ? (hierById[parentAccountId] || null) : null;
+      const childCount = childCounts[r.sf_account_id] || 0;
+      return {
+        sfAccountId:        r.sf_account_id,
+        sfAccountName:      r.sf_account_name,
+        sfAccountStatus:    r.sf_account_status,
+        sfAccountArr:       r.sf_account_arr ? Number(r.sf_account_arr) : null,
+        sfWebsiteDomain:    r.sf_website_domain,
+        zdOrgId:            r.zd_org_id,
+        zdOrgName:          r.zd_org_name,
+        zdPrimaryDomain:    r.zd_primary_email_domain,
+        zdMatchConfidence:  r.zd_match_confidence,
+        zdDomainConfirmed:  r.zd_domain_confirmed === true || r.zd_domain_confirmed === 1,
+        hasZdOrg:           r.has_zd_org === true || r.has_zd_org === 1,
+        pbCompanyId:        r.pb_company_id,
+        pbCompanyName:      r.pb_company_name,
+        pbCompanyDomain:    r.pb_company_domain,
+        pbMatchMethod:      r.pb_match_method,
+        hasPbCompany:       r.has_pb_company === true || r.has_pb_company === 1,
+        sfNameCollision:    r.sf_name_collision === true || r.sf_name_collision === 1,
+        sfActiveSubscriptions: Number(r.sf_active_subscriptions) || 0,
+        parentAccountId:    parentAccountId,
+        parentAccountName:  parentInfo ? parentInfo.accountName : null,
+        childCount:         childCount,
+        sfAccountType:      childCount > 0 ? 'parent' : (parentAccountId ? 'child' : 'lone'),
+      };
+    });
+
     const dupGroups = {};
     dupRows.forEach(r => {
       const name = r.sf_account_name;
@@ -165,15 +155,12 @@ async function mdmAccounts(req, res) {
 
     const duplicates = Object.entries(dupGroups).map(([name, accs]) => {
       const withDomain  = accs.filter(a => a.sfWebsiteDomain);
-      const noDomain    = accs.filter(a => !a.sfWebsiteDomain);
       const allSameDomain = withDomain.length === accs.length &&
         new Set(accs.map(a => a.sfWebsiteDomain)).size === 1;
-
       let resolution;
-      if (withDomain.length > 0 && noDomain.length > 0) resolution = 'domain_rule';
-      else if (allSameDomain)                             resolution = 'identical';
-      else                                                resolution = 'manual';
-
+      if (withDomain.length > 0 && accs.length > withDomain.length) resolution = 'domain_rule';
+      else if (allSameDomain) resolution = 'identical';
+      else resolution = 'manual';
       return { name, accounts: accs, resolution };
     }).sort((a, b) => {
       const order = { domain_rule: 0, manual: 1, identical: 2 };
@@ -182,12 +169,12 @@ async function mdmAccounts(req, res) {
 
     res.json({
       summary: {
-        total:             Number(summary.total)            || 0,
-        highCount:         Number(summary.highCount)        || 0,
-        mediumCount:       Number(summary.mediumCount)      || 0,
-        noZdCount:         Number(summary.noZdCount)        || 0,
-        zdLinked:          Number(summary.zdLinked)         || 0,
-        zdDomainConfirmed: Number(summary.zdDomainConfirmed)|| 0,
+        total:             Number(summary.total)             || 0,
+        highCount:         Number(summary.highCount)         || 0,
+        mediumCount:       Number(summary.mediumCount)       || 0,
+        noZdCount:         Number(summary.noZdCount)         || 0,
+        zdLinked:          Number(summary.zdLinked)          || 0,
+        zdDomainConfirmed: Number(summary.zdDomainConfirmed) || 0,
         pbLinked:          Number(summary.pbLinked)          || 0,
         pbCompaniesMatched:Number(summary.pbCompaniesMatched)|| 0,
         pbTotalAll:        Number(summary.pbTotalAll)         || 0,
@@ -195,7 +182,7 @@ async function mdmAccounts(req, res) {
         pbWebsite:         Number(summary.pbWebsite)         || 0,
         pbEos:             Number(summary.pbEos)             || 0,
         pbName:            Number(summary.pbName)            || 0,
-        nameCollisions:    Number(summary.nameCollisions)   || 0
+        nameCollisions:    Number(summary.nameCollisions)    || 0
       },
       accounts,
       duplicates,
