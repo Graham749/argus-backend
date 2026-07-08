@@ -2501,10 +2501,62 @@ class Component extends DCLogic {
           +'<span style="font-size:12px;color:#3c3c3b;line-height:1.5;">'+text+'</span>'
           +'</div>';
 
+        const zdNotFound   = sm.total - sm.zdLinked;
+        const pbNotFound   = sm.total - sm.pbLinked;
+
+        const covBar = (matched, total, col) => {
+          const px = total ? Math.round(matched/total*100) : 0;
+          return '<div style="height:6px;border-radius:3px;background:#f1f1f0;margin-top:8px;margin-bottom:6px;">'
+            +'<div style="width:'+px+'%;height:100%;border-radius:3px;background:'+col+';"></div>'
+            +'</div>';
+        };
+
         const html = ''
           +'<div style="margin-bottom:24px;">'
             +'<div style="font-size:24px;font-weight:700;letter-spacing:-0.01em;">Account MDM</div>'
-            +'<div style="font-size:14px;color:#6d6d6c;margin-top:4px;">Master data: Salesforce → Zendesk → Productboard &nbsp;·&nbsp; '+sm.total.toLocaleString()+' SF accounts</div>'
+            +'<div style="font-size:14px;color:#6d6d6c;margin-top:4px;">Salesforce is the master — Zendesk and Productboard are matched as satellites</div>'
+          +'</div>'
+
+          // Source System Coverage widget
+          +'<div style="background:#fff;border:1px solid #e6e6e5;border-radius:12px;padding:20px;margin-bottom:16px;box-shadow:0 1px 3px rgba(60,60,59,0.07);">'
+            +'<div style="font-size:12px;font-weight:700;color:#6d6d6c;margin-bottom:16px;text-transform:uppercase;letter-spacing:0.08em;">Source System Coverage</div>'
+            +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:#f1f1f0;border-radius:8px;overflow:hidden;">'
+
+              // Salesforce column
+              +'<div style="background:#fff;padding:16px 20px;">'
+                +'<div style="font-size:11px;font-weight:700;color:#3c3c3b;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px;">Salesforce</div>'
+                +'<div style="font-size:28px;font-weight:900;color:#3c3c3b;">'+sm.total.toLocaleString()+'</div>'
+                +'<div style="font-size:11px;color:#9d9d9d;margin-top:4px;">accounts &nbsp;·&nbsp; master system of record</div>'
+                +'<div style="height:6px;border-radius:3px;background:#3c3c3b;margin-top:14px;margin-bottom:6px;"></div>'
+                +'<div style="font-size:11px;color:#9d9d9d;">100% baseline</div>'
+              +'</div>'
+
+              // Zendesk column
+              +'<div style="background:#fff;padding:16px 20px;">'
+                +'<div style="font-size:11px;font-weight:700;color:#288184;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px;">Zendesk</div>'
+                +'<div style="font-size:28px;font-weight:900;color:#288184;">'+sm.zdLinked.toLocaleString()+'</div>'
+                +'<div style="font-size:11px;color:#9d9d9d;margin-top:4px;">SF accounts with a Zendesk org</div>'
+                +covBar(sm.zdLinked, sm.total, '#288184')
+                +'<div style="display:flex;justify-content:space-between;font-size:11px;">'
+                  +'<span style="color:#288184;font-weight:600;">'+pct(sm.zdLinked,sm.total)+' matched</span>'
+                  +'<span style="color:#9d9d9d;">'+zdNotFound.toLocaleString()+' SF accounts not in Zendesk</span>'
+                +'</div>'
+              +'</div>'
+
+              // Productboard column
+              +'<div style="background:#fff;padding:16px 20px;">'
+                +'<div style="font-size:11px;font-weight:700;color:#7030a0;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px;">Productboard</div>'
+                +'<div style="font-size:28px;font-weight:900;color:#7030a0;">'+sm.pbLinked.toLocaleString()+'</div>'
+                +'<div style="font-size:11px;color:#9d9d9d;margin-top:4px;">SF accounts with a Productboard company</div>'
+                +covBar(sm.pbLinked, sm.total, '#7030a0')
+                +'<div style="display:flex;justify-content:space-between;font-size:11px;">'
+                  +'<span style="color:#7030a0;font-weight:600;">'+pct(sm.pbLinked,sm.total)+' matched</span>'
+                  +'<span style="color:#9d9d9d;">'+pbNotFound.toLocaleString()+' SF accounts not in Productboard</span>'
+                +'</div>'
+              +'</div>'
+
+            +'</div>'
+            +'<div style="margin-top:12px;font-size:11px;color:#9d9d9d;">Coverage is from Salesforce outward — Zendesk and Productboard accounts with no SF record are not shown here.</div>'
           +'</div>'
 
           // Match Criteria card
@@ -2524,7 +2576,7 @@ class Component extends DCLogic {
                   +'<div style="margin-left:28px;display:flex;flex-direction:column;gap:4px;padding:8px 10px;background:#f7f7f6;border-radius:6px;font-size:11px;color:#6d6d6c;">'
                     +'<div><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#00be86;margin-right:5px;vertical-align:middle;"></span><strong>High</strong> — name matched + domain confirmed</div>'
                     +'<div><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ffcc00;margin-right:5px;vertical-align:middle;"></span><strong>Medium</strong> — name matched, no domain</div>'
-                    +'<div><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#b0b0b0;margin-right:5px;vertical-align:middle;"></span><strong>No match</strong> — Zendesk org not found</div>'
+                    +'<div><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#b0b0b0;margin-right:5px;vertical-align:middle;"></span><strong>Not in Zendesk</strong> — no Zendesk org found for this SF account</div>'
                   +'</div>'
                 +'</div>'
               +'</div>'
@@ -2574,10 +2626,10 @@ class Component extends DCLogic {
               +'<div style="display:flex;flex-direction:column;gap:3px;">'
                 +'<div style="display:flex;align-items:center;gap:6px;">'
                   +'<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#b0b0b0;flex-shrink:0;"></span>'
-                  +'<span style="font-size:12px;font-weight:700;color:#3c3c3b;">No Match</span>'
+                  +'<span style="font-size:12px;font-weight:700;color:#3c3c3b;">Not in Zendesk</span>'
                 +'</div>'
                 +'<div style="font-size:20px;font-weight:900;color:#9d9d9d;padding-left:16px;">'+sm.noZdCount.toLocaleString()+'</div>'
-                +'<div style="font-size:11px;color:#9d9d9d;padding-left:16px;">'+pct(sm.noZdCount,sm.total)+' · no Zendesk org found</div>'
+                +'<div style="font-size:11px;color:#9d9d9d;padding-left:16px;">'+pct(sm.noZdCount,sm.total)+' · SF accounts with no Zendesk record</div>'
               +'</div>'
             +'</div>'
           +'</div>'
