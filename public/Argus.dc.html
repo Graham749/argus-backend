@@ -1223,26 +1223,14 @@ class Component extends DCLogic {
     detail.style.display = 'none';
     error.style.display = 'none';
 
-    const subMsgs = [
-      "Argus had 100 eyes — all of them are bloodshot right now",
-      "The Oracle is consulting... if only it was a materialised table and not a view",
-      "Hermes is on his way — he stopped for coffee",
-      "Please bear with us — this is a Proof of Concept",
-      "Hephaestus is forging your insights — craftsmanship takes time",
-      "The Fates are measuring your metrics — they're very thorough",
-      "100 eyes, one slow query",
-      "Zeus is reviewing the figures — he has notes",
-      "Athena didn't build Athens in a day",
-      "The Titans are crunching numbers — there are a lot of numbers",
-      "Consulting the Oracle... the query is still running",
-      "Good things come to those who wait. So does this reload",
-      "Argus is swimming in the data lake — all 100 eyes open underwater",
-      "Diving deep into the data lake — Argus forgot his goggles",
-      "Something is swimming in the data lake — Argus is investigating",
-      "The data lake is murky today — even Argus can't see the bottom",
-      "Argus took a dip in the data lake — give him a moment to dry off"
-    ];
-    const startIdx = Math.floor(Math.random() * subMsgs.length);
+    // Use shared shuffle queue (initialised in loadMdm; fallback if called first)
+    if (!window.__argusNextMsg) window.__argusNextMsg = (function(){
+      const _all=["Argus had 100 eyes — all of them are bloodshot right now","The Oracle is consulting... if only it was a materialised table and not a view","Hermes is on his way — he stopped for coffee","Please bear with us — this is a Proof of Concept","Hephaestus is forging your insights — craftsmanship takes time","The Fates are measuring your metrics — they're very thorough","100 eyes, one slow query","Zeus is reviewing the figures — he has notes","Athena didn't build Athens in a day","The Titans are crunching numbers — there are a lot of numbers","Consulting the Oracle... the query is still running","Good things come to those who wait. So does this reload","Argus is swimming in the data lake — all 100 eyes open underwater","Diving deep into the data lake — Argus forgot his goggles","Something is swimming in the data lake — Argus is investigating","The data lake is murky today — even Argus can't see the bottom","Argus took a dip in the data lake — give him a moment to dry off"];
+      let _q=[];
+      return function(){if(!_q.length){_q=_all.slice();for(let i=_q.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));const t=_q[i];_q[i]=_q[j];_q[j]=t;}}return _q.pop();};
+    })();
+
+    const firstMsg = window.__argusNextMsg();
     loading.innerHTML =
       '<style>@keyframes subProg{from{width:0%}to{width:88%}}</style>'
       +'<div style="max-width:520px;margin:60px auto;padding:32px;text-align:center;">'
@@ -1250,17 +1238,15 @@ class Component extends DCLogic {
         +'<div style="height:5px;border-radius:3px;background:#f1f1f0;overflow:hidden;margin-bottom:20px;">'
           +'<div style="height:100%;border-radius:3px;background:linear-gradient(90deg,#288184,#00be86);animation:subProg 7s ease-out forwards;"></div>'
         +'</div>'
-        +'<div id="sub-loading-msg" style="font-size:13px;color:#9d9d9d;font-style:italic;min-height:20px;">'+subMsgs[startIdx]+'</div>'
+        +'<div id="sub-loading-msg" style="font-size:13px;color:#9d9d9d;font-style:italic;min-height:20px;">'+firstMsg+'</div>'
       +'</div>';
     loading.style.display = 'block';
 
     clearInterval(window.__subMsgInterval);
-    let subMsgIdx = (startIdx + 1) % subMsgs.length;
     window.__subMsgInterval = setInterval(function() {
       const el = document.getElementById('sub-loading-msg');
       if (!el) { clearInterval(window.__subMsgInterval); return; }
-      el.textContent = subMsgs[subMsgIdx];
-      subMsgIdx = (subMsgIdx + 1) % subMsgs.length;
+      el.textContent = window.__argusNextMsg();
     }, 6000);
 
     console.log('[Argus] Updated UI to show loading...');
@@ -1939,33 +1925,48 @@ class Component extends DCLogic {
       setTimeout(() => window.__mdmRefresh && window.__mdmRefresh(), 0);
       return;
     }
+    // Initialise shared shuffle queue once — used by both MDM and subscription loaders
+    if (!window.__argusNextMsg) {
+      const _all = [
+        "Argus had 100 eyes — all of them are bloodshot right now",
+        "The Oracle is consulting... if only it was a materialised table and not a view",
+        "Hermes is on his way — he stopped for coffee",
+        "Please bear with us — this is a Proof of Concept",
+        "Hephaestus is forging your insights — craftsmanship takes time",
+        "The Fates are measuring your metrics — they're very thorough",
+        "100 eyes, one slow query",
+        "Zeus is reviewing the figures — he has notes",
+        "Athena didn't build Athens in a day",
+        "The Titans are crunching numbers — there are a lot of numbers",
+        "Consulting the Oracle... the query is still running",
+        "Good things come to those who wait. So does this reload",
+        "Argus is swimming in the data lake — all 100 eyes open underwater",
+        "Diving deep into the data lake — Argus forgot his goggles",
+        "Something is swimming in the data lake — Argus is investigating",
+        "The data lake is murky today — even Argus can't see the bottom",
+        "Argus took a dip in the data lake — give him a moment to dry off"
+      ];
+      let _q = [];
+      window.__argusNextMsg = function() {
+        if (!_q.length) {
+          // Fisher-Yates shuffle into fresh queue
+          _q = _all.slice();
+          for (let i = _q.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            const t = _q[i]; _q[i] = _q[j]; _q[j] = t;
+          }
+        }
+        return _q.pop();
+      };
+    }
+
     // Start message cycling before setState so the interval runs exactly once
     clearInterval(window.__mdmMsgInterval);
-    window.__mdmMsgs = [
-      "Argus had 100 eyes — all of them are bloodshot right now",
-      "The Oracle is consulting... if only it was a materialised table and not a view",
-      "Hermes is on his way — he stopped for coffee",
-      "Please bear with us — this is a Proof of Concept",
-      "Hephaestus is forging your insights — craftsmanship takes time",
-      "The Fates are measuring your metrics — they're very thorough",
-      "100 eyes, one slow query",
-      "Zeus is reviewing the figures — he has notes",
-      "Athena didn't build Athens in a day",
-      "The Titans are crunching numbers — there are a lot of numbers",
-      "Consulting the Oracle... the query is still running",
-      "Good things come to those who wait. So does this reload",
-      "Argus is swimming in the data lake — all 100 eyes open underwater",
-      "Diving deep into the data lake — Argus forgot his goggles",
-      "Something is swimming in the data lake — Argus is investigating",
-      "The data lake is murky today — even Argus can't see the bottom",
-      "Argus took a dip in the data lake — give him a moment to dry off"
-    ];
-    window.__mdmMsgIdx = Math.floor(Math.random() * window.__mdmMsgs.length);
+    window.__mdmCurrentMsg = window.__argusNextMsg();
     window.__mdmMsgInterval = setInterval(function() {
-      window.__mdmMsgIdx = (window.__mdmMsgIdx + 1) % window.__mdmMsgs.length;
       const el = document.getElementById('mdm-loading-msg');
       if (!el) { clearInterval(window.__mdmMsgInterval); return; }
-      el.textContent = window.__mdmMsgs[window.__mdmMsgIdx];
+      el.textContent = window.__argusNextMsg();
     }, 6000);
     this.setState({mdmLoading: true});
     try {
@@ -2509,7 +2510,7 @@ class Component extends DCLogic {
         // Loading state — animated progress bar with rotating messages (interval managed by loadMdm)
         if(S.mdmLoading || (!S.mdmLoaded && !sm)) {
           const isLoading = S.mdmLoading;
-          const currentMsg = (window.__mdmMsgs && window.__mdmMsgs[window.__mdmMsgIdx]) || 'Loading account data…';
+          const currentMsg = window.__mdmCurrentMsg || 'Loading account data…';
           return {__html:
             '<style>@keyframes mdmProg{from{width:0%}to{width:88%}}</style>'
             +'<div style="max-width:520px;margin:80px auto;padding:32px;text-align:center;">'
