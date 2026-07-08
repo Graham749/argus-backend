@@ -2262,7 +2262,7 @@ class Component extends DCLogic {
                 <span style="font-size:11px;color:#9d9d9d;">Region market score ${activeMktCount}</span>
                 <span style="font-size:13px;font-weight:900;color:#7030a0;">×${Number(activeMultiplier).toFixed(1)}</span>
                 <span style="font-size:11px;color:#9d9d9d;margin-left:auto;">${baseScore} × ${Number(activeMultiplier).toFixed(1)} =</span>
-                <span style="font-size:13px;font-weight:700;color:#3c3c3b;">${Number(f.finalScore).toFixed(2)}</span>
+                <span style="font-size:13px;font-weight:700;color:#3c3c3b;">${parentCtxOpen ? Number(f.featureScore).toFixed(2) : Number(f.finalScore).toFixed(2)}</span>
               </div>
               <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding-top:10px;border-top:1px solid #f1f1f0;flex-wrap:wrap;gap:8px;">
                 <div style="display:flex;flex-direction:column;gap:3px;">
