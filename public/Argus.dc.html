@@ -202,9 +202,7 @@ input{font-family:inherit;}
             </div>
           </div>
 
-          <div id="sfLoadingMessage" style="padding:20px;text-align:center;color:#9d9d9d;display:none;">
-            <span style="font-size:13px;">Loading subscriptions...</span>
-          </div>
+          <div id="sfLoadingMessage" style="display:none;"></div>
 
           <div id="sfErrorMessage" style="padding:20px;text-align:center;color:#d32f2f;display:none;">
             <span style="font-size:13px;" id="sfErrorText"></span>
@@ -1224,7 +1222,41 @@ class Component extends DCLogic {
     summary.style.display = 'none';
     detail.style.display = 'none';
     error.style.display = 'none';
+
+    const subMsgs = [
+      "Argus had 100 eyes — all of them are bloodshot right now",
+      "The Oracle is consulting... if only it was a materialised table and not a view",
+      "Hermes is on his way — he stopped for coffee",
+      "Please bear with us — this is a Proof of Concept",
+      "Hephaestus is forging your insights — craftsmanship takes time",
+      "The Fates are measuring your metrics — they're very thorough",
+      "100 eyes, one slow query",
+      "Zeus is reviewing the figures — he has notes",
+      "Athena didn't build Athens in a day",
+      "The Titans are crunching numbers — there are a lot of numbers",
+      "Consulting the Oracle... the query is still running",
+      "Good things come to those who wait. So does this reload"
+    ];
+    const startIdx = Math.floor(Math.random() * subMsgs.length);
+    loading.innerHTML =
+      '<style>@keyframes subProg{from{width:0%}to{width:88%}}</style>'
+      +'<div style="max-width:520px;margin:60px auto;padding:32px;text-align:center;">'
+        +'<div style="font-size:15px;font-weight:600;color:#3c3c3b;margin-bottom:16px;">Loading subscriptions from Fabric</div>'
+        +'<div style="height:5px;border-radius:3px;background:#f1f1f0;overflow:hidden;margin-bottom:20px;">'
+          +'<div style="height:100%;border-radius:3px;background:linear-gradient(90deg,#288184,#00be86);animation:subProg 7s ease-out forwards;"></div>'
+        +'</div>'
+        +'<div id="sub-loading-msg" style="font-size:13px;color:#9d9d9d;font-style:italic;min-height:20px;">'+subMsgs[startIdx]+'</div>'
+      +'</div>';
     loading.style.display = 'block';
+
+    clearInterval(window.__subMsgInterval);
+    let subMsgIdx = (startIdx + 1) % subMsgs.length;
+    window.__subMsgInterval = setInterval(function() {
+      const el = document.getElementById('sub-loading-msg');
+      if (!el) { clearInterval(window.__subMsgInterval); return; }
+      el.textContent = subMsgs[subMsgIdx];
+      subMsgIdx = (subMsgIdx + 1) % subMsgs.length;
+    }, 6000);
 
     console.log('[Argus] Updated UI to show loading...');
 
@@ -1236,12 +1268,14 @@ class Component extends DCLogic {
       })
       .then(data=>{
         console.log('[Argus] Got subscriptions, count:', data.subscriptions?.length || 0);
+        clearInterval(window.__subMsgInterval);
         loading.style.display = 'none';
         this.renderSubscriptions(data.subscriptions || []);
         console.log('[Argus] Subscriptions rendered');
       })
       .catch(err=>{
         console.error('[Argus] Failed:', err);
+        clearInterval(window.__subMsgInterval);
         loading.style.display = 'none';
         error.style.display = 'block';
         const errorText = document.getElementById('sfErrorText');
