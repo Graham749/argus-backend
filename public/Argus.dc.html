@@ -1027,7 +1027,7 @@ class Component extends DCLogic {
     this.state = {
       view: savedView, healthClient: savedHealthClient, range: savedRange, briefClient:'rwe',
       featProduct:'all', featCritFilter:null, featEffFilter:null, featScoreSource:null, featSearch:'', drills:{}, featuresLoaded:false, features:[],
-      mdmLoaded:false, mdmAccounts:[], mdmSummary:null, mdmDuplicates:[], mdmSearch:'', mdmConfFilter:null,
+      mdmLoaded:false, mdmAccounts:[], mdmSummary:null, mdmDuplicates:[], mdmSearch:'', mdmConfFilter:null, mdmExpandedId:null,
       chat:[{role:'argus', html:'Hello — I can brief you on any client account, or help you spot patterns across your portfolio. Try asking about a specific client, or a cross-portfolio question like &ldquo;which clients are at churn risk?&rdquo;'}],
       chatInput:'', typing:false, started:false,
       bronzeExpanded:false, silverExpanded:false, goldExpanded:false,
@@ -2437,7 +2437,7 @@ class Component extends DCLogic {
         const medPct   = sm.zdLinked ? sm.mediumCount/sm.zdLinked : 0;
 
         const confColor = {'HIGH':'#00be86','MEDIUM':'#ffcc00','NO_ZD_MATCH':'#e6e6e5'};
-        const confLabel = {'HIGH':'HIGH','MEDIUM':'MEDIUM','NO_ZD_MATCH':'No ZD'};
+        const confLabel = {'HIGH':'Name + Domain','MEDIUM':'Name only','NO_ZD_MATCH':'No ZD'};
 
         const filterBtns = [null,'HIGH','MEDIUM','NO_ZD_MATCH'].map(v=>{
           const active = S.mdmConfFilter===v;
@@ -2453,39 +2453,108 @@ class Component extends DCLogic {
         const mdmSearch = S.mdmSearch||'';
         const filtered = S.mdmAccounts.filter(a=>{
           if(S.mdmConfFilter && a.zdMatchConfidence!==S.mdmConfFilter) return false;
-          if(mdmSearch && !a.sfAccountName.toLowerCase().includes(mdmSearch.toLowerCase())) return false;
+          if(mdmSearch) {
+            const q = mdmSearch.toLowerCase();
+            if(!(
+              (a.sfAccountName&&a.sfAccountName.toLowerCase().includes(q))
+              ||(a.sfAccountId&&a.sfAccountId.toLowerCase().includes(q))
+              ||(a.zdOrgName&&a.zdOrgName.toLowerCase().includes(q))
+              ||(a.pbCompanyName&&a.pbCompanyName.toLowerCase().includes(q))
+            )) return false;
+          }
           return true;
         });
 
-        const confBadge = (c) => {
-          const col = confColor[c]||'#e6e6e5';
-          const lbl = confLabel[c]||c;
-          const txt = c==='MEDIUM'?'#3c3c3b':'#fff';
-          return '<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:'+col+';color:'+txt+';">'+lbl+'</span>';
+        // Table
+        const typeStyle = {
+          parent: 'font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px;background:#e6f7f1;color:#00966b;white-space:nowrap;',
+          child:  'font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px;background:#f1f1f0;color:#6d6d6c;white-space:nowrap;',
+          lone:   ''
+        };
+        const typeLabel = { parent:'Parent', child:'Child', lone:'' };
+
+        const zdPill = (conf) => {
+          if(conf==='HIGH')   return '<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:#e6faf4;color:#00966b;white-space:nowrap;">Name + Domain</span>';
+          if(conf==='MEDIUM') return '<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:#fff8e1;color:#b89400;white-space:nowrap;">Name</span>';
+          return '<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:#f1f1f0;color:#9d9d9d;white-space:nowrap;">No Match</span>';
         };
 
-        const pbBadge = (a) => !a.hasPbCompany ? '<span style="color:#c0c0c0;font-size:12px;">—</span>'
-          : '<span title="'+a.pbMatchMethod+'">'+a.pbCompanyName+'</span>';
+        const pbPill = (a) => {
+          if(!a.hasPbCompany) return '<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:#f1f1f0;color:#9d9d9d;white-space:nowrap;">No Match</span>';
+          if(a.pbMatchMethod==='website_domain') return '<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:#f0e9f7;color:#7030a0;white-space:nowrap;">Website</span>';
+          if(a.pbMatchMethod==='eos_domain')     return '<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:#f5f0fa;color:#9d60c8;white-space:nowrap;">EOS Domain</span>';
+          return '<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:#faf5fd;color:#c9a0e0;white-space:nowrap;">Name</span>';
+        };
+
+        const detailCell = (label, val) => val
+          ? '<div style="display:flex;gap:6px;margin-bottom:3px;"><span style="font-size:10px;font-weight:700;color:#9d9d9d;min-width:100px;">'+label+'</span><span style="font-size:11px;color:#3c3c3b;">'+val+'</span></div>'
+          : '';
 
         const rows = filtered.slice(0,300).map(a=>{
-          const zdCell = a.hasZdOrg
-            ? '<span style="color:#00be86;font-size:13px;" title="'+( a.zdDomainConfirmed?'Domain confirmed':'Name match only')+'">✓</span>'
-              +(a.zdDomainConfirmed?' <span style="font-size:10px;color:#9d9d9d;">domain ✓</span>':'')
-            : '<span style="color:#c0c0c0;">—</span>';
-          const domainCell = a.zdPrimaryDomain
-            ? '<span style="font-size:11px;color:#6d6d6c;font-family:monospace;">'+a.zdPrimaryDomain+'</span>'
-            : '<span style="color:#c0c0c0;font-size:11px;">—</span>';
-          const arrCell = a.sfAccountArr ? fmt(a.sfAccountArr) : '<span style="color:#c0c0c0;">—</span>';
-          const collisionWarning = a.sfNameCollision ? ' <span style="font-size:9px;color:#e07000;" title="Another SF account shares this name">⚠</span>' : '';
-          return '<tr style="border-bottom:1px solid #f1f1f0;">'
-            +'<td style="padding:8px 10px;font-size:13px;font-weight:500;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+a.sfAccountName+collisionWarning+'</td>'
-            +'<td style="padding:8px 10px;font-size:11px;color:#6d6d6c;white-space:nowrap;">'+( a.sfAccountStatus||'—')+'</td>'
-            +'<td style="padding:8px 10px;text-align:center;">'+zdCell+'</td>'
-            +'<td style="padding:8px 10px;">'+domainCell+'</td>'
-            +'<td style="padding:8px 10px;">'+confBadge(a.zdMatchConfidence)+'</td>'
-            +'<td style="padding:8px 10px;font-size:12px;color:#3c3c3b;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+pbBadge(a)+'</td>'
-            +'<td style="padding:8px 10px;font-size:12px;font-weight:700;text-align:right;white-space:nowrap;">'+arrCell+'</td>'
+          const isExp = S.mdmExpandedId === a.sfAccountId;
+          const toggleId = JSON.stringify(a.sfAccountId);
+
+          const nameCell = '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">'
+            +'<span style="font-size:13px;font-weight:500;">'+a.sfAccountName+'</span>'
+            +(a.sfAccountType!=='lone'?'<span style="'+typeStyle[a.sfAccountType]+'">'+typeLabel[a.sfAccountType]+'</span>':'')
+            +(a.sfAccountType==='child'&&a.parentAccountName?'<span style="font-size:10px;color:#9d9d9d;">↑ '+a.parentAccountName+'</span>':'')
+            +(a.sfNameCollision?'<span style="font-size:9px;color:#e07000;" title="Duplicate name in SF">⚠</span>':'')
+            +'</div>';
+
+          const mainRow = '<tr style="border-bottom:1px solid #f1f1f0;cursor:pointer;'+(isExp?'background:#fafafa;':'')+'" onclick="(function(){var a=window.__argus;if(a)a.setV({mdmExpandedId:a.state.mdmExpandedId==='+toggleId+'?null:'+toggleId+'});})()">'
+            +'<td style="padding:9px 10px;">'+nameCell+'</td>'
+            +'<td style="padding:9px 10px;">'+zdPill(a.zdMatchConfidence)+'</td>'
+            +'<td style="padding:9px 10px;">'+pbPill(a)+'</td>'
+            +'<td style="padding:9px 14px;text-align:right;font-size:12px;font-weight:700;color:#3c3c3b;white-space:nowrap;">'+(a.sfAccountArr?fmt(a.sfAccountArr):'<span style="color:#c0c0c0;">—</span>')+'</td>'
+            +'<td style="padding:9px 10px;text-align:center;color:#9d9d9d;font-size:14px;">'+(isExp?'▴':'▾')+'</td>'
             +'</tr>';
+
+          if(!isExp) return mainRow;
+
+          const detailRow = '<tr style="background:#fafafa;">'
+            +'<td colspan="5" style="padding:0 12px 16px 12px;">'
+            +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;padding:14px;background:#fff;border:1px solid #f1f1f0;border-radius:8px;">'
+
+            // SF section
+            +'<div>'
+              +'<div style="font-size:10px;font-weight:700;color:#3c3c3b;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">Salesforce</div>'
+              +detailCell('Account ID', a.sfAccountId)
+              +detailCell('Status', a.sfAccountStatus)
+              +detailCell('Account Type', a.sfAccountType==='lone'?'Standalone':(typeLabel[a.sfAccountType]||''))
+              +(a.sfAccountType==='child'?detailCell('Parent Account', a.parentAccountName):'')
+              +(a.childCount>0?detailCell('Child Accounts', a.childCount+' subsidiaries'):'')
+              +detailCell('Website Domain', a.sfWebsiteDomain)
+              +detailCell('Active Subs', a.sfActiveSubscriptions||'—')
+            +'</div>'
+
+            // ZD section
+            +'<div>'
+              +'<div style="font-size:10px;font-weight:700;color:#288184;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">Zendesk</div>'
+              +(a.hasZdOrg ? (
+                detailCell('Org Name', a.zdOrgName)
+                +detailCell('Org ID', a.zdOrgId)
+                +detailCell('Primary Domain', a.zdPrimaryDomain)
+                +detailCell('Confidence', a.zdMatchConfidence==='HIGH'?'High — name + domain':'Medium — name only')
+                +detailCell('Domain Confirmed', a.zdDomainConfirmed?'Yes':'No')
+              ) : '<div style="font-size:11px;color:#9d9d9d;">No Zendesk organisation found</div>')
+            +'</div>'
+
+            // PB section
+            +'<div>'
+              +'<div style="font-size:10px;font-weight:700;color:#7030a0;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">Productboard</div>'
+              +(a.hasPbCompany ? (
+                detailCell('Company Name', a.pbCompanyName)
+                +detailCell('Company ID', a.pbCompanyId)
+                +detailCell('Domain', a.pbCompanyDomain)
+                +detailCell('Match Method', a.pbMatchMethod==='website_domain'?'Website domain':a.pbMatchMethod==='eos_domain'?'EOS domain':'Name fallback')
+              ) : '<div style="font-size:11px;color:#9d9d9d;">No Productboard company matched</div>')
+            +'</div>'
+
+            +'</div>'
+            +'</td>'
+            +'</tr>';
+
+          return mainRow + detailRow;
         }).join('');
 
         const searchId = 'mdm-search-'+Date.now();
@@ -2762,27 +2831,24 @@ class Component extends DCLogic {
 
           // Search + filter bar
           +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;">'
-            +'<input id="'+searchId+'" type="text" placeholder="Search accounts…" value="'+mdmSearch+'" '
+            +'<input id="'+searchId+'" type="text" placeholder="Search by SF name, SF ID, Zendesk or Productboard…" value="'+mdmSearch+'" '
               +'oninput="(function(v){window.__argus&&window.__argus.setV&&window.__argus.setV({mdmSearch:v});})(this.value)" '
               +'style="flex:1;min-width:220px;padding:8px 12px;border:1.5px solid #e6e6e5;border-radius:8px;font-size:13px;font-family:inherit;outline:none;" />'
             +filterBtns
             +'<span style="font-size:12px;color:#9d9d9d;margin-left:auto;">Showing '+Math.min(filtered.length,300)+' of '+filtered.length+' accounts (top 500 by ARR)</span>'
           +'</div>'
 
-          // Table
           +'<div style="background:#fff;border:1px solid #e6e6e5;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(60,60,59,0.07);">'
             +'<div style="overflow-x:auto;">'
             +'<table style="width:100%;border-collapse:collapse;font-size:13px;">'
               +'<thead><tr style="border-bottom:2px solid #f1f1f0;background:#fafafa;">'
-                +'<th style="text-align:left;padding:10px 10px;font-size:11px;font-weight:700;color:#9d9d9d;text-transform:uppercase;letter-spacing:0.06em;white-space:nowrap;">SF Account</th>'
-                +'<th style="text-align:left;padding:10px 10px;font-size:11px;font-weight:700;color:#9d9d9d;text-transform:uppercase;letter-spacing:0.06em;white-space:nowrap;">Status</th>'
-                +'<th style="text-align:center;padding:10px 10px;font-size:11px;font-weight:700;color:#9d9d9d;text-transform:uppercase;letter-spacing:0.06em;white-space:nowrap;">ZD</th>'
-                +'<th style="text-align:left;padding:10px 10px;font-size:11px;font-weight:700;color:#9d9d9d;text-transform:uppercase;letter-spacing:0.06em;white-space:nowrap;">Email domain</th>'
-                +'<th style="text-align:left;padding:10px 10px;font-size:11px;font-weight:700;color:#9d9d9d;text-transform:uppercase;letter-spacing:0.06em;white-space:nowrap;">Confidence</th>'
-                +'<th style="text-align:left;padding:10px 10px;font-size:11px;font-weight:700;color:#9d9d9d;text-transform:uppercase;letter-spacing:0.06em;white-space:nowrap;">PB Company</th>'
-                +'<th style="text-align:right;padding:10px 10px;font-size:11px;font-weight:700;color:#9d9d9d;text-transform:uppercase;letter-spacing:0.06em;white-space:nowrap;">ARR (GBP)</th>'
+                +'<th style="text-align:left;padding:10px 10px;font-size:11px;font-weight:700;color:#9d9d9d;text-transform:uppercase;letter-spacing:0.06em;">SF Account</th>'
+                +'<th style="text-align:left;padding:10px 10px;font-size:11px;font-weight:700;color:#288184;text-transform:uppercase;letter-spacing:0.06em;">Zendesk</th>'
+                +'<th style="text-align:left;padding:10px 10px;font-size:11px;font-weight:700;color:#7030a0;text-transform:uppercase;letter-spacing:0.06em;">Productboard</th>'
+                +'<th style="text-align:right;padding:10px 10px;font-size:11px;font-weight:700;color:#9d9d9d;text-transform:uppercase;letter-spacing:0.06em;">ARR</th>'
+                +'<th style="width:32px;"></th>'
               +'</tr></thead>'
-              +'<tbody>'+(rows||'<tr><td colspan="7" style="padding:32px;text-align:center;color:#9d9d9d;">No accounts match this filter</td></tr>')+'</tbody>'
+              +'<tbody>'+(rows||'<tr><td colspan="5" style="padding:32px;text-align:center;color:#9d9d9d;">No accounts match this filter</td></tr>')+'</tbody>'
             +'</table></div>'
           +'</div>';
 

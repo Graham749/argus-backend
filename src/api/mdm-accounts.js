@@ -63,27 +63,44 @@ async function mdmAccounts(req, res) {
       `),
       queryLakehouse(`
         SELECT TOP 500
-          sf_account_id,
-          sf_account_name,
-          sf_account_status,
-          sf_account_arr,
-          sf_website_domain,
-          zd_org_id,
-          zd_org_name,
-          zd_primary_email_domain,
-          zd_match_confidence,
-          zd_domain_confirmed,
-          has_zd_org,
-          pb_company_id,
-          pb_company_name,
-          pb_company_domain,
-          pb_match_method,
-          has_pb_company,
-          sf_name_collision
-        FROM v_silver_mdm_account
-        WHERE sf_account_name IS NOT NULL
-          ${search ? `AND LOWER(sf_account_name) LIKE '%${search.toLowerCase().replace(/'/g, "''")}%'` : ''}
-        ORDER BY COALESCE(TRY_CAST(sf_account_arr AS FLOAT), 0) DESC
+          a.sf_account_id,
+          a.sf_account_name,
+          a.sf_account_status,
+          a.sf_account_arr,
+          a.sf_active_subscriptions,
+          a.sf_website_domain,
+          a.zd_org_id,
+          a.zd_org_name,
+          a.zd_primary_email_domain,
+          a.zd_match_confidence,
+          a.zd_domain_confirmed,
+          a.has_zd_org,
+          a.pb_company_id,
+          a.pb_company_name,
+          a.pb_company_domain,
+          a.pb_match_method,
+          a.has_pb_company,
+          a.sf_name_collision,
+          ca.parent_account_id,
+          parent_ca.account_name AS parent_account_name,
+          COALESCE(ch.child_count, 0) AS child_count
+        FROM v_silver_mdm_account a
+        LEFT JOIN v_silver_sf_customer_accounts ca ON ca.account_id = a.sf_account_id
+        LEFT JOIN v_silver_sf_customer_accounts parent_ca ON parent_ca.account_id = ca.parent_account_id
+        LEFT JOIN (
+          SELECT parent_account_id, COUNT(*) AS child_count
+          FROM v_silver_sf_customer_accounts
+          WHERE parent_account_id IS NOT NULL
+          GROUP BY parent_account_id
+        ) ch ON ch.parent_account_id = a.sf_account_id
+        WHERE a.sf_account_name IS NOT NULL
+          ${search ? `AND (
+            LOWER(a.sf_account_name) LIKE '%${search.toLowerCase().replace(/'/g, "''")}%'
+            OR LOWER(a.sf_account_id) LIKE '%${search.toLowerCase().replace(/'/g, "''")}%'
+            OR LOWER(a.zd_org_name) LIKE '%${search.toLowerCase().replace(/'/g, "''")}%'
+            OR LOWER(a.pb_company_name) LIKE '%${search.toLowerCase().replace(/'/g, "''")}%'
+          )` : ''}
+        ORDER BY COALESCE(TRY_CAST(a.sf_account_arr AS FLOAT), 0) DESC
       `),
       queryLakehouse(`
         SELECT
@@ -122,7 +139,12 @@ async function mdmAccounts(req, res) {
       pbCompanyDomain:    r.pb_company_domain,
       pbMatchMethod:      r.pb_match_method,
       hasPbCompany:       r.has_pb_company === true || r.has_pb_company === 1,
-      sfNameCollision:    r.sf_name_collision === true || r.sf_name_collision === 1
+      sfNameCollision:    r.sf_name_collision === true || r.sf_name_collision === 1,
+      sfActiveSubscriptions: r.sf_active_subscriptions ? Number(r.sf_active_subscriptions) : 0,
+      parentAccountId:    r.parent_account_id || null,
+      parentAccountName:  r.parent_account_name || null,
+      childCount:         Number(r.child_count) || 0,
+      sfAccountType:      (Number(r.child_count) > 0) ? 'parent' : (r.parent_account_id ? 'child' : 'lone'),
     }));
 
     // Group collision rows by name and determine resolution
