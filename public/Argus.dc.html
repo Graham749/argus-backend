@@ -2468,8 +2468,8 @@ class Component extends DCLogic {
                 if (!el) { clearInterval(window.__mdmMsgInterval); return; }
                 el.textContent = msgs[i];
                 i = (i + 1) % msgs.length;
-              }, 3500);
-            }, 3500);
+              }, 6000);
+            }, 6000);
           }
           return {__html:
             '<style>@keyframes mdmProg{from{width:0%}to{width:88%}}</style>'
