@@ -1027,7 +1027,7 @@ class Component extends DCLogic {
     this.state = {
       view: savedView, healthClient: savedHealthClient, range: savedRange, briefClient:'rwe',
       featProduct:'all', featCritFilter:null, featEffFilter:null, featScoreSource:null, featSearch:'', drills:{}, featuresLoaded:false, features:[],
-      mdmLoaded:false, mdmAccounts:[], mdmSummary:null, mdmSearch:'', mdmConfFilter:null,
+      mdmLoaded:false, mdmAccounts:[], mdmSummary:null, mdmDuplicates:[], mdmSearch:'', mdmConfFilter:null,
       chat:[{role:'argus', html:'Hello — I can brief you on any client account, or help you spot patterns across your portfolio. Try asking about a specific client, or a cross-portfolio question like &ldquo;which clients are at churn risk?&rdquo;'}],
       chatInput:'', typing:false, started:false,
       bronzeExpanded:false, silverExpanded:false, goldExpanded:false,
@@ -1900,7 +1900,7 @@ class Component extends DCLogic {
       const res = await fetch(url);
       if(!res.ok) throw new Error('HTTP '+res.status);
       const data = await res.json();
-      this.setState({mdmAccounts: data.accounts || [], mdmSummary: data.summary || null, mdmLoaded: true});
+      this.setState({mdmAccounts: data.accounts || [], mdmSummary: data.summary || null, mdmDuplicates: data.duplicates || [], mdmLoaded: true});
     } catch(e) {
       console.error('[Argus] loadMdm failed:', e);
       this.setState({mdmLoaded: true});
@@ -2628,6 +2628,68 @@ class Component extends DCLogic {
             +'</div>'
             +(sm.nameCollisions?'<div style="margin-top:12px;padding-top:12px;border-top:1px solid #f1f1f0;font-size:12px;color:#e07000;">⚠ '+sm.nameCollisions+' account names appear more than once in Salesforce (e.g. two separate accounts both named "Shell"). For any Productboard name-fallback matches on these accounts, the link may have been assigned to the wrong duplicate — review these manually.</div>':'')
           +'</div>'
+
+          // Salesforce Duplicate Accounts widget
+          + (()=>{
+            const dups = S.mdmDuplicates || [];
+            if(!dups.length) return '';
+            const resolvable = dups.filter(d=>d.resolution==='domain_rule').length;
+            const manual     = dups.filter(d=>d.resolution==='manual').length;
+            const identical  = dups.filter(d=>d.resolution==='identical').length;
+
+            const resLabel = {
+              domain_rule: {label:'Domain rule',  col:'#00be86', bg:'#e6faf4', desc:'One account has a domain, the other does not — prefer the account with domain'},
+              manual:      {label:'Manual review', col:'#e07000', bg:'#fff4e6', desc:'Neither account has a domain — cannot auto-resolve'},
+              identical:   {label:'SF merge needed',col:'#d32f2f',bg:'#fdecea', desc:'Both accounts share the same domain — identical records in Salesforce'},
+            };
+
+            const confDot = c => {
+              const col = c==='HIGH'?'#00be86':c==='MEDIUM'?'#b89400':'#b0b0b0';
+              return '<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:'+col+';margin-right:4px;vertical-align:middle;"></span>';
+            };
+
+            const rows = dups.map(d=>{
+              const r = resLabel[d.resolution];
+              const badge = '<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:'+r.bg+';color:'+r.col+';white-space:nowrap;">'+r.label+'</span>';
+              const accCells = d.accounts.map(a=>
+                '<td style="padding:6px 10px;vertical-align:top;">'
+                  +'<div style="font-size:11px;color:#6d6d6c;font-family:monospace;">'+(a.sfWebsiteDomain||'<span style="color:#c0c0c0;">no domain</span>')+'</div>'
+                  +'<div style="font-size:10px;color:#9d9d9d;margin-top:2px;">'+confDot(a.zdMatchConfidence)+a.zdMatchConfidence+(a.zdDomainConfirmed?' ✓':'')+(a.pbCompanyName?' · PB: '+a.pbCompanyName:'')+'</div>'
+                  +'<div style="font-size:10px;color:#c0c0c0;margin-top:1px;font-family:monospace;">'+a.sfAccountId+'</div>'
+                +'</td>'
+              ).join('<td style="padding:6px 4px;color:#c0c0c0;font-size:12px;vertical-align:middle;">vs</td>');
+              return '<tr style="border-bottom:1px solid #f1f1f0;">'
+                +'<td style="padding:8px 10px;font-size:13px;font-weight:600;white-space:nowrap;">'+d.name+'</td>'
+                +accCells
+                +'<td style="padding:8px 10px;text-align:right;">'+badge+'</td>'
+                +'</tr>';
+            }).join('');
+
+            return '<div style="background:#fff;border:1px solid #e6e6e5;border-radius:12px;padding:20px;margin-bottom:20px;box-shadow:0 1px 3px rgba(60,60,59,0.07);">'
+              +'<div style="display:flex;align-items:baseline;gap:12px;margin-bottom:4px;">'
+                +'<div style="font-size:12px;font-weight:700;color:#6d6d6c;text-transform:uppercase;letter-spacing:0.08em;">Salesforce Duplicate Accounts</div>'
+              +'</div>'
+              +'<div style="font-size:12px;color:#6d6d6c;margin-bottom:16px;">'
+                +dups.length+' duplicate name groups detected &nbsp;·&nbsp; '
+                +'<span style="color:#00be86;font-weight:600;">'+resolvable+' resolvable by domain rule</span>'
+                +(manual?' &nbsp;·&nbsp; <span style="color:#e07000;font-weight:600;">'+manual+' need manual review</span>':'')
+                +(identical?' &nbsp;·&nbsp; <span style="color:#d32f2f;font-weight:600;">'+identical+' identical — SF merge needed</span>':'')
+              +'</div>'
+              +'<div style="overflow-x:auto;">'
+              +'<table style="width:100%;border-collapse:collapse;font-size:13px;">'
+                +'<thead><tr style="border-bottom:2px solid #f1f1f0;background:#fafafa;">'
+                  +'<th style="text-align:left;padding:8px 10px;font-size:11px;font-weight:700;color:#9d9d9d;text-transform:uppercase;letter-spacing:0.06em;">Account Name</th>'
+                  +'<th style="text-align:left;padding:8px 10px;font-size:11px;font-weight:700;color:#9d9d9d;text-transform:uppercase;letter-spacing:0.06em;" colspan="3">Duplicate Records</th>'
+                  +'<th style="text-align:right;padding:8px 10px;font-size:11px;font-weight:700;color:#9d9d9d;text-transform:uppercase;letter-spacing:0.06em;">Resolution</th>'
+                +'</tr></thead>'
+                +'<tbody>'+rows+'</tbody>'
+              +'</table>'
+              +'</div>'
+              +'<div style="margin-top:12px;padding-top:12px;border-top:1px solid #f1f1f0;display:flex;gap:20px;flex-wrap:wrap;">'
+                +Object.values(resLabel).map(r=>'<span style="font-size:11px;color:#6d6d6c;"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+r.col+';margin-right:5px;vertical-align:middle;"></span><strong>'+r.label+'</strong> — '+r.desc+'</span>').join('')
+              +'</div>'
+            +'</div>';
+          })()
 
           // Search + filter bar
           +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;">'

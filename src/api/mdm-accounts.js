@@ -42,7 +42,7 @@ async function mdmAccounts(req, res) {
   try {
     const search = (req.query.search || '').trim();
 
-    const [summaryRows, accountRows] = await Promise.all([
+    const [summaryRows, accountRows, dupRows] = await Promise.all([
       queryLakehouse(`
         SELECT
           COUNT(*)                                                              AS total,
@@ -83,6 +83,23 @@ async function mdmAccounts(req, res) {
         WHERE sf_account_name IS NOT NULL
           ${search ? `AND LOWER(sf_account_name) LIKE '%${search.toLowerCase().replace(/'/g, "''")}%'` : ''}
         ORDER BY COALESCE(TRY_CAST(sf_account_arr AS FLOAT), 0) DESC
+      `),
+      queryLakehouse(`
+        SELECT
+          sf_account_id,
+          sf_account_name,
+          sf_account_status,
+          sf_website_domain,
+          zd_match_confidence,
+          zd_domain_confirmed,
+          pb_company_name,
+          pb_match_method
+        FROM v_silver_mdm_account
+        WHERE sf_name_collision = 1
+          AND sf_account_name IS NOT NULL
+        ORDER BY sf_account_name,
+                 CASE WHEN sf_website_domain IS NOT NULL THEN 0 ELSE 1 END,
+                 CASE zd_match_confidence WHEN 'HIGH' THEN 0 WHEN 'MEDIUM' THEN 1 ELSE 2 END
       `)
     ]);
 
@@ -107,6 +124,39 @@ async function mdmAccounts(req, res) {
       sfNameCollision:    r.sf_name_collision === true || r.sf_name_collision === 1
     }));
 
+    // Group collision rows by name and determine resolution
+    const dupGroups = {};
+    dupRows.forEach(r => {
+      const name = r.sf_account_name;
+      if (!dupGroups[name]) dupGroups[name] = [];
+      dupGroups[name].push({
+        sfAccountId:       r.sf_account_id,
+        sfAccountStatus:   r.sf_account_status,
+        sfWebsiteDomain:   r.sf_website_domain || null,
+        zdMatchConfidence: r.zd_match_confidence,
+        zdDomainConfirmed: r.zd_domain_confirmed === true || r.zd_domain_confirmed === 1,
+        pbCompanyName:     r.pb_company_name || null,
+        pbMatchMethod:     r.pb_match_method || null
+      });
+    });
+
+    const duplicates = Object.entries(dupGroups).map(([name, accs]) => {
+      const withDomain  = accs.filter(a => a.sfWebsiteDomain);
+      const noDomain    = accs.filter(a => !a.sfWebsiteDomain);
+      const allSameDomain = withDomain.length === accs.length &&
+        new Set(accs.map(a => a.sfWebsiteDomain)).size === 1;
+
+      let resolution;
+      if (withDomain.length > 0 && noDomain.length > 0) resolution = 'domain_rule';
+      else if (allSameDomain)                             resolution = 'identical';
+      else                                                resolution = 'manual';
+
+      return { name, accounts: accs, resolution };
+    }).sort((a, b) => {
+      const order = { domain_rule: 0, manual: 1, identical: 2 };
+      return order[a.resolution] - order[b.resolution] || a.name.localeCompare(b.name);
+    });
+
     res.json({
       summary: {
         total:             Number(summary.total)            || 0,
@@ -124,6 +174,7 @@ async function mdmAccounts(req, res) {
         nameCollisions:    Number(summary.nameCollisions)   || 0
       },
       accounts,
+      duplicates,
       syncedAt: new Date().toISOString()
     });
   } catch (err) {
