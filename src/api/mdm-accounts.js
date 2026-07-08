@@ -57,7 +57,8 @@ async function mdmAccounts(req, res) {
           SUM(CASE WHEN pb_match_method = 'eos_domain'       THEN 1 ELSE 0 END) AS pbEos,
           SUM(CASE WHEN pb_match_method = 'name'             THEN 1 ELSE 0 END) AS pbName,
           SUM(sf_name_collision)                                                AS nameCollisions,
-          (SELECT COUNT(*) FROM v_silver_pb_companies)                         AS pbTotal
+          (SELECT COUNT(*) FROM v_silver_pb_companies)                                                    AS pbTotalAll,
+          (SELECT COUNT(*) FROM v_silver_pb_companies WHERE silver_entity_classification = 'External')  AS pbTotal
         FROM v_silver_mdm_account
       `),
       queryLakehouse(`
@@ -167,6 +168,7 @@ async function mdmAccounts(req, res) {
         zdDomainConfirmed: Number(summary.zdDomainConfirmed)|| 0,
         pbLinked:          Number(summary.pbLinked)          || 0,
         pbCompaniesMatched:Number(summary.pbCompaniesMatched)|| 0,
+        pbTotalAll:        Number(summary.pbTotalAll)         || 0,
         pbTotal:           Number(summary.pbTotal)           || 0,
         pbWebsite:         Number(summary.pbWebsite)         || 0,
         pbEos:             Number(summary.pbEos)             || 0,
