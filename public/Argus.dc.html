@@ -2532,28 +2532,53 @@ class Component extends DCLogic {
 
               // Zendesk column
               +'<div style="background:#fff;padding:16px 20px;">'
-                +'<div style="font-size:11px;font-weight:700;color:#288184;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px;">Zendesk</div>'
-                +'<div style="font-size:28px;font-weight:900;color:#288184;">'+sm.zdLinked.toLocaleString()+'</div>'
-                +'<div style="font-size:11px;color:#9d9d9d;margin-top:4px;">SF accounts with a Zendesk org</div>'
-                +covBar(sm.zdLinked, sm.total, '#288184')
-                +'<div style="display:flex;justify-content:space-between;font-size:11px;">'
-                  +'<span style="color:#288184;font-weight:600;">'+pct(sm.zdLinked,sm.total)+' matched</span>'
-                  +'<span style="color:#9d9d9d;">'+zdNotFound.toLocaleString()+' SF accounts not in Zendesk</span>'
+                +'<div style="font-size:11px;font-weight:700;color:#288184;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:14px;">Zendesk</div>'
+                +'<div style="display:flex;flex-direction:column;gap:12px;">'
+                  // SF → ZD
+                  +'<div>'
+                    +'<div style="font-size:10px;font-weight:700;color:#9d9d9d;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;">SF → Zendesk</div>'
+                    +'<div style="display:flex;align-items:baseline;gap:6px;">'
+                      +'<span style="font-size:22px;font-weight:900;color:#288184;">'+pct(sm.zdLinked,sm.total)+'</span>'
+                      +'<span style="font-size:11px;color:#9d9d9d;">of SF accounts found in Zendesk</span>'
+                    +'</div>'
+                    +covBar(sm.zdLinked, sm.total, '#288184')
+                    +'<div style="font-size:11px;color:#9d9d9d;">'+sm.zdLinked.toLocaleString()+' matched &nbsp;·&nbsp; '+zdNotFound.toLocaleString()+' not found</div>'
+                  +'</div>'
+                  +'<div style="border-top:1px solid #f1f1f0;padding-top:12px;">'
+                    +'<div style="font-size:10px;font-weight:700;color:#9d9d9d;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;">Zendesk → SF</div>'
+                    +'<div style="display:flex;align-items:baseline;gap:6px;">'
+                      +'<span style="font-size:22px;font-weight:900;color:#288184;">100%</span>'
+                      +'<span style="font-size:11px;color:#9d9d9d;">of Zendesk orgs linked to an SF account</span>'
+                    +'</div>'
+                    +covBar(1, 1, '#288184')
+                    +'<div style="font-size:11px;color:#9d9d9d;">All ZD orgs in our dataset have an SF account</div>'
+                  +'</div>'
                 +'</div>'
               +'</div>'
 
               // Productboard column
               +'<div style="background:#fff;padding:16px 20px;">'
-                +'<div style="font-size:11px;font-weight:700;color:#7030a0;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px;">Productboard</div>'
-                +'<div style="display:flex;align-items:baseline;gap:8px;">'
-                  +'<div style="font-size:28px;font-weight:900;color:#7030a0;">'+sm.pbCompaniesMatched.toLocaleString()+'</div>'
-                  +'<div style="font-size:12px;color:#9d9d9d;">of '+(sm.pbTotalAll&&sm.pbTotalAll!==sm.pbTotal?sm.pbTotalAll.toLocaleString()+' ('+sm.pbTotal.toLocaleString()+' external)':sm.pbTotal.toLocaleString()+' external')+'</div>'
-                +'</div>'
-                +'<div style="font-size:11px;color:#9d9d9d;margin-top:4px;">Productboard companies matched to SF</div>'
-                +covBar(sm.pbCompaniesMatched, sm.pbTotal, '#7030a0')
-                +'<div style="display:flex;justify-content:space-between;font-size:11px;">'
-                  +'<span style="color:#7030a0;font-weight:600;">'+pct(sm.pbCompaniesMatched,sm.pbTotal)+' of PB matched</span>'
-                  +'<span style="color:#9d9d9d;">'+(sm.pbTotal-sm.pbCompaniesMatched).toLocaleString()+' PB companies not in SF</span>'
+                +'<div style="font-size:11px;font-weight:700;color:#7030a0;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:14px;">Productboard &nbsp;<span style="font-weight:400;color:#9d9d9d;font-size:10px;text-transform:none;letter-spacing:0;">'+(sm.pbTotalAll&&sm.pbTotalAll!==sm.pbTotal?sm.pbTotalAll.toLocaleString()+' total ('+sm.pbTotal.toLocaleString()+' external)':sm.pbTotal.toLocaleString()+' external')+'</span></div>'
+                +'<div style="display:flex;flex-direction:column;gap:12px;">'
+                  // PB → SF
+                  +'<div>'
+                    +'<div style="font-size:10px;font-weight:700;color:#9d9d9d;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;">PB → Salesforce</div>'
+                    +'<div style="display:flex;align-items:baseline;gap:6px;">'
+                      +'<span style="font-size:22px;font-weight:900;color:#7030a0;">'+pct(sm.pbCompaniesMatched,sm.pbTotal)+'</span>'
+                      +'<span style="font-size:11px;color:#9d9d9d;">of PB companies matched to SF</span>'
+                    +'</div>'
+                    +covBar(sm.pbCompaniesMatched, sm.pbTotal, '#7030a0')
+                    +'<div style="font-size:11px;color:#9d9d9d;">'+sm.pbCompaniesMatched.toLocaleString()+' matched &nbsp;·&nbsp; '+(sm.pbTotal-sm.pbCompaniesMatched).toLocaleString()+' not in SF</div>'
+                  +'</div>'
+                  +'<div style="border-top:1px solid #f1f1f0;padding-top:12px;">'
+                    +'<div style="font-size:10px;font-weight:700;color:#9d9d9d;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;">SF → Productboard</div>'
+                    +'<div style="display:flex;align-items:baseline;gap:6px;">'
+                      +'<span style="font-size:22px;font-weight:900;color:#7030a0;">'+pct(sm.pbLinked,sm.total)+'</span>'
+                      +'<span style="font-size:11px;color:#9d9d9d;">of SF accounts linked to a PB company</span>'
+                    +'</div>'
+                    +covBar(sm.pbLinked, sm.total, '#7030a0')
+                    +'<div style="font-size:11px;color:#9d9d9d;">'+sm.pbLinked.toLocaleString()+' SF accounts &nbsp;·&nbsp; '+(sm.total-sm.pbLinked).toLocaleString()+' not in PB</div>'
+                  +'</div>'
                 +'</div>'
               +'</div>'
 
