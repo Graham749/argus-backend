@@ -62,7 +62,7 @@ async function mdmAccounts(req, res) {
         FROM v_silver_mdm_account
       `),
       queryLakehouse(`
-        SELECT TOP 5000
+        SELECT
           a.sf_account_id,
           a.sf_account_name,
           a.sf_account_status,

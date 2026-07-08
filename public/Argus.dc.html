@@ -2656,10 +2656,15 @@ class Component extends DCLogic {
           });
           if (cf) filtered = filtered.filter(function(a){ return a.zdMatchConfidence === cf; });
           const total = filtered.length;
+          const all = (window.__mdmAccounts||[]).length;
+          const isFiltered = s || cf;
+          const display = isFiltered ? filtered : filtered.slice(0, 200);
           const lbl = document.getElementById('mdm-count-label');
-          if (lbl) lbl.textContent = total + ' accounts' + (total < (window.__mdmAccounts||[]).length ? ' (filtered)' : '');
+          if (lbl) lbl.textContent = isFiltered
+            ? total + ' account' + (total !== 1 ? 's' : '') + ' found'
+            : 'Showing top 200 of ' + all + ' accounts — search to find others';
           tbody.innerHTML = total
-            ? filtered.map(window.__mdmRow).join('')
+            ? display.map(window.__mdmRow).join('')
             : '<tr><td colspan="4" style="padding:32px;text-align:center;color:#9d9d9d;">No accounts match this filter</td></tr>';
         };
 
@@ -2936,11 +2941,15 @@ class Component extends DCLogic {
             +'</div>';
           })()
 
-          // Search + filter bar — search updates window.__mdmSearch directly, no re-render
+          // Search + filter bar — committed on Enter or Search button, not live
           +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;">'
-            +'<input id="mdm-search" type="text" placeholder="Search by SF name, SF ID, Zendesk or Productboard…" value="'+(window.__mdmSearch||'')+'" '
-              +'oninput="(function(v){window.__mdmSearch=v;window.__mdmRefresh&&window.__mdmRefresh();})(this.value)" '
-              +'style="flex:1;min-width:220px;padding:8px 12px;border:1.5px solid #e6e6e5;border-radius:8px;font-size:13px;font-family:inherit;outline:none;" />'
+            +'<div style="display:flex;flex:1;min-width:220px;border:1.5px solid #e6e6e5;border-radius:8px;overflow:hidden;background:#fff;">'
+              +'<input id="mdm-search" type="text" placeholder="Search by SF name, SF ID, Zendesk or Productboard…" value="'+(window.__mdmSearch||'')+'" '
+                +'onkeydown="(function(e){if(e.key===\'Enter\'){window.__mdmSearch=e.target.value;window.__mdmRefresh&&window.__mdmRefresh();}})(event)" '
+                +'style="flex:1;padding:8px 12px;border:none;font-size:13px;font-family:inherit;outline:none;min-width:0;" />'
+              +'<button onclick="(function(){var v=document.getElementById(\'mdm-search\').value;window.__mdmSearch=v;window.__mdmRefresh&&window.__mdmRefresh();})()" '
+                +'style="padding:8px 16px;background:#288184;color:#fff;border:none;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;">Search</button>'
+            +'</div>'
             +filterBtns
             +'<span id="mdm-count-label" style="font-size:12px;color:#9d9d9d;white-space:nowrap;margin-left:auto;">Loading…</span>'
           +'</div>'
