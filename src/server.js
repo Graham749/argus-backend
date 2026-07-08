@@ -62,8 +62,8 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(argusPath, 'Argus.dc.html'));
 });
 
-// Serve Argus dashboard static files (AFTER API routes)
-app.use(express.static(argusPath));
+// Serve Argus dashboard static files (AFTER API routes) — no-cache so HTML changes are always picked up
+app.use(express.static(argusPath, { etag: false, lastModified: false, setHeaders: (res) => { res.setHeader('Cache-Control', 'no-store'); } }));
 
 // Error handler
 app.use((err, req, res, next) => {

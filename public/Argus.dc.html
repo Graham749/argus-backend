@@ -2560,20 +2560,24 @@ class Component extends DCLogic {
         const highPct  = sm.zdLinked ? sm.highCount/sm.zdLinked   : 0;
         const medPct   = sm.zdLinked ? sm.mediumCount/sm.zdLinked : 0;
 
-        const confColor = {'HIGH':'#00be86','MEDIUM':'#ffcc00','NO_ZD_MATCH':'#e6e6e5'};
-        const confLabel = {'HIGH':'Name + Domain','MEDIUM':'Name only','NO_ZD_MATCH':'No ZD'};
+        const zdNotMatched = sm.total - sm.zdLinked;
+        const pbNotMatched = sm.total - sm.pbLinked;
 
-        // Filter buttons read/write window.__mdmConfFilter directly — no state update, no re-render
-        const filterBtns = [null,'HIGH','MEDIUM','NO_ZD_MATCH'].map(v=>{
-          const active = window.__mdmConfFilter===v;
-          const label  = v===null?'All':confLabel[v];
-          const col    = v?confColor[v]:'#288184';
-          const base   = 'font-size:12px;font-weight:700;padding:5px 14px;border-radius:20px;cursor:pointer;border:1.5px solid;transition:background 0.15s;';
-          const style  = active
-            ? base+'background:'+col+';color:'+(v==='MEDIUM'?'#3c3c3b':'#fff')+';border-color:'+col+';'
-            : base+'background:#fff;color:'+col+';border-color:'+col+';';
-          return '<button onclick="(function(){window.__mdmConfFilter='+JSON.stringify(v)+';window.__mdmRefresh&&window.__mdmRefresh();})()" style="'+style+'">'+label+'</button>';
-        }).join('');
+        // Filter buttons — no state update, no re-render
+        const filterBtns = (function(){
+          const base = 'font-size:12px;font-weight:700;padding:5px 14px;border-radius:20px;cursor:pointer;border:1.5px solid;white-space:nowrap;';
+          const btn = (v, label, col, textCol) => {
+            const active = window.__mdmConfFilter === v;
+            const style = active
+              ? base+'background:'+col+';color:'+(textCol||'#fff')+';border-color:'+col+';'
+              : base+'background:#fff;color:'+col+';border-color:'+col+';';
+            const vAttr = v === null ? 'null' : "'"+v+"'";
+            return '<button onclick="(function(){window.__mdmConfFilter='+vAttr+';window.__mdmRefresh&&window.__mdmRefresh();})()" style="'+style+'">'+label+'</button>';
+          };
+          return btn(null, 'All', '#288184')
+            + btn('NO_ZD', zdNotMatched+' SF accounts not matched to Zendesk', '#e07000')
+            + btn('NO_PB', pbNotMatched+' accounts not matched in Productboard', '#7030a0');
+        })();
 
         // Define row renderer and filter function as globals so search/expand never trigger re-render
         window.__mdmRow = function(a) {
@@ -2673,7 +2677,8 @@ class Component extends DCLogic {
               || (a.pbCompanyName && a.pbCompanyName.toLowerCase().includes(s))
               || (a.pbCompanyId && String(a.pbCompanyId).toLowerCase().includes(s));
           });
-          if (cf) filtered = filtered.filter(function(a){ return a.zdMatchConfidence === cf; });
+          if (cf === 'NO_ZD') filtered = filtered.filter(function(a){ return !a.hasZdOrg; });
+          else if (cf === 'NO_PB') filtered = filtered.filter(function(a){ return !a.hasPbCompany; });
           const total = filtered.length;
           const all = (window.__mdmAccounts||[]).length;
           const isFiltered = s || cf;
