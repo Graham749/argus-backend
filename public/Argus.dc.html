@@ -1027,7 +1027,7 @@ class Component extends DCLogic {
     this.state = {
       view: savedView, healthClient: savedHealthClient, range: savedRange, briefClient:'rwe',
       featProduct:'all', featCritFilter:null, featEffFilter:null, featScoreSource:null, featSearch:'', drills:{}, featuresLoaded:false, features:[],
-      mdmLoaded:false, mdmAccounts:[], mdmSummary:null, mdmDuplicates:[], mdmSearch:'', mdmConfFilter:null, mdmExpandedId:null,
+      mdmLoaded:false, mdmLoading:false, mdmSummary:null, mdmDuplicates:[],
       chat:[{role:'argus', html:'Hello — I can brief you on any client account, or help you spot patterns across your portfolio. Try asking about a specific client, or a cross-portfolio question like &ldquo;which clients are at churn risk?&rdquo;'}],
       chatInput:'', typing:false, started:false,
       bronzeExpanded:false, silverExpanded:false, goldExpanded:false,
@@ -1894,16 +1894,26 @@ class Component extends DCLogic {
     }
   }
 
-  async loadMdm(search){
+  async loadMdm(){
+    if (window.__mdmAccounts && window.__mdmAccounts.length > 0) {
+      // Already loaded — just re-paint the table after re-render
+      setTimeout(() => window.__mdmRefresh && window.__mdmRefresh(), 0);
+      return;
+    }
+    this.setState({mdmLoading: true});
     try {
-      const url = '/api/mdm-accounts' + (search ? '?search='+encodeURIComponent(search) : '');
-      const res = await fetch(url);
+      const res = await fetch('/api/mdm-accounts');
       if(!res.ok) throw new Error('HTTP '+res.status);
       const data = await res.json();
-      this.setState({mdmAccounts: data.accounts || [], mdmSummary: data.summary || null, mdmDuplicates: data.duplicates || [], mdmLoaded: true});
+      window.__mdmAccounts = data.accounts || [];
+      if (window.__mdmSearch   === undefined) window.__mdmSearch   = '';
+      if (window.__mdmConfFilter === undefined) window.__mdmConfFilter = null;
+      if (window.__mdmExpandedId === undefined) window.__mdmExpandedId = null;
+      this.setState({mdmLoaded: true, mdmLoading: false, mdmSummary: data.summary || null, mdmDuplicates: data.duplicates || []});
+      setTimeout(() => window.__mdmRefresh && window.__mdmRefresh(), 50);
     } catch(e) {
       console.error('[Argus] loadMdm failed:', e);
-      this.setState({mdmLoaded: true});
+      this.setState({mdmLoaded: true, mdmLoading: false});
     }
   }
 
@@ -2387,7 +2397,7 @@ class Component extends DCLogic {
       goAssistant:(e)=>{e&&e.preventDefault();this.setV({view:'assistant'});},
       goBriefing:(e)=>{e&&e.preventDefault();this.setV({view:'briefing'});},
       goBuildStatus:(e)=>{e&&e.preventDefault();this.setV({view:'buildStatus'});},
-      goMdm:(e)=>{e&&e.preventDefault();this.setV({view:'mdm',mdmConfFilter:null,mdmSearch:''}); },
+      goMdm:(e)=>{e&&e.preventDefault();window.__mdmSearch='';window.__mdmConfFilter=null;window.__mdmExpandedId=null;this.setV({view:'mdm'}); },
       navStyleHealth:navStyle('health'), navStyleFeatures:navStyle('features'), navStyleAssistant:navStyle('assistant'), navStyleBriefing:navStyle('briefing'), navStyleBuildStatus:navStyle('buildStatus'), navStyleMdm:navStyle('mdm'),
       isHealth:S.view==='health', isFeatures:S.view==='features', isAssistant:S.view==='assistant', isBriefing:S.view==='briefing', isBuildStatus:S.view==='buildStatus', isMdm:S.view==='mdm',
       healthTabsHtml, rangesHtml, healthTabs, ranges, hc,
@@ -2428,7 +2438,25 @@ class Component extends DCLogic {
       currentUser:S.currentUser,
       mdmHtml: (()=>{
         const sm = S.mdmSummary;
-        if(!S.mdmLoaded || !sm) return {__html:'<div style="text-align:center;padding:64px;color:#9d9d9d;font-size:14px;">Loading account MDM data…</div>'};
+
+        // Loading state — animated progress bar
+        if(S.mdmLoading || (!S.mdmLoaded && !sm)) {
+          const isLoading = S.mdmLoading;
+          return {__html:
+            '<style>@keyframes mdmProg{from{width:0%}to{width:88%}}</style>'
+            +'<div style="max-width:480px;margin:80px auto;padding:32px;text-align:center;">'
+              +'<div style="font-size:15px;font-weight:600;color:#3c3c3b;margin-bottom:6px;">Loading account data from Fabric</div>'
+              +'<div style="font-size:13px;color:#9d9d9d;margin-bottom:24px;">Querying MDM view — typically 5–10 seconds</div>'
+              +'<div style="height:5px;border-radius:3px;background:#f1f1f0;overflow:hidden;">'
+                +(isLoading
+                  ? '<div style="height:100%;border-radius:3px;background:linear-gradient(90deg,#288184,#00be86);animation:mdmProg 7s ease-out forwards;"></div>'
+                  : '<div style="height:100%;width:0%;background:#288184;"></div>')
+              +'</div>'
+            +'</div>'
+          };
+        }
+
+        if(!sm) return {__html:'<div style="text-align:center;padding:64px;color:#9d9d9d;font-size:14px;">No data available</div>'};
 
         const pct = (n,d) => d ? (n/d*100).toFixed(1)+'%' : '—';
         const fmt = (n) => n==null ? '—' : n>=1000000 ? '£'+(n/1000000).toFixed(1)+'M' : n>=1000 ? '£'+(n/1000).toFixed(0)+'K' : '£'+Math.round(n);
@@ -2439,124 +2467,108 @@ class Component extends DCLogic {
         const confColor = {'HIGH':'#00be86','MEDIUM':'#ffcc00','NO_ZD_MATCH':'#e6e6e5'};
         const confLabel = {'HIGH':'Name + Domain','MEDIUM':'Name only','NO_ZD_MATCH':'No ZD'};
 
+        // Filter buttons read/write window.__mdmConfFilter directly — no state update, no re-render
         const filterBtns = [null,'HIGH','MEDIUM','NO_ZD_MATCH'].map(v=>{
-          const active = S.mdmConfFilter===v;
+          const active = window.__mdmConfFilter===v;
           const label  = v===null?'All':confLabel[v];
           const col    = v?confColor[v]:'#288184';
           const base   = 'font-size:12px;font-weight:700;padding:5px 14px;border-radius:20px;cursor:pointer;border:1.5px solid;transition:background 0.15s;';
           const style  = active
             ? base+'background:'+col+';color:'+(v==='MEDIUM'?'#3c3c3b':'#fff')+';border-color:'+col+';'
             : base+'background:#fff;color:'+col+';border-color:'+col+';';
-          return '<button onclick="(function(){window.__argus&&window.__argus.setV&&window.__argus.setV({mdmConfFilter:'+JSON.stringify(v)+'});})()" style="'+style+'">'+label+'</button>';
+          return '<button onclick="(function(){window.__mdmConfFilter='+JSON.stringify(v)+';window.__mdmRefresh&&window.__mdmRefresh();})()" style="'+style+'">'+label+'</button>';
         }).join('');
 
-        const mdmSearch = S.mdmSearch||'';
-        const filtered = S.mdmAccounts.filter(a=>{
-          if(S.mdmConfFilter && a.zdMatchConfidence!==S.mdmConfFilter) return false;
-          if(mdmSearch) {
-            const q = mdmSearch.toLowerCase();
-            if(!(
-              (a.sfAccountName&&a.sfAccountName.toLowerCase().includes(q))
-              ||(a.sfAccountId&&a.sfAccountId.toLowerCase().includes(q))
-              ||(a.zdOrgName&&a.zdOrgName.toLowerCase().includes(q))
-              ||(a.pbCompanyName&&a.pbCompanyName.toLowerCase().includes(q))
-            )) return false;
-          }
-          return true;
-        });
-
-        // Table
-        const typeStyle = {
-          parent: 'font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px;background:#e6f7f1;color:#00966b;white-space:nowrap;',
-          child:  'font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px;background:#f1f1f0;color:#6d6d6c;white-space:nowrap;',
-          lone:   ''
-        };
-        const typeLabel = { parent:'Parent', child:'Child', lone:'' };
-
-        const zdPill = (conf) => {
-          if(conf==='HIGH')   return '<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:#e6faf4;color:#00966b;white-space:nowrap;">Name + Domain</span>';
-          if(conf==='MEDIUM') return '<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:#fff8e1;color:#b89400;white-space:nowrap;">Name</span>';
-          return '<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:#f1f1f0;color:#9d9d9d;white-space:nowrap;">No Match</span>';
-        };
-
-        const pbPill = (a) => {
-          if(!a.hasPbCompany) return '<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:#f1f1f0;color:#9d9d9d;white-space:nowrap;">No Match</span>';
-          if(a.pbMatchMethod==='website_domain') return '<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:#f0e9f7;color:#7030a0;white-space:nowrap;">Website</span>';
-          if(a.pbMatchMethod==='eos_domain')     return '<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:#f5f0fa;color:#9d60c8;white-space:nowrap;">EOS Domain</span>';
-          return '<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:#faf5fd;color:#c9a0e0;white-space:nowrap;">Name</span>';
-        };
-
-        const detailCell = (label, val) => val
-          ? '<div style="display:flex;gap:6px;margin-bottom:3px;"><span style="font-size:10px;font-weight:700;color:#9d9d9d;min-width:100px;">'+label+'</span><span style="font-size:11px;color:#3c3c3b;">'+val+'</span></div>'
-          : '';
-
-        const rows = filtered.slice(0,300).map(a=>{
-          const isExp = S.mdmExpandedId === a.sfAccountId;
-          const toggleId = "'"+a.sfAccountId+"'";
-
+        // Define row renderer and filter function as globals so search/expand never trigger re-render
+        window.__mdmRow = function(a) {
+          const isExp = window.__mdmExpandedId === a.sfAccountId;
+          const tid = "'"+a.sfAccountId+"'";
+          const typeStyle = {
+            parent:'font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px;background:#e6f7f1;color:#00966b;white-space:nowrap;',
+            child:'font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px;background:#f1f1f0;color:#6d6d6c;white-space:nowrap;'
+          };
           const nameCell = '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">'
             +'<span style="font-size:13px;font-weight:500;">'+a.sfAccountName+'</span>'
-            +(a.sfAccountType!=='lone'?'<span style="'+typeStyle[a.sfAccountType]+'">'+typeLabel[a.sfAccountType]+'</span>':'')
+            +(a.sfAccountType!=='lone'?'<span style="'+typeStyle[a.sfAccountType]+'">'+{parent:'Parent',child:'Child'}[a.sfAccountType]+'</span>':'')
             +(a.sfAccountType==='child'&&a.parentAccountName?'<span style="font-size:10px;color:#9d9d9d;">↑ '+a.parentAccountName+'</span>':'')
-            +(a.sfNameCollision?'<span style="font-size:9px;color:#e07000;" title="Duplicate name in SF">⚠</span>':'')
+            +(a.sfNameCollision?'<span style="font-size:9px;color:#e07000;" title="Duplicate SF name">⚠</span>':'')
             +'</div>';
-
-          const mainRow = '<tr style="border-bottom:1px solid #f1f1f0;cursor:pointer;'+(isExp?'background:#fafafa;':'')+'" onclick="(function(){var a=window.__argus;if(a)a.setV({mdmExpandedId:a.state.mdmExpandedId==='+toggleId+'?null:'+toggleId+'});})()">'
+          const zdPill = a.zdMatchConfidence==='HIGH'
+            ? '<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:#e6faf4;color:#00966b;white-space:nowrap;">Name + Domain</span>'
+            : a.zdMatchConfidence==='MEDIUM'
+            ? '<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:#fff8e1;color:#b89400;white-space:nowrap;">Name</span>'
+            : '<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:#f1f1f0;color:#9d9d9d;white-space:nowrap;">No Match</span>';
+          const pbPill = !a.hasPbCompany
+            ? '<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:#f1f1f0;color:#9d9d9d;white-space:nowrap;">No Match</span>'
+            : a.pbMatchMethod==='website_domain'
+            ? '<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:#f0e9f7;color:#7030a0;white-space:nowrap;">Website</span>'
+            : a.pbMatchMethod==='eos_domain'
+            ? '<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:#f5f0fa;color:#9d60c8;white-space:nowrap;">EOS Domain</span>'
+            : '<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:#faf5fd;color:#c9a0e0;white-space:nowrap;">Name</span>';
+          const dc = (lbl,val) => val
+            ? '<div style="display:flex;gap:6px;margin-bottom:3px;"><span style="font-size:10px;font-weight:700;color:#9d9d9d;min-width:100px;">'+lbl+'</span><span style="font-size:11px;color:#3c3c3b;">'+val+'</span></div>'
+            : '';
+          const mainRow = '<tr style="border-bottom:1px solid #f1f1f0;cursor:pointer;'+(isExp?'background:#fafafa;':'')+'" onclick="(function(){window.__mdmExpandedId=window.__mdmExpandedId==='+tid+'?null:'+tid+';window.__mdmRefresh&&window.__mdmRefresh();})()">'
             +'<td style="padding:9px 10px;">'+nameCell+'</td>'
-            +'<td style="padding:9px 10px;">'+zdPill(a.zdMatchConfidence)+'</td>'
-            +'<td style="padding:9px 10px;">'+pbPill(a)+'</td>'
+            +'<td style="padding:9px 10px;">'+zdPill+'</td>'
+            +'<td style="padding:9px 10px;">'+pbPill+'</td>'
             +'<td style="padding:9px 10px;text-align:center;color:#9d9d9d;font-size:14px;">'+(isExp?'▴':'▾')+'</td>'
             +'</tr>';
-
           if(!isExp) return mainRow;
-
           const detailRow = '<tr style="background:#fafafa;">'
             +'<td colspan="4" style="padding:0 12px 16px 12px;">'
             +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;padding:14px;background:#fff;border:1px solid #f1f1f0;border-radius:8px;">'
-
-            // SF section
-            +'<div>'
-              +'<div style="font-size:10px;font-weight:700;color:#3c3c3b;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">Salesforce</div>'
-              +detailCell('Account ID', a.sfAccountId)
-              +detailCell('Status', a.sfAccountStatus)
-              +detailCell('Account Type', a.sfAccountType==='lone'?'Standalone':(typeLabel[a.sfAccountType]||''))
-              +(a.sfAccountType==='child'?detailCell('Parent Account', a.parentAccountName):'')
-              +(a.childCount>0?detailCell('Child Accounts', a.childCount+' subsidiaries'):'')
-              +detailCell('Website Domain', a.sfWebsiteDomain)
-              +detailCell('Active Subs', a.sfActiveSubscriptions||'—')
-            +'</div>'
-
-            // ZD section
-            +'<div>'
-              +'<div style="font-size:10px;font-weight:700;color:#288184;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">Zendesk</div>'
-              +(a.hasZdOrg ? (
-                detailCell('Org Name', a.zdOrgName)
-                +detailCell('Org ID', a.zdOrgId)
-                +detailCell('Primary Domain', a.zdPrimaryDomain)
-                +detailCell('Confidence', a.zdMatchConfidence==='HIGH'?'High — name + domain':'Medium — name only')
-                +detailCell('Domain Confirmed', a.zdDomainConfirmed?'Yes':'No')
-              ) : '<div style="font-size:11px;color:#9d9d9d;">No Zendesk organisation found</div>')
-            +'</div>'
-
-            // PB section
-            +'<div>'
-              +'<div style="font-size:10px;font-weight:700;color:#7030a0;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">Productboard</div>'
-              +(a.hasPbCompany ? (
-                detailCell('Company Name', a.pbCompanyName)
-                +detailCell('Company ID', a.pbCompanyId)
-                +detailCell('Domain', a.pbCompanyDomain)
-                +detailCell('Match Method', a.pbMatchMethod==='website_domain'?'Website domain':a.pbMatchMethod==='eos_domain'?'EOS domain':'Name fallback')
-              ) : '<div style="font-size:11px;color:#9d9d9d;">No Productboard company matched</div>')
-            +'</div>'
-
+              +'<div>'
+                +'<div style="font-size:10px;font-weight:700;color:#3c3c3b;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">Salesforce</div>'
+                +dc('Account ID', a.sfAccountId)
+                +dc('Status', a.sfAccountStatus)
+                +dc('Account Type', a.sfAccountType==='lone'?'Standalone':(a.sfAccountType==='parent'?'Parent':'Child'))
+                +(a.sfAccountType==='child'?dc('Parent Account', a.parentAccountName):'')
+                +(a.childCount>0?dc('Child Accounts', a.childCount+' subsidiaries'):'')
+                +dc('Website Domain', a.sfWebsiteDomain)
+                +dc('Active Subs', a.sfActiveSubscriptions||'—')
+              +'</div>'
+              +'<div>'
+                +'<div style="font-size:10px;font-weight:700;color:#288184;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">Zendesk</div>'
+                +(a.hasZdOrg
+                  ? dc('Org Name',a.zdOrgName)+dc('Org ID',a.zdOrgId)+dc('Primary Domain',a.zdPrimaryDomain)+dc('Confidence',a.zdMatchConfidence==='HIGH'?'High — name + domain':'Medium — name only')+dc('Domain Confirmed',a.zdDomainConfirmed?'Yes':'No')
+                  : '<div style="font-size:11px;color:#9d9d9d;">No Zendesk organisation found</div>')
+              +'</div>'
+              +'<div>'
+                +'<div style="font-size:10px;font-weight:700;color:#7030a0;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">Productboard</div>'
+                +(a.hasPbCompany
+                  ? dc('Company Name',a.pbCompanyName)+dc('Company ID',a.pbCompanyId)+dc('Domain',a.pbCompanyDomain)+dc('Match Method',a.pbMatchMethod==='website_domain'?'Website domain':a.pbMatchMethod==='eos_domain'?'EOS domain':'Name fallback')
+                  : '<div style="font-size:11px;color:#9d9d9d;">No Productboard company matched</div>')
+              +'</div>'
             +'</div>'
             +'</td>'
             +'</tr>';
-
           return mainRow + detailRow;
-        }).join('');
+        };
 
-        const searchId = 'mdm-search-'+Date.now();
+        window.__mdmRefresh = function() {
+          const tbody = document.getElementById('mdm-tbody');
+          if (!tbody) return;
+          const s = (window.__mdmSearch || '').toLowerCase();
+          const cf = window.__mdmConfFilter;
+          let filtered = (window.__mdmAccounts || []);
+          if (s) filtered = filtered.filter(function(a){
+            return (a.sfAccountName && a.sfAccountName.toLowerCase().includes(s))
+              || (a.sfAccountId && a.sfAccountId.toLowerCase().includes(s))
+              || (a.zdOrgName && a.zdOrgName.toLowerCase().includes(s))
+              || (a.pbCompanyName && a.pbCompanyName.toLowerCase().includes(s));
+          });
+          if (cf) filtered = filtered.filter(function(a){ return a.zdMatchConfidence === cf; });
+          const total = filtered.length;
+          const lbl = document.getElementById('mdm-count-label');
+          if (lbl) lbl.textContent = 'Showing ' + Math.min(total, 300) + ' of ' + total + ' accounts';
+          tbody.innerHTML = total
+            ? filtered.slice(0, 300).map(window.__mdmRow).join('')
+            : '<tr><td colspan="4" style="padding:32px;text-align:center;color:#9d9d9d;">No accounts match this filter</td></tr>';
+        };
+
+        // Schedule table population after x-dc sets innerHTML
+        setTimeout(function(){ window.__mdmRefresh && window.__mdmRefresh(); }, 0);
         const pbNoMatch  = sm.pbTotal - sm.pbCompaniesMatched;
         const pbWebPct   = sm.pbTotal ? sm.pbWebsite/sm.pbTotal : 0;
         const pbEosPct   = sm.pbTotal ? sm.pbEos/sm.pbTotal     : 0;
@@ -2828,13 +2840,13 @@ class Component extends DCLogic {
             +'</div>';
           })()
 
-          // Search + filter bar
+          // Search + filter bar — search updates window.__mdmSearch directly, no re-render
           +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;">'
-            +'<input id="'+searchId+'" type="text" placeholder="Search by SF name, SF ID, Zendesk or Productboard…" value="'+mdmSearch+'" '
-              +'oninput="(function(v){window.__argus&&window.__argus.setV&&window.__argus.setV({mdmSearch:v});})(this.value)" '
+            +'<input id="mdm-search" type="text" placeholder="Search by SF name, SF ID, Zendesk or Productboard…" value="'+(window.__mdmSearch||'')+'" '
+              +'oninput="(function(v){window.__mdmSearch=v;window.__mdmRefresh&&window.__mdmRefresh();})(this.value)" '
               +'style="flex:1;min-width:220px;padding:8px 12px;border:1.5px solid #e6e6e5;border-radius:8px;font-size:13px;font-family:inherit;outline:none;" />'
             +filterBtns
-            +'<span style="font-size:12px;color:#9d9d9d;margin-left:auto;">Showing '+Math.min(filtered.length,300)+' of '+filtered.length+' accounts (top 500 by ARR)</span>'
+            +'<span id="mdm-count-label" style="font-size:12px;color:#9d9d9d;white-space:nowrap;margin-left:auto;">Loading…</span>'
           +'</div>'
 
           +'<div style="background:#fff;border:1px solid #e6e6e5;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(60,60,59,0.07);">'
@@ -2846,7 +2858,7 @@ class Component extends DCLogic {
                 +'<th style="text-align:left;padding:10px 10px;font-size:11px;font-weight:700;color:#7030a0;text-transform:uppercase;letter-spacing:0.06em;">Productboard</th>'
                 +'<th style="width:32px;"></th>'
               +'</tr></thead>'
-              +'<tbody>'+(rows||'<tr><td colspan="4" style="padding:32px;text-align:center;color:#9d9d9d;">No accounts match this filter</td></tr>')+'</tbody>'
+              +'<tbody id="mdm-tbody"><tr><td colspan="4" style="padding:32px;text-align:center;color:#9d9d9d;">Loading…</td></tr></tbody>'
             +'</table></div>'
           +'</div>';
 
