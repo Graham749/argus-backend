@@ -2490,21 +2490,65 @@ class Component extends DCLogic {
         }).join('');
 
         const searchId = 'mdm-search-'+Date.now();
-        const pbNoMatch  = sm.total - sm.pbLinked;
-        const pbWebPct   = sm.total ? sm.pbWebsite/sm.total : 0;
-        const pbEosPct   = sm.total ? sm.pbEos/sm.total     : 0;
-        const pbNamePct  = sm.total ? sm.pbName/sm.total     : 0;
-        const pbNonePct  = sm.total ? pbNoMatch/sm.total     : 0;
+        const pbNoMatch  = sm.pbTotal - sm.pbCompaniesMatched;
+        const pbWebPct   = sm.pbTotal ? sm.pbWebsite/sm.pbTotal : 0;
+        const pbEosPct   = sm.pbTotal ? sm.pbEos/sm.pbTotal     : 0;
+        const pbNamePct  = sm.pbTotal ? sm.pbName/sm.pbTotal     : 0;
+        const pbNonePct  = sm.pbTotal ? pbNoMatch/sm.pbTotal     : 0;
+
+        const step = (n, text) => '<div style="display:flex;gap:10px;align-items:flex-start;">'
+          +'<span style="min-width:18px;height:18px;border-radius:50%;background:#f1f1f0;color:#6d6d6c;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">'+n+'</span>'
+          +'<span style="font-size:12px;color:#3c3c3b;line-height:1.5;">'+text+'</span>'
+          +'</div>';
 
         const html = ''
           +'<div style="margin-bottom:24px;">'
             +'<div style="font-size:24px;font-weight:700;letter-spacing:-0.01em;">Account MDM</div>'
-            +'<div style="font-size:14px;color:#6d6d6c;margin-top:4px;">Master data: Salesforce → Zendesk → ProductBoard &nbsp;·&nbsp; '+sm.total.toLocaleString()+' SF accounts</div>'
+            +'<div style="font-size:14px;color:#6d6d6c;margin-top:4px;">Master data: Salesforce → Zendesk → Productboard &nbsp;·&nbsp; '+sm.total.toLocaleString()+' SF accounts</div>'
           +'</div>'
 
-          // ZD Match Confidence Distribution
+          // Match Criteria card
           +'<div style="background:#fff;border:1px solid #e6e6e5;border-radius:12px;padding:20px;margin-bottom:16px;box-shadow:0 1px 3px rgba(60,60,59,0.07);">'
-            +'<div style="font-size:12px;font-weight:700;color:#6d6d6c;margin-bottom:12px;text-transform:uppercase;letter-spacing:0.08em;">ZD Match Confidence Distribution</div>'
+            +'<div style="font-size:12px;font-weight:700;color:#6d6d6c;margin-bottom:16px;text-transform:uppercase;letter-spacing:0.08em;">Salesforce Match Criteria</div>'
+            +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">'
+
+              // ZD column
+              +'<div>'
+                +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">'
+                  +'<div style="width:8px;height:8px;border-radius:50%;background:#288184;flex-shrink:0;"></div>'
+                  +'<span style="font-size:12px;font-weight:700;color:#288184;text-transform:uppercase;letter-spacing:0.06em;">Salesforce → Zendesk</span>'
+                +'</div>'
+                +'<div style="display:flex;flex-direction:column;gap:8px;">'
+                  +step(1,'Match SF account name to Zendesk organisation name (case-insensitive)')
+                  +step(2,'If matched, compare SF website domain to ZD primary email domain')
+                  +'<div style="margin-left:28px;display:flex;flex-direction:column;gap:4px;padding:8px 10px;background:#f7f7f6;border-radius:6px;font-size:11px;color:#6d6d6c;">'
+                    +'<div><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#00be86;margin-right:5px;vertical-align:middle;"></span><strong>High</strong> — name matched + domain confirmed</div>'
+                    +'<div><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ffcc00;margin-right:5px;vertical-align:middle;"></span><strong>Medium</strong> — name matched, no domain</div>'
+                    +'<div><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#b0b0b0;margin-right:5px;vertical-align:middle;"></span><strong>No match</strong> — Zendesk org not found</div>'
+                  +'</div>'
+                +'</div>'
+              +'</div>'
+
+              // PB column
+              +'<div>'
+                +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">'
+                  +'<div style="width:8px;height:8px;border-radius:50%;background:#7030a0;flex-shrink:0;"></div>'
+                  +'<span style="font-size:12px;font-weight:700;color:#7030a0;text-transform:uppercase;letter-spacing:0.06em;">Salesforce → Productboard</span>'
+                +'</div>'
+                +'<div style="display:flex;flex-direction:column;gap:8px;">'
+                  +step(1,'<strong>Website domain</strong> — SF <code style="font-size:10px;background:#f1f1f0;padding:1px 4px;border-radius:3px;">Website</code> matches PB normalised domain')
+                  +step(2,'<strong>EOS domain</strong> — SF <code style="font-size:10px;background:#f1f1f0;padding:1px 4px;border-radius:3px;">Domains_with_EOS_Access__c</code> contains PB domain')
+                  +step(3,'<strong>Name fallback</strong> — case-insensitive name match when no domain available')
+                  +'<div style="margin-left:28px;font-size:11px;color:#9d9d9d;padding:6px 10px;background:#f7f7f6;border-radius:6px;">'+sm.pbCompaniesMatched.toLocaleString()+' of '+sm.pbTotal.toLocaleString()+' Productboard companies matched to a Salesforce account</div>'
+                +'</div>'
+              +'</div>'
+
+            +'</div>'
+          +'</div>'
+
+          // Zendesk Match Confidence Distribution
+          +'<div style="background:#fff;border:1px solid #e6e6e5;border-radius:12px;padding:20px;margin-bottom:16px;box-shadow:0 1px 3px rgba(60,60,59,0.07);">'
+            +'<div style="font-size:12px;font-weight:700;color:#6d6d6c;margin-bottom:12px;text-transform:uppercase;letter-spacing:0.08em;">Zendesk Match Confidence Distribution</div>'
             +'<div style="display:flex;height:12px;border-radius:6px;overflow:hidden;background:#f1f1f0;">'
               +'<div style="width:'+Math.round(highPct*100)+'%;background:#00be86;" title="HIGH: '+sm.highCount+'"></div>'
               +'<div style="width:'+Math.round(medPct*100)+'%;background:#ffcc00;" title="MEDIUM: '+sm.mediumCount+'"></div>'
@@ -2538,9 +2582,10 @@ class Component extends DCLogic {
             +'</div>'
           +'</div>'
 
-          // PB Match Confidence Distribution
+          // Productboard Match Confidence Distribution
           +'<div style="background:#fff;border:1px solid #e6e6e5;border-radius:12px;padding:20px;margin-bottom:20px;box-shadow:0 1px 3px rgba(60,60,59,0.07);">'
-            +'<div style="font-size:12px;font-weight:700;color:#6d6d6c;margin-bottom:12px;text-transform:uppercase;letter-spacing:0.08em;">PB Match Confidence Distribution</div>'
+            +'<div style="font-size:12px;font-weight:700;color:#6d6d6c;margin-bottom:12px;text-transform:uppercase;letter-spacing:0.08em;">Productboard Match Confidence Distribution</div>'
+            +'<div style="font-size:11px;color:#9d9d9d;margin-bottom:10px;">Based on '+sm.pbTotal.toLocaleString()+' Productboard companies</div>'
             +'<div style="display:flex;height:12px;border-radius:6px;overflow:hidden;background:#f1f1f0;">'
               +'<div style="width:'+Math.round(pbWebPct*100)+'%;background:#7030a0;" title="Website domain: '+sm.pbWebsite+'"></div>'
               +'<div style="width:'+Math.round(pbEosPct*100)+'%;background:#9d60c8;" title="EOS domain: '+sm.pbEos+'"></div>'
@@ -2554,7 +2599,7 @@ class Component extends DCLogic {
                   +'<span style="font-size:12px;font-weight:700;color:#3c3c3b;">Website Domain</span>'
                 +'</div>'
                 +'<div style="font-size:20px;font-weight:900;color:#7030a0;padding-left:16px;">'+sm.pbWebsite.toLocaleString()+'</div>'
-                +'<div style="font-size:11px;color:#9d9d9d;padding-left:16px;">'+pct(sm.pbWebsite,sm.total)+' · SF website = PB domain</div>'
+                +'<div style="font-size:11px;color:#9d9d9d;padding-left:16px;">'+pct(sm.pbWebsite,sm.pbTotal)+' of PB · SF website = PB domain</div>'
               +'</div>'
               +'<div style="display:flex;flex-direction:column;gap:3px;">'
                 +'<div style="display:flex;align-items:center;gap:6px;">'
@@ -2562,7 +2607,7 @@ class Component extends DCLogic {
                   +'<span style="font-size:12px;font-weight:700;color:#3c3c3b;">EOS Domain</span>'
                 +'</div>'
                 +'<div style="font-size:20px;font-weight:900;color:#9d60c8;padding-left:16px;">'+sm.pbEos.toLocaleString()+'</div>'
-                +'<div style="font-size:11px;color:#9d9d9d;padding-left:16px;">'+pct(sm.pbEos,sm.total)+' · EOS access domains</div>'
+                +'<div style="font-size:11px;color:#9d9d9d;padding-left:16px;">'+pct(sm.pbEos,sm.pbTotal)+' of PB · EOS access domains</div>'
               +'</div>'
               +'<div style="display:flex;flex-direction:column;gap:3px;">'
                 +'<div style="display:flex;align-items:center;gap:6px;">'
@@ -2570,7 +2615,7 @@ class Component extends DCLogic {
                   +'<span style="font-size:12px;font-weight:700;color:#3c3c3b;">Name Fallback</span>'
                 +'</div>'
                 +'<div style="font-size:20px;font-weight:900;color:#c9a0e0;padding-left:16px;">'+sm.pbName.toLocaleString()+'</div>'
-                +'<div style="font-size:11px;color:#9d9d9d;padding-left:16px;">'+pct(sm.pbName,sm.total)+' · name match only</div>'
+                +'<div style="font-size:11px;color:#9d9d9d;padding-left:16px;">'+pct(sm.pbName,sm.pbTotal)+' of PB · name match only</div>'
               +'</div>'
               +'<div style="display:flex;flex-direction:column;gap:3px;">'
                 +'<div style="display:flex;align-items:center;gap:6px;">'
@@ -2578,7 +2623,7 @@ class Component extends DCLogic {
                   +'<span style="font-size:12px;font-weight:700;color:#3c3c3b;">No Match</span>'
                 +'</div>'
                 +'<div style="font-size:20px;font-weight:900;color:#9d9d9d;padding-left:16px;">'+pbNoMatch.toLocaleString()+'</div>'
-                +'<div style="font-size:11px;color:#9d9d9d;padding-left:16px;">'+pct(pbNoMatch,sm.total)+' · no PB company found</div>'
+                +'<div style="font-size:11px;color:#9d9d9d;padding-left:16px;">'+pct(pbNoMatch,sm.pbTotal)+' of PB · no SF account found</div>'
               +'</div>'
             +'</div>'
             +(sm.nameCollisions?'<div style="margin-top:12px;padding-top:12px;border-top:1px solid #f1f1f0;font-size:12px;color:#e07000;">⚠ '+sm.nameCollisions+' SF accounts share a name with another account — name fallback matches may be ambiguous</div>':'')
