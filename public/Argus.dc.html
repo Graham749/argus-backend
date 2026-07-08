@@ -2011,8 +2011,8 @@ class Component extends DCLogic {
     const filtered=scored
       .filter(f=> {
         if(featSearchTerm) {
-          if(isIdSearch) return f.id.toLowerCase().startsWith(featSearchTerm);
-          return f.name.toLowerCase().includes(featSearchTerm);
+          if(isIdSearch) return f.id.toLowerCase().startsWith(featSearchTerm) || (f.subId && f.subId.toLowerCase().startsWith(featSearchTerm));
+          return f.name.toLowerCase().includes(featSearchTerm) || (f.fromSub && f.subName && f.subName.toLowerCase().includes(featSearchTerm));
         }
         return true;
       })
@@ -2058,23 +2058,26 @@ class Component extends DCLogic {
       ? `<div style="text-align:center;padding:48px;color:#9d9d9d;font-size:14px;">${S.featuresLoaded===false||S.features.length===0 ? 'Loading features...' : 'No features match this filter.'}</div>`
       : filtered.map((f,i)=>{
           const expanded = !!S.drills['feat_'+f.id];
-          const cc = critColor[f.criticality] || ['#f1f1f0','#6d6d6c'];
-          const ec = effColor[f.efficiency] || ['#f1f1f0','#6d6d6c'];
           const scoreBarPct = Math.min(f.finalScore * 10, 100);
           const isSubScore = f.fromSub && !!f.subId;
-          const activeRankW  = isSubScore ? f.subRankW  : f.rankWeighted;
-          const activeCritW  = isSubScore ? f.subCritW  : f.criticalityWeighted;
-          const activeEffW   = isSubScore ? f.subEffW   : f.efficiencyWeighted;
-          const activeSrW    = isSubScore ? f.subSrW    : f.strategicRegionWeighted;
-          const activeRankScore = isSubScore ? f.subRankScore : f.rankScore;
-          const activeCritScore = isSubScore ? f.subCritScore : f.criticalityScore;
-          const activeEffScore  = isSubScore ? f.subEffScore  : f.efficiencyScore;
-          const activeSrScore   = isSubScore ? f.subSrScore   : f.strategicRegionScore;
-          const activeMktCount  = isSubScore ? f.subMktCount  : f.regionMarketCount;
-          const activeMultiplier= isSubScore ? f.subMultiplier: f.regionMultiplier;
-          const activeCrit      = isSubScore ? f.subCriticality : f.criticality;
-          const activeEff       = isSubScore ? f.subEfficiency  : f.efficiency;
-          const activeRawPri    = isSubScore ? f.subRawPriority : f.rawRegionalPriority;
+          // parentCtxOpen: user toggled to view parent feature breakdown instead of subfeature's
+          const parentCtxOpen = isSubScore && !!S.drills['feat_parent_'+f.id];
+          // active* = whichever entity's metrics are currently shown in the breakdown
+          const activeCrit = parentCtxOpen ? f.criticality       : (isSubScore ? (f.subCriticality || '') : f.criticality);
+          const activeEff  = parentCtxOpen ? f.efficiency        : (isSubScore ? (f.subEfficiency  || '') : f.efficiency);
+          const cc = critColor[activeCrit] || ['#f1f1f0','#6d6d6c'];
+          const ec = effColor[activeEff]   || ['#f1f1f0','#6d6d6c'];
+          const activeRankW     = parentCtxOpen ? f.rankWeighted            : (isSubScore ? f.subRankW  : f.rankWeighted);
+          const activeCritW     = parentCtxOpen ? f.criticalityWeighted     : (isSubScore ? f.subCritW  : f.criticalityWeighted);
+          const activeEffW      = parentCtxOpen ? f.efficiencyWeighted      : (isSubScore ? f.subEffW   : f.efficiencyWeighted);
+          const activeSrW       = parentCtxOpen ? f.strategicRegionWeighted : (isSubScore ? f.subSrW    : f.strategicRegionWeighted);
+          const activeRankScore = parentCtxOpen ? f.rankScore               : (isSubScore ? f.subRankScore : f.rankScore);
+          const activeCritScore = parentCtxOpen ? f.criticalityScore        : (isSubScore ? f.subCritScore : f.criticalityScore);
+          const activeEffScore  = parentCtxOpen ? f.efficiencyScore         : (isSubScore ? f.subEffScore  : f.efficiencyScore);
+          const activeSrScore   = parentCtxOpen ? f.strategicRegionScore    : (isSubScore ? f.subSrScore   : f.strategicRegionScore);
+          const activeMktCount  = parentCtxOpen ? f.regionMarketCount       : (isSubScore ? f.subMktCount  : f.regionMarketCount);
+          const activeMultiplier= parentCtxOpen ? f.regionMultiplier        : (isSubScore ? f.subMultiplier: f.regionMultiplier);
+          const activeRawPri    = parentCtxOpen ? f.rawRegionalPriority     : (isSubScore ? f.subRawPriority : f.rawRegionalPriority);
           const baseScore = (Number(activeRankW)+Number(activeCritW)+Number(activeEffW)+Number(activeSrW)).toFixed(2);
           const boosterTtId = 'btt_'+f.id;
           const rttId = 'rtt_'+f.id;
@@ -2105,7 +2108,7 @@ class Component extends DCLogic {
               +'<th style="'+_ttTh+'">Criticality Level</th><th style="'+_ttThR+'">Score</th><th style="'+_ttThR+'">Weight</th><th style="'+_ttThR+'">Max pts</th>'
               +'</tr></thead><tbody>'
               +rows.map(function(r){var hl=curCrit===r[3]?_ttHl:'';return '<tr style="'+hl+'"><td style="'+_ttTd+'">'+r[0]+'</td><td style="'+_ttTdR+'">'+r[1]+'</td><td style="'+_ttTdR+'">×20%</td><td style="'+_ttTdR+'">'+r[2]+'</td></tr>';}).join('')
-              +'</tbody></table><p style="font-size:10px;color:#9d9d9d;margin-top:8px;">This feature: '+(f.criticality||'— (not set)')+'</p>';
+              +'</tbody></table><p style="font-size:10px;color:#9d9d9d;margin-top:8px;">'+(isSubScore?'This subfeature: ':'This feature: ')+(activeCrit||'— (not set)')+'</p>';
           })();
           const effTtHtml = (function(){
             var rows=[['High',4,'0.80','HIGH'],['Medium',2,'0.40','MEDIUM'],['Low',0,'0.00','LOW']];
@@ -2114,12 +2117,24 @@ class Component extends DCLogic {
               +'<th style="'+_ttTh+'">Efficiency Impact</th><th style="'+_ttThR+'">Score</th><th style="'+_ttThR+'">Weight</th><th style="'+_ttThR+'">Max pts</th>'
               +'</tr></thead><tbody>'
               +rows.map(function(r){var hl=curEff===r[3]?_ttHl:'';return '<tr style="'+hl+'"><td style="'+_ttTd+'">'+r[0]+'</td><td style="'+_ttTdR+'">'+r[1]+'</td><td style="'+_ttTdR+'">×20%</td><td style="'+_ttTdR+'">'+r[2]+'</td></tr>';}).join('')
-              +'</tbody></table><p style="font-size:10px;color:#9d9d9d;margin-top:8px;">This feature: '+(f.efficiency||'— (not set)')+'</p>';
+              +'</tbody></table><p style="font-size:10px;color:#9d9d9d;margin-top:8px;">'+(isSubScore?'This subfeature: ':'This feature: ')+(activeEff||'— (not set)')+'</p>';
           })();
+          const parentCtxHtml = !isSubScore ? '' :
+            '<div style="margin-bottom:10px;">'
+            +'<button data-toggle-id="feat_parent_'+f.id+'" style="font-size:11px;color:#288184;background:none;border:1px solid #c0dede;border-radius:6px;padding:3px 10px;cursor:pointer;">'+(parentCtxOpen?'↑ Back to subfeature breakdown':'↓ View parent feature breakdown')+'</button>'
+            +(parentCtxOpen
+              ? '<div style="margin-top:8px;padding:10px 12px;background:#eef4ff;border-radius:8px;border-left:3px solid #90b4d4;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">'
+                +'<span style="font-size:10px;font-weight:700;color:#1565c0;text-transform:uppercase;letter-spacing:0.05em;">Parent:</span>'
+                +(f.criticality && f.criticality!=='—' ? badge(f.criticality+' Criticality',(critColor[f.criticality]||['#f1f1f0','#6d6d6c'])[0],(critColor[f.criticality]||['#f1f1f0','#6d6d6c'])[1]) : '')
+                +(f.efficiency  && f.efficiency !=='—' ? badge(f.efficiency+' Efficiency',  (effColor[f.efficiency]  ||['#f1f1f0','#6d6d6c'])[0],(effColor[f.efficiency]  ||['#f1f1f0','#6d6d6c'])[1]) : '')
+                +'<span style="font-size:11px;color:#6d6d6c;">'+f.regionMarketCount+' markets · feature score '+Number(f.featureScore).toFixed(2)+'</span>'
+                +'</div>'
+              : '')
+            +'</div>';
           const breakdown = expanded ? `
             <div style="margin-top:14px;padding-top:14px;border-top:1px solid #f1f1f0;">
               <p style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#9d9d9d;margin-bottom:${isSubScore?'4px':'10px'};">Priority score breakdown</p>
-              ${isSubScore ? `<p style="font-size:11px;color:#7030a0;font-weight:600;margin-bottom:10px;padding:5px 9px;background:#f5f0fa;border-radius:6px;">↑ Score from subfeature: ${f.subName}</p>` : ''}
+              ${isSubScore ? `<p style="font-size:11px;font-weight:600;margin-bottom:6px;padding:5px 9px;border-radius:6px;${parentCtxOpen?'color:#1565c0;background:#eef4ff;':'color:#7030a0;background:#f5f0fa;'}">${parentCtxOpen?'Viewing: parent feature — '+f.name:'↑ Score from subfeature: '+f.subName}</p>${parentCtxHtml}` : ''}
               ${[
                 {label:'Rank',        raw:'regional priority '+(activeRawPri !== null ? activeRawPri : '—')+' · score '+Number(activeRankScore).toFixed(1), wt:'×50%', pts:Number(activeRankW).toFixed(2), barPct:Math.round(activeRankW/5*100), col:'#ffcc00', ttId:rttId, ttHtml:rankTtHtml},
                 {label:'Criticality', raw:(activeCrit||'—')+' ('+Number(activeCritScore).toFixed(1)+')', wt:'×20%', pts:Number(activeCritW).toFixed(2), barPct:Math.round(activeCritW/2*100), col:'#ee791a', ttId:cttId, ttHtml:critTtHtml},
@@ -2248,8 +2263,8 @@ class Component extends DCLogic {
                   <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
                     <span style="font-size:15px;font-weight:700;">${f.name}</span>
                     ${f.productName ? badge(f.productName,'#eef2ff','#3730a3') : ''}
-                    ${badge(f.efficiency ? f.efficiency+' - Efficiency' : 'Efficiency', ec[0], ec[1])}
-                    ${badge(f.criticality ? f.criticality+' - Criticality' : 'Criticality', cc[0], cc[1])}
+                    ${badge(activeEff  ? activeEff+' - Efficiency'   : '— Efficiency',  ec[0], ec[1])}
+                    ${badge(activeCrit ? activeCrit+' - Criticality' : '— Criticality', cc[0], cc[1])}
                     ${f.fromSub ? badge('↑ subfeature','#f0e9f7','#7030a0') : ''}
                   </div>
                   <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-top:12px;">
