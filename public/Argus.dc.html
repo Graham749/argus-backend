@@ -2553,7 +2553,7 @@ class Component extends DCLogic {
                   +'<span style="color:#7030a0;font-weight:600;">'+pct(sm.pbLinked,sm.total)+' matched</span>'
                   +'<span style="color:#9d9d9d;">'+pbNotFound.toLocaleString()+' SF accounts not in Productboard</span>'
                 +'</div>'
-                +'<div style="margin-top:8px;font-size:10px;color:#b0b0b0;">'+sm.pbTotalAll.toLocaleString()+' total PB companies · '+(sm.pbTotalAll-sm.pbTotal)+' internal/test excluded · '+sm.pbTotal.toLocaleString()+' external</div>'
+                +(sm.pbTotalAll?'<div style="margin-top:8px;font-size:10px;color:#b0b0b0;">'+sm.pbTotalAll.toLocaleString()+' total PB companies · '+(sm.pbTotalAll-sm.pbTotal)+' internal/test excluded · '+sm.pbTotal.toLocaleString()+' external</div>':'')
               +'</div>'
 
             +'</div>'
@@ -2638,7 +2638,7 @@ class Component extends DCLogic {
           // Productboard Match Confidence Distribution
           +'<div style="background:#fff;border:1px solid #e6e6e5;border-radius:12px;padding:20px;margin-bottom:20px;box-shadow:0 1px 3px rgba(60,60,59,0.07);">'
             +'<div style="font-size:12px;font-weight:700;color:#6d6d6c;margin-bottom:12px;text-transform:uppercase;letter-spacing:0.08em;">Productboard Match Confidence Distribution</div>'
-            +'<div style="font-size:11px;color:#9d9d9d;margin-bottom:10px;">Based on '+sm.pbTotal.toLocaleString()+' external Productboard companies ('+sm.pbTotalAll.toLocaleString()+' total · '+(sm.pbTotalAll-sm.pbTotal)+' internal/test excluded)</div>'
+            +'<div style="font-size:11px;color:#9d9d9d;margin-bottom:10px;">Based on '+sm.pbTotal.toLocaleString()+' external Productboard companies'+(sm.pbTotalAll?' ('+sm.pbTotalAll.toLocaleString()+' total · '+(sm.pbTotalAll-sm.pbTotal)+' internal/test excluded)':'')+'</div>'
             +'<div style="display:flex;height:12px;border-radius:6px;overflow:hidden;background:#f1f1f0;">'
               +'<div style="width:'+Math.round(pbWebPct*100)+'%;background:#7030a0;" title="Website domain: '+sm.pbWebsite+'"></div>'
               +'<div style="width:'+Math.round(pbEosPct*100)+'%;background:#9d60c8;" title="EOS domain: '+sm.pbEos+'"></div>'
