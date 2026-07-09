@@ -387,7 +387,12 @@ input{font-family:inherit;}
       <sc-if value="{{ isFeatures }}" hint-placeholder-val="{{ false }}">
       <div style="padding:32px;max-width:1000px;animation:argusFade .25s ease;">
         <div style="margin-bottom:16px;">
-          <div style="font-size:24px;font-weight:700;letter-spacing:-0.01em;">Feature priority</div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div style="font-size:24px;font-weight:700;letter-spacing:-0.01em;">Feature priority</div>
+            <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:#00be86;font-weight:600;">
+              <span style="font-size:12px;line-height:1;">●</span>Live data
+            </div>
+          </div>
           <div style="font-size:14px;color:#6d6d6c;margin-top:4px;">Productboard demand scored in the Fabric gold layer — rank 50% · criticality 20% · efficiency 20% · strategic region 10%</div>
         </div>
 
@@ -2640,6 +2645,7 @@ class Component extends DCLogic {
                   +dc('Company Name', a.pbCompanyName)
                   +dc('Company ID', a.pbCompanyId)
                   +dc('Domain', a.pbCompanyDomain)
+                  +'<div style="margin-top:8px;"><a href="https://auroraer.productboard.com/detail/'+a.pbCompanyId+'" target="_blank" style="font-size:10px;color:#7030a0;text-decoration:none;display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border:1px solid #ddc8f0;border-radius:4px;background:#fdf9ff;">↗ Open in Productboard</a></div>'
                 +'</div>'
               +'</div>'
               +'</td>'
@@ -2674,18 +2680,21 @@ class Component extends DCLogic {
                           +children.map(function(c){ return '<div style="margin-bottom:4px;">'+accountLink(c.sfAccountId, c.sfAccountName)+'</div>'; }).join('')
                         +'</div>'
                       : '')
+                    +(a.sfAccountId?'<div style="margin-top:10px;"><a href="https://auroraer.lightning.force.com/lightning/r/Account/'+a.sfAccountId+'/view" target="_blank" style="font-size:10px;color:#288184;text-decoration:none;display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border:1px solid #cde8e8;border-radius:4px;background:#f5fafa;">↗ Open in Salesforce</a></div>':'')
                     +'</div>';
                 })()
               +'<div>'
                 +'<div style="font-size:10px;font-weight:700;color:#288184;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">Zendesk</div>'
                 +(a.hasZdOrg
                   ? dc('Org Name',a.zdOrgName)+dc('Org ID',a.zdOrgId)+dc('Primary Domain',a.zdPrimaryDomain)+dc('Match Method',a.zdMatchConfidence==='HIGH'?'Name + Domain':a.zdMatchConfidence==='MEDIUM'?'Name only':'—')
+                    +'<div style="margin-top:8px;"><a href="https://auroraer.zendesk.com/agent/organizations/'+a.zdOrgId+'/tickets" target="_blank" style="font-size:10px;color:#288184;text-decoration:none;display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border:1px solid #cde8e8;border-radius:4px;background:#f5fafa;">↗ Open in Zendesk</a></div>'
                   : '<div style="font-size:11px;color:#9d9d9d;">No Zendesk organisation found</div>')
               +'</div>'
               +'<div>'
                 +'<div style="font-size:10px;font-weight:700;color:#7030a0;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">Productboard</div>'
                 +(a.hasPbCompany
                   ? dc('Company Name',a.pbCompanyName)+dc('Company ID',a.pbCompanyId)+dc('Primary Domain',a.pbCompanyDomain)+dc('Match Method',a.pbMatchMethod==='website_domain'?'Website Domain':a.pbMatchMethod==='eos_domain'?'EOS Domain':'Name only')
+                    +'<div style="margin-top:8px;"><a href="https://auroraer.productboard.com/detail/'+a.pbCompanyId+'" target="_blank" style="font-size:10px;color:#7030a0;text-decoration:none;display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border:1px solid #ddc8f0;border-radius:4px;background:#fdf9ff;">↗ Open in Productboard</a></div>'
                   : '<div style="font-size:11px;color:#9d9d9d;">No Productboard company matched</div>')
               +'</div>'
             +'</div>'
@@ -2748,7 +2757,10 @@ class Component extends DCLogic {
 
         const html = ''
           +'<div style="margin-bottom:24px;">'
-            +'<div style="font-size:24px;font-weight:700;letter-spacing:-0.01em;">Account MDM</div>'
+            +'<div style="display:flex;align-items:center;gap:8px;">'
+              +'<div style="font-size:24px;font-weight:700;letter-spacing:-0.01em;">Account MDM</div>'
+              +'<div style="display:flex;align-items:center;gap:4px;font-size:10px;color:#00be86;font-weight:600;"><span style="font-size:12px;line-height:1;">●</span>Live data</div>'
+            +'</div>'
             +'<div style="font-size:14px;color:#6d6d6c;margin-top:4px;">Salesforce is the master — Zendesk and Productboard are matched as satellites</div>'
           +'</div>'
 
