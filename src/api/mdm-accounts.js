@@ -42,7 +42,7 @@ async function queryLakehouse(query) {
 
 async function mdmAccounts(req, res) {
   try {
-    const [summaryRows, accountRows, hierarchyRows, dupRows] = await Promise.all([
+    const [summaryRows, accountRows, hierarchyRows, dupRows, pbOnlyRows] = await Promise.all([
       queryLakehouse(`
         SELECT
           COUNT(*)                                                              AS total,
@@ -89,6 +89,16 @@ async function mdmAccounts(req, res) {
         ORDER BY sf_account_name,
                  CASE WHEN sf_website_domain IS NOT NULL THEN 0 ELSE 1 END,
                  CASE zd_match_confidence WHEN 'HIGH' THEN 0 WHEN 'MEDIUM' THEN 1 ELSE 2 END
+      `),
+      // PB companies with no SF match — 96 rows
+      queryLakehouse(`
+        SELECT pb_company_id, company_name AS pb_company_name, normalised_domain AS pb_company_domain
+        FROM v_silver_pb_companies
+        WHERE silver_entity_classification = 'External'
+        AND pb_company_id NOT IN (
+          SELECT DISTINCT pb_company_id FROM v_silver_mdm_account WHERE pb_company_id IS NOT NULL
+        )
+        ORDER BY company_name
       `)
     ]);
 
@@ -137,6 +147,33 @@ async function mdmAccounts(req, res) {
         sfAccountType:      childCount > 0 ? 'parent' : (parentAccountId ? 'child' : 'lone'),
       };
     });
+
+    const pbOnlyAccounts = (pbOnlyRows || []).map(r => ({
+      pbOnly:             true,
+      sfAccountId:        null,
+      sfAccountName:      null,
+      sfAccountStatus:    null,
+      sfAccountArr:       null,
+      sfWebsiteDomain:    null,
+      sfActiveSubscriptions: 0,
+      sfNameCollision:    false,
+      sfAccountType:      'lone',
+      parentAccountId:    null,
+      parentAccountName:  null,
+      childCount:         0,
+      zdOrgId:            null,
+      zdOrgName:          null,
+      zdPrimaryDomain:    null,
+      zdMatchConfidence:  'NO_ZD_MATCH',
+      zdDomainConfirmed:  false,
+      hasZdOrg:           false,
+      pbCompanyId:        r.pb_company_id,
+      pbCompanyName:      r.pb_company_name,
+      pbCompanyDomain:    r.pb_company_domain,
+      pbMatchMethod:      null,
+      hasPbCompany:       true,
+    }));
+    accounts.push(...pbOnlyAccounts);
 
     const dupGroups = {};
     dupRows.forEach(r => {

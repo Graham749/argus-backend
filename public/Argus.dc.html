@@ -2562,6 +2562,7 @@ class Component extends DCLogic {
 
         const zdNotMatched = sm.total - sm.zdLinked;
         const pbNotMatched = sm.total - sm.pbLinked;
+        const pbUnlinked   = sm.pbTotal - sm.pbCompaniesMatched;
 
         // Filter buttons — no state update, no re-render
         const filterBtns = (function(){
@@ -2575,24 +2576,31 @@ class Component extends DCLogic {
             return '<button onclick="(function(){window.__mdmConfFilter='+vAttr+';window.__mdmRefresh&&window.__mdmRefresh();})()" style="'+style+'">'+label+'</button>';
           };
           return btn(null, 'All', '#288184')
-            + btn('NO_ZD', zdNotMatched+' SF accounts not matched to Zendesk', '#e07000')
-            + btn('NO_PB', pbNotMatched+' accounts not matched in Productboard', '#7030a0');
+            + btn('NO_ZD', zdNotMatched+' SF no link to ZD', '#e07000')
+            + btn('NO_PB', pbUnlinked+' PB Company no link to SF', '#7030a0');
         })();
 
         // Define row renderer and filter function as globals so search/expand never trigger re-render
         window.__mdmRow = function(a) {
-          const isExp = window.__mdmExpandedId === a.sfAccountId;
-          const tid = "'"+a.sfAccountId+"'";
+          const rowKey = a.pbOnly ? ('pb_'+a.pbCompanyId) : a.sfAccountId;
+          const isExp = window.__mdmExpandedId === rowKey;
+          const tid = "'"+rowKey+"'";
           const typeStyle = {
             parent:'font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px;background:#e6f7f1;color:#00966b;white-space:nowrap;',
             child:'font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px;background:#f1f1f0;color:#6d6d6c;white-space:nowrap;'
           };
-          const nameCell = '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">'
-            +'<span style="font-size:13px;font-weight:500;">'+a.sfAccountName+'</span>'
-            +(a.sfAccountType==='parent'||a.sfAccountType==='child'?'<span style="'+(typeStyle[a.sfAccountType]||'')+'">'+({parent:'Parent',child:'Child'}[a.sfAccountType]||'')+'</span>':'')
-            +(a.sfAccountType==='child'&&a.parentAccountName?'<span style="font-size:10px;color:#9d9d9d;">↑ '+a.parentAccountName+'</span>':'')
-            +(a.sfNameCollision?'<span style="font-size:9px;color:#e07000;" title="Duplicate SF name">⚠</span>':'')
-            +'</div>';
+          const nameCell = a.pbOnly
+            ? '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">'
+                +'<span style="font-size:13px;font-weight:500;color:#7030a0;">'+a.pbCompanyName+'</span>'
+                +'<span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px;background:#f0e9f7;color:#7030a0;white-space:nowrap;">PB Only</span>'
+                +(a.pbCompanyDomain?'<span style="font-size:10px;color:#9d9d9d;">'+a.pbCompanyDomain+'</span>':'')
+              +'</div>'
+            : '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">'
+                +'<span style="font-size:13px;font-weight:500;">'+a.sfAccountName+'</span>'
+                +(a.sfAccountType==='parent'||a.sfAccountType==='child'?'<span style="'+(typeStyle[a.sfAccountType]||'')+'">'+({parent:'Parent',child:'Child'}[a.sfAccountType]||'')+'</span>':'')
+                +(a.sfAccountType==='child'&&a.parentAccountName?'<span style="font-size:10px;color:#9d9d9d;">↑ '+a.parentAccountName+'</span>':'')
+                +(a.sfNameCollision?'<span style="font-size:9px;color:#e07000;" title="Duplicate SF name">⚠</span>':'')
+              +'</div>';
           const zdPill = a.zdMatchConfidence==='HIGH'
             ? '<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:#e6faf4;color:#00966b;white-space:nowrap;">Name + Domain</span>'
             : a.zdMatchConfidence==='MEDIUM'
@@ -2608,13 +2616,36 @@ class Component extends DCLogic {
           const dc = (lbl,val) => val
             ? '<div style="display:flex;gap:6px;margin-bottom:3px;"><span style="font-size:10px;font-weight:700;color:#9d9d9d;min-width:100px;">'+lbl+'</span><span style="font-size:11px;color:#3c3c3b;">'+val+'</span></div>'
             : '';
-          const mainRow = '<tr style="border-bottom:1px solid #f1f1f0;cursor:pointer;'+(isExp?'background:#fafafa;':'')+'" onclick="(function(){window.__mdmExpandedId=window.__mdmExpandedId==='+tid+'?null:'+tid+';window.__mdmRefresh&&window.__mdmRefresh();})()">'
+          const mainRow = '<tr style="border-bottom:1px solid #f1f1f0;cursor:pointer;'+(a.pbOnly?'background:#fdf9ff;':'')+(isExp?'background:#fafafa;':'')+'" onclick="(function(){window.__mdmExpandedId=window.__mdmExpandedId==='+tid+'?null:'+tid+';window.__mdmRefresh&&window.__mdmRefresh();})()">'
             +'<td style="padding:9px 10px;">'+nameCell+'</td>'
             +'<td style="padding:9px 10px;">'+zdPill+'</td>'
             +'<td style="padding:9px 10px;">'+pbPill+'</td>'
             +'<td style="padding:9px 10px;text-align:center;color:#9d9d9d;font-size:14px;">'+(isExp?'▴':'▾')+'</td>'
             +'</tr>';
           if(!isExp) return mainRow;
+          if(a.pbOnly) {
+            const pbDetailRow = '<tr style="background:#fdf9ff;">'
+              +'<td colspan="4" style="padding:0 12px 16px 12px;">'
+              +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;padding:14px;background:#fff;border:1px solid #ede0f7;border-radius:8px;">'
+                +'<div>'
+                  +'<div style="font-size:10px;font-weight:700;color:#9d9d9d;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">Salesforce</div>'
+                  +'<div style="font-size:11px;color:#9d9d9d;">Not matched to any Salesforce account</div>'
+                +'</div>'
+                +'<div>'
+                  +'<div style="font-size:10px;font-weight:700;color:#9d9d9d;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">Zendesk</div>'
+                  +'<div style="font-size:11px;color:#9d9d9d;">—</div>'
+                +'</div>'
+                +'<div>'
+                  +'<div style="font-size:10px;font-weight:700;color:#7030a0;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">Productboard</div>'
+                  +dc('Company Name', a.pbCompanyName)
+                  +dc('Company ID', a.pbCompanyId)
+                  +dc('Domain', a.pbCompanyDomain)
+                +'</div>'
+              +'</div>'
+              +'</td>'
+              +'</tr>';
+            return mainRow + pbDetailRow;
+          }
           const detailRow = '<tr style="background:#fafafa;">'
             +'<td colspan="4" style="padding:0 12px 16px 12px;">'
             +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;padding:14px;background:#fff;border:1px solid #f1f1f0;border-radius:8px;">'
@@ -2677,8 +2708,8 @@ class Component extends DCLogic {
               || (a.pbCompanyName && a.pbCompanyName.toLowerCase().includes(s))
               || (a.pbCompanyId && String(a.pbCompanyId).toLowerCase().includes(s));
           });
-          if (cf === 'NO_ZD') filtered = filtered.filter(function(a){ return !a.hasZdOrg; });
-          else if (cf === 'NO_PB') filtered = filtered.filter(function(a){ return !a.hasPbCompany; });
+          if (cf === 'NO_ZD') filtered = filtered.filter(function(a){ return !a.hasZdOrg && !a.pbOnly; });
+          else if (cf === 'NO_PB') filtered = filtered.filter(function(a){ return a.pbOnly === true; });
           const total = filtered.length;
           const all = (window.__mdmAccounts||[]).length;
           const isFiltered = s || cf;
