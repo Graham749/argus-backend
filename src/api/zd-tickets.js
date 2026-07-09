@@ -101,10 +101,9 @@ async function zdTickets(req, res) {
       ? Math.round(withReply.reduce((s, t) => s + t.reply_time_calendar, 0) / withReply.length / 60 * 10) / 10
       : null;
 
-    // Open + pending ticket list (most recent 20)
+    // All open + pending tickets (no cap — drilldown needs the full list)
     const activeTickets = [...open, ...pending]
-      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-      .slice(0, 20)
+      .sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
       .map(t => ({
         id:         t.id,
         subject:    t.subject,

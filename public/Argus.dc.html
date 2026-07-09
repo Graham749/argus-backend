@@ -213,9 +213,7 @@ input{font-family:inherit;}
         <!-- Zendesk Tickets Card (Live Data) -->
         <div id="zdTicketsCard" style="background:#fff;border:1px solid #e6e6e5;border-radius:12px;padding:20px;box-shadow:0 1px 3px rgba(60,60,59,0.07);margin-bottom:28px;">
           <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
-            <div style="width:40px;height:40px;border-radius:8px;background:#03363D;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" style="width:22px;height:22px;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-            </div>
+            <img src="./assets/Zendesk.png" alt="Zendesk" style="width:40px;height:40px;object-fit:contain;" />
             <div style="flex:1;">
               <div style="display:flex;align-items:center;gap:8px;">
                 <div style="font-size:13px;font-weight:700;">Zendesk Support Tickets</div>
@@ -225,7 +223,7 @@ input{font-family:inherit;}
               </div>
               <div style="font-size:11px;color:#9d9d9d;margin-top:2px;">Ticket activity for selected account</div>
             </div>
-            <a id="zdOrgLink" href="#" target="_blank" style="display:none;font-size:10px;color:#03363D;text-decoration:none;display:none;align-items:center;gap:3px;padding:4px 10px;border:1px solid #c0d8d8;border-radius:5px;background:#f3fafa;white-space:nowrap;">↗ Open in Zendesk</a>
+            <a id="zdOrgLink" href="#" target="_blank" style="display:none;font-size:10px;color:#03363D;text-decoration:none;align-items:center;gap:3px;padding:4px 10px;border:1px solid #c0d8d8;border-radius:5px;background:#f3fafa;white-space:nowrap;">↗ Open in Zendesk</a>
           </div>
 
           <!-- No account selected -->
@@ -240,17 +238,18 @@ input{font-family:inherit;}
           <!-- Error -->
           <div id="zdError" style="display:none;padding:16px;background:#fdeee0;border-radius:8px;font-size:12px;color:#c2600f;text-align:center;"></div>
 
-          <!-- Content -->
-          <div id="zdContent" style="display:none;">
-            <!-- Summary counts -->
+          <!-- Summary view -->
+          <div id="zdSummaryView" style="display:none;">
             <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px;">
-              <div style="background:#fff3e0;border-radius:8px;padding:12px;text-align:center;border:1px solid #ffe0b2;">
+              <div id="zdOpenTile" onclick="window.__zdShowDrilldown&&window.__zdShowDrilldown('open')" style="background:#fff3e0;border-radius:8px;padding:12px;text-align:center;border:1px solid #ffe0b2;cursor:pointer;" title="Click to view open tickets">
                 <div style="font-size:22px;font-weight:800;color:#e65100;" id="zdOpenCount">0</div>
                 <div style="font-size:10px;font-weight:700;color:#e65100;text-transform:uppercase;margin-top:2px;">Open</div>
+                <div style="font-size:9px;color:#e65100;opacity:0.7;margin-top:3px;">click to view ▾</div>
               </div>
-              <div style="background:#fff8e1;border-radius:8px;padding:12px;text-align:center;border:1px solid #fff176;">
+              <div id="zdPendingTile" onclick="window.__zdShowDrilldown&&window.__zdShowDrilldown('pending')" style="background:#fff8e1;border-radius:8px;padding:12px;text-align:center;border:1px solid #fff176;cursor:pointer;" title="Click to view pending tickets">
                 <div style="font-size:22px;font-weight:800;color:#f9a825;" id="zdPendingCount">0</div>
                 <div style="font-size:10px;font-weight:700;color:#f9a825;text-transform:uppercase;margin-top:2px;">Pending</div>
+                <div style="font-size:9px;color:#f9a825;opacity:0.7;margin-top:3px;">click to view ▾</div>
               </div>
               <div style="background:#e8f5e9;border-radius:8px;padding:12px;text-align:center;border:1px solid #c8e6c9;">
                 <div style="font-size:22px;font-weight:800;color:#2e7d32;" id="zdSolvedCount">0</div>
@@ -262,43 +261,47 @@ input{font-family:inherit;}
               </div>
             </div>
 
-            <!-- Two-panel: active tickets + resolution stats -->
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-              <!-- Active tickets list -->
-              <div>
-                <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#9d9d9d;margin-bottom:12px;display:flex;align-items:center;gap:6px;">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                  Open &amp; Pending tickets
-                </div>
-                <div id="zdTicketList" style="font-size:12px;"></div>
-                <div id="zdNoActiveTickets" style="display:none;font-size:12px;color:#9d9d9d;padding:12px 0;">No open or pending tickets</div>
+            <!-- Resolution stats -->
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+              <div style="background:#f7f7f6;border-radius:8px;padding:14px 16px;">
+                <div style="font-size:10px;color:#6d6d6c;margin-bottom:4px;">Avg resolution</div>
+                <div style="font-size:22px;font-weight:700;" id="zdAvgResolution">—</div>
+                <div style="font-size:10px;color:#9d9d9d;margin-top:2px;">days</div>
               </div>
+              <div style="background:#f7f7f6;border-radius:8px;padding:14px 16px;">
+                <div style="font-size:10px;color:#6d6d6c;margin-bottom:4px;">Avg first reply</div>
+                <div style="font-size:22px;font-weight:700;" id="zdAvgReply">—</div>
+                <div style="font-size:10px;color:#9d9d9d;margin-top:2px;">hours</div>
+              </div>
+              <div style="background:#f7f7f6;border-radius:8px;padding:14px 16px;">
+                <div style="font-size:10px;color:#6d6d6c;margin-bottom:8px;font-weight:700;">Total tickets</div>
+                <div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0;border-bottom:1px solid #e6e6e5;"><span style="color:#6d6d6c;">All time</span><span id="zdTotalAll" style="font-weight:700;">0</span></div>
+                <div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0;border-bottom:1px solid #e6e6e5;"><span style="color:#e65100;">Open + Pending</span><span id="zdTotalActive" style="font-weight:700;color:#e65100;">0</span></div>
+                <div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0;"><span style="color:#2e7d32;">Resolved</span><span id="zdTotalResolved" style="font-weight:700;color:#2e7d32;">0</span></div>
+              </div>
+            </div>
+          </div>
 
-              <!-- Resolution stats -->
-              <div>
-                <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#9d9d9d;margin-bottom:12px;display:flex;align-items:center;gap:6px;">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;"><polyline points="20 6 9 17 4 12"/></svg>
-                  Resolution stats
-                </div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
-                  <div style="background:#f7f7f6;border-radius:8px;padding:14px 16px;">
-                    <div style="font-size:10px;color:#6d6d6c;margin-bottom:4px;">Avg resolution</div>
-                    <div style="font-size:22px;font-weight:700;" id="zdAvgResolution">—</div>
-                    <div style="font-size:10px;color:#9d9d9d;margin-top:2px;">days</div>
-                  </div>
-                  <div style="background:#f7f7f6;border-radius:8px;padding:14px 16px;">
-                    <div style="font-size:10px;color:#6d6d6c;margin-bottom:4px;">Avg first reply</div>
-                    <div style="font-size:22px;font-weight:700;" id="zdAvgReply">—</div>
-                    <div style="font-size:10px;color:#9d9d9d;margin-top:2px;">hours</div>
-                  </div>
-                </div>
-                <div style="background:#f7f7f6;border-radius:8px;padding:14px 16px;">
-                  <div style="font-size:10px;color:#6d6d6c;margin-bottom:8px;font-weight:700;">Total tickets</div>
-                  <div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid #e6e6e5;"><span style="color:#6d6d6c;">All time</span><span id="zdTotalAll" style="font-weight:700;">0</span></div>
-                  <div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid #e6e6e5;"><span style="color:#e65100;">Open + Pending</span><span id="zdTotalActive" style="font-weight:700;color:#e65100;">0</span></div>
-                  <div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0;"><span style="color:#2e7d32;">Resolved</span><span id="zdTotalResolved" style="font-weight:700;color:#2e7d32;">0</span></div>
-                </div>
-              </div>
+          <!-- Drilldown view -->
+          <div id="zdDetailView" style="display:none;">
+            <div style="margin-bottom:12px;display:flex;align-items:center;gap:12px;">
+              <button id="zdBackButton" style="padding:6px 12px;border-radius:6px;border:1px solid #e6e6e5;background:#fff;color:#03363D;font-size:11px;font-weight:700;cursor:pointer;">← Back to Summary</button>
+              <span style="font-size:12px;color:#6d6d6c;" id="zdDrilldownTitle"></span>
+            </div>
+            <div style="overflow-x:auto;border:1px solid #e6e6e5;border-radius:8px;">
+              <table style="width:100%;border-collapse:collapse;font-size:12px;">
+                <thead style="background:#f7f7f6;border-bottom:1px solid #e6e6e5;">
+                  <tr>
+                    <th style="padding:10px 12px;text-align:left;font-weight:700;color:#3c3c3b;">Priority</th>
+                    <th style="padding:10px 12px;text-align:left;font-weight:700;color:#3c3c3b;">Subject</th>
+                    <th style="padding:10px 12px;text-align:center;font-weight:700;color:#3c3c3b;">Ticket #</th>
+                    <th style="padding:10px 12px;text-align:center;font-weight:700;color:#3c3c3b;">Status</th>
+                    <th style="padding:10px 12px;text-align:center;font-weight:700;color:#3c3c3b;">Days Open</th>
+                    <th style="padding:10px 12px;text-align:center;font-weight:700;color:#3c3c3b;">Replies</th>
+                  </tr>
+                </thead>
+                <tbody id="zdDrilldownBody"></tbody>
+              </table>
             </div>
           </div>
         </div>
@@ -1278,9 +1281,51 @@ class Component extends DCLogic {
     show('zdLoading', true);
     show('zdNoMatch', false);
     show('zdError', false);
-    show('zdContent', false);
+    show('zdSummaryView', false);
+    show('zdDetailView', false);
     const link = document.getElementById('zdOrgLink');
     if (link) link.style.display = 'none';
+
+    // Wire up drilldown/back handlers once
+    window.__zdShowDrilldown = (status) => {
+      const tickets = (window.__zdTickets || []).filter(t => {
+        if (status === 'open') return t.status === 'open' || t.status === 'new';
+        return t.status === status;
+      }).sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+
+      const titleEl = document.getElementById('zdDrilldownTitle');
+      if (titleEl) titleEl.textContent = tickets.length + ' ' + status + ' ticket' + (tickets.length !== 1 ? 's' : '');
+
+      const priorityColour = { urgent:'#d32f2f', high:'#e65100', normal:'#1565c0', low:'#6d6d6c' };
+      const priorityBg     = { urgent:'#fdeee0', high:'#fff3e0', normal:'#e3f2fd', low:'#f7f7f6' };
+      const statusStyle    = { open:'background:#fff3e0;color:#e65100;', new:'background:#fff3e0;color:#e65100;', pending:'background:#fff8e1;color:#f9a825;' };
+
+      const tbody = document.getElementById('zdDrilldownBody');
+      if (tbody) {
+        if (tickets.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" style="padding:20px;text-align:center;color:#9d9d9d;font-size:12px;">No tickets</td></tr>';
+        } else {
+          tbody.innerHTML = tickets.map(t => {
+            const p = (t.priority || 'normal').toLowerCase();
+            const daysOpen = Math.floor((Date.now() - new Date(t.createdAt)) / 86400000);
+            const st = t.status.toLowerCase();
+            return '<tr style="border-bottom:1px solid #f1f1f0;">'
+              + '<td style="padding:9px 12px;"><span style="font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;background:'+priorityBg[p]+';color:'+priorityColour[p]+';text-transform:uppercase;">'+(p==='normal'?'STD':p.toUpperCase())+'</span></td>'
+              + '<td style="padding:9px 12px;font-size:12px;color:#3c3c3b;max-width:320px;">'+t.subject+'</td>'
+              + '<td style="padding:9px 12px;text-align:center;font-size:11px;color:#6d6d6c;">#'+t.id+'</td>'
+              + '<td style="padding:9px 12px;text-align:center;"><span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px;'+(statusStyle[st]||'background:#f7f7f6;color:#6d6d6c;')+'">'+ st.toUpperCase()+'</span></td>'
+              + '<td style="padding:9px 12px;text-align:center;font-size:12px;font-weight:700;color:'+(daysOpen>30?'#d32f2f':daysOpen>7?'#e65100':'#3c3c3b')+';">'+daysOpen+'</td>'
+              + '<td style="padding:9px 12px;text-align:center;font-size:12px;color:#6d6d6c;">'+t.replies+'</td>'
+              + '</tr>';
+          }).join('');
+        }
+      }
+      show('zdSummaryView', false);
+      show('zdDetailView', true);
+    };
+
+    const backBtn = document.getElementById('zdBackButton');
+    if (backBtn) backBtn.onclick = () => { show('zdDetailView', false); show('zdSummaryView', true); };
 
     fetch(`/api/zd-tickets?account=${encodeURIComponent(accountName)}&t=${Date.now()}`)
       .then(r => r.json())
@@ -1295,6 +1340,9 @@ class Component extends DCLogic {
           show('zdNoMatch', true);
           return;
         }
+
+        // Store tickets for drilldown
+        window.__zdTickets = data.tickets || [];
 
         // ZD org link
         if (link) {
@@ -1314,38 +1362,15 @@ class Component extends DCLogic {
         setText('zdAvgResolution', data.avgResolutionDays != null ? data.avgResolutionDays : '—');
         setText('zdAvgReply',      data.avgReplyHours    != null ? data.avgReplyHours    : '—');
 
-        // Active ticket list
-        const list = document.getElementById('zdTicketList');
-        const noActive = document.getElementById('zdNoActiveTickets');
-        if (list) {
-          if (!data.tickets || data.tickets.length === 0) {
-            list.innerHTML = '';
-            if (noActive) noActive.style.display = '';
-          } else {
-            if (noActive) noActive.style.display = 'none';
-            const priorityColour = { urgent:'#d32f2f', high:'#e65100', normal:'#1565c0', low:'#6d6d6c' };
-            const priorityBg     = { urgent:'#fdeee0', high:'#fff3e0', normal:'#e3f2fd', low:'#f7f7f6' };
-            list.innerHTML = data.tickets.map(t => {
-              const p = (t.priority || 'normal').toLowerCase();
-              const daysAgo = Math.floor((Date.now() - new Date(t.createdAt)) / 86400000);
-              const ago = daysAgo === 0 ? 'today' : daysAgo === 1 ? '1d ago' : daysAgo + 'd ago';
-              const statusBadge = t.status === 'pending'
-                ? '<span style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:3px;background:#fff8e1;color:#f9a825;margin-left:4px;">PENDING</span>'
-                : '';
-              return '<div style="display:flex;align-items:flex-start;gap:8px;padding:8px 0;border-bottom:1px solid #f1f1f0;">'
-                + '<span style="flex-shrink:0;font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;background:'+priorityBg[p]+';color:'+priorityColour[p]+';text-transform:uppercase;margin-top:1px;">'+(p==='normal'?'STD':p.toUpperCase())+'</span>'
-                + '<div style="flex:1;min-width:0;">'
-                  + '<div style="font-size:12px;color:#3c3c3b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+t.subject+statusBadge+'</div>'
-                  + '<div style="font-size:10px;color:#9d9d9d;margin-top:2px;">#'+t.id+' · '+ago+(t.replies?' · '+t.replies+' repl'+(t.replies===1?'y':'ies'):'')+'</div>'
-                + '</div>'
-              + '</div>';
-            }).join('');
-          }
-        }
+        // Hide "click to view" hint on tiles with 0 tickets
+        const openHint = document.querySelector('#zdOpenTile div:last-child');
+        const pendHint = document.querySelector('#zdPendingTile div:last-child');
+        if (openHint) openHint.style.display = s.open > 0 ? '' : 'none';
+        if (pendHint) pendHint.style.display = s.pending > 0 ? '' : 'none';
 
-        show('zdContent', true);
+        show('zdSummaryView', true);
       })
-      .catch(err => {
+      .catch(() => {
         show('zdLoading', false);
         const errEl = document.getElementById('zdError');
         if (errEl) { errEl.textContent = 'Failed to load ticket data'; errEl.style.display = ''; }
