@@ -111,7 +111,7 @@ input{font-family:inherit;}
         <!-- Salesforce Subscriptions Card (Live Data) -->
         <div style="background:#fff;border:1px solid #e6e6e5;border-radius:12px;padding:20px;box-shadow:0 1px 3px rgba(60,60,59,0.07);margin-bottom:28px;">
           <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
-            <img src="./assets/Salesforce-Logo.jpg" alt="Salesforce" style="width:40px;height:40px;object-fit:contain;" />
+            <img src="./assets/Salesforce-Logo.jpg" alt="Salesforce" style="width:44px;height:44px;object-fit:contain;border-radius:8px;" />
             <div style="flex:1;">
               <div style="display:flex;align-items:center;gap:8px;">
                 <div style="font-size:13px;font-weight:700;">Salesforce Subscriptions</div>
@@ -213,7 +213,7 @@ input{font-family:inherit;}
         <!-- Zendesk Tickets Card (Live Data) -->
         <div id="zdTicketsCard" style="background:#fff;border:1px solid #e6e6e5;border-radius:12px;padding:20px;box-shadow:0 1px 3px rgba(60,60,59,0.07);margin-bottom:28px;">
           <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
-            <img src="./assets/Zendesk.png" alt="Zendesk" style="width:40px;height:40px;object-fit:contain;" />
+            <img src="./assets/Zendesk.png" alt="Zendesk" style="width:44px;height:44px;object-fit:contain;border-radius:8px;" />
             <div style="flex:1;">
               <div style="display:flex;align-items:center;gap:8px;">
                 <div style="font-size:13px;font-weight:700;">Zendesk Support Tickets</div>
@@ -223,7 +223,6 @@ input{font-family:inherit;}
               </div>
               <div style="font-size:11px;color:#9d9d9d;margin-top:2px;">Ticket activity for selected account</div>
             </div>
-            <a id="zdOrgLink" href="#" target="_blank" style="display:none;font-size:10px;color:#03363D;text-decoration:none;align-items:center;gap:3px;padding:4px 10px;border:1px solid #c0d8d8;border-radius:5px;background:#f3fafa;white-space:nowrap;">↗ Open in Zendesk</a>
           </div>
 
           <!-- No account selected -->
@@ -1274,7 +1273,7 @@ class Component extends DCLogic {
   }
 
   fetchZdTickets(accountName) {
-    const show = (id, visible) => { const el = document.getElementById(id); if (el) el.style.display = visible ? '' : 'none'; };
+    const show = (id, visible) => { const el = document.getElementById(id); if (el) el.style.display = visible ? 'block' : 'none'; };
     const setText = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
 
     show('zdNoAccount', false);
@@ -1283,8 +1282,6 @@ class Component extends DCLogic {
     show('zdError', false);
     show('zdSummaryView', false);
     show('zdDetailView', false);
-    const link = document.getElementById('zdOrgLink');
-    if (link) link.style.display = 'none';
 
     // Wire up drilldown/back handlers once
     window.__zdShowDrilldown = (status) => {
@@ -1343,12 +1340,6 @@ class Component extends DCLogic {
 
         // Store tickets for drilldown
         window.__zdTickets = data.tickets || [];
-
-        // ZD org link
-        if (link) {
-          link.href = `https://auroraer.zendesk.com/agent/organizations/${data.zdOrgId}/tickets`;
-          link.style.display = 'inline-flex';
-        }
 
         // Summary counts
         const s = data.summary;

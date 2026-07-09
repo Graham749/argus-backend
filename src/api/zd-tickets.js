@@ -4,6 +4,10 @@ const sql = require('mssql');
 let cachedToken = null;
 let tokenExpiry = null;
 
+// Per-account result cache — avoids repeated Fabric round-trips
+const resultCache = {};
+const CACHE_TTL = 10 * 60 * 1000; // 10 minutes
+
 async function getAccessToken() {
   const now = Date.now();
   if (cachedToken && tokenExpiry && tokenExpiry > now + 60000) return cachedToken;
@@ -42,6 +46,12 @@ async function queryLakehouse(query) {
 async function zdTickets(req, res) {
   const account = (req.query.account || '').trim();
   if (!account) return res.status(400).json({ error: 'account query param required' });
+
+  // Serve from cache if fresh
+  const cached = resultCache[account];
+  if (cached && Date.now() - cached.ts < CACHE_TTL) {
+    return res.json(cached.data);
+  }
 
   try {
     const escaped = account.replace(/'/g, "''");
@@ -114,7 +124,7 @@ async function zdTickets(req, res) {
         reopens:    Number(t.reopens) || 0,
       }));
 
-    res.json({
+    const payload = {
       zdOrgId,
       zdOrgName,
       summary: {
@@ -127,7 +137,10 @@ async function zdTickets(req, res) {
       avgResolutionDays,
       avgReplyHours,
       tickets: activeTickets,
-    });
+    };
+
+    resultCache[account] = { ts: Date.now(), data: payload };
+    res.json(payload);
   } catch (err) {
     console.error('[zd-tickets]', err);
     res.status(500).json({ error: err.message });
