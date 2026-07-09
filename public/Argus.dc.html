@@ -2645,13 +2645,21 @@ class Component extends DCLogic {
                   +'<div style="font-size:10px;font-weight:700;color:#9d9d9d;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">Zendesk</div>'
                   +'<div style="font-size:11px;color:#9d9d9d;">—</div>'
                 +'</div>'
-                +'<div>'
-                  +'<div style="font-size:10px;font-weight:700;color:#7030a0;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">Productboard</div>'
-                  +dc('Company Name', a.pbCompanyName)
-                  +dc('Company ID', a.pbCompanyId)
-                  +dc('Domain', a.pbCompanyDomain)
-                  +'<div style="margin-top:8px;"><a href="https://auroraer.productboard.com/detail/'+a.pbCompanyId+'" target="_blank" style="font-size:10px;color:#7030a0;text-decoration:none;display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border:1px solid #ddc8f0;border-radius:4px;background:#fdf9ff;">↗ Open in Productboard</a></div>'
-                +'</div>'
+                +(function(){
+                    const pbN = window.__mdmPbNotes && a.pbCompanyId ? (window.__mdmPbNotes[a.pbCompanyId.toLowerCase()] || 0) : 0;
+                    const stat = (val, lbl) => '<div style="display:inline-flex;flex-direction:column;align-items:center;padding:6px 12px;border:1px solid #f1f1f0;border-radius:6px;min-width:60px;">'
+                      +'<span style="font-size:15px;font-weight:800;color:#3c3c3b;line-height:1.1;">'+val+'</span>'
+                      +'<span style="font-size:9px;color:#9d9d9d;margin-top:2px;text-align:center;white-space:nowrap;">'+lbl+'</span>'
+                      +'</div>';
+                    return '<div>'
+                      +'<div style="font-size:10px;font-weight:700;color:#7030a0;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">Productboard</div>'
+                      +dc('Company Name', a.pbCompanyName)
+                      +dc('Company ID', a.pbCompanyId)
+                      +dc('Domain', a.pbCompanyDomain)
+                      +(pbN ? '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;">'+stat(pbN,'Feedback')+'</div>' : '')
+                      +'<div style="margin-top:8px;"><a href="https://auroraer.productboard.com/detail/'+a.pbCompanyId+'" target="_blank" style="font-size:10px;color:#7030a0;text-decoration:none;display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border:1px solid #ddc8f0;border-radius:4px;background:#fdf9ff;">↗ Open in Productboard</a></div>'
+                    +'</div>';
+                  })()
               +'</div>'
               +'</td>'
               +'</tr>';
