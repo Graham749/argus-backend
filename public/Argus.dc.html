@@ -100,6 +100,14 @@ input{font-family:inherit;}
           <div style="font-size:14px;color:#6d6d6c;margin-top:4px;">Unified signals from Posthog · Zendesk · Salesforce</div>
         </div>
 
+        <!-- Page-level account selector -->
+        <div style="background:#fff;border:1px solid #e6e6e5;border-radius:10px;padding:14px 20px;margin-bottom:24px;display:flex;align-items:center;gap:16px;box-shadow:0 1px 3px rgba(60,60,59,0.05);">
+          <label style="font-size:11px;font-weight:700;color:#3c3c3b;white-space:nowrap;">SELECT ACCOUNT</label>
+          <select id="sfAccountSelector" style="flex:1;padding:8px 12px;border:1px solid #e6e6e5;border-radius:6px;font-size:13px;cursor:pointer;max-width:480px;">
+            <option value="">-- Loading accounts... --</option>
+          </select>
+        </div>
+
         <!-- Salesforce Subscriptions Card (Live Data) -->
         <div style="background:#fff;border:1px solid #e6e6e5;border-radius:12px;padding:20px;box-shadow:0 1px 3px rgba(60,60,59,0.07);margin-bottom:28px;">
           <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
@@ -113,13 +121,6 @@ input{font-family:inherit;}
               </div>
               <div style="font-size:11px;color:#9d9d9d;margin-top:2px;">Subscriptions by ARR</div>
             </div>
-          </div>
-
-          <div style="margin-bottom:16px;">
-            <label style="font-size:11px;font-weight:700;color:#3c3c3b;display:block;margin-bottom:6px;">SELECT ACCOUNT</label>
-            <select id="sfAccountSelector" style="width:100%;padding:8px 12px;border:1px solid #e6e6e5;border-radius:6px;font-size:12px;cursor:pointer;">
-              <option value="">-- Loading accounts... --</option>
-            </select>
           </div>
 
           <!-- Summary View (Risk Status Cards) -->
@@ -206,6 +207,99 @@ input{font-family:inherit;}
 
           <div id="sfErrorMessage" style="padding:20px;text-align:center;color:#d32f2f;display:none;">
             <span style="font-size:13px;" id="sfErrorText"></span>
+          </div>
+        </div>
+
+        <!-- Zendesk Tickets Card (Live Data) -->
+        <div id="zdTicketsCard" style="background:#fff;border:1px solid #e6e6e5;border-radius:12px;padding:20px;box-shadow:0 1px 3px rgba(60,60,59,0.07);margin-bottom:28px;">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+            <div style="width:40px;height:40px;border-radius:8px;background:#03363D;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" style="width:22px;height:22px;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            </div>
+            <div style="flex:1;">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <div style="font-size:13px;font-weight:700;">Zendesk Support Tickets</div>
+                <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:#00be86;font-weight:600;">
+                  <span style="font-size:12px;line-height:1;">●</span>Live data
+                </div>
+              </div>
+              <div style="font-size:11px;color:#9d9d9d;margin-top:2px;">Ticket activity for selected account</div>
+            </div>
+            <a id="zdOrgLink" href="#" target="_blank" style="display:none;font-size:10px;color:#03363D;text-decoration:none;display:none;align-items:center;gap:3px;padding:4px 10px;border:1px solid #c0d8d8;border-radius:5px;background:#f3fafa;white-space:nowrap;">↗ Open in Zendesk</a>
+          </div>
+
+          <!-- No account selected -->
+          <div id="zdNoAccount" style="padding:20px 0;text-align:center;color:#9d9d9d;font-size:13px;">Select an account above to view ticket data</div>
+
+          <!-- Loading -->
+          <div id="zdLoading" style="display:none;padding:20px 0;text-align:center;color:#9d9d9d;font-size:13px;">Loading ticket data…</div>
+
+          <!-- No ZD match -->
+          <div id="zdNoMatch" style="display:none;padding:16px;background:#f7f7f6;border-radius:8px;font-size:12px;color:#9d9d9d;text-align:center;">No Zendesk organisation matched to this account</div>
+
+          <!-- Error -->
+          <div id="zdError" style="display:none;padding:16px;background:#fdeee0;border-radius:8px;font-size:12px;color:#c2600f;text-align:center;"></div>
+
+          <!-- Content -->
+          <div id="zdContent" style="display:none;">
+            <!-- Summary counts -->
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px;">
+              <div style="background:#fff3e0;border-radius:8px;padding:12px;text-align:center;border:1px solid #ffe0b2;">
+                <div style="font-size:22px;font-weight:800;color:#e65100;" id="zdOpenCount">0</div>
+                <div style="font-size:10px;font-weight:700;color:#e65100;text-transform:uppercase;margin-top:2px;">Open</div>
+              </div>
+              <div style="background:#fff8e1;border-radius:8px;padding:12px;text-align:center;border:1px solid #fff176;">
+                <div style="font-size:22px;font-weight:800;color:#f9a825;" id="zdPendingCount">0</div>
+                <div style="font-size:10px;font-weight:700;color:#f9a825;text-transform:uppercase;margin-top:2px;">Pending</div>
+              </div>
+              <div style="background:#e8f5e9;border-radius:8px;padding:12px;text-align:center;border:1px solid #c8e6c9;">
+                <div style="font-size:22px;font-weight:800;color:#2e7d32;" id="zdSolvedCount">0</div>
+                <div style="font-size:10px;font-weight:700;color:#2e7d32;text-transform:uppercase;margin-top:2px;">Solved</div>
+              </div>
+              <div style="background:#f7f7f6;border-radius:8px;padding:12px;text-align:center;border:1px solid #e6e6e5;">
+                <div style="font-size:22px;font-weight:800;color:#6d6d6c;" id="zdClosedCount">0</div>
+                <div style="font-size:10px;font-weight:700;color:#6d6d6c;text-transform:uppercase;margin-top:2px;">Closed</div>
+              </div>
+            </div>
+
+            <!-- Two-panel: active tickets + resolution stats -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+              <!-- Active tickets list -->
+              <div>
+                <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#9d9d9d;margin-bottom:12px;display:flex;align-items:center;gap:6px;">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                  Open &amp; Pending tickets
+                </div>
+                <div id="zdTicketList" style="font-size:12px;"></div>
+                <div id="zdNoActiveTickets" style="display:none;font-size:12px;color:#9d9d9d;padding:12px 0;">No open or pending tickets</div>
+              </div>
+
+              <!-- Resolution stats -->
+              <div>
+                <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#9d9d9d;margin-bottom:12px;display:flex;align-items:center;gap:6px;">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;"><polyline points="20 6 9 17 4 12"/></svg>
+                  Resolution stats
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+                  <div style="background:#f7f7f6;border-radius:8px;padding:14px 16px;">
+                    <div style="font-size:10px;color:#6d6d6c;margin-bottom:4px;">Avg resolution</div>
+                    <div style="font-size:22px;font-weight:700;" id="zdAvgResolution">—</div>
+                    <div style="font-size:10px;color:#9d9d9d;margin-top:2px;">days</div>
+                  </div>
+                  <div style="background:#f7f7f6;border-radius:8px;padding:14px 16px;">
+                    <div style="font-size:10px;color:#6d6d6c;margin-bottom:4px;">Avg first reply</div>
+                    <div style="font-size:22px;font-weight:700;" id="zdAvgReply">—</div>
+                    <div style="font-size:10px;color:#9d9d9d;margin-top:2px;">hours</div>
+                  </div>
+                </div>
+                <div style="background:#f7f7f6;border-radius:8px;padding:14px 16px;">
+                  <div style="font-size:10px;color:#6d6d6c;margin-bottom:8px;font-weight:700;">Total tickets</div>
+                  <div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid #e6e6e5;"><span style="color:#6d6d6c;">All time</span><span id="zdTotalAll" style="font-weight:700;">0</span></div>
+                  <div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid #e6e6e5;"><span style="color:#e65100;">Open + Pending</span><span id="zdTotalActive" style="font-weight:700;color:#e65100;">0</span></div>
+                  <div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0;"><span style="color:#2e7d32;">Resolved</span><span id="zdTotalResolved" style="font-weight:700;color:#2e7d32;">0</span></div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -1105,6 +1199,7 @@ class Component extends DCLogic {
             }
           });
           this.fetchSalesforceSubscriptions(accountName);
+          this.fetchZdTickets(accountName);
         }
       });
 
@@ -1175,6 +1270,88 @@ class Component extends DCLogic {
       });
   }
 
+  fetchZdTickets(accountName) {
+    const show = (id, visible) => { const el = document.getElementById(id); if (el) el.style.display = visible ? '' : 'none'; };
+    const setText = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+
+    show('zdNoAccount', false);
+    show('zdLoading', true);
+    show('zdNoMatch', false);
+    show('zdError', false);
+    show('zdContent', false);
+    const link = document.getElementById('zdOrgLink');
+    if (link) link.style.display = 'none';
+
+    fetch(`/api/zd-tickets?account=${encodeURIComponent(accountName)}&t=${Date.now()}`)
+      .then(r => r.json())
+      .then(data => {
+        show('zdLoading', false);
+        if (data.error) {
+          const err = document.getElementById('zdError');
+          if (err) { err.textContent = data.error; err.style.display = ''; }
+          return;
+        }
+        if (!data.zdOrgId) {
+          show('zdNoMatch', true);
+          return;
+        }
+
+        // ZD org link
+        if (link) {
+          link.href = `https://auroraer.zendesk.com/agent/organizations/${data.zdOrgId}/tickets`;
+          link.style.display = 'inline-flex';
+        }
+
+        // Summary counts
+        const s = data.summary;
+        setText('zdOpenCount',    s.open);
+        setText('zdPendingCount', s.pending);
+        setText('zdSolvedCount',  s.solved);
+        setText('zdClosedCount',  s.closed);
+        setText('zdTotalAll',     s.total);
+        setText('zdTotalActive',  s.open + s.pending);
+        setText('zdTotalResolved',s.solved + s.closed);
+        setText('zdAvgResolution', data.avgResolutionDays != null ? data.avgResolutionDays : '—');
+        setText('zdAvgReply',      data.avgReplyHours    != null ? data.avgReplyHours    : '—');
+
+        // Active ticket list
+        const list = document.getElementById('zdTicketList');
+        const noActive = document.getElementById('zdNoActiveTickets');
+        if (list) {
+          if (!data.tickets || data.tickets.length === 0) {
+            list.innerHTML = '';
+            if (noActive) noActive.style.display = '';
+          } else {
+            if (noActive) noActive.style.display = 'none';
+            const priorityColour = { urgent:'#d32f2f', high:'#e65100', normal:'#1565c0', low:'#6d6d6c' };
+            const priorityBg     = { urgent:'#fdeee0', high:'#fff3e0', normal:'#e3f2fd', low:'#f7f7f6' };
+            list.innerHTML = data.tickets.map(t => {
+              const p = (t.priority || 'normal').toLowerCase();
+              const daysAgo = Math.floor((Date.now() - new Date(t.createdAt)) / 86400000);
+              const ago = daysAgo === 0 ? 'today' : daysAgo === 1 ? '1d ago' : daysAgo + 'd ago';
+              const statusBadge = t.status === 'pending'
+                ? '<span style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:3px;background:#fff8e1;color:#f9a825;margin-left:4px;">PENDING</span>'
+                : '';
+              return '<div style="display:flex;align-items:flex-start;gap:8px;padding:8px 0;border-bottom:1px solid #f1f1f0;">'
+                + '<span style="flex-shrink:0;font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;background:'+priorityBg[p]+';color:'+priorityColour[p]+';text-transform:uppercase;margin-top:1px;">'+(p==='normal'?'STD':p.toUpperCase())+'</span>'
+                + '<div style="flex:1;min-width:0;">'
+                  + '<div style="font-size:12px;color:#3c3c3b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+t.subject+statusBadge+'</div>'
+                  + '<div style="font-size:10px;color:#9d9d9d;margin-top:2px;">#'+t.id+' · '+ago+(t.replies?' · '+t.replies+' repl'+(t.replies===1?'y':'ies'):'')+'</div>'
+                + '</div>'
+              + '</div>';
+            }).join('');
+          }
+        }
+
+        show('zdContent', true);
+      })
+      .catch(err => {
+        show('zdLoading', false);
+        const errEl = document.getElementById('zdError');
+        if (errEl) { errEl.textContent = 'Failed to load ticket data'; errEl.style.display = ''; }
+      });
+  }
+
   populateAccountsDropdown(select, accounts){
     if(!select || !accounts) return;
 
@@ -1206,7 +1383,7 @@ class Component extends DCLogic {
           window.__argusTargetAccount = null;
           try{ localStorage.setItem('argusHealthAccount', target); }catch(e){}
         }
-        setTimeout(() => this.fetchSalesforceSubscriptions(target), 100);
+        setTimeout(() => { this.fetchSalesforceSubscriptions(target); this.fetchZdTickets(target); }, 100);
       }
     }
   }

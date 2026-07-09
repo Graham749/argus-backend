@@ -11,6 +11,7 @@ const buildStatus = require('./api/build-status');
 const dataSources = require('./api/data-sources');
 const dataSourcesMinimal = require('./api/data-sources-minimal');
 const mdmAccounts = require('./api/mdm-accounts');
+const zdTickets = require('./api/zd-tickets');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -56,6 +57,7 @@ app.get('/api/accounts-list', accountsList);
 app.get('/api/accounts/:accountName', accounts);
 app.get('/api/integration-status', integrationStatus);
 app.get('/api/mdm-accounts', mdmAccounts);
+app.get('/api/zd-tickets', zdTickets);
 
 // Serve Argus dashboard at root
 app.get('/', (req, res) => {
