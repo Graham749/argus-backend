@@ -142,7 +142,7 @@ async function mdmAccounts(req, res) {
     });
 
     const pbNotes = {};
-    pbNoteRows.forEach(r => { pbNotes[r.pb_company_id] = Number(r.note_count) || 0; });
+    pbNoteRows.forEach(r => { pbNotes[r.pb_company_id.toLowerCase()] = Number(r.note_count) || 0; });
 
     const sfSubCounts = {};
     sfSubRows.forEach(r => { sfSubCounts[r.account_id] = Number(r.sub_count) || 0; });

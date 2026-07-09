@@ -2669,7 +2669,7 @@ class Component extends DCLogic {
                     : [];
                   const zdUsers = a.zdOrgId ? (window.__mdmZdMetrics[a.zdOrgId] || 0) : 0;
                   const zdT     = a.zdOrgId ? (window.__mdmZdTickets[a.zdOrgId] || {}) : {};
-                  const pbN   = a.pbCompanyId ? (window.__mdmPbNotes[a.pbCompanyId] || 0) : 0;
+                  const pbN   = a.pbCompanyId ? (window.__mdmPbNotes[a.pbCompanyId.toLowerCase()] || 0) : 0;
                   const stat = (val, lbl) => val != null
                     ? '<div style="display:inline-flex;flex-direction:column;align-items:center;padding:6px 12px;border:1px solid #f1f1f0;border-radius:6px;min-width:60px;">'
                         +'<span style="font-size:15px;font-weight:800;color:#3c3c3b;line-height:1.1;">'+val+'</span>'
