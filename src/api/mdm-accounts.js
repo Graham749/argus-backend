@@ -117,25 +117,26 @@ async function mdmAccounts(req, res) {
         WHERE organization_id IS NOT NULL AND status != 'deleted'
         GROUP BY CAST(TRY_CAST(organization_id AS BIGINT) AS VARCHAR(20))
       `),
-      // PB notes per company: direct company links + notes linked to users at that company
+      // PB notes per company: direct company links + notes linked to contacts at that company
+      // pb_notebook_relationships maps user→parent→company cleanly (no JSON parsing needed)
       queryLakehouse(`
         WITH user_company_map AS (
-          SELECT u.id AS user_id, JSON_VALUE(t.[value], '$.target.id') AS company_id
-          FROM bronze_pb_users u
-          CROSS APPLY OPENJSON(JSON_QUERY(u.relationships, '$.data')) AS t
-          WHERE JSON_VALUE(t.[value], '$.target.type') = 'company'
-            AND JSON_VALUE(t.[value], '$.type') = 'parent'
+          SELECT [source.id] AS user_id, [target.id] AS company_id
+          FROM pb_notebook_relationships
+          WHERE [source.type] = 'user'
+            AND [relationship.type] = 'parent'
+            AND [target.type] = 'company'
         ),
         company_direct AS (
           SELECT target_id AS company_id, note_id
           FROM pb_notebook_note_relationships
-          WHERE target_type = 'company'
+          WHERE relationship_type = 'customer' AND target_type = 'company'
         ),
         user_mediated AS (
           SELECT ucm.company_id, nr.note_id
           FROM pb_notebook_note_relationships nr
           JOIN user_company_map ucm ON LOWER(nr.target_id) = LOWER(ucm.user_id)
-          WHERE nr.target_type = 'user'
+          WHERE nr.relationship_type = 'customer' AND nr.target_type = 'user'
         ),
         all_notes AS (
           SELECT company_id, note_id FROM company_direct
