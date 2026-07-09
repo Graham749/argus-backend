@@ -1196,16 +1196,17 @@ class Component extends DCLogic {
       select.appendChild(option);
     });
 
-    // Restore previously selected account — DOM guard prevents double-firing from multiple poll timers
-    if(!select.dataset.restored){
+    // MDM deep-link target takes priority over localStorage restore
+    const target = window.__argusTargetAccount || localStorage.getItem('argusHealthAccount');
+    if(target){
       select.dataset.restored = '1';
-      const saved = localStorage.getItem('argusHealthAccount');
-      if(saved){
-        select.value = saved;
-        if(select.value === saved){
-          // Call directly — dispatchEvent won't work if the change listener isn't attached yet
-          setTimeout(() => this.fetchSalesforceSubscriptions(saved), 100);
+      select.value = target;
+      if(select.value === target){
+        if(window.__argusTargetAccount){
+          window.__argusTargetAccount = null;
+          try{ localStorage.setItem('argusHealthAccount', target); }catch(e){}
         }
+        setTimeout(() => this.fetchSalesforceSubscriptions(target), 100);
       }
     }
   }
@@ -1996,7 +1997,11 @@ class Component extends DCLogic {
       const res = await fetch('/api/mdm-accounts');
       if(!res.ok) throw new Error('HTTP '+res.status);
       const data = await res.json();
-      window.__mdmAccounts = data.accounts || [];
+      window.__mdmAccounts   = data.accounts   || [];
+      window.__mdmZdMetrics  = data.zdMetrics   || {};
+      window.__mdmZdTickets  = data.zdTickets   || {};
+      window.__mdmPbNotes    = data.pbNotes     || {};
+      window.__mdmSfSubCounts= data.sfSubCounts || {};
       if (window.__mdmSearch   === undefined) window.__mdmSearch   = '';
       if (window.__mdmConfFilter === undefined) window.__mdmConfFilter = null;
       if (window.__mdmExpandedId === undefined) window.__mdmExpandedId = null;
@@ -2662,12 +2667,24 @@ class Component extends DCLogic {
                   const children = a.sfAccountType==='parent'
                     ? (window.__mdmAccounts||[]).filter(function(x){ return x.parentAccountId===a.sfAccountId; })
                     : [];
+                  const zdUsers = a.zdOrgId ? (window.__mdmZdMetrics[a.zdOrgId] || 0) : 0;
+                  const zdT     = a.zdOrgId ? (window.__mdmZdTickets[a.zdOrgId] || {}) : {};
+                  const pbN   = a.pbCompanyId ? (window.__mdmPbNotes[a.pbCompanyId] || 0) : 0;
+                  const stat = (val, lbl) => val != null
+                    ? '<div style="display:inline-flex;flex-direction:column;align-items:center;padding:6px 12px;border:1px solid #f1f1f0;border-radius:6px;min-width:60px;">'
+                        +'<span style="font-size:15px;font-weight:800;color:#3c3c3b;line-height:1.1;">'+val+'</span>'
+                        +'<span style="font-size:9px;color:#9d9d9d;margin-top:2px;text-align:center;white-space:nowrap;">'+lbl+'</span>'
+                      +'</div>'
+                    : '';
                   return '<div>'
                     +'<div style="font-size:10px;font-weight:700;color:#3c3c3b;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">Salesforce</div>'
                     +dc('Account Name', a.sfAccountName)
                     +dc('Account ID', a.sfAccountId)
                     +dc('Status', a.sfAccountStatus)
                     +dc('Primary Domain', a.sfWebsiteDomain)
+                    +'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;">'
+                      +stat((window.__mdmSfSubCounts&&window.__mdmSfSubCounts[a.sfAccountId])||0,'Subscriptions')
+                    +'</div>'
                     +(a.sfAccountType==='child'&&a.parentAccountId
                       ? '<div style="margin-top:10px;padding-top:10px;border-top:1px solid #f1f1f0;">'
                           +'<div style="font-size:10px;font-weight:700;color:#9d9d9d;margin-bottom:6px;">Parent Account</div>'
@@ -2680,23 +2697,32 @@ class Component extends DCLogic {
                           +children.map(function(c){ return '<div style="margin-bottom:4px;">'+accountLink(c.sfAccountId, c.sfAccountName)+'</div>'; }).join('')
                         +'</div>'
                       : '')
-                    +(a.sfAccountId?'<div style="margin-top:10px;"><a href="https://auroraer.lightning.force.com/lightning/r/Account/'+a.sfAccountId+'/view" target="_blank" style="font-size:10px;color:#288184;text-decoration:none;display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border:1px solid #cde8e8;border-radius:4px;background:#f5fafa;">↗ Open in Salesforce</a></div>':'')
-                    +'</div>';
+                    +(a.sfAccountId?'<div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap;">'
+                      +'<a href="https://auroraer.lightning.force.com/lightning/r/Account/'+a.sfAccountId+'/view" target="_blank" style="font-size:10px;color:#288184;text-decoration:none;display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border:1px solid #cde8e8;border-radius:4px;background:#f5fafa;">↗ Open in Salesforce</a>'
+                      +'<button onclick="(function(){window.__argusTargetAccount=\''+a.sfAccountName.replace(/'/g,"\\'")+'\';window.__argus&&window.__argus.setV({view:\'health\'});window.scrollTo(0,0);})()" style="font-size:10px;color:#3c3c3b;cursor:pointer;display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border:1px solid #e6e6e5;border-radius:4px;background:#f7f7f6;">→ View Subscriptions</button>'
+                      +'</div>':'')
+                    +'</div>'
+                  +'<div>'
+                    +'<div style="font-size:10px;font-weight:700;color:#288184;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">Zendesk</div>'
+                    +(a.hasZdOrg
+                      ? dc('Org Name',a.zdOrgName)+dc('Org ID',a.zdOrgId)+dc('Primary Domain',a.zdPrimaryDomain)+dc('Match Method',a.zdMatchConfidence==='HIGH'?'Name + Domain':a.zdMatchConfidence==='MEDIUM'?'Name only':'—')
+                        +'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;">'
+                          +stat(zdUsers,'Users')
+                          +stat(zdT.open||0,'Open Tickets')
+                          +stat(zdT.total||0,'Total Tickets')
+                        +'</div>'
+                        +'<div style="margin-top:8px;"><a href="https://auroraer.zendesk.com/agent/organizations/'+a.zdOrgId+'/tickets" target="_blank" style="font-size:10px;color:#288184;text-decoration:none;display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border:1px solid #cde8e8;border-radius:4px;background:#f5fafa;">↗ Open in Zendesk</a></div>'
+                      : '<div style="font-size:11px;color:#9d9d9d;">No Zendesk organisation found</div>')
+                  +'</div>'
+                  +'<div>'
+                    +'<div style="font-size:10px;font-weight:700;color:#7030a0;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">Productboard</div>'
+                    +(a.hasPbCompany
+                      ? dc('Company Name',a.pbCompanyName)+dc('Company ID',a.pbCompanyId)+dc('Primary Domain',a.pbCompanyDomain)+dc('Match Method',a.pbMatchMethod==='website_domain'?'Website Domain':a.pbMatchMethod==='eos_domain'?'EOS Domain':'Name only')
+                        +(pbN?'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;">'+stat(pbN,'Feedback')+'</div>':'')
+                        +'<div style="margin-top:8px;"><a href="https://auroraer.productboard.com/detail/'+a.pbCompanyId+'" target="_blank" style="font-size:10px;color:#7030a0;text-decoration:none;display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border:1px solid #ddc8f0;border-radius:4px;background:#fdf9ff;">↗ Open in Productboard</a></div>'
+                      : '<div style="font-size:11px;color:#9d9d9d;">No Productboard company matched</div>')
+                  +'</div>';
                 })()
-              +'<div>'
-                +'<div style="font-size:10px;font-weight:700;color:#288184;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">Zendesk</div>'
-                +(a.hasZdOrg
-                  ? dc('Org Name',a.zdOrgName)+dc('Org ID',a.zdOrgId)+dc('Primary Domain',a.zdPrimaryDomain)+dc('Match Method',a.zdMatchConfidence==='HIGH'?'Name + Domain':a.zdMatchConfidence==='MEDIUM'?'Name only':'—')
-                    +'<div style="margin-top:8px;"><a href="https://auroraer.zendesk.com/agent/organizations/'+a.zdOrgId+'/tickets" target="_blank" style="font-size:10px;color:#288184;text-decoration:none;display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border:1px solid #cde8e8;border-radius:4px;background:#f5fafa;">↗ Open in Zendesk</a></div>'
-                  : '<div style="font-size:11px;color:#9d9d9d;">No Zendesk organisation found</div>')
-              +'</div>'
-              +'<div>'
-                +'<div style="font-size:10px;font-weight:700;color:#7030a0;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">Productboard</div>'
-                +(a.hasPbCompany
-                  ? dc('Company Name',a.pbCompanyName)+dc('Company ID',a.pbCompanyId)+dc('Primary Domain',a.pbCompanyDomain)+dc('Match Method',a.pbMatchMethod==='website_domain'?'Website Domain':a.pbMatchMethod==='eos_domain'?'EOS Domain':'Name only')
-                    +'<div style="margin-top:8px;"><a href="https://auroraer.productboard.com/detail/'+a.pbCompanyId+'" target="_blank" style="font-size:10px;color:#7030a0;text-decoration:none;display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border:1px solid #ddc8f0;border-radius:4px;background:#fdf9ff;">↗ Open in Productboard</a></div>'
-                  : '<div style="font-size:11px;color:#9d9d9d;">No Productboard company matched</div>')
-              +'</div>'
             +'</div>'
             +'</td>'
             +'</tr>';

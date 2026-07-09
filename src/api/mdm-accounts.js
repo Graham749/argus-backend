@@ -42,7 +42,7 @@ async function queryLakehouse(query) {
 
 async function mdmAccounts(req, res) {
   try {
-    const [summaryRows, accountRows, hierarchyRows, dupRows, pbOnlyRows] = await Promise.all([
+    const [summaryRows, accountRows, hierarchyRows, dupRows, pbOnlyRows, zdUserRows, zdTicketRows, pbNoteRows, sfSubRows] = await Promise.all([
       queryLakehouse(`
         SELECT
           COUNT(*)                                                              AS total,
@@ -99,8 +99,53 @@ async function mdmAccounts(req, res) {
           SELECT DISTINCT pb_company_id FROM v_silver_mdm_account WHERE pb_company_id IS NOT NULL
         )
         ORDER BY company_name
+      `),
+      // ZD users per org
+      queryLakehouse(`
+        SELECT CAST(TRY_CAST(organization_id AS BIGINT) AS VARCHAR(20)) AS zd_org_id,
+               COUNT(DISTINCT id) AS user_count
+        FROM zd_notebook_users
+        WHERE organization_id IS NOT NULL
+        GROUP BY CAST(TRY_CAST(organization_id AS BIGINT) AS VARCHAR(20))
+      `),
+      // ZD tickets per org (open = open/new/pending)
+      queryLakehouse(`
+        SELECT CAST(TRY_CAST(organization_id AS BIGINT) AS VARCHAR(20)) AS zd_org_id,
+               COUNT(*) AS ticket_count,
+               SUM(CASE WHEN status IN ('open','new','pending') THEN 1 ELSE 0 END) AS open_count
+        FROM zd_notebook_tickets
+        WHERE organization_id IS NOT NULL AND status != 'deleted'
+        GROUP BY CAST(TRY_CAST(organization_id AS BIGINT) AS VARCHAR(20))
+      `),
+      // PB notes per company via relationship table
+      queryLakehouse(`
+        SELECT nr.target_id AS pb_company_id, COUNT(*) AS note_count
+        FROM pb_notebook_note_relationships nr
+        WHERE nr.target_type = 'company'
+        GROUP BY nr.target_id
+      `),
+      // SF subscription counts per account (matches subscription widget: Active + Termination in Progress)
+      queryLakehouse(`
+        SELECT account_id, COUNT(*) AS sub_count
+        FROM v_silver_sf_subscriptions
+        GROUP BY account_id
       `)
     ]);
+
+    // Build metric lookup maps — keyed by org/company ID for O(1) row renderer access
+    const zdUsers = {};
+    zdUserRows.forEach(r => { zdUsers[r.zd_org_id] = Number(r.user_count) || 0; });
+
+    const zdTickets = {};
+    zdTicketRows.forEach(r => {
+      zdTickets[r.zd_org_id] = { total: Number(r.ticket_count) || 0, open: Number(r.open_count) || 0 };
+    });
+
+    const pbNotes = {};
+    pbNoteRows.forEach(r => { pbNotes[r.pb_company_id] = Number(r.note_count) || 0; });
+
+    const sfSubCounts = {};
+    sfSubRows.forEach(r => { sfSubCounts[r.account_id] = Number(r.sub_count) || 0; });
 
     // Build hierarchy maps in JavaScript — O(1) lookup, no DB join needed
     const hierById = {};
@@ -223,6 +268,10 @@ async function mdmAccounts(req, res) {
       },
       accounts,
       duplicates,
+      zdMetrics: zdUsers,
+      zdTickets,
+      pbNotes,
+      sfSubCounts,
       syncedAt: new Date().toISOString()
     });
   } catch (err) {
