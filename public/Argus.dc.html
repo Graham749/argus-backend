@@ -2748,11 +2748,16 @@ class Component extends DCLogic {
           const total = filtered.length;
           const all = (window.__mdmAccounts||[]).length;
           const isFiltered = s || cf;
-          const display = isFiltered ? filtered : filtered.slice(0, 200);
+          const bySubs = filtered.slice().sort(function(a, b) {
+            var sa = (window.__mdmSfSubCounts && window.__mdmSfSubCounts[a.sfAccountId]) || 0;
+            var sb = (window.__mdmSfSubCounts && window.__mdmSfSubCounts[b.sfAccountId]) || 0;
+            return sb - sa;
+          });
+          const display = isFiltered ? bySubs : bySubs.slice(0, 200);
           const lbl = document.getElementById('mdm-count-label');
           if (lbl) lbl.textContent = isFiltered
-            ? total + ' account' + (total !== 1 ? 's' : '') + ' found'
-            : 'Showing top 200 of ' + all + ' accounts — search to find others';
+            ? total + ' account' + (total !== 1 ? 's' : '') + ' found · sorted by subscriptions'
+            : 'Top 200 by subscriptions · ' + all + ' total — search to find others';
           tbody.innerHTML = total
             ? display.map(window.__mdmRow).join('')
             : '<tr><td colspan="4" style="padding:32px;text-align:center;color:#9d9d9d;">No accounts match this filter</td></tr>';
@@ -3113,7 +3118,7 @@ class Component extends DCLogic {
         <div style="display:flex;align-items:center;gap:5px;"><div style="width:20px;height:20px;border-radius:50%;background:#888;flex-shrink:0;"></div>11–50</div>
         <div style="display:flex;align-items:center;gap:5px;"><div style="width:32px;height:32px;border-radius:50%;background:#888;flex-shrink:0;"></div>50+</div>
       </div>
-      <div style="margin-left:auto;font-style:italic;color:#bbb;font-size:10px;">Axes are log scale</div>
+      <div style="margin-left:auto;font-style:italic;color:#bbb;font-size:10px;">Quadrant = has tickets / has feedback · hover for counts</div>
     </div>
     <div id="eng-chart-host" style="width:100%;overflow-x:auto;"></div>
     <div id="eng-insight-box" style="margin-top:14px;padding:11px 16px;background:#fff9f0;border:1px solid #f0c060;border-radius:8px;font-size:12px;color:#6d6d6c;line-height:1.6;display:none;"></div>
@@ -3193,15 +3198,18 @@ class Component extends DCLogic {
     var mt = 38, mr = 28, mb = 56, ml = 66;
     var cw = W - ml - mr, ch = H - mt - mb;
 
-    var maxT = Math.max(2, Math.max.apply(null, data.map(function(d){ return d.tickets; })));
-    var maxF = Math.max(2, Math.max.apply(null, data.map(function(d){ return d.feedback; })));
+    // Fixed visual 50/50 split — placement is by quadrant (tickets>0, feedback>0), not by exact count
+    var splitX = ml + cw * 0.5;
+    var splitY = mt + ch * 0.5;
 
-    function sx(v) { return ml + (Math.log(v + 1) / Math.log(maxT + 1)) * cw; }
-    function sy(v) { return mt + ch - (Math.log(v + 1) / Math.log(maxF + 1)) * ch; }
-
-    // Quadrant dividers at the 0→1 boundary (has any engagement vs none)
-    var splitX = sx(1);
-    var splitY = sy(1);
+    function quadBounds(d) {
+      return {
+        xMin: d.tickets  > 0 ? splitX : ml,
+        xMax: d.tickets  > 0 ? ml+cw  : splitX,
+        yMin: d.feedback > 0 ? mt     : splitY,
+        yMax: d.feedback > 0 ? splitY : mt+ch
+      };
+    }
 
     function br(d) { return d.subs > 50 ? 16 : d.subs > 10 ? 10 : 6; }
     function dotCol(hasPb, tickets) {
@@ -3216,20 +3224,22 @@ class Component extends DCLogic {
     // Sort ascending subs so large bubbles paint last (on top)
     data.sort(function(a, b) { return a.subs - b.subs; });
 
-    // Step 1: compute initial positions with jitter on zero-axis accounts
+    // Step 1: place each bubble at its quadrant centre + deterministic jitter
     var placed = data.map(function(d) {
       var r  = br(d);
-      var jx = d.tickets  === 0 ? (hash(d.name)        % 32 - 16) : 0;
-      var jy = d.feedback === 0 ? (hash(d.name + 'fb') % 32 - 16) : 0;
+      var qb = quadBounds(d);
+      var qcx = (qb.xMin + qb.xMax) / 2;
+      var qcy = (qb.yMin + qb.yMax) / 2;
+      var jx  = (hash(d.name)        % 60) - 30;
+      var jy  = (hash(d.name + 'jy') % 60) - 30;
       return {
-        d:  d,
-        r:  r,
-        cx: Math.max(ml + r, Math.min(ml + cw - r, sx(d.tickets)  + jx)),
-        cy: Math.max(mt + r, Math.min(mt + ch - r, sy(d.feedback) + jy))
+        d:  d, r: r, qb: qb,
+        cx: Math.max(qb.xMin + r, Math.min(qb.xMax - r, qcx + jx)),
+        cy: Math.max(qb.yMin + r, Math.min(qb.yMax - r, qcy + jy))
       };
     });
 
-    // Step 2: iterative collision avoidance (push overlapping bubbles apart)
+    // Step 2: collision avoidance — bubbles can only be pushed within their own quadrant
     for (var iter = 0; iter < 25; iter++) {
       for (var i = 0; i < placed.length; i++) {
         for (var j = i + 1; j < placed.length; j++) {
@@ -3240,10 +3250,10 @@ class Component extends DCLogic {
           if (dist < minD) {
             var push = (minD - dist) * 0.5;
             var nx = dx / dist * push, ny = dy / dist * push;
-            placed[i].cx = Math.max(ml + placed[i].r, Math.min(ml + cw - placed[i].r, placed[i].cx - nx));
-            placed[i].cy = Math.max(mt + placed[i].r, Math.min(mt + ch - placed[i].r, placed[i].cy - ny));
-            placed[j].cx = Math.max(ml + placed[j].r, Math.min(ml + cw - placed[j].r, placed[j].cx + nx));
-            placed[j].cy = Math.max(mt + placed[j].r, Math.min(mt + ch - placed[j].r, placed[j].cy + ny));
+            placed[i].cx = Math.max(placed[i].qb.xMin + placed[i].r, Math.min(placed[i].qb.xMax - placed[i].r, placed[i].cx - nx));
+            placed[i].cy = Math.max(placed[i].qb.yMin + placed[i].r, Math.min(placed[i].qb.yMax - placed[i].r, placed[i].cy - ny));
+            placed[j].cx = Math.max(placed[j].qb.xMin + placed[j].r, Math.min(placed[j].qb.xMax - placed[j].r, placed[j].cx + nx));
+            placed[j].cy = Math.max(placed[j].qb.yMin + placed[j].r, Math.min(placed[j].qb.yMax - placed[j].r, placed[j].cy + ny));
           }
         }
       }

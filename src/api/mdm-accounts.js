@@ -117,12 +117,34 @@ async function mdmAccounts(req, res) {
         WHERE organization_id IS NOT NULL AND status != 'deleted'
         GROUP BY CAST(TRY_CAST(organization_id AS BIGINT) AS VARCHAR(20))
       `),
-      // PB notes per company via relationship table
+      // PB notes per company: direct company links + notes linked to users at that company
       queryLakehouse(`
-        SELECT nr.target_id AS pb_company_id, COUNT(*) AS note_count
-        FROM pb_notebook_note_relationships nr
-        WHERE nr.target_type = 'company'
-        GROUP BY nr.target_id
+        WITH user_company_map AS (
+          SELECT u.id AS user_id, JSON_VALUE(t.[value], '$.target.id') AS company_id
+          FROM bronze_pb_users u
+          CROSS APPLY OPENJSON(JSON_QUERY(u.relationships, '$.data')) AS t
+          WHERE JSON_VALUE(t.[value], '$.target.type') = 'company'
+            AND JSON_VALUE(t.[value], '$.type') = 'parent'
+        ),
+        company_direct AS (
+          SELECT target_id AS company_id, note_id
+          FROM pb_notebook_note_relationships
+          WHERE target_type = 'company'
+        ),
+        user_mediated AS (
+          SELECT ucm.company_id, nr.note_id
+          FROM pb_notebook_note_relationships nr
+          JOIN user_company_map ucm ON LOWER(nr.target_id) = LOWER(ucm.user_id)
+          WHERE nr.target_type = 'user'
+        ),
+        all_notes AS (
+          SELECT company_id, note_id FROM company_direct
+          UNION
+          SELECT company_id, note_id FROM user_mediated
+        )
+        SELECT company_id AS pb_company_id, COUNT(*) AS note_count
+        FROM all_notes
+        GROUP BY company_id
       `),
       // SF subscription counts per account (matches subscription widget: Active + Termination in Progress)
       queryLakehouse(`
