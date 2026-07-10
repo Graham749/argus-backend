@@ -76,8 +76,8 @@ async function pbInsights(req, res) {
     const pbCompanyName = mdmRows[0].pb_company_name;
     const esc2 = pbCompanyId.replace(/'/g, "''");
 
-    // 2. Features + notes in parallel
-    const [featureRows, noteRows] = await Promise.all([
+    // 2. Features + notes + unlinked notes in parallel
+    const [featureRows, noteRows, unlinkedRows] = await Promise.all([
       queryLakehouse(`
         SELECT
           f.feature_id,
@@ -106,6 +106,22 @@ async function pbInsights(req, res) {
         WHERE LOWER(pb_company_id) = LOWER('${esc2}')
           AND is_archived = 0
         ORDER BY note_created_at DESC
+      `),
+      queryLakehouse(`
+        SELECT pnc.note_id,
+               n.note_name,
+               LEFT(n.note_content, 300) AS note_excerpt,
+               n.note_html_url,
+               n.note_created_at
+        FROM v_silver_pb_path_note_company pnc
+        INNER JOIN v_silver_pb_notes n ON n.note_id = pnc.note_id
+        WHERE LOWER(pnc.pb_company_id) = LOWER('${esc2}')
+          AND NOT EXISTS (
+            SELECT 1 FROM v_gold_pb_note_company_feature f2
+            WHERE LOWER(f2.pb_company_id) = LOWER('${esc2}')
+              AND f2.note_id = pnc.note_id
+          )
+        ORDER BY n.note_created_at DESC
       `),
     ]);
 
@@ -138,6 +154,14 @@ async function pbInsights(req, res) {
     const pipeline    = features.filter(f => f.bucket === 'pipeline');
     const review      = features.filter(f => f.bucket === 'review');
 
+    const unlinkedNotes = (unlinkedRows || []).map(r => ({
+      noteId:      r.note_id,
+      noteName:    r.note_name,
+      noteExcerpt: r.note_excerpt,
+      noteUrl:     r.note_html_url,
+      createdAt:   r.note_created_at,
+    }));
+
     const payload = {
       pbCompanyId,
       pbCompanyName,
@@ -147,8 +171,10 @@ async function pbInsights(req, res) {
         deliveredFeatures: delivered.length,
         pipelineFeatures:  pipeline.length,
         reviewFeatures:    review.length,
+        unlinkedNotes:     unlinkedNotes.length,
       },
       features,
+      unlinkedNotes,
     };
 
     resultCache[account] = { ts: Date.now(), data: payload };
