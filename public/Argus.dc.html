@@ -3187,7 +3187,11 @@ class Component extends DCLogic {
 
           // Collapse-all toggle
           +(()=>{
-            const allC = !!window.__mdmW1C && !!window.__mdmW2C && !!window.__mdmW3C && !!window.__mdmW4C && !window.__mdmDupExpanded;
+            if (window.__mdmW1C === undefined) window.__mdmW1C = true;
+            if (window.__mdmW2C === undefined) window.__mdmW2C = true;
+            if (window.__mdmW3C === undefined) window.__mdmW3C = true;
+            if (window.__mdmW4C === undefined) window.__mdmW4C = true;
+            const allC = window.__mdmW1C && window.__mdmW2C && window.__mdmW3C && window.__mdmW4C && !window.__mdmDupExpanded;
             const colAll = '(function(){'
               +'var toC=!(window.__mdmW1C&&window.__mdmW2C&&window.__mdmW3C&&window.__mdmW4C&&!window.__mdmDupExpanded);'
               +'[1,2,3,4].forEach(function(n){'
@@ -3214,7 +3218,8 @@ class Component extends DCLogic {
 
           // Source System Coverage widget
           +(()=>{
-            const collapsed = !!window.__mdmW1C;
+            if (window.__mdmW1C === undefined) window.__mdmW1C = true;
+            const collapsed = window.__mdmW1C;
             const toggle = '(function(){'
               +'window.__mdmW1C=!window.__mdmW1C;'
               +'var b=document.getElementById(\'mdm-w1-body\');'
@@ -3300,7 +3305,8 @@ class Component extends DCLogic {
 
           // Match Criteria card
           +(()=>{
-            const collapsed = !!window.__mdmW2C;
+            if (window.__mdmW2C === undefined) window.__mdmW2C = true;
+            const collapsed = window.__mdmW2C;
             const toggle = '(function(){'
               +'window.__mdmW2C=!window.__mdmW2C;'
               +'var b=document.getElementById(\'mdm-w2-body\');'
@@ -3354,7 +3360,8 @@ class Component extends DCLogic {
 
           // Zendesk Match Confidence Distribution
           +(()=>{
-            const collapsed = !!window.__mdmW3C;
+            if (window.__mdmW3C === undefined) window.__mdmW3C = true;
+            const collapsed = window.__mdmW3C;
             const toggle = '(function(){'
               +'window.__mdmW3C=!window.__mdmW3C;'
               +'var b=document.getElementById(\'mdm-w3-body\');'
@@ -3400,7 +3407,8 @@ class Component extends DCLogic {
 
           // Productboard Match Confidence Distribution
           +(()=>{
-            const collapsed = !!window.__mdmW4C;
+            if (window.__mdmW4C === undefined) window.__mdmW4C = true;
+            const collapsed = window.__mdmW4C;
             const toggle = '(function(){'
               +'window.__mdmW4C=!window.__mdmW4C;'
               +'var b=document.getElementById(\'mdm-w4-body\');'
