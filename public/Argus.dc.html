@@ -277,10 +277,10 @@ input{font-family:inherit;}
                 <div id="zdReplyTrendChart" style="margin-top:6px;width:100%;height:32px;"></div>
               </div>
               <div style="background:#f7f7f6;border-radius:8px;padding:10px 12px;">
-                <div style="font-size:10px;color:#6d6d6c;margin-bottom:5px;font-weight:700;">Total tickets</div>
-                <div style="display:flex;justify-content:space-between;font-size:11px;padding:2px 0;border-bottom:1px solid #e6e6e5;"><span style="color:#6d6d6c;">All time</span><span id="zdTotalAll" style="font-weight:700;">0</span></div>
-                <div style="display:flex;justify-content:space-between;font-size:11px;padding:2px 0;border-bottom:1px solid #e6e6e5;"><span style="color:#e65100;">Open + Pending</span><span id="zdTotalActive" style="font-weight:700;color:#e65100;">0</span></div>
-                <div style="display:flex;justify-content:space-between;font-size:11px;padding:2px 0;"><span style="color:#2e7d32;">Resolved</span><span id="zdTotalResolved" style="font-weight:700;color:#2e7d32;">0</span></div>
+                <div style="font-size:10px;color:#6d6d6c;margin-bottom:3px;">Support Credits Used</div>
+                <div style="font-size:16px;font-weight:700;" id="zdTotalCredits">—</div>
+                <div style="font-size:10px;color:#9d9d9d;margin-top:1px;">credits (all tickets)</div>
+                <div id="zdCreditsTrendChart" style="margin-top:6px;width:100%;height:32px;"></div>
               </div>
             </div>
 
@@ -1342,7 +1342,7 @@ class Component extends DCLogic {
       const el = document.getElementById('zd-loading-msg');
       if (!el) { clearInterval(window.__zdMsgInterval); return; }
       el.textContent = window.__argusNextMsg();
-    }, 6000);
+    }, 12000);
 
     // Wire up drilldown/back handlers once
     window.__zdShowDrilldown = (status) => {
@@ -1439,6 +1439,35 @@ class Component extends DCLogic {
         setText('zdAvgResolution', data.avgResolutionDays != null ? data.avgResolutionDays : '—');
         setText('zdAvgReply',      data.avgReplyHours    != null ? data.avgReplyHours    : '—');
 
+        // Support credits total + sparkline — 1:1 ticket mapping
+        (function renderZdCredits(tickets) {
+          const pts = tickets
+            .filter(t => t.numCredits > 0)
+            .slice().sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+          const total = pts.reduce((s, t) => s + t.numCredits, 0);
+          setText('zdTotalCredits', total > 0 ? total : '—');
+
+          const host = document.getElementById('zdCreditsTrendChart');
+          if (!host || pts.length < 2) return;
+
+          const W = 200, H = 32, pad = 2;
+          const maxV = Math.max(...pts.map(p => p.numCredits)) || 1;
+          const xp = i => pad + i * (W - pad*2) / (pts.length - 1);
+          const yp = v => H - pad - (v / maxV) * (H - pad*2);
+          const line = pts.map((p,i) => (i===0?'M':'L') + xp(i).toFixed(1)+' '+yp(p.numCredits).toFixed(1)).join(' ');
+          const hits = pts.map((p,i) => {
+            const d = new Date(p.createdAt).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+            return `<circle cx="${xp(i).toFixed(1)}" cy="${yp(p.numCredits).toFixed(1)}" r="7" fill="transparent" style="cursor:pointer;"
+              onmouseover="window.__zdSparkShow(event,'${p.id}',${p.numCredits}+' credits','${d}')"
+              onmouseout="window.__zdSparkHide()"
+              onclick="window.open('https://auroraer.zendesk.com/agent/tickets/${p.id}','_blank')"/>`;
+          }).join('');
+          host.innerHTML = `<svg width="100%" height="${H}" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
+            <path d="${line}" fill="none" stroke="#03363D" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+            ${hits}
+          </svg>`;
+        })(data.tickets || []);
+
         // Sparkline — reply time (business mins), all tickets
         (function renderZdReplyTrend(tickets) {
           const host = document.getElementById('zdReplyTrendChart');
@@ -1485,17 +1514,19 @@ class Component extends DCLogic {
               tip.style.cssText = 'position:fixed;z-index:9999;background:#3c3c3b;color:#fff;font-size:11px;padding:6px 10px;border-radius:6px;pointer-events:none;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.2);';
               document.body.appendChild(tip);
             }
-            tip.textContent = '#' + id + ' · ' + mins + ' mins · ' + date;
-            tip.style.left = (evt.clientX + 14) + 'px';
-            tip.style.top  = (evt.clientY - 32) + 'px';
+            tip.textContent = '#' + id + ' · ' + mins + ' · ' + date;
             tip.style.display = 'block';
+            var tw = tip.offsetWidth;
+            var left = (evt.clientX + 14 + tw > window.innerWidth) ? (evt.clientX - tw - 4) : (evt.clientX + 14);
+            tip.style.left = left + 'px';
+            tip.style.top  = (evt.clientY - 32) + 'px';
           };
           window.__zdSparkHide = function() {
             const tip = document.getElementById('__zdSparkTip');
             if (tip) tip.style.display = 'none';
           };
 
-          const W = 200, H = 40, pad = 2;
+          const W = 200, H = 32, pad = 2;
           const maxV = Math.max(...pts.map(p => p.timeSpentMinutes)) || 1;
           const xp = i => pad + i * (W - pad*2) / (pts.length - 1);
           const yp = v => H - pad - (v / maxV) * (H - pad*2);
@@ -1504,7 +1535,7 @@ class Component extends DCLogic {
           const hits = pts.map((p,i) => {
             const d = new Date(p.createdAt).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
             return `<circle cx="${xp(i).toFixed(1)}" cy="${yp(p.timeSpentMinutes).toFixed(1)}" r="7" fill="transparent" style="cursor:pointer;"
-              onmouseover="window.__zdSparkShow(event,'${p.id}',${p.timeSpentMinutes},'${d}')"
+              onmouseover="window.__zdSparkShow(event,'${p.id}',${p.timeSpentMinutes}+' mins','${d}')"
               onmouseout="window.__zdSparkHide()"
               onclick="window.open('https://auroraer.zendesk.com/agent/tickets/${p.id}','_blank')"/>`;
           }).join('');
@@ -1603,7 +1634,7 @@ class Component extends DCLogic {
       const el = document.getElementById('sub-loading-msg');
       if (!el) { clearInterval(window.__subMsgInterval); return; }
       el.textContent = window.__argusNextMsg();
-    }, 6000);
+    }, 12000);
 
     console.log('[Argus] Updated UI to show loading...');
 
@@ -2236,7 +2267,7 @@ class Component extends DCLogic {
       const el = document.getElementById('feat-loading-msg');
       if (!el) { clearInterval(window.__featMsgInterval); return; }
       el.textContent = window.__featCurrentMsg;
-    }, 6000);
+    }, 12000);
     this.setState({featLoading: true});
     try {
       const res = await fetch('/api/features');
@@ -2341,7 +2372,7 @@ class Component extends DCLogic {
       const el = document.getElementById('mdm-loading-msg');
       if (!el) { clearInterval(window.__mdmMsgInterval); return; }
       el.textContent = window.__argusNextMsg();
-    }, 6000);
+    }, 12000);
     this.setState({mdmLoading: true});
     try {
       const res = await fetch('/api/mdm-accounts');
@@ -3057,7 +3088,7 @@ class Component extends DCLogic {
                       : '')
                     +(a.sfAccountId?'<div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap;">'
                       +'<a href="https://auroraer.lightning.force.com/lightning/r/Account/'+a.sfAccountId+'/view" target="_blank" style="font-size:10px;color:#288184;text-decoration:none;display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border:1px solid #cde8e8;border-radius:4px;background:#f5fafa;">↗ Open in Salesforce</a>'
-                      +'<button onclick="(function(){window.__argusTargetAccount=\''+a.sfAccountName.replace(/'/g,"\\'")+'\';window.__argus&&window.__argus.setV({view:\'health\'});window.scrollTo(0,0);})()" style="font-size:10px;color:#3c3c3b;cursor:pointer;display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border:1px solid #e6e6e5;border-radius:4px;background:#f7f7f6;">→ View Subscriptions</button>'
+                      +'<button onclick="(function(){var acct=\''+a.sfAccountName.replace(/'/g,"\\'")+'\';window.__argus&&window.__argus.setV({view:\'health\'});window.scrollTo(0,0);setTimeout(function(){var sel=document.getElementById(\'sfAccountSelector\');if(sel){sel.value=acct;if(sel.value===acct){window.__argus&&window.__argus.fetchSalesforceSubscriptions(acct);window.__argus&&window.__argus.fetchZdTickets(acct);try{localStorage.setItem(\'argusHealthAccount\',acct);}catch(e){}}}},250);})()" style="font-size:10px;color:#3c3c3b;cursor:pointer;display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border:1px solid #e6e6e5;border-radius:4px;background:#f7f7f6;">→ View Client health card</button>'
                       +'</div>':'')
                     +'</div>'
                   +'<div>'

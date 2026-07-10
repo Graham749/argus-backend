@@ -89,24 +89,24 @@ async function zdTickets(req, res) {
         m.replies,
         m.reopens,
         m.solved_at,
-        TRY_CAST(ts.time_spent_value AS INT) AS time_spent_minutes
+        TRY_CAST(ts.time_spent_value AS INT) AS time_spent_minutes,
+        TRY_CAST(cr.num_credits_value AS INT) AS num_credits
       FROM zd_notebook_tickets t
       LEFT JOIN zd_notebook_ticket_metrics m ON CAST(m.ticket_id AS BIGINT) = t.id
       OUTER APPLY (
         SELECT TOP 1 cf.[value] AS time_spent_value
         FROM OPENJSON(
-          REPLACE(REPLACE(REPLACE(REPLACE(
-            t.custom_fields,
-            '''', '"'),
-            ': None', ': null'),
-            ': True', ': true'),
-            ': False', ': false')
-        ) WITH (
-          id      BIGINT         '$.id',
-          [value] NVARCHAR(100)  '$.value'
-        ) cf
+          REPLACE(REPLACE(REPLACE(REPLACE(t.custom_fields,'''','"'),': None',': null'),': True',': true'),': False',': false')
+        ) WITH (id BIGINT '$.id', [value] NVARCHAR(100) '$.value') cf
         WHERE cf.id = 4803428506271
       ) ts
+      OUTER APPLY (
+        SELECT TOP 1 cf.[value] AS num_credits_value
+        FROM OPENJSON(
+          REPLACE(REPLACE(REPLACE(REPLACE(t.custom_fields,'''','"'),': None',': null'),': True',': true'),': False',': false')
+        ) WITH (id BIGINT '$.id', [value] NVARCHAR(100) '$.value') cf
+        WHERE cf.id = 5220732777631
+      ) cr
       WHERE CAST(TRY_CAST(t.organization_id AS BIGINT) AS VARCHAR(20)) = '${zdOrgId}'
         AND t.status != 'deleted'
       ORDER BY t.created_at DESC
@@ -144,6 +144,7 @@ async function zdTickets(req, res) {
         waitMinutes:          Number(t.requester_wait_time_calendar) || 0,
         timeSpentMinutes:     Number(t.time_spent_minutes) || 0,
         replyBusinessMinutes: Number(t.reply_time_business) || 0,
+        numCredits:           Number(t.num_credits) || 0,
       }));
 
     const payload = {
