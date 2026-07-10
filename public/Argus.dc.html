@@ -149,23 +149,27 @@ input{font-family:inherit;}
             <div id="sfRiskCardsContainer" style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;">
               <div class="sfSummaryCard" data-group="OVERDUE" style="background:#fdeee0;border-radius:8px;padding:12px;cursor:pointer;border:1px solid #e6e6e5;">
                 <div style="font-size:11px;font-weight:700;color:#c2600f;text-transform:uppercase;margin-bottom:4px;">Overdue</div>
-                <div style="font-size:16px;font-weight:700;color:#d32f2f;" id="sf_overdue_Count">0</div>
-                <div style="font-size:16px;font-weight:700;color:#d32f2f;margin-top:4px;">£<span id="sf_overdue_ARR">0</span>k</div>
+                <div style="font-size:20px;font-weight:700;color:#d32f2f;line-height:1;" id="sf_overdue_Count">0</div>
+                <div style="font-size:11px;color:#d32f2f;margin-top:2px;" id="sf_overdue_Pct">—</div>
+                <div style="font-size:13px;font-weight:600;color:#d32f2f;margin-top:4px;" id="sf_overdue_ARR">£0k</div>
               </div>
               <div class="sfSummaryCard" data-group="AT_RISK" style="background:#fff3e0;border-radius:8px;padding:12px;cursor:pointer;border:1px solid #e6e6e5;">
                 <div style="font-size:11px;font-weight:700;color:#e65100;text-transform:uppercase;margin-bottom:4px;">At Risk</div>
-                <div style="font-size:16px;font-weight:700;color:#ff9800;" id="sf_at_risk_Count">0</div>
-                <div style="font-size:16px;font-weight:700;color:#ff9800;margin-top:4px;">£<span id="sf_at_risk_ARR">0</span>k</div>
+                <div style="font-size:20px;font-weight:700;color:#ff9800;line-height:1;" id="sf_at_risk_Count">0</div>
+                <div style="font-size:11px;color:#ff9800;margin-top:2px;" id="sf_at_risk_Pct">—</div>
+                <div style="font-size:13px;font-weight:600;color:#ff9800;margin-top:4px;" id="sf_at_risk_ARR">£0k</div>
               </div>
               <div class="sfSummaryCard" data-group="TO_WATCH" style="background:#e3f2fd;border-radius:8px;padding:12px;cursor:pointer;border:1px solid #e6e6e5;">
                 <div style="font-size:11px;font-weight:700;color:#1565c0;text-transform:uppercase;margin-bottom:4px;">To Watch</div>
-                <div style="font-size:16px;font-weight:700;color:#2196f3;" id="sf_to_watch_Count">0</div>
-                <div style="font-size:16px;font-weight:700;color:#2196f3;margin-top:4px;">£<span id="sf_to_watch_ARR">0</span>k</div>
+                <div style="font-size:20px;font-weight:700;color:#2196f3;line-height:1;" id="sf_to_watch_Count">0</div>
+                <div style="font-size:11px;color:#2196f3;margin-top:2px;" id="sf_to_watch_Pct">—</div>
+                <div style="font-size:13px;font-weight:600;color:#2196f3;margin-top:4px;" id="sf_to_watch_ARR">£0k</div>
               </div>
               <div class="sfSummaryCard" data-group="HEALTHY" style="background:#e8f5e9;border-radius:8px;padding:12px;cursor:pointer;border:1px solid #e6e6e5;">
                 <div style="font-size:11px;font-weight:700;color:#2e7d32;text-transform:uppercase;margin-bottom:4px;">Healthy</div>
-                <div style="font-size:16px;font-weight:700;color:#4caf50;" id="sf_healthy_Count">0</div>
-                <div style="font-size:16px;font-weight:700;color:#4caf50;margin-top:4px;">£<span id="sf_healthy_ARR">0</span>k</div>
+                <div style="font-size:20px;font-weight:700;color:#4caf50;line-height:1;" id="sf_healthy_Count">0</div>
+                <div style="font-size:11px;color:#4caf50;margin-top:2px;" id="sf_healthy_Pct">—</div>
+                <div style="font-size:13px;font-weight:600;color:#4caf50;margin-top:4px;" id="sf_healthy_ARR">£0k</div>
               </div>
             </div>
           </div>
@@ -181,9 +185,9 @@ input{font-family:inherit;}
               <span style="font-size:11px;color:#6d6d6c;font-weight:700;min-width:90px;">Account:</span>
               <div id="sfFilterButtons" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
             </div>
-            <div style="overflow-x:auto;border:1px solid #e6e6e5;border-radius:8px;">
+            <div style="overflow-x:auto;border:1px solid #e6e6e5;border-radius:8px;max-height:400px;overflow-y:auto;">
               <table style="width:100%;border-collapse:collapse;font-size:12px;">
-                <thead style="background:#f7f7f6;border-bottom:1px solid #e6e6e5;">
+                <thead style="background:#f7f7f6;border-bottom:1px solid #e6e6e5;position:sticky;top:0;z-index:1;">
                   <tr id="sfTableHeaders">
                     <th style="padding:10px 12px;text-align:left;font-weight:700;color:#3c3c3b;cursor:pointer;" data-sort="account_name">Account ▼</th>
                     <th style="padding:10px 12px;text-align:left;font-weight:700;color:#3c3c3b;cursor:pointer;" data-sort="product_category">Product ▼</th>
@@ -291,9 +295,9 @@ input{font-family:inherit;}
               <button id="zdBackButton" style="padding:6px 12px;border-radius:6px;border:1px solid #e6e6e5;background:#fff;color:#03363D;font-size:11px;font-weight:700;cursor:pointer;">← Back to Summary</button>
               <span style="font-size:12px;color:#6d6d6c;" id="zdDrilldownTitle"></span>
             </div>
-            <div style="overflow-x:auto;border:1px solid #e6e6e5;border-radius:8px;">
+            <div style="overflow-x:auto;border:1px solid #e6e6e5;border-radius:8px;max-height:400px;overflow-y:auto;">
               <table style="width:100%;border-collapse:collapse;font-size:12px;">
-                <thead style="background:#f7f7f6;border-bottom:1px solid #e6e6e5;">
+                <thead style="background:#f7f7f6;border-bottom:1px solid #e6e6e5;position:sticky;top:0;z-index:1;">
                   <tr>
                     <th style="padding:10px 12px;text-align:left;font-weight:700;color:#3c3c3b;">Priority</th>
                     <th style="padding:10px 12px;text-align:left;font-weight:700;color:#3c3c3b;">Subject</th>
@@ -328,36 +332,37 @@ input{font-family:inherit;}
           </div>
 
           <div id="pbNoAccount" style="padding:20px 0;text-align:center;color:#9d9d9d;font-size:13px;">Select an account above to view feedback data</div>
-          <div id="pbLoading" style="display:none;padding:24px 0;text-align:center;color:#9d9d9d;font-size:12px;">Loading Productboard insights…</div>
+          <div id="pbLoading" style="display:none;"></div>
           <div id="pbNoMatch" style="display:none;padding:16px;background:#f7f7f6;border-radius:8px;font-size:12px;color:#9d9d9d;text-align:center;">No Productboard company matched to this account</div>
           <div id="pbError" style="display:none;padding:16px;background:#fdeee0;border-radius:8px;font-size:12px;color:#c2600f;text-align:center;"></div>
 
           <div id="pbSummaryView" style="display:none;">
             <!-- Stat tiles — click Delivered / In Pipeline / Unlinked to drilldown -->
             <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px;">
-              <!-- Total Notes — stat only -->
-              <div style="background:#f0e8f8;border-radius:8px;padding:12px;border:1px solid #dcc8f0;">
-                <div style="font-size:10px;font-weight:700;color:#5a1f8a;text-transform:uppercase;margin-bottom:4px;">Total Notes</div>
+              <!-- Total Notes — clickable drilldown -->
+              <div style="background:#f0e8f8;border-radius:8px;padding:12px;border:1px solid #dcc8f0;cursor:pointer;user-select:none;" id="pbTile-total">
+                <div style="font-size:10px;font-weight:700;color:#5a1f8a;text-transform:uppercase;margin-bottom:4px;">Total Notes <span id="pbChev-total" style="opacity:0.6;">▾</span></div>
                 <div style="font-size:22px;font-weight:700;color:#7030a0;" id="pbTotalNotes">—</div>
                 <div style="font-size:10px;color:#9d9d9d;margin-top:2px;" id="pbTotalFeatures">— features</div>
+                <div style="font-size:9px;color:#b0a0c0;margin-top:3px;">excl. archived</div>
               </div>
               <!-- Delivered -->
-              <div style="background:#e6faf4;border-radius:8px;padding:12px;border:1px solid #b3efd8;cursor:pointer;user-select:none;" id="pbTile-delivered" onclick="window.__pbToggleTile&&window.__pbToggleTile('delivered')">
+              <div style="background:#e6faf4;border-radius:8px;padding:12px;border:1px solid #b3efd8;cursor:pointer;user-select:none;" id="pbTile-delivered">
                 <div style="font-size:10px;font-weight:700;color:#00664f;text-transform:uppercase;margin-bottom:4px;">Delivered <span id="pbChev-delivered" style="opacity:0.6;">▾</span></div>
                 <div style="font-size:22px;font-weight:700;color:#00966b;" id="pbDeliveredCount">—</div>
-                <div style="font-size:10px;color:#9d9d9d;margin-top:2px;">released features</div>
+                <div style="font-size:10px;color:#9d9d9d;margin-top:2px;" id="pbDeliveredFeatures">— features</div>
               </div>
-              <!-- In Pipeline -->
-              <div style="background:#fff8e1;border-radius:8px;padding:12px;border:1px solid #ffe082;cursor:pointer;user-select:none;" id="pbTile-pipeline" onclick="window.__pbToggleTile&&window.__pbToggleTile('pipeline')">
-                <div style="font-size:10px;font-weight:700;color:#7a5200;text-transform:uppercase;margin-bottom:4px;">In Pipeline <span id="pbChev-pipeline" style="opacity:0.6;">▾</span></div>
+              <!-- In Progress (pipeline + review combined) -->
+              <div style="background:#fff8e1;border-radius:8px;padding:12px;border:1px solid #ffe082;cursor:pointer;user-select:none;" id="pbTile-pipeline">
+                <div style="font-size:10px;font-weight:700;color:#7a5200;text-transform:uppercase;margin-bottom:4px;">In Progress <span id="pbChev-pipeline" style="opacity:0.6;">▾</span></div>
                 <div style="font-size:22px;font-weight:700;color:#b89400;" id="pbPipelineCount">—</div>
-                <div style="font-size:10px;color:#9d9d9d;margin-top:2px;">active features</div>
+                <div style="font-size:10px;color:#9d9d9d;margin-top:2px;" id="pbPipelineFeatures">— features</div>
               </div>
               <!-- Unlinked Notes -->
-              <div style="background:#f7f7f6;border-radius:8px;padding:12px;border:1px solid #e6e6e5;cursor:pointer;user-select:none;" id="pbTile-unlinked" onclick="window.__pbToggleTile&&window.__pbToggleTile('unlinked')">
+              <div style="background:#f7f7f6;border-radius:8px;padding:12px;border:1px solid #e6e6e5;cursor:pointer;user-select:none;" id="pbTile-unlinked">
                 <div style="font-size:10px;font-weight:700;color:#3c3c3b;text-transform:uppercase;margin-bottom:4px;">Unlinked Notes <span id="pbChev-unlinked" style="opacity:0.6;">▾</span></div>
                 <div style="font-size:22px;font-weight:700;color:#6d6d6c;" id="pbUnlinkedCount">—</div>
-                <div style="font-size:10px;color:#9d9d9d;margin-top:2px;">not linked to a feature</div>
+                <div style="font-size:10px;color:#9d9d9d;margin-top:2px;">no feature link</div>
               </div>
             </div>
 
@@ -1154,6 +1159,18 @@ document.addEventListener('click', function(e) {
     return;
   }
 
+  // PB tile drilldown (event delegation — survives x-dc re-renders)
+  var pbTile = e.target.closest('#pbTile-total, #pbTile-delivered, #pbTile-pipeline, #pbTile-unlinked');
+  if (pbTile && window.__pbToggleTile) {
+    window.__pbToggleTile(pbTile.id.replace('pbTile-', ''));
+    return;
+  }
+  // PB drilldown back button
+  if (e.target.closest('#pbDrillBack') && window.__pbToggleTile && window.__pbOpenDropdown) {
+    window.__pbToggleTile(window.__pbOpenDropdown);
+    return;
+  }
+
   // Handle sidebar toggle
   if (e.target.closest('[data-toggle-sidebar]')) {
     const isCollapsed = document.body.classList.contains('sidebar-collapsed');
@@ -1624,21 +1641,47 @@ class Component extends DCLogic {
     show('pbDrilldown', false);
     window.__pbOpenDropdown = null;
 
-    const BUCKET_COLOR  = { delivered: '#00966b', pipeline: '#b89400', review: '#9d9d9d' };
+    if (!window.__argusNextMsg) window.__argusNextMsg = (function(){
+      const _all=["Argus had 100 eyes — all of them are bloodshot right now","The Oracle is consulting... if only it was a materialised table and not a view","Hermes is on his way — he stopped for coffee","Please bear with us — this is a Proof of Concept","Hephaestus is forging your insights — craftsmanship takes time","Consulting the Oracle... the query is still running","100 eyes, one slow query","Zeus is reviewing the figures — he has notes","Argus is swimming in the data lake — all 100 eyes open underwater","The data lake is murky today — even Argus can't see the bottom"];
+      let _q=[];
+      return function(){if(!_q.length){_q=_all.slice();for(let i=_q.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));const t=_q[i];_q[i]=_q[j];_q[j]=t;}}return _q.pop();};
+    })();
+    const pbLoadEl = document.getElementById('pbLoading');
+    if (pbLoadEl) {
+      pbLoadEl.innerHTML =
+        '<style>@keyframes pbProg{from{width:0%}to{width:88%}}</style>'
+        +'<div style="max-width:520px;margin:40px auto;padding:32px;text-align:center;">'
+          +'<div style="font-size:15px;font-weight:600;color:#3c3c3b;margin-bottom:16px;">Loading ProductBoard insights from Fabric</div>'
+          +'<div style="height:5px;border-radius:3px;background:#f1f1f0;overflow:hidden;margin-bottom:20px;">'
+            +'<div style="height:100%;border-radius:3px;background:linear-gradient(90deg,#288184,#00be86);animation:pbProg 7s ease-out forwards;"></div>'
+          +'</div>'
+          +'<div id="pb-loading-msg" style="font-size:13px;color:#9d9d9d;font-style:italic;min-height:20px;">'+window.__argusNextMsg()+'</div>'
+        +'</div>';
+    }
+    clearInterval(window.__pbMsgInterval);
+    window.__pbMsgInterval = setInterval(function(){
+      const el = document.getElementById('pb-loading-msg');
+      if (!el) { clearInterval(window.__pbMsgInterval); return; }
+      el.textContent = window.__argusNextMsg();
+    }, 12000);
+
     const BUCKET_BG     = { delivered: '#e6faf4', pipeline: '#fff8e1', review: '#f7f7f6' };
     const BUCKET_BORDER = { delivered: '#b3efd8', pipeline: '#ffe082', review: '#e6e6e5' };
-    const TILE_ACTIVE   = { delivered: { bg:'#d0f5e8', border:'#00966b' }, pipeline: { bg:'#fff0b3', border:'#b89400' }, unlinked: { bg:'#efefef', border:'#6d6d6c' } };
-    const TILE_DEFAULT  = { delivered: { bg:'#e6faf4', border:'#b3efd8' }, pipeline: { bg:'#fff8e1', border:'#ffe082' }, unlinked: { bg:'#f7f7f6', border:'#e6e6e5' } };
+    const TILE_ACTIVE   = { total: { bg:'#e4d0f5', border:'#7030a0' }, delivered: { bg:'#d0f5e8', border:'#00966b' }, pipeline: { bg:'#fff0b3', border:'#b89400' }, unlinked: { bg:'#efefef', border:'#6d6d6c' } };
+    const TILE_DEFAULT  = { total: { bg:'#f0e8f8', border:'#dcc8f0' }, delivered: { bg:'#e6faf4', border:'#b3efd8' }, pipeline: { bg:'#fff8e1', border:'#ffe082' }, unlinked: { bg:'#f7f7f6', border:'#e6e6e5' } };
     const STATUS_BADGE  = (s) => {
       const c = s === 'Released' ? '#00966b' : s === 'Internally released' ? '#288184'
               : s === 'In progress' ? '#b89400' : s === 'Planned' ? '#7030a0'
               : s === 'Shaping' ? '#5a6b8a' : '#9d9d9d';
       return `<span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;background:${c}18;color:${c};white-space:nowrap;">${s}</span>`;
     };
+    const stripHtml = (h) => !h ? '' : h.replace(/<[^>]+>/g,' ').replace(/\s{2,}/g,' ').trim();
+    const fmt = (d) => d ? new Date(d).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}) : '—';
 
     fetch(`/api/pb-insights?account=${encodeURIComponent(accountName)}&t=${Date.now()}`)
       .then(r => r.json())
       .then(data => {
+        clearInterval(window.__pbMsgInterval);
         show('pbLoading', false);
         if (data.error) {
           const el = document.getElementById('pbError');
@@ -1648,107 +1691,195 @@ class Component extends DCLogic {
         if (!data.pbCompanyId) { show('pbNoMatch', true); return; }
 
         const s = data.summary;
-        setText('pbTotalNotes', s.totalNotes);
+        // Build one global note map — each note assigned to exactly one bucket by priority
+        // (delivered > pipeline > review) so counts add up: Total = Delivered + InProgress + Unlinked
+        const _PRI = { delivered: 3, pipeline: 2, review: 1 };
+        const _noteMap = {};
+        data.features.forEach(f => {
+          f.notes.forEach(n => {
+            if (!_noteMap[n.noteId]) {
+              _noteMap[n.noteId] = { ...n, features: [], bucket: f.bucket };
+            } else if ((_PRI[f.bucket]||0) > (_PRI[_noteMap[n.noteId].bucket]||0)) {
+              _noteMap[n.noteId].bucket = f.bucket;
+            }
+            _noteMap[n.noteId].features.push({ featureId: f.featureId, featureName: f.featureName, status: f.status });
+          });
+        });
+        const _allNotes = Object.values(_noteMap);
+        const _unlinked = (data.unlinkedNotes || []).length;
+        const _delCount = _allNotes.filter(n => n.bucket === 'delivered').length;
+        const _pipCount = _allNotes.filter(n => n.bucket === 'pipeline' || n.bucket === 'review').length;
+        setText('pbTotalNotes', _allNotes.length + _unlinked);
         setText('pbTotalFeatures', `${s.totalFeatures} features`);
-        setText('pbDeliveredCount', s.deliveredFeatures);
-        setText('pbPipelineCount', s.pipelineFeatures);
-        setText('pbUnlinkedCount', s.unlinkedNotes || 0);
+        setText('pbDeliveredCount', _delCount);
+        setText('pbDeliveredFeatures', `${s.deliveredFeatures} features`);
+        setText('pbPipelineCount', _pipCount);
+        setText('pbPipelineFeatures', `${s.pipelineFeatures + (s.reviewFeatures || 0)} features`);
+        setText('pbUnlinkedCount', _unlinked);
 
-        // Build drilldown HTML for a feature bucket
-        const featureDrillHtml = (bucket) => {
-          const grp = data.features.filter(f => f.bucket === bucket);
-          const label = { delivered:'Delivered', pipeline:'In Pipeline', review:'Under Review' }[bucket] || bucket;
-          if (!grp.length) return `<div style="padding:20px;text-align:center;font-size:12px;color:#9d9d9d;">No ${label} features for this account</div>`;
-          return grp.map(f => `
-            <div style="border-bottom:1px solid #f1f1f0;overflow:hidden;">
-              <div style="padding:12px 16px;background:${BUCKET_BG[bucket]};display:flex;align-items:flex-start;justify-content:space-between;gap:8px;cursor:pointer;"
-                   onclick="(function(el){var b=el.nextElementSibling;var chev=el.querySelector('.pb-chev');b.style.display=b.style.display==='none'?'block':'none';chev.textContent=b.style.display==='none'?'▾':'▴';})(this)">
-                <div style="flex:1;min-width:0;">
-                  <div style="font-size:12px;font-weight:600;color:#3c3c3b;line-height:1.4;margin-bottom:5px;">${f.featureName.replace(/</g,'&lt;')}</div>
-                  <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-                    ${STATUS_BADGE(f.status)}
-                    <span style="font-size:11px;color:#9d9d9d;">${f.noteCount} note${f.noteCount!==1?'s':''}</span>
-                    <span style="font-size:11px;color:#9d9d9d;">·</span>
-                    <span style="font-size:11px;color:#9d9d9d;">Latest ${new Date(f.latestNoteAt).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}</span>
-                  </div>
-                </div>
-                <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
-                  <a href="https://auroraer.productboard.com/feature-board/features/${f.featureId}" target="_blank" onclick="event.stopPropagation()"
-                     style="font-size:10px;color:#7030a0;text-decoration:none;padding:3px 8px;border:1px solid #dcc8f0;border-radius:4px;white-space:nowrap;background:#fff;">↗ PB</a>
-                  <span class="pb-chev" style="font-size:12px;color:#9d9d9d;">▾</span>
-                </div>
-              </div>
-              <div style="display:none;border-top:1px solid ${BUCKET_BORDER[bucket]};">
-                ${f.notes.length ? f.notes.map(n => `
-                  <div style="padding:10px 16px;border-bottom:1px solid #f1f1f0;display:flex;align-items:flex-start;gap:10px;background:#fff;">
-                    <div style="flex:1;min-width:0;">
-                      <div style="font-size:12px;font-weight:600;color:#3c3c3b;margin-bottom:3px;">${(n.noteName||'(untitled)').replace(/</g,'&lt;')}</div>
-                      ${n.noteExcerpt ? `<div style="font-size:11px;color:#6d6d6c;line-height:1.5;max-height:60px;overflow:hidden;">${n.noteExcerpt.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>` : ''}
-                      <div style="margin-top:4px;font-size:10px;color:#9d9d9d;">${new Date(n.createdAt).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}${n.processed?' · <span style="color:#00966b;font-weight:600;">Processed</span>':''}</div>
-                    </div>
-                    ${n.noteUrl ? `<a href="${n.noteUrl}" target="_blank" style="font-size:10px;color:#7030a0;text-decoration:none;padding:3px 8px;border:1px solid #dcc8f0;border-radius:4px;white-space:nowrap;flex-shrink:0;">↗ View</a>` : ''}
-                  </div>
-                `).join('') : `<div style="padding:10px 16px;font-size:11px;color:#9d9d9d;">No notes attached</div>`}
-              </div>
-            </div>
-          `).join('');
+        // Shared: note title cell (hyperlinked if URL available)
+        const noteTitle = (name, url) => url
+          ? `<a href="${url}" target="_blank" style="font-size:11px;font-weight:600;color:#7030a0;text-decoration:none;">${(name||'(untitled)').replace(/</g,'&lt;')}</a>`
+          : `<span style="font-size:11px;font-weight:600;color:#3c3c3b;">${(name||'(untitled)').replace(/</g,'&lt;')}</span>`;
+
+        // Note status badge — Processed vs New
+        const NOTE_STATUS = (processed) => processed
+          ? `<span style="background:#e6faf4;color:#00664f;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;">Processed</span>`
+          : `<span style="background:#f7f7f6;color:#6d6d6c;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;">New</span>`;
+
+        // Filter global note map by bucket, sorted newest first
+        const notesForBucket = (bucket) =>
+          _allNotes.filter(n => n.bucket === bucket)
+                   .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+        // Render note rows as table tbodies (note primary, features as expand)
+        const renderNoteRows = (notes) => notes.map(n => {
+          const hasFeat = n.features && n.features.length > 0;
+          return `<tbody>
+            <tr style="border-bottom:1px solid #f1f1f0;${hasFeat?'cursor:pointer;':''}"
+                ${hasFeat?`onclick="(function(el){var nb=el.closest('tbody').nextElementSibling;var chev=el.querySelector('.pb-chev');if(!nb||!nb.classList.contains('pb-feat-tb'))return;nb.style.display=nb.style.display==='none'?'':'none';chev.textContent=nb.style.display===''?'▴':'▾';})(this)"`:''}>
+              <td style="padding:10px 12px;">${noteTitle(n.noteName, n.noteUrl)}</td>
+              <td style="padding:10px 12px;text-align:center;font-size:12px;color:#6d6d6c;">${hasFeat?n.features.length:'—'}</td>
+              <td style="padding:10px 12px;text-align:center;font-size:11px;color:#9d9d9d;white-space:nowrap;">${fmt(n.createdAt)}</td>
+              <td style="padding:10px 12px;text-align:center;width:24px;">${hasFeat?`<span class="pb-chev" style="font-size:10px;color:#9d9d9d;">▾</span>`:''}</td>
+            </tr>
+          </tbody>
+          ${hasFeat?`<tbody class="pb-feat-tb" style="display:none;">${n.features.map(f=>`
+            <tr style="background:#fafafa;">
+              <td style="padding:8px 12px 8px 28px;border-bottom:1px solid #f1f1f0;">
+                <a href="https://auroraer.productboard.com/feature-board/features/${f.featureId}" target="_blank" style="font-size:11px;font-weight:600;color:#7030a0;text-decoration:none;">${(f.featureName||'(untitled)').replace(/</g,'&lt;')}</a>
+              </td>
+              <td colspan="3" style="border-bottom:1px solid #f1f1f0;"></td>
+            </tr>`).join('')}</tbody>`:''}`;
+        }).join('');
+
+        const NOTE_TABLE_HDR = `<colgroup><col><col style="width:72px"><col style="width:90px"><col style="width:28px"></colgroup>
+        <thead style="background:#f7f7f6;border-bottom:1px solid #e6e6e5;position:sticky;top:0;">
+          <tr>
+            <th style="padding:9px 12px;text-align:left;font-weight:700;color:#3c3c3b;">Note</th>
+            <th style="padding:9px 12px;text-align:center;font-weight:700;color:#3c3c3b;">Features</th>
+            <th style="padding:9px 12px;text-align:center;font-weight:700;color:#3c3c3b;">Latest</th>
+            <th style="padding:9px 12px;"></th>
+          </tr>
+        </thead>`;
+
+        // Section header rows — label + count badge inline (no stretching)
+        const NOTE_SECTION_HDR = (label, count, bg, color) =>
+          `<tbody><tr style="background:${bg};border-top:2px solid ${color}55;border-bottom:1px solid ${color}22;">
+            <td colspan="4" style="padding:7px 14px;">
+              <span style="font-size:11px;font-weight:700;color:${color};">✻ ${label}</span>
+              <span style="font-size:10px;font-weight:600;color:${color};background:${color}20;padding:2px 8px;border-radius:10px;margin-left:8px;">${count} note${count===1?'':'s'}</span>
+            </td>
+          </tr></tbody>`;
+
+        // Note-centric drilldown — 'pipeline' shows two sections (In Pipeline + Under Review)
+        const noteDrillHtml = (bucket) => {
+          if (bucket === 'pipeline') {
+            const pipNotes    = notesForBucket('pipeline');
+            const reviewNotes = notesForBucket('review');
+            if (!pipNotes.length && !reviewNotes.length)
+              return `<div style="padding:20px;text-align:center;font-size:12px;color:#9d9d9d;">No active notes for this account</div>`;
+            return `<div style="overflow-x:auto;border-top:1px solid #e6e6e5;">
+              <table style="width:100%;border-collapse:collapse;font-size:12px;">
+                ${NOTE_TABLE_HDR}
+                ${pipNotes.length    ? NOTE_SECTION_HDR('In Pipeline',  pipNotes.length,    '#fff8e1', '#7a5200') + renderNoteRows(pipNotes)    : ''}
+                ${reviewNotes.length ? NOTE_SECTION_HDR('Under Review', reviewNotes.length, '#eef2ff', '#3730a3') + renderNoteRows(reviewNotes) : ''}
+              </table>
+            </div>`;
+          }
+          const notes = notesForBucket(bucket);
+          const label = { delivered:'Delivered' }[bucket] || bucket;
+          const hdrColor = { delivered:'#00664f' }[bucket] || '#3c3c3b';
+          const hdrBg    = { delivered:'#e6faf4' }[bucket] || '#f7f7f6';
+          if (!notes.length) return `<div style="padding:20px;text-align:center;font-size:12px;color:#9d9d9d;">No ${label} notes for this account</div>`;
+          return `<div style="overflow-x:auto;border-top:1px solid #e6e6e5;">
+            <table style="width:100%;border-collapse:collapse;font-size:12px;">
+              ${NOTE_TABLE_HDR}
+              ${NOTE_SECTION_HDR(label, notes.length, hdrBg, hdrColor)}
+              ${renderNoteRows(notes)}
+            </table>
+          </div>`;
         };
 
-        // Build drilldown HTML for unlinked notes
+        // Build drilldown table for unlinked notes — same layout, no feature expand
         const unlinkedDrillHtml = () => {
-          const notes = data.unlinkedNotes || [];
+          const notes = (data.unlinkedNotes || []).map(n => ({ ...n, features: [] }));
           if (!notes.length) return `<div style="padding:20px;text-align:center;font-size:12px;color:#9d9d9d;">No unlinked notes found for this account</div>`;
-          return notes.map(n => `
-            <div style="padding:12px 16px;border-bottom:1px solid #f1f1f0;display:flex;align-items:flex-start;gap:10px;background:#fff;">
-              <div style="flex:1;min-width:0;">
-                <div style="font-size:12px;font-weight:600;color:#3c3c3b;margin-bottom:3px;">${(n.noteName||'(untitled)').replace(/</g,'&lt;')}</div>
-                ${n.noteExcerpt ? `<div style="font-size:11px;color:#6d6d6c;line-height:1.5;max-height:60px;overflow:hidden;">${n.noteExcerpt.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>` : ''}
-                <div style="font-size:10px;color:#9d9d9d;margin-top:3px;">${new Date(n.createdAt).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}</div>
-              </div>
-              ${n.noteUrl ? `<a href="${n.noteUrl}" target="_blank" style="font-size:10px;color:#7030a0;text-decoration:none;padding:3px 8px;border:1px solid #dcc8f0;border-radius:4px;white-space:nowrap;flex-shrink:0;">↗ View</a>` : ''}
-            </div>
-          `).join('');
+          return `<div style="overflow-x:auto;border-top:1px solid #e6e6e5;">
+            <table style="width:100%;border-collapse:collapse;font-size:12px;">
+              ${NOTE_TABLE_HDR}
+              ${NOTE_SECTION_HDR('Unlinked Notes', notes.length, '#f7f7f6', '#3c3c3b')}
+              ${renderNoteRows(notes)}
+            </table>
+          </div>`;
+        };
+
+        // Build Total Notes drilldown — note-centric with section headers, note counts add up correctly
+        const totalDrillHtml = () => {
+          const deliveredNotes = notesForBucket('delivered');
+          const pipelineNotes  = notesForBucket('pipeline');
+          const reviewNotes    = notesForBucket('review');
+          const unlinkedNotes  = (data.unlinkedNotes || []).map(n => ({ ...n, features: [] }));
+          if (!deliveredNotes.length && !pipelineNotes.length && !reviewNotes.length && !unlinkedNotes.length)
+            return `<div style="padding:20px;text-align:center;font-size:12px;color:#9d9d9d;">No notes found for this account</div>`;
+
+          const sectionHdr = NOTE_SECTION_HDR;
+
+          return `<div style="overflow-x:auto;border-top:1px solid #e6e6e5;">
+            <table style="width:100%;border-collapse:collapse;font-size:12px;">
+              ${NOTE_TABLE_HDR}
+              ${deliveredNotes.length ? sectionHdr('Delivered', deliveredNotes.length, '#e6faf4', '#00664f') + renderNoteRows(deliveredNotes) : ''}
+              ${pipelineNotes.length  ? sectionHdr('In Pipeline', pipelineNotes.length, '#fff8e1', '#7a5200') + renderNoteRows(pipelineNotes)  : ''}
+              ${reviewNotes.length    ? sectionHdr('Under Review', reviewNotes.length, '#eef2ff', '#3730a3') + renderNoteRows(reviewNotes)    : ''}
+              ${unlinkedNotes.length  ? sectionHdr('Unlinked Notes', unlinkedNotes.length, '#f7f7f6', '#3c3c3b') + renderNoteRows(unlinkedNotes) : ''}
+            </table>
+          </div>`;
         };
 
         // Tile toggle — opens/closes drilldown panel inline below tiles
         window.__pbToggleTile = (key) => {
-          const panel = document.getElementById('pbDrilldown');
-          if (!panel) return;
-          const isOpen = window.__pbOpenDropdown === key;
+          try {
+            const panel = document.getElementById('pbDrilldown');
+            if (!panel) return;
+            const isOpen = window.__pbOpenDropdown === key;
 
-          // Reset all tiles to default style
-          ['delivered','pipeline','unlinked'].forEach(k => {
-            const t = document.getElementById(`pbTile-${k}`);
-            const d = TILE_DEFAULT[k];
-            if (t) { t.style.background = d.bg; t.style.borderColor = d.border; }
-            const chev = document.getElementById(`pbChev-${k}`);
-            if (chev) chev.textContent = '▾';
-          });
+            ['total','delivered','pipeline','unlinked'].forEach(k => {
+              const t = document.getElementById(`pbTile-${k}`);
+              const d = TILE_DEFAULT[k];
+              if (t && d) { t.style.background = d.bg; t.style.borderColor = d.border; }
+              const chev = document.getElementById(`pbChev-${k}`);
+              if (chev) chev.textContent = '▾';
+            });
 
-          if (isOpen) {
-            panel.style.display = 'none';
-            window.__pbOpenDropdown = null;
-            return;
+            if (isOpen) {
+              panel.style.display = 'none';
+              window.__pbOpenDropdown = null;
+              return;
+            }
+
+            window.__pbOpenDropdown = key;
+
+            const activeTile = document.getElementById(`pbTile-${key}`);
+            const act = TILE_ACTIVE[key];
+            if (activeTile && act) { activeTile.style.background = act.bg; activeTile.style.borderColor = act.border; }
+            const activeChev = document.getElementById(`pbChev-${key}`);
+            if (activeChev) activeChev.textContent = '▴';
+
+            const drillColor = { total:'#5a1f8a', delivered:'#00664f', pipeline:'#7a5200', unlinked:'#3c3c3b' }[key];
+            const drillLabel = { total:'All Notes — by category', delivered:'Delivered', pipeline:'In Progress', unlinked:'Unlinked Notes' }[key] || key;
+            const contentHtml = key === 'total' ? totalDrillHtml() : key === 'unlinked' ? unlinkedDrillHtml() : noteDrillHtml(key);
+
+            panel.innerHTML = `
+              <div style="padding:10px 16px;background:#f7f7f6;border-bottom:1px solid #e6e6e5;display:flex;align-items:center;gap:12px;">
+                <button id="pbDrillBack" style="padding:5px 12px;border-radius:6px;border:1px solid #e6e6e5;background:#fff;color:#3c3c3b;font-size:11px;font-weight:700;cursor:pointer;">← Back to Summary</button>
+                <span style="font-size:12px;color:${drillColor};font-weight:600;">${drillLabel}</span>
+              </div>
+              <div style="max-height:370px;overflow-y:auto;">${contentHtml}</div>`;
+            panel.style.display = 'block';
+          } catch(err) {
+            const errEl = document.getElementById('pbError');
+            if (errEl) { errEl.textContent = 'Drilldown error: ' + err.message; errEl.style.display = ''; }
           }
-
-          window.__pbOpenDropdown = key;
-
-          // Highlight active tile
-          const activeTile = document.getElementById(`pbTile-${key}`);
-          const act = TILE_ACTIVE[key];
-          if (activeTile) { activeTile.style.background = act.bg; activeTile.style.borderColor = act.border; }
-          const activeChev = document.getElementById(`pbChev-${key}`);
-          if (activeChev) activeChev.textContent = '▴';
-
-          // Drilldown header
-          const drillLabel = { delivered:'Delivered — released features', pipeline:'In Pipeline — active features', unlinked:'Unlinked Notes — not attached to a feature' }[key] || key;
-          const drillColor = { delivered:'#00664f', pipeline:'#7a5200', unlinked:'#3c3c3b' }[key];
-
-          const headerHtml = `<div style="padding:10px 16px;background:#f7f7f6;border-bottom:1px solid #e6e6e5;font-size:11px;font-weight:700;color:${drillColor};text-transform:uppercase;letter-spacing:0.07em;">${drillLabel}</div>`;
-
-          const contentHtml = key === 'unlinked' ? unlinkedDrillHtml() : featureDrillHtml(key);
-          panel.innerHTML = `<div style="max-height:420px;overflow-y:auto;">${headerHtml}${contentHtml}</div>`;
-          panel.style.display = 'block';
         };
 
         window.__pbOpenDropdown = null;
@@ -2081,23 +2212,20 @@ class Component extends DCLogic {
     }
 
     // Populate risk status cards
+    const fmtArr = (v) => v >= 1e6 ? '£'+(v/1e6).toFixed(1)+'m' : '£'+Math.round(v/1000)+'k';
     for(const [key, group] of Object.entries(groups)){
       const count = group.subs.length;
       const arr = group.subs.reduce((sum, s) => sum + s.arr_gbp, 0);
-      const arrK = (arr / 1000).toFixed(0);
-      const countPercent = totalCount > 0 ? ((count / totalCount) * 100).toFixed(1) : 0;
+      const countPercent = totalCount > 0 ? ((count / totalCount) * 100).toFixed(1) : '0.0';
 
       const idPrefix = idMap[key];
       const countEl = document.getElementById(`${idPrefix}_Count`);
-      const arrEl = document.getElementById(`${idPrefix}_ARR`);
+      const pctEl   = document.getElementById(`${idPrefix}_Pct`);
+      const arrEl   = document.getElementById(`${idPrefix}_ARR`);
 
-      if(countEl) {
-        countEl.textContent = `${count}\n(${countPercent}%)`;
-        countEl.style.whiteSpace = 'pre-wrap';
-        countEl.style.fontSize = '16px';
-        countEl.style.lineHeight = '1';
-      }
-      if(arrEl) arrEl.textContent = arrK;
+      if(countEl) countEl.textContent = count;
+      if(pctEl)   pctEl.textContent   = `(${countPercent}%)`;
+      if(arrEl)   arrEl.textContent   = fmtArr(arr);
     }
 
   }
