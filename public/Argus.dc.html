@@ -310,6 +310,53 @@ input{font-family:inherit;}
           </div>
         </div>
 
+        <!-- ProductBoard Insights Card -->
+        <div id="pbInsightsCard" style="background:#fff;border:1px solid #e6e6e5;border-radius:12px;padding:20px;box-shadow:0 1px 3px rgba(60,60,59,0.07);margin-bottom:28px;">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+            <div style="width:44px;height:44px;background:#7030a0;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <svg viewBox="0 0 24 24" fill="none" style="width:24px;height:24px;"><rect x="3" y="3" width="18" height="18" rx="3" fill="white" opacity="0.2"/><path d="M7 12h4a3 3 0 0 0 0-6H7v12" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+            <div style="flex:1;">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <div style="font-size:13px;font-weight:700;">ProductBoard Insights</div>
+                <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:#00be86;font-weight:600;">
+                  <span style="font-size:12px;line-height:1;">●</span>Live data
+                </div>
+              </div>
+              <div style="font-size:11px;color:#9d9d9d;margin-top:2px;">Customer feedback linked to product features</div>
+            </div>
+          </div>
+
+          <div id="pbNoAccount" style="padding:20px 0;text-align:center;color:#9d9d9d;font-size:13px;">Select an account above to view feedback data</div>
+          <div id="pbLoading" style="display:none;padding:24px 0;text-align:center;color:#9d9d9d;font-size:12px;">Loading ProductBoard insights…</div>
+          <div id="pbNoMatch" style="display:none;padding:16px;background:#f7f7f6;border-radius:8px;font-size:12px;color:#9d9d9d;text-align:center;">No ProductBoard company matched to this account</div>
+          <div id="pbError" style="display:none;padding:16px;background:#fdeee0;border-radius:8px;font-size:12px;color:#c2600f;text-align:center;"></div>
+
+          <div id="pbSummaryView" style="display:none;">
+            <!-- Stat tiles -->
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px;">
+              <div style="background:#f0e8f8;border-radius:8px;padding:12px;border:1px solid #dcc8f0;">
+                <div style="font-size:11px;font-weight:700;color:#5a1f8a;text-transform:uppercase;margin-bottom:4px;">Total Notes</div>
+                <div style="font-size:22px;font-weight:700;color:#7030a0;" id="pbTotalNotes">—</div>
+                <div style="font-size:11px;color:#9d9d9d;margin-top:2px;" id="pbTotalFeatures">— features</div>
+              </div>
+              <div style="background:#e6faf4;border-radius:8px;padding:12px;border:1px solid #b3efd8;cursor:pointer;" id="pbDeliveredTile" onclick="window.__pbFilter=window.__pbFilter==='delivered'?null:'delivered';window.__pbRender&&window.__pbRender();">
+                <div style="font-size:11px;font-weight:700;color:#00664f;text-transform:uppercase;margin-bottom:4px;">Delivered</div>
+                <div style="font-size:22px;font-weight:700;color:#00966b;" id="pbDeliveredCount">—</div>
+                <div style="font-size:11px;color:#9d9d9d;margin-top:2px;">released features</div>
+              </div>
+              <div style="background:#fff8e1;border-radius:8px;padding:12px;border:1px solid #ffe082;cursor:pointer;" id="pbPipelineTile" onclick="window.__pbFilter=window.__pbFilter==='pipeline'?null:'pipeline';window.__pbRender&&window.__pbRender();">
+                <div style="font-size:11px;font-weight:700;color:#7a5200;text-transform:uppercase;margin-bottom:4px;">In Pipeline</div>
+                <div style="font-size:22px;font-weight:700;color:#b89400;" id="pbPipelineCount">—</div>
+                <div style="font-size:11px;color:#9d9d9d;margin-top:2px;">active features</div>
+              </div>
+            </div>
+
+            <!-- Feature list -->
+            <div id="pbFeatureList"></div>
+          </div>
+        </div>
+
         <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:20px;" dangerouslySetInnerHTML="{{ healthTabsHtml }}"></div>
 
         <div style="display:flex;gap:4px;margin-bottom:22px;" dangerouslySetInnerHTML="{{ rangesHtml }}"></div>
@@ -1237,6 +1284,7 @@ class Component extends DCLogic {
           });
           this.fetchSalesforceSubscriptions(accountName);
           this.fetchZdTickets(accountName);
+          this.fetchPbInsights(accountName);
         }
       });
 
@@ -1555,6 +1603,113 @@ class Component extends DCLogic {
       });
   }
 
+  fetchPbInsights(accountName) {
+    const show = (id, visible) => { const el = document.getElementById(id); if (el) el.style.display = visible ? 'block' : 'none'; };
+    const setText = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+
+    show('pbNoAccount', false);
+    show('pbNoMatch', false);
+    show('pbError', false);
+    show('pbSummaryView', false);
+    show('pbLoading', true);
+
+    const BUCKET_LABEL  = { delivered: 'Delivered from your feedback', pipeline: 'In Pipeline', review: 'Under Review' };
+    const BUCKET_COLOR  = { delivered: '#00966b', pipeline: '#b89400', review: '#9d9d9d' };
+    const BUCKET_BG     = { delivered: '#e6faf4', pipeline: '#fff8e1', review: '#f7f7f6' };
+    const BUCKET_BORDER = { delivered: '#b3efd8', pipeline: '#ffe082', review: '#e6e6e5' };
+    const STATUS_BADGE  = (s) => {
+      const c = s === 'Released' ? '#00966b' : s === 'Internally released' ? '#288184'
+              : s === 'In progress' ? '#b89400' : s === 'Planned' ? '#7030a0'
+              : s === 'Shaping' ? '#5a6b8a' : '#9d9d9d';
+      return `<span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;background:${c}18;color:${c};white-space:nowrap;">${s}</span>`;
+    };
+
+    window.__pbFilter = window.__pbFilter || null;
+
+    fetch(`/api/pb-insights?account=${encodeURIComponent(accountName)}&t=${Date.now()}`)
+      .then(r => r.json())
+      .then(data => {
+        show('pbLoading', false);
+        if (data.error) {
+          const el = document.getElementById('pbError');
+          if (el) { el.textContent = data.error; el.style.display = ''; }
+          return;
+        }
+        if (!data.pbCompanyId) { show('pbNoMatch', true); return; }
+
+        const s = data.summary;
+        setText('pbTotalNotes', s.totalNotes);
+        setText('pbTotalFeatures', `${s.totalFeatures} features`);
+        setText('pbDeliveredCount', s.deliveredFeatures);
+        setText('pbPipelineCount', s.pipelineFeatures);
+
+        const renderFeatures = () => {
+          const host = document.getElementById('pbFeatureList');
+          if (!host) return;
+          const features = window.__pbFilter
+            ? data.features.filter(f => f.bucket === window.__pbFilter)
+            : data.features;
+
+          // Highlight active filter tile
+          ['delivered','pipeline'].forEach(b => {
+            const tile = document.getElementById(`pb${b.charAt(0).toUpperCase()+b.slice(1)}Tile`);
+            if (tile) tile.style.outline = window.__pbFilter === b ? '2px solid #7030a0' : 'none';
+          });
+
+          if (!features.length) { host.innerHTML = '<div style="padding:16px;text-align:center;font-size:12px;color:#9d9d9d;">No features match the selected filter</div>'; return; }
+
+          const buckets = ['delivered','pipeline','review'];
+          host.innerHTML = buckets.map(bucket => {
+            const grp = features.filter(f => f.bucket === bucket);
+            if (!grp.length) return '';
+            return `<div style="margin-bottom:16px;">
+              <div style="font-size:11px;font-weight:700;color:${BUCKET_COLOR[bucket]};text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px;">
+                ${BUCKET_LABEL[bucket]} &nbsp;<span style="font-weight:400;color:#9d9d9d;">${grp.length} feature${grp.length!==1?'s':''}</span>
+              </div>
+              ${grp.map(f => `
+                <div style="border:1px solid ${BUCKET_BORDER[bucket]};border-radius:8px;margin-bottom:6px;overflow:hidden;">
+                  <div style="padding:10px 14px;background:${BUCKET_BG[bucket]};display:flex;align-items:flex-start;justify-content:space-between;gap:8px;cursor:pointer;"
+                       onclick="(function(el){var body=el.nextElementSibling;body.style.display=body.style.display==='none'?'block':'none';})(this)">
+                    <div style="flex:1;min-width:0;">
+                      <div style="font-size:12px;font-weight:600;color:#3c3c3b;line-height:1.4;">${f.featureName}</div>
+                      <div style="margin-top:4px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+                        ${STATUS_BADGE(f.status)}
+                        <span style="font-size:11px;color:#9d9d9d;">${f.noteCount} note${f.noteCount!==1?'s':''}</span>
+                        <span style="font-size:11px;color:#9d9d9d;">·</span>
+                        <span style="font-size:11px;color:#9d9d9d;">Latest ${new Date(f.latestNoteAt).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}</span>
+                      </div>
+                    </div>
+                    <span style="font-size:12px;color:#9d9d9d;flex-shrink:0;margin-top:2px;">▾</span>
+                  </div>
+                  <div style="display:none;border-top:1px solid ${BUCKET_BORDER[bucket]};">
+                    ${f.notes.map(n => `
+                      <div style="padding:10px 14px;border-bottom:1px solid #f1f1f0;display:flex;align-items:flex-start;gap:10px;">
+                        <div style="flex:1;min-width:0;">
+                          <div style="font-size:12px;font-weight:600;color:#3c3c3b;margin-bottom:3px;">${n.noteName || '(untitled)'}</div>
+                          ${n.noteExcerpt ? `<div style="font-size:11px;color:#6d6d6c;line-height:1.5;white-space:pre-wrap;max-height:80px;overflow:hidden;">${n.noteExcerpt.replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/<[^>]+>/g,'')}</div>` : ''}
+                          <div style="margin-top:4px;font-size:10px;color:#9d9d9d;">${new Date(n.createdAt).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}${n.processed?' · <span style="color:#00966b;font-weight:600;">Processed</span>':''}</div>
+                        </div>
+                        <a href="${n.noteUrl}" target="_blank" style="font-size:10px;color:#7030a0;text-decoration:none;padding:3px 8px;border:1px solid #dcc8f0;border-radius:4px;white-space:nowrap;flex-shrink:0;">↗ View</a>
+                      </div>
+                    `).join('')}
+                  </div>
+                </div>
+              `).join('')}
+            </div>`;
+          }).join('');
+        };
+
+        window.__pbRender = renderFeatures;
+        renderFeatures();
+        show('pbSummaryView', true);
+      })
+      .catch(() => {
+        show('pbLoading', false);
+        const el = document.getElementById('pbError');
+        if (el) { el.textContent = 'Failed to load ProductBoard data'; el.style.display = ''; }
+      });
+  }
+
   populateAccountsDropdown(select, accounts){
     if(!select || !accounts) return;
 
@@ -1586,7 +1741,7 @@ class Component extends DCLogic {
           window.__argusTargetAccount = null;
           try{ localStorage.setItem('argusHealthAccount', target); }catch(e){}
         }
-        setTimeout(() => { this.fetchSalesforceSubscriptions(target); this.fetchZdTickets(target); }, 100);
+        setTimeout(() => { this.fetchSalesforceSubscriptions(target); this.fetchZdTickets(target); this.fetchPbInsights(target); }, 100);
       }
     }
   }
@@ -3087,7 +3242,7 @@ class Component extends DCLogic {
                       : '')
                     +(a.sfAccountId?'<div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap;">'
                       +'<a href="https://auroraer.lightning.force.com/lightning/r/Account/'+a.sfAccountId+'/view" target="_blank" style="font-size:10px;color:#288184;text-decoration:none;display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border:1px solid #cde8e8;border-radius:4px;background:#f5fafa;">↗ Open in Salesforce</a>'
-                      +'<button onclick="(function(){var acct=\''+a.sfAccountName.replace(/'/g,"\\'")+'\';window.__argus&&window.__argus.setV({view:\'health\'});window.scrollTo(0,0);setTimeout(function(){var sel=document.getElementById(\'sfAccountSelector\');if(sel){sel.value=acct;if(sel.value===acct){window.__argus&&window.__argus.fetchSalesforceSubscriptions(acct);window.__argus&&window.__argus.fetchZdTickets(acct);try{localStorage.setItem(\'argusHealthAccount\',acct);}catch(e){}}}},250);})()" style="font-size:10px;color:#3c3c3b;cursor:pointer;display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border:1px solid #e6e6e5;border-radius:4px;background:#f7f7f6;">→ View Client health card</button>'
+                      +'<button onclick="(function(){var acct=\''+a.sfAccountName.replace(/'/g,"\\'")+'\';window.__argus&&window.__argus.setV({view:\'health\'});window.scrollTo(0,0);setTimeout(function(){var sel=document.getElementById(\'sfAccountSelector\');if(sel){sel.value=acct;if(sel.value===acct){window.__argus&&window.__argus.fetchSalesforceSubscriptions(acct);window.__argus&&window.__argus.fetchZdTickets(acct);window.__argus&&window.__argus.fetchPbInsights(acct);try{localStorage.setItem(\'argusHealthAccount\',acct);}catch(e){}}}},250);})()" style="font-size:10px;color:#3c3c3b;cursor:pointer;display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border:1px solid #e6e6e5;border-radius:4px;background:#f7f7f6;">→ View Client health card</button>'
                       +'</div>':'')
                     +'</div>'
                   +'<div>'
