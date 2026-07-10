@@ -83,12 +83,30 @@ async function zdTickets(req, res) {
         t.updated_at,
         t.support_type,
         m.full_resolution_time_calendar,
+        m.requester_wait_time_calendar,
         m.reply_time_calendar,
+        m.reply_time_business,
         m.replies,
         m.reopens,
-        m.solved_at
+        m.solved_at,
+        TRY_CAST(ts.time_spent_value AS INT) AS time_spent_minutes
       FROM zd_notebook_tickets t
       LEFT JOIN zd_notebook_ticket_metrics m ON CAST(m.ticket_id AS BIGINT) = t.id
+      OUTER APPLY (
+        SELECT TOP 1 cf.[value] AS time_spent_value
+        FROM OPENJSON(
+          REPLACE(REPLACE(REPLACE(REPLACE(
+            t.custom_fields,
+            '''', '"'),
+            ': None', ': null'),
+            ': True', ': true'),
+            ': False', ': false')
+        ) WITH (
+          id      BIGINT         '$.id',
+          [value] NVARCHAR(100)  '$.value'
+        ) cf
+        WHERE cf.id = 4803428506271
+      ) ts
       WHERE CAST(TRY_CAST(t.organization_id AS BIGINT) AS VARCHAR(20)) = '${zdOrgId}'
         AND t.status != 'deleted'
       ORDER BY t.created_at DESC
@@ -99,29 +117,33 @@ async function zdTickets(req, res) {
     const solved  = ticketRows.filter(t => t.status === 'solved');
     const closed  = ticketRows.filter(t => t.status === 'closed');
 
-    // Avg resolution time (minutes → days) for resolved tickets
-    const resolved = [...solved, ...closed].filter(t => t.full_resolution_time_calendar > 0);
-    const avgResolutionDays = resolved.length
-      ? Math.round(resolved.reduce((s, t) => s + t.full_resolution_time_calendar, 0) / resolved.length / 1440 * 10) / 10
+    // Avg time spent (logged minutes) — closed tickets only
+    const withTimeSpent = ticketRows.filter(t => t.status === 'closed' && Number(t.time_spent_minutes) > 0);
+    const avgResolutionDays = withTimeSpent.length
+      ? Math.round(withTimeSpent.reduce((s, t) => s + Number(t.time_spent_minutes), 0) / withTimeSpent.length)
       : null;
 
-    // Avg first reply time (minutes → hours) for tickets with reply data
-    const withReply = ticketRows.filter(t => t.reply_time_calendar > 0);
+    // Avg first reply — business hours, all tickets
+    const withReply = ticketRows.filter(t => Number(t.reply_time_business) > 0);
     const avgReplyHours = withReply.length
-      ? Math.round(withReply.reduce((s, t) => s + t.reply_time_calendar, 0) / withReply.length / 60 * 10) / 10
+      ? Math.round(withReply.reduce((s, t) => s + Number(t.reply_time_business), 0) / withReply.length / 60 * 10) / 10
       : null;
 
-    // All open + pending tickets (no cap — drilldown needs the full list)
-    const activeTickets = [...open, ...pending]
+    // All tickets for all statuses — drilldown needs the full list
+    const activeTickets = [...open, ...pending, ...solved, ...closed]
       .sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
       .map(t => ({
-        id:         t.id,
-        subject:    t.subject,
-        status:     t.status,
-        priority:   t.priority || 'normal',
-        createdAt:  t.created_at,
-        replies:    Number(t.replies) || 0,
-        reopens:    Number(t.reopens) || 0,
+        id:               t.id,
+        subject:          t.subject,
+        status:           t.status,
+        priority:         t.priority || 'normal',
+        createdAt:        t.created_at,
+        replies:          Number(t.replies) || 0,
+        reopens:          Number(t.reopens) || 0,
+        resolutionMinutes:    Number(t.full_resolution_time_calendar) || 0,
+        waitMinutes:          Number(t.requester_wait_time_calendar) || 0,
+        timeSpentMinutes:     Number(t.time_spent_minutes) || 0,
+        replyBusinessMinutes: Number(t.reply_time_business) || 0,
       }));
 
     const payload = {

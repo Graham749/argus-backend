@@ -111,7 +111,7 @@ input{font-family:inherit;}
         <!-- Salesforce Subscriptions Card (Live Data) -->
         <div style="background:#fff;border:1px solid #e6e6e5;border-radius:12px;padding:20px;box-shadow:0 1px 3px rgba(60,60,59,0.07);margin-bottom:28px;">
           <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
-            <img src="./assets/Salesforce-Logo.jpg" alt="Salesforce" style="width:44px;height:44px;object-fit:contain;border-radius:8px;" />
+            <img src="./assets/Salesforce-Logo.png" alt="Salesforce" style="width:44px;height:44px;object-fit:contain;border-radius:8px;" />
             <div style="flex:1;">
               <div style="display:flex;align-items:center;gap:8px;">
                 <div style="font-size:13px;font-weight:700;">Salesforce Subscriptions</div>
@@ -229,7 +229,7 @@ input{font-family:inherit;}
           <div id="zdNoAccount" style="padding:20px 0;text-align:center;color:#9d9d9d;font-size:13px;">Select an account above to view ticket data</div>
 
           <!-- Loading -->
-          <div id="zdLoading" style="display:none;padding:20px 0;text-align:center;color:#9d9d9d;font-size:13px;">Loading ticket data…</div>
+          <div id="zdLoading" style="display:none;"></div>
 
           <!-- No ZD match -->
           <div id="zdNoMatch" style="display:none;padding:16px;background:#f7f7f6;border-radius:8px;font-size:12px;color:#9d9d9d;text-align:center;">No Zendesk organisation matched to this account</div>
@@ -240,45 +240,50 @@ input{font-family:inherit;}
           <!-- Summary view -->
           <div id="zdSummaryView" style="display:none;">
             <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px;">
-              <div id="zdOpenTile" onclick="window.__zdShowDrilldown&&window.__zdShowDrilldown('open')" style="background:#fff3e0;border-radius:8px;padding:12px;text-align:center;border:1px solid #ffe0b2;cursor:pointer;" title="Click to view open tickets">
-                <div style="font-size:22px;font-weight:800;color:#e65100;" id="zdOpenCount">0</div>
-                <div style="font-size:10px;font-weight:700;color:#e65100;text-transform:uppercase;margin-top:2px;">Open</div>
-                <div style="font-size:9px;color:#e65100;opacity:0.7;margin-top:3px;">click to view ▾</div>
+              <div id="zdOpenTile" title="Click to view open tickets" style="background:#fff3e0;border-radius:8px;padding:12px;cursor:pointer;border:1px solid #ffe0b2;">
+                <div style="font-size:11px;font-weight:700;color:#c2600f;text-transform:uppercase;margin-bottom:4px;">Open</div>
+                <div style="font-size:16px;font-weight:700;color:#e65100;" id="zdOpenCount">0</div>
+                <div style="font-size:16px;font-weight:700;color:#e65100;margin-top:4px;" id="zdOpenPct">—</div>
               </div>
-              <div id="zdPendingTile" onclick="window.__zdShowDrilldown&&window.__zdShowDrilldown('pending')" style="background:#fff8e1;border-radius:8px;padding:12px;text-align:center;border:1px solid #fff176;cursor:pointer;" title="Click to view pending tickets">
-                <div style="font-size:22px;font-weight:800;color:#f9a825;" id="zdPendingCount">0</div>
-                <div style="font-size:10px;font-weight:700;color:#f9a825;text-transform:uppercase;margin-top:2px;">Pending</div>
-                <div style="font-size:9px;color:#f9a825;opacity:0.7;margin-top:3px;">click to view ▾</div>
+              <div id="zdPendingTile" title="Click to view pending tickets" style="background:#fff8e1;border-radius:8px;padding:12px;cursor:pointer;border:1px solid #fff176;">
+                <div style="font-size:11px;font-weight:700;color:#f57f17;text-transform:uppercase;margin-bottom:4px;">Pending</div>
+                <div style="font-size:16px;font-weight:700;color:#f9a825;" id="zdPendingCount">0</div>
+                <div style="font-size:16px;font-weight:700;color:#f9a825;margin-top:4px;" id="zdPendingPct">—</div>
               </div>
-              <div style="background:#e8f5e9;border-radius:8px;padding:12px;text-align:center;border:1px solid #c8e6c9;">
-                <div style="font-size:22px;font-weight:800;color:#2e7d32;" id="zdSolvedCount">0</div>
-                <div style="font-size:10px;font-weight:700;color:#2e7d32;text-transform:uppercase;margin-top:2px;">Solved</div>
+              <div id="zdSolvedTile" title="Click to view solved tickets" style="background:#e8f5e9;border-radius:8px;padding:12px;cursor:pointer;border:1px solid #c8e6c9;">
+                <div style="font-size:11px;font-weight:700;color:#2e7d32;text-transform:uppercase;margin-bottom:4px;">Solved</div>
+                <div style="font-size:16px;font-weight:700;color:#4caf50;" id="zdSolvedCount">0</div>
+                <div style="font-size:16px;font-weight:700;color:#4caf50;margin-top:4px;" id="zdSolvedPct">—</div>
               </div>
-              <div style="background:#f7f7f6;border-radius:8px;padding:12px;text-align:center;border:1px solid #e6e6e5;">
-                <div style="font-size:22px;font-weight:800;color:#6d6d6c;" id="zdClosedCount">0</div>
-                <div style="font-size:10px;font-weight:700;color:#6d6d6c;text-transform:uppercase;margin-top:2px;">Closed</div>
+              <div id="zdClosedTile" title="Click to view closed tickets" style="background:#f7f7f6;border-radius:8px;padding:12px;cursor:pointer;border:1px solid #e6e6e5;">
+                <div style="font-size:11px;font-weight:700;color:#6d6d6c;text-transform:uppercase;margin-bottom:4px;">Closed</div>
+                <div style="font-size:16px;font-weight:700;color:#6d6d6c;" id="zdClosedCount">0</div>
+                <div style="font-size:16px;font-weight:700;color:#6d6d6c;margin-top:4px;" id="zdClosedPct">—</div>
               </div>
             </div>
 
             <!-- Resolution stats -->
             <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
-              <div style="background:#f7f7f6;border-radius:8px;padding:14px 16px;">
-                <div style="font-size:10px;color:#6d6d6c;margin-bottom:4px;">Avg resolution</div>
-                <div style="font-size:22px;font-weight:700;" id="zdAvgResolution">—</div>
-                <div style="font-size:10px;color:#9d9d9d;margin-top:2px;">days</div>
+              <div style="background:#f7f7f6;border-radius:8px;padding:10px 12px;">
+                <div style="font-size:10px;color:#6d6d6c;margin-bottom:3px;">Avg time spent (Closed Tickets)</div>
+                <div style="font-size:16px;font-weight:700;" id="zdAvgResolution">—</div>
+                <div style="font-size:10px;color:#9d9d9d;margin-top:1px;">mins</div>
+                <div id="zdTrendChart" style="margin-top:6px;width:100%;height:32px;"></div>
               </div>
-              <div style="background:#f7f7f6;border-radius:8px;padding:14px 16px;">
-                <div style="font-size:10px;color:#6d6d6c;margin-bottom:4px;">Avg first reply</div>
-                <div style="font-size:22px;font-weight:700;" id="zdAvgReply">—</div>
-                <div style="font-size:10px;color:#9d9d9d;margin-top:2px;">hours</div>
+              <div style="background:#f7f7f6;border-radius:8px;padding:10px 12px;">
+                <div style="font-size:10px;color:#6d6d6c;margin-bottom:3px;">Avg first reply (All Tickets)</div>
+                <div style="font-size:16px;font-weight:700;" id="zdAvgReply">—</div>
+                <div style="font-size:10px;color:#9d9d9d;margin-top:1px;">business hours</div>
+                <div id="zdReplyTrendChart" style="margin-top:6px;width:100%;height:32px;"></div>
               </div>
-              <div style="background:#f7f7f6;border-radius:8px;padding:14px 16px;">
-                <div style="font-size:10px;color:#6d6d6c;margin-bottom:8px;font-weight:700;">Total tickets</div>
-                <div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0;border-bottom:1px solid #e6e6e5;"><span style="color:#6d6d6c;">All time</span><span id="zdTotalAll" style="font-weight:700;">0</span></div>
-                <div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0;border-bottom:1px solid #e6e6e5;"><span style="color:#e65100;">Open + Pending</span><span id="zdTotalActive" style="font-weight:700;color:#e65100;">0</span></div>
-                <div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0;"><span style="color:#2e7d32;">Resolved</span><span id="zdTotalResolved" style="font-weight:700;color:#2e7d32;">0</span></div>
+              <div style="background:#f7f7f6;border-radius:8px;padding:10px 12px;">
+                <div style="font-size:10px;color:#6d6d6c;margin-bottom:5px;font-weight:700;">Total tickets</div>
+                <div style="display:flex;justify-content:space-between;font-size:11px;padding:2px 0;border-bottom:1px solid #e6e6e5;"><span style="color:#6d6d6c;">All time</span><span id="zdTotalAll" style="font-weight:700;">0</span></div>
+                <div style="display:flex;justify-content:space-between;font-size:11px;padding:2px 0;border-bottom:1px solid #e6e6e5;"><span style="color:#e65100;">Open + Pending</span><span id="zdTotalActive" style="font-weight:700;color:#e65100;">0</span></div>
+                <div style="display:flex;justify-content:space-between;font-size:11px;padding:2px 0;"><span style="color:#2e7d32;">Resolved</span><span id="zdTotalResolved" style="font-weight:700;color:#2e7d32;">0</span></div>
               </div>
             </div>
+
           </div>
 
           <!-- Drilldown view -->
@@ -295,7 +300,8 @@ input{font-family:inherit;}
                     <th style="padding:10px 12px;text-align:left;font-weight:700;color:#3c3c3b;">Subject</th>
                     <th style="padding:10px 12px;text-align:center;font-weight:700;color:#3c3c3b;">Ticket #</th>
                     <th style="padding:10px 12px;text-align:center;font-weight:700;color:#3c3c3b;">Status</th>
-                    <th style="padding:10px 12px;text-align:center;font-weight:700;color:#3c3c3b;">Days Open</th>
+                    <th style="padding:10px 12px;text-align:center;font-weight:700;color:#3c3c3b;">Created</th>
+                    <th id="zdDaysColHeader" style="padding:10px 12px;text-align:center;font-weight:700;color:#3c3c3b;">Time Spent (mins)</th>
                     <th style="padding:10px 12px;text-align:center;font-weight:700;color:#3c3c3b;">Replies</th>
                   </tr>
                 </thead>
@@ -1066,6 +1072,33 @@ if (localStorage.getItem('sidebarCollapsed') === 'true') {
 }
 
 document.addEventListener('click', function(e) {
+  // SF risk card drilldown
+  var sfCard = e.target.closest('.sfSummaryCard');
+  if (sfCard && window.__argus) {
+    window.__argus.showDrilldown(sfCard.getAttribute('data-group'));
+    return;
+  }
+  // SF back button
+  if (e.target.closest('#sfBackButton') && window.__argus) {
+    window.__argus.showSummary();
+    return;
+  }
+  // ZD tile drilldown
+  var zdTile = e.target.closest('#zdOpenTile, #zdPendingTile, #zdSolvedTile, #zdClosedTile');
+  if (zdTile && window.__zdShowDrilldown && zdTile.style.cursor !== 'default') {
+    var zdStatusMap = { zdOpenTile: 'open', zdPendingTile: 'pending', zdSolvedTile: 'solved', zdClosedTile: 'closed' };
+    window.__zdShowDrilldown(zdStatusMap[zdTile.id]);
+    return;
+  }
+  // ZD back button
+  if (e.target.closest('#zdBackButton')) {
+    var zdDv = document.getElementById('zdDetailView');
+    var zdSv = document.getElementById('zdSummaryView');
+    if (zdDv) zdDv.style.display = 'none';
+    if (zdSv) zdSv.style.display = 'block';
+    return;
+  }
+
   // Handle sidebar toggle
   if (e.target.closest('[data-toggle-sidebar]')) {
     const isCollapsed = document.body.classList.contains('sidebar-collapsed');
@@ -1136,6 +1169,9 @@ class Component extends DCLogic {
       apis:[{name:'Loading...',color:'#ddd',symbol:'...',description:''}],
       buildStatus:{bronze:{count:0,label:'tables',rowLabel:'0 rows',productboardCount:0,salesforceCount:0,sourceGroups:[]},silver:{count:0,label:'views',productboardCount:0,salesforceCount:0,productOpsCount:0,views:[],sourceGroups:[]},gold:{count:0,label:'tables',productboardCount:0,salesforceCount:0,productOpsCount:0,financeCount:0,posthogCount:0,zendeskCount:0,jiraCount:0,views:[],tables:[],sourceGroups:[]},syncLabel:'Loading...'}
     };
+
+    // Always current — constructor runs on every mount/remount
+    window.__argus = this;
 
     // Load accounts immediately on construction (survives navigation remount)
     setTimeout(() => this.loadAccountsList(), 10);
@@ -1277,11 +1313,36 @@ class Component extends DCLogic {
     const setText = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
 
     show('zdNoAccount', false);
-    show('zdLoading', true);
     show('zdNoMatch', false);
     show('zdError', false);
     show('zdSummaryView', false);
     show('zdDetailView', false);
+
+    // Animated loading bar (matches SF subscriptions style)
+    if (!window.__argusNextMsg) window.__argusNextMsg = (function(){
+      const _all=["Argus had 100 eyes — all of them are bloodshot right now","The Oracle is consulting... if only it was a materialised table and not a view","Hermes is on his way — he stopped for coffee","Please bear with us — this is a Proof of Concept","Hephaestus is forging your insights — craftsmanship takes time","Consulting the Oracle... the query is still running","100 eyes, one slow query","Zeus is reviewing the figures — he has notes","Argus is swimming in the data lake — all 100 eyes open underwater","The data lake is murky today — even Argus can't see the bottom"];
+      let _q=[];
+      return function(){if(!_q.length){_q=_all.slice();for(let i=_q.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));const t=_q[i];_q[i]=_q[j];_q[j]=t;}}return _q.pop();};
+    })();
+    const zdLoadingEl = document.getElementById('zdLoading');
+    if (zdLoadingEl) {
+      zdLoadingEl.style.display = 'block';
+      zdLoadingEl.innerHTML =
+        '<style>@keyframes zdProg{from{width:0%}to{width:88%}}</style>'
+        +'<div style="max-width:520px;margin:40px auto;padding:32px;text-align:center;">'
+          +'<div style="font-size:15px;font-weight:600;color:#3c3c3b;margin-bottom:16px;">Loading support tickets from Fabric</div>'
+          +'<div style="height:5px;border-radius:3px;background:#f1f1f0;overflow:hidden;margin-bottom:20px;">'
+            +'<div style="height:100%;border-radius:3px;background:linear-gradient(90deg,#03363D,#00be86);animation:zdProg 7s ease-out forwards;"></div>'
+          +'</div>'
+          +'<div id="zd-loading-msg" style="font-size:13px;color:#9d9d9d;font-style:italic;min-height:20px;">'+window.__argusNextMsg()+'</div>'
+        +'</div>';
+    }
+    clearInterval(window.__zdMsgInterval);
+    window.__zdMsgInterval = setInterval(function() {
+      const el = document.getElementById('zd-loading-msg');
+      if (!el) { clearInterval(window.__zdMsgInterval); return; }
+      el.textContent = window.__argusNextMsg();
+    }, 6000);
 
     // Wire up drilldown/back handlers once
     window.__zdShowDrilldown = (status) => {
@@ -1292,10 +1353,13 @@ class Component extends DCLogic {
 
       const titleEl = document.getElementById('zdDrilldownTitle');
       if (titleEl) titleEl.textContent = tickets.length + ' ' + status + ' ticket' + (tickets.length !== 1 ? 's' : '');
+      const isResolved = status === 'solved' || status === 'closed';
+      const daysColEl = document.getElementById('zdDaysColHeader');
+      if (daysColEl) daysColEl.textContent = 'Time Spent (mins)';
 
       const priorityColour = { urgent:'#d32f2f', high:'#e65100', normal:'#1565c0', low:'#6d6d6c' };
       const priorityBg     = { urgent:'#fdeee0', high:'#fff3e0', normal:'#e3f2fd', low:'#f7f7f6' };
-      const statusStyle    = { open:'background:#fff3e0;color:#e65100;', new:'background:#fff3e0;color:#e65100;', pending:'background:#fff8e1;color:#f9a825;' };
+      const statusStyle    = { open:'background:#fff3e0;color:#e65100;', new:'background:#fff3e0;color:#e65100;', pending:'background:#fff8e1;color:#f9a825;', solved:'background:#e8f5e9;color:#2e7d32;', closed:'background:#f7f7f6;color:#6d6d6c;' };
 
       const tbody = document.getElementById('zdDrilldownBody');
       if (tbody) {
@@ -1304,14 +1368,17 @@ class Component extends DCLogic {
         } else {
           tbody.innerHTML = tickets.map(t => {
             const p = (t.priority || 'normal').toLowerCase();
-            const daysOpen = Math.floor((Date.now() - new Date(t.createdAt)) / 86400000);
             const st = t.status.toLowerCase();
+            const spentMins = t.timeSpentMinutes || 0;
+            const daysOpen = spentMins > 0 ? spentMins : '—';
+            const daysNum = spentMins / 60;
             return '<tr style="border-bottom:1px solid #f1f1f0;">'
               + '<td style="padding:9px 12px;"><span style="font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;background:'+priorityBg[p]+';color:'+priorityColour[p]+';text-transform:uppercase;">'+(p==='normal'?'STD':p.toUpperCase())+'</span></td>'
-              + '<td style="padding:9px 12px;font-size:12px;color:#3c3c3b;max-width:320px;">'+t.subject+'</td>'
-              + '<td style="padding:9px 12px;text-align:center;font-size:11px;color:#6d6d6c;">#'+t.id+'</td>'
+              + '<td style="padding:9px 12px;font-size:12px;color:#3c3c3b;max-width:320px;"><a href="https://auroraer.zendesk.com/agent/tickets/'+t.id+'" target="_blank" style="color:#03363D;text-decoration:none;" onmouseover="this.style.textDecoration=\'underline\'" onmouseout="this.style.textDecoration=\'none\'">'+t.subject+'</a></td>'
+              + '<td style="padding:9px 12px;text-align:center;font-size:11px;"><a href="https://auroraer.zendesk.com/agent/tickets/'+t.id+'" target="_blank" style="color:#6d6d6c;text-decoration:none;" onmouseover="this.style.textDecoration=\'underline\'" onmouseout="this.style.textDecoration=\'none\'">#'+t.id+'</a></td>'
               + '<td style="padding:9px 12px;text-align:center;"><span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px;'+(statusStyle[st]||'background:#f7f7f6;color:#6d6d6c;')+'">'+ st.toUpperCase()+'</span></td>'
-              + '<td style="padding:9px 12px;text-align:center;font-size:12px;font-weight:700;color:'+(daysOpen>30?'#d32f2f':daysOpen>7?'#e65100':'#3c3c3b')+';">'+daysOpen+'</td>'
+              + '<td style="padding:9px 12px;text-align:center;font-size:12px;color:#6d6d6c;">'+new Date(t.createdAt).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})+'</td>'
+              + '<td style="padding:9px 12px;text-align:center;font-size:12px;font-weight:700;color:'+(daysNum>40?'#d32f2f':daysNum>8?'#e65100':'#3c3c3b')+';">'+daysOpen+'</td>'
               + '<td style="padding:9px 12px;text-align:center;font-size:12px;color:#6d6d6c;">'+t.replies+'</td>'
               + '</tr>';
           }).join('');
@@ -1327,6 +1394,7 @@ class Component extends DCLogic {
     fetch(`/api/zd-tickets?account=${encodeURIComponent(accountName)}&t=${Date.now()}`)
       .then(r => r.json())
       .then(data => {
+        clearInterval(window.__zdMsgInterval);
         show('zdLoading', false);
         if (data.error) {
           const err = document.getElementById('zdError');
@@ -1349,19 +1417,108 @@ class Component extends DCLogic {
         setText('zdClosedCount',  s.closed);
         setText('zdTotalAll',     s.total);
         setText('zdTotalActive',  s.open + s.pending);
+        const pct = (n) => s.total > 0 ? Math.round(n / s.total * 100) + '%' : '—';
+        setText('zdOpenPct',    pct(s.open));
+        setText('zdPendingPct', pct(s.pending));
+        setText('zdSolvedPct',  pct(s.solved));
+        setText('zdClosedPct',  pct(s.closed));
+
+        // Grey out zero-count tiles — no data to drilldown into
+        [['Open',s.open],['Pending',s.pending],['Solved',s.solved],['Closed',s.closed]].forEach(([label, count]) => {
+          const tile = document.getElementById('zd' + label + 'Tile');
+          if (!tile) return;
+          if (count > 0) {
+            tile.style.cursor = 'pointer';
+            tile.title = 'Click to view ' + label.toLowerCase() + ' tickets';
+          } else {
+            tile.style.cursor = 'default';
+            tile.title = 'No ' + label.toLowerCase() + ' tickets';
+          }
+        });
         setText('zdTotalResolved',s.solved + s.closed);
         setText('zdAvgResolution', data.avgResolutionDays != null ? data.avgResolutionDays : '—');
         setText('zdAvgReply',      data.avgReplyHours    != null ? data.avgReplyHours    : '—');
 
-        // Hide "click to view" hint on tiles with 0 tickets
-        const openHint = document.querySelector('#zdOpenTile div:last-child');
-        const pendHint = document.querySelector('#zdPendingTile div:last-child');
-        if (openHint) openHint.style.display = s.open > 0 ? '' : 'none';
-        if (pendHint) pendHint.style.display = s.pending > 0 ? '' : 'none';
+        // Sparkline — reply time (business mins), all tickets
+        (function renderZdReplyTrend(tickets) {
+          const host = document.getElementById('zdReplyTrendChart');
+          if (!host) return;
+          const pts = tickets
+            .filter(t => t.replyBusinessMinutes > 0)
+            .slice().sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+          if (pts.length < 2) { host.innerHTML = ''; return; }
+
+          const W = 200, H = 32, pad = 2;
+          const maxV = Math.max(...pts.map(p => p.replyBusinessMinutes)) || 1;
+          const xp = i => pad + i * (W - pad*2) / (pts.length - 1);
+          const yp = v => H - pad - (v / maxV) * (H - pad*2);
+          const line = pts.map((p,i) => (i===0?'M':'L') + xp(i).toFixed(1)+' '+yp(p.replyBusinessMinutes).toFixed(1)).join(' ');
+          const hits = pts.map((p,i) => {
+            const d = new Date(p.createdAt).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+            const hrs = Math.round(p.replyBusinessMinutes / 60 * 10) / 10;
+            return `<circle cx="${xp(i).toFixed(1)}" cy="${yp(p.replyBusinessMinutes).toFixed(1)}" r="7" fill="transparent" style="cursor:pointer;"
+              onmouseover="window.__zdSparkShow(event,'${p.id}',${hrs}+'h reply','${d}')"
+              onmouseout="window.__zdSparkHide()"
+              onclick="window.open('https://auroraer.zendesk.com/agent/tickets/${p.id}','_blank')"/>`;
+          }).join('');
+          host.innerHTML = `<svg width="100%" height="${H}" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
+            <path d="${line}" fill="none" stroke="#03363D" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+            ${hits}
+          </svg>`;
+        })(data.tickets || []);
+
+        // Sparkline — closed tickets with logged time, sorted chronologically
+        (function renderZdTrend(tickets) {
+          const host = document.getElementById('zdTrendChart');
+          if (!host) return;
+          const pts = tickets
+            .filter(t => t.status === 'closed' && t.timeSpentMinutes > 0)
+            .slice().sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+          if (pts.length < 2) { host.innerHTML = ''; return; }
+
+          // Floating tooltip helpers
+          window.__zdSparkShow = function(evt, id, mins, date) {
+            let tip = document.getElementById('__zdSparkTip');
+            if (!tip) {
+              tip = document.createElement('div');
+              tip.id = '__zdSparkTip';
+              tip.style.cssText = 'position:fixed;z-index:9999;background:#3c3c3b;color:#fff;font-size:11px;padding:6px 10px;border-radius:6px;pointer-events:none;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.2);';
+              document.body.appendChild(tip);
+            }
+            tip.textContent = '#' + id + ' · ' + mins + ' mins · ' + date;
+            tip.style.left = (evt.clientX + 14) + 'px';
+            tip.style.top  = (evt.clientY - 32) + 'px';
+            tip.style.display = 'block';
+          };
+          window.__zdSparkHide = function() {
+            const tip = document.getElementById('__zdSparkTip');
+            if (tip) tip.style.display = 'none';
+          };
+
+          const W = 200, H = 40, pad = 2;
+          const maxV = Math.max(...pts.map(p => p.timeSpentMinutes)) || 1;
+          const xp = i => pad + i * (W - pad*2) / (pts.length - 1);
+          const yp = v => H - pad - (v / maxV) * (H - pad*2);
+
+          const line = pts.map((p,i) => (i===0?'M':'L') + xp(i).toFixed(1)+' '+yp(p.timeSpentMinutes).toFixed(1)).join(' ');
+          const hits = pts.map((p,i) => {
+            const d = new Date(p.createdAt).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+            return `<circle cx="${xp(i).toFixed(1)}" cy="${yp(p.timeSpentMinutes).toFixed(1)}" r="7" fill="transparent" style="cursor:pointer;"
+              onmouseover="window.__zdSparkShow(event,'${p.id}',${p.timeSpentMinutes},'${d}')"
+              onmouseout="window.__zdSparkHide()"
+              onclick="window.open('https://auroraer.zendesk.com/agent/tickets/${p.id}','_blank')"/>`;
+          }).join('');
+
+          host.innerHTML = `<svg width="100%" height="${H}" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
+            <path d="${line}" fill="none" stroke="#03363D" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+            ${hits}
+          </svg>`;
+        })(data.tickets || []);
 
         show('zdSummaryView', true);
       })
       .catch(() => {
+        clearInterval(window.__zdMsgInterval);
         show('zdLoading', false);
         const errEl = document.getElementById('zdError');
         if (errEl) { errEl.textContent = 'Failed to load ticket data'; errEl.style.display = ''; }
@@ -1761,7 +1918,7 @@ class Component extends DCLogic {
     document.getElementById('sfDetailView').style.display = 'block';
     document.getElementById('sfDrilldownTitle').textContent = `${group} Subscriptions`;
 
-    const groupData = (this.currentGroupedSubs || this.groupedSubs)[group];
+    const groupData = (this.currentGroupedSubs || this.groupedSubs || {})[group];
     const allSubs = groupData ? groupData.subs : [];
 
     this.currentDrilldownSubs = allSubs;
