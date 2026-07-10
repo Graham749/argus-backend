@@ -4,6 +4,10 @@ const sql = require('mssql');
 let cachedToken = null;
 let tokenExpiry = null;
 
+let cachedResult = null;
+let cacheTs = null;
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
 async function getAccessToken() {
   const now = Date.now();
 
@@ -39,12 +43,8 @@ async function queryLakehouse(query) {
         token: token
       }
     },
-    options: {
-      encrypt: true,
-      trustServerCertificate: false,
-      connectionTimeout: 30000,
-      requestTimeout: 120000
-    }
+    requestTimeout: 120000,
+    options: { encrypt: true, trustServerCertificate: false, connectionTimeout: 30000 }
   });
 
   try {
@@ -64,6 +64,10 @@ async function queryLakehouse(query) {
 
 async function features(req, res) {
   try {
+    if (cachedResult && cacheTs && Date.now() - cacheTs < CACHE_TTL) {
+      return res.json(cachedResult);
+    }
+
     const query = `
 SELECT
     feature_id              AS featureId,
@@ -112,11 +116,10 @@ ORDER BY prioritization_score DESC
 
     const rows = await queryLakehouse(query);
 
-    res.json({
-      features: rows,
-      syncedAt: new Date().toISOString(),
-      rowCount: rows.length
-    });
+    const payload = { features: rows, syncedAt: new Date().toISOString(), rowCount: rows.length };
+    cachedResult = payload;
+    cacheTs = Date.now();
+    res.json(payload);
   } catch (err) {
     console.error('[features]', err);
     res.status(500).json({ error: err.message });

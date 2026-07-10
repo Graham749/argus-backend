@@ -4,6 +4,10 @@ const sql = require('mssql');
 let cachedToken = null;
 let tokenExpiry = null;
 
+let cachedResult = null;
+let cacheTs = null;
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
 async function getAccessToken() {
   const now = Date.now();
 
@@ -69,25 +73,18 @@ function getSourceFromName(name) {
 
 async function lakelzouseStatus(req, res) {
   try {
-    // Count all bronze tables (exclude gold-prefixed tables)
-    const bronzeQuery = `SELECT COUNT(*) as count FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'dbo' AND TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME NOT LIKE 'gold_%'`;
-    const bronzeCount = await queryLakehouse(bronzeQuery);
+    if (cachedResult && cacheTs && Date.now() - cacheTs < CACHE_TTL) {
+      return res.json(cachedResult);
+    }
 
-    // Get all silver views with source derived from naming convention
-    const silverQuery = `SELECT TABLE_NAME FROM INFORMATION_SCHEMA.VIEWS WHERE TABLE_SCHEMA = 'dbo' AND TABLE_NAME LIKE 'v_silver_%' ORDER BY TABLE_NAME`;
-    const silverViews = await queryLakehouse(silverQuery);
-
-    // Get all gold views with source derived from naming convention
-    const goldQuery = `SELECT TABLE_NAME FROM INFORMATION_SCHEMA.VIEWS WHERE TABLE_SCHEMA = 'dbo' AND TABLE_NAME LIKE 'v_gold_%' ORDER BY TABLE_NAME`;
-    const goldViews = await queryLakehouse(goldQuery);
-
-    // Get all gold tables (provided by data team, e.g., gold_exchangeratetable)
-    const goldTablesQuery = `SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'dbo' AND TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME LIKE 'gold_%' ORDER BY TABLE_NAME`;
-    const goldTables = await queryLakehouse(goldTablesQuery);
-
-    // Get bronze table details (exclude gold-prefixed tables)
-    const bronzeDetailsQuery = `SELECT TABLE_NAME as name FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'dbo' AND TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME NOT LIKE 'gold_%' ORDER BY TABLE_NAME`;
-    const bronzeDetails = await queryLakehouse(bronzeDetailsQuery);
+    // All 5 schema queries are independent — run in parallel
+    const [bronzeCount, silverViews, goldViews, goldTables, bronzeDetails] = await Promise.all([
+      queryLakehouse(`SELECT COUNT(*) as count FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'dbo' AND TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME NOT LIKE 'gold_%'`),
+      queryLakehouse(`SELECT TABLE_NAME FROM INFORMATION_SCHEMA.VIEWS WHERE TABLE_SCHEMA = 'dbo' AND TABLE_NAME LIKE 'v_silver_%' ORDER BY TABLE_NAME`),
+      queryLakehouse(`SELECT TABLE_NAME FROM INFORMATION_SCHEMA.VIEWS WHERE TABLE_SCHEMA = 'dbo' AND TABLE_NAME LIKE 'v_gold_%' ORDER BY TABLE_NAME`),
+      queryLakehouse(`SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'dbo' AND TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME LIKE 'gold_%' ORDER BY TABLE_NAME`),
+      queryLakehouse(`SELECT TABLE_NAME as name FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'dbo' AND TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME NOT LIKE 'gold_%' ORDER BY TABLE_NAME`),
+    ]);
 
     // Build views with source from naming convention
     const silverViewsWithSource = silverViews.map(v => ({
@@ -167,6 +164,8 @@ async function lakelzouseStatus(req, res) {
       lastUpdated: new Date().toISOString()
     };
 
+    cachedResult = status;
+    cacheTs = Date.now();
     res.json(status);
   } catch (err) {
     console.error('[lakehouse-status]', err);
