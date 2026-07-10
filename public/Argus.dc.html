@@ -3185,10 +3185,51 @@ class Component extends DCLogic {
             +'<div style="font-size:14px;color:#6d6d6c;margin-top:4px;">Salesforce is the master — Zendesk and Productboard are matched as satellites</div>'
           +'</div>'
 
+          // Collapse-all toggle
+          +(()=>{
+            const allC = !!window.__mdmW1C && !!window.__mdmW2C && !!window.__mdmW3C && !!window.__mdmW4C && !window.__mdmDupExpanded;
+            const colAll = '(function(){'
+              +'var toC=!(window.__mdmW1C&&window.__mdmW2C&&window.__mdmW3C&&window.__mdmW4C&&!window.__mdmDupExpanded);'
+              +'[1,2,3,4].forEach(function(n){'
+                +'window[\'__mdmW\'+n+\'C\']=toC;'
+                +'var b=document.getElementById(\'mdm-w\'+n+\'-body\');'
+                +'var c=document.getElementById(\'mdm-w\'+n+\'-chev\');'
+                +'if(b)b.style.display=toC?\'none\':\'block\';'
+                +'if(c)c.textContent=toC?\'▾\':\'▴\';'
+              +'});'
+              +'window.__mdmDupExpanded=!toC;'
+              +'var db=document.getElementById(\'mdm-dup-body\');'
+              +'var dc=document.getElementById(\'mdm-dup-chev\');'
+              +'if(db)db.style.display=!toC?\'block\':\'none\';'
+              +'if(dc)dc.textContent=!toC?\'▴\':\'▾\';'
+              +'var btn=document.getElementById(\'mdm-collapseall-btn\');'
+              +'if(btn)btn.textContent=toC?\'Expand widgets\':\'Collapse widgets\';'
+              +'})()';
+            return '<div style="text-align:right;margin-bottom:10px;">'
+              +'<button id="mdm-collapseall-btn" onclick="'+colAll+'" style="font-size:11px;color:#6d6d6c;background:#f7f7f6;border:1px solid #e6e6e5;border-radius:6px;padding:5px 14px;cursor:pointer;font-weight:600;letter-spacing:0.02em;">'
+              +(allC?'Expand widgets':'Collapse widgets')
+              +'</button>'
+            +'</div>';
+          })()
+
           // Source System Coverage widget
-          +'<div style="background:#fff;border:1px solid #e6e6e5;border-radius:12px;padding:20px;margin-bottom:16px;box-shadow:0 1px 3px rgba(60,60,59,0.07);">'
-            +'<div style="font-size:12px;font-weight:700;color:#6d6d6c;margin-bottom:16px;text-transform:uppercase;letter-spacing:0.08em;">Source System Coverage</div>'
-            +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:#f1f1f0;border-radius:8px;overflow:hidden;">'
+          +(()=>{
+            const collapsed = !!window.__mdmW1C;
+            const toggle = '(function(){'
+              +'window.__mdmW1C=!window.__mdmW1C;'
+              +'var b=document.getElementById(\'mdm-w1-body\');'
+              +'var c=document.getElementById(\'mdm-w1-chev\');'
+              +'if(b)b.style.display=window.__mdmW1C?\'none\':\'block\';'
+              +'if(c)c.textContent=window.__mdmW1C?\'▾\':\'▴\';'
+              +'})()';
+            return '<div style="background:#fff;border:1px solid #e6e6e5;border-radius:12px;margin-bottom:16px;box-shadow:0 1px 3px rgba(60,60,59,0.07);overflow:hidden;">'
+              +'<div onclick="'+toggle+'" style="padding:14px 20px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;user-select:none;" onmouseenter="this.style.background=\'#fafafa\'" onmouseleave="this.style.background=\'\'">'
+                +'<div style="font-size:12px;font-weight:700;color:#6d6d6c;text-transform:uppercase;letter-spacing:0.08em;">Source System Coverage</div>'
+                +'<span id="mdm-w1-chev" style="font-size:14px;color:#9d9d9d;">'+(collapsed?'▾':'▴')+'</span>'
+              +'</div>'
+              +'<div id="mdm-w1-body" style="display:'+(collapsed?'none':'block')+';padding:0 20px 16px;border-top:1px solid #f1f1f0;">'
+                +'<div style="height:16px;"></div>'
+                +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:#f1f1f0;border-radius:8px;overflow:hidden;">'
 
               // Salesforce column
               +'<div style="background:#fff;padding:16px 20px;">'
@@ -3253,12 +3294,28 @@ class Component extends DCLogic {
 
             +'</div>'
             +'<div style="margin-top:12px;font-size:11px;color:#9d9d9d;">Coverage is from Salesforce outward — Zendesk and Productboard accounts with no SF record are not shown here.</div>'
-          +'</div>'
+              +'</div>'
+            +'</div>';
+          })()
 
           // Match Criteria card
-          +'<div style="background:#fff;border:1px solid #e6e6e5;border-radius:12px;padding:20px;margin-bottom:16px;box-shadow:0 1px 3px rgba(60,60,59,0.07);">'
-            +'<div style="font-size:12px;font-weight:700;color:#6d6d6c;margin-bottom:16px;text-transform:uppercase;letter-spacing:0.08em;">Salesforce Match Criteria</div>'
-            +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">'
+          +(()=>{
+            const collapsed = !!window.__mdmW2C;
+            const toggle = '(function(){'
+              +'window.__mdmW2C=!window.__mdmW2C;'
+              +'var b=document.getElementById(\'mdm-w2-body\');'
+              +'var c=document.getElementById(\'mdm-w2-chev\');'
+              +'if(b)b.style.display=window.__mdmW2C?\'none\':\'block\';'
+              +'if(c)c.textContent=window.__mdmW2C?\'▾\':\'▴\';'
+              +'})()';
+            return '<div style="background:#fff;border:1px solid #e6e6e5;border-radius:12px;margin-bottom:16px;box-shadow:0 1px 3px rgba(60,60,59,0.07);overflow:hidden;">'
+              +'<div onclick="'+toggle+'" style="padding:14px 20px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;user-select:none;" onmouseenter="this.style.background=\'#fafafa\'" onmouseleave="this.style.background=\'\'">'
+                +'<div style="font-size:12px;font-weight:700;color:#6d6d6c;text-transform:uppercase;letter-spacing:0.08em;">Salesforce Match Criteria</div>'
+                +'<span id="mdm-w2-chev" style="font-size:14px;color:#9d9d9d;">'+(collapsed?'▾':'▴')+'</span>'
+              +'</div>'
+              +'<div id="mdm-w2-body" style="display:'+(collapsed?'none':'block')+';padding:0 20px 20px;border-top:1px solid #f1f1f0;">'
+                +'<div style="height:16px;"></div>'
+                +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">'
 
               // ZD column
               +'<div>'
@@ -3290,14 +3347,32 @@ class Component extends DCLogic {
                 +'</div>'
               +'</div>'
 
-            +'</div>'
-          +'</div>'
+                +'</div>'
+              +'</div>'
+            +'</div>';
+          })()
 
           // Zendesk Match Confidence Distribution
-          +'<div style="background:#fff;border:1px solid #e6e6e5;border-radius:12px;padding:20px;margin-bottom:16px;box-shadow:0 1px 3px rgba(60,60,59,0.07);">'
-            +'<div style="font-size:12px;font-weight:700;color:#6d6d6c;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.08em;">Zendesk Match Confidence</div>'
-            +'<div style="font-size:11px;color:#9d9d9d;margin-bottom:12px;">Quality of the '+sm.zdLinked.toLocaleString()+' SF accounts matched to Zendesk</div>'
-            +'<div style="display:flex;height:12px;border-radius:6px;overflow:hidden;background:#f1f1f0;">'
+          +(()=>{
+            const collapsed = !!window.__mdmW3C;
+            const toggle = '(function(){'
+              +'window.__mdmW3C=!window.__mdmW3C;'
+              +'var b=document.getElementById(\'mdm-w3-body\');'
+              +'var c=document.getElementById(\'mdm-w3-chev\');'
+              +'if(b)b.style.display=window.__mdmW3C?\'none\':\'block\';'
+              +'if(c)c.textContent=window.__mdmW3C?\'▾\':\'▴\';'
+              +'})()';
+            return '<div style="background:#fff;border:1px solid #e6e6e5;border-radius:12px;margin-bottom:16px;box-shadow:0 1px 3px rgba(60,60,59,0.07);overflow:hidden;">'
+              +'<div onclick="'+toggle+'" style="padding:14px 20px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;user-select:none;" onmouseenter="this.style.background=\'#fafafa\'" onmouseleave="this.style.background=\'\'">'
+                +'<div>'
+                  +'<div style="font-size:12px;font-weight:700;color:#6d6d6c;text-transform:uppercase;letter-spacing:0.08em;">Zendesk Match Confidence</div>'
+                  +'<div style="font-size:11px;color:#9d9d9d;margin-top:2px;">Quality of the '+sm.zdLinked.toLocaleString()+' SF accounts matched to Zendesk</div>'
+                +'</div>'
+                +'<span id="mdm-w3-chev" style="font-size:14px;color:#9d9d9d;flex-shrink:0;margin-left:12px;">'+(collapsed?'▾':'▴')+'</span>'
+              +'</div>'
+              +'<div id="mdm-w3-body" style="display:'+(collapsed?'none':'block')+';padding:0 20px 20px;border-top:1px solid #f1f1f0;">'
+                +'<div style="height:16px;"></div>'
+                +'<div style="display:flex;height:12px;border-radius:6px;overflow:hidden;background:#f1f1f0;">'
               +'<div style="width:'+Math.round(highPct*100)+'%;background:#00be86;" title="HIGH: '+sm.highCount+'"></div>'
               +'<div style="width:'+Math.round(medPct*100)+'%;background:#ffcc00;" title="MEDIUM: '+sm.mediumCount+'"></div>'
             +'</div>'
@@ -3318,14 +3393,32 @@ class Component extends DCLogic {
                 +'<div style="font-size:20px;font-weight:900;color:#b89400;padding-left:16px;">'+sm.mediumCount.toLocaleString()+'</div>'
                 +'<div style="font-size:11px;color:#9d9d9d;padding-left:16px;">'+pct(sm.mediumCount,sm.zdLinked)+' of matched · name only, no domain</div>'
               +'</div>'
+              +'</div>'
             +'</div>'
-          +'</div>'
+          +'</div>';
+          })()
 
           // Productboard Match Confidence Distribution
-          +'<div style="background:#fff;border:1px solid #e6e6e5;border-radius:12px;padding:20px;margin-bottom:20px;box-shadow:0 1px 3px rgba(60,60,59,0.07);">'
-            +'<div style="font-size:12px;font-weight:700;color:#6d6d6c;margin-bottom:12px;text-transform:uppercase;letter-spacing:0.08em;">Productboard Match Confidence Distribution</div>'
-            +'<div style="font-size:11px;color:#9d9d9d;margin-bottom:10px;">Based on '+sm.pbTotal.toLocaleString()+' external Productboard companies</div>'
-            +'<div style="display:flex;height:12px;border-radius:6px;overflow:hidden;background:#f1f1f0;">'
+          +(()=>{
+            const collapsed = !!window.__mdmW4C;
+            const toggle = '(function(){'
+              +'window.__mdmW4C=!window.__mdmW4C;'
+              +'var b=document.getElementById(\'mdm-w4-body\');'
+              +'var c=document.getElementById(\'mdm-w4-chev\');'
+              +'if(b)b.style.display=window.__mdmW4C?\'none\':\'block\';'
+              +'if(c)c.textContent=window.__mdmW4C?\'▾\':\'▴\';'
+              +'})()';
+            return '<div style="background:#fff;border:1px solid #e6e6e5;border-radius:12px;margin-bottom:16px;box-shadow:0 1px 3px rgba(60,60,59,0.07);overflow:hidden;">'
+              +'<div onclick="'+toggle+'" style="padding:14px 20px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;user-select:none;" onmouseenter="this.style.background=\'#fafafa\'" onmouseleave="this.style.background=\'\'">'
+                +'<div>'
+                  +'<div style="font-size:12px;font-weight:700;color:#6d6d6c;text-transform:uppercase;letter-spacing:0.08em;">Productboard Match Confidence Distribution</div>'
+                  +'<div style="font-size:11px;color:#9d9d9d;margin-top:2px;">Based on '+sm.pbTotal.toLocaleString()+' external Productboard companies</div>'
+                +'</div>'
+                +'<span id="mdm-w4-chev" style="font-size:14px;color:#9d9d9d;flex-shrink:0;margin-left:12px;">'+(collapsed?'▾':'▴')+'</span>'
+              +'</div>'
+              +'<div id="mdm-w4-body" style="display:'+(collapsed?'none':'block')+';padding:0 20px 20px;border-top:1px solid #f1f1f0;">'
+                +'<div style="height:16px;"></div>'
+                +'<div style="display:flex;height:12px;border-radius:6px;overflow:hidden;background:#f1f1f0;">'
               +'<div style="width:'+Math.round(pbWebPct*100)+'%;background:#7030a0;" title="Website domain: '+sm.pbWebsite+'"></div>'
               +'<div style="width:'+Math.round(pbEosPct*100)+'%;background:#9d60c8;" title="EOS domain: '+sm.pbEos+'"></div>'
               +'<div style="width:'+Math.round(pbNamePct*100)+'%;background:#c9a0e0;" title="Name fallback: '+sm.pbName+'"></div>'
@@ -3365,7 +3458,9 @@ class Component extends DCLogic {
                 +'<div style="font-size:11px;color:#9d9d9d;padding-left:16px;">'+pct(pbNoMatch,sm.pbTotal)+' of PB · no SF account found</div>'
               +'</div>'
             +'</div>'
-          +'</div>'
+              +'</div>'
+            +'</div>';
+          })()
 
           // Salesforce Duplicate Accounts widget
           + (()=>{
