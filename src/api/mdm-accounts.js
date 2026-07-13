@@ -53,9 +53,9 @@ async function mdmAccounts(req, res) {
           SUM(zd_domain_confirmed)                                              AS zdDomainConfirmed,
           SUM(has_pb_company)                                                   AS pbLinked,
           COUNT(DISTINCT pb_company_id)                                         AS pbCompaniesMatched,
-          SUM(CASE WHEN pb_match_method = 'website_domain'   THEN 1 ELSE 0 END) AS pbWebsite,
-          SUM(CASE WHEN pb_match_method = 'eos_domain'       THEN 1 ELSE 0 END) AS pbEos,
-          SUM(CASE WHEN pb_match_method = 'name'             THEN 1 ELSE 0 END) AS pbName,
+          COUNT(DISTINCT CASE WHEN pb_match_method = 'website_domain' THEN pb_company_id END) AS pbWebsite,
+          COUNT(DISTINCT CASE WHEN pb_match_method = 'eos_domain'     THEN pb_company_id END) AS pbEos,
+          COUNT(DISTINCT CASE WHEN pb_match_method = 'name'           THEN pb_company_id END) AS pbName,
           SUM(sf_name_collision)                                                AS nameCollisions,
           (SELECT COUNT(*) FROM v_silver_pb_companies)                                                   AS pbTotalAll,
           (SELECT COUNT(*) FROM v_silver_pb_companies WHERE silver_entity_classification = 'External')  AS pbTotal
