@@ -3091,8 +3091,8 @@ class Component extends DCLogic {
             +'</div>';
           const extOpen = expanded && !!S.drills['pb_ext_'+f.id];
           const sigData = S.featInsightsData[f.id];
-          const extCompanies = sigData ? (sigData.externalCompanies || []) : null;
-          const extCount = sigData ? (sigData.extNoteCount || 0) : f.noteCount;
+          const extCompanies = sigData ? (sigData.companies || []) : null;
+          const extCount = sigData ? (sigData.noteCount || 0) : f.noteCount;
           const accountSignals = !expanded ? '' : `
             <div style="margin-top:14px;padding-top:14px;border-top:1px solid #f1f1f0;">
               <p style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#9d9d9d;margin-bottom:10px;">Account signals</p>
