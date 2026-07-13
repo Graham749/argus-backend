@@ -2780,8 +2780,8 @@ class Component extends DCLogic {
     // Badge click — just toggles the Account signals section open/closed
     this.toggleDrill('signals_'+featureId);
   }
-  togglePbNotes(featureId, type){
-    const key = 'pb_'+type+'_'+featureId;
+  togglePbNotes(featureId){
+    const key = 'pb_ext_'+featureId;
     const wasOpen = !!this.state.drills[key];
     const newDrills = {...this.state.drills, [key]: !wasOpen, ['signals_'+featureId]: true};
     this.setV({drills: newDrills});
@@ -2979,17 +2979,19 @@ class Component extends DCLogic {
       {label:'No insights',  onClick:()=>this.setV({featInsights:'none'}), style:S.featInsights==='none'?iBtnAct:iBtnBase},
     ];
     const insightsDrillHtml = (companies) => {
-      if (!companies) return '<div style="padding:10px 0 2px;font-size:12px;color:#9d9d9d;font-style:italic;">Loading notes…</div>';
-      if (!companies.length) return '<div style="padding:10px 0 2px;font-size:12px;color:#9d9d9d;">No notes found.</div>';
-      return '<div style="margin-top:10px;border-top:1px solid #e0d0f8;padding-top:8px;">'
+      if (!companies) return '<div style="background:#f7f7f6;border-radius:8px;padding:12px;margin-top:10px;font-size:12px;color:#9d9d9d;font-style:italic;">Loading notes…</div>';
+      if (!companies.length) return '<div style="background:#f7f7f6;border-radius:8px;padding:12px;margin-top:10px;font-size:12px;color:#9d9d9d;">No notes found.</div>';
+      return '<div style="background:#f7f7f6;border-radius:8px;padding:4px 12px;margin-top:10px;">'
         +companies.map(c=>
-          '<div style="margin-bottom:8px;">'
-            +'<div style="font-size:11px;font-weight:700;color:#3c3c3b;margin-bottom:3px;">'+(c.companyName||'Unknown').replace(/</g,'&lt;')
-              +' <span style="font-weight:400;color:#9d9d9d;">('+c.notes.length+' note'+(c.notes.length===1?'':'s')+')</span></div>'
+          '<div style="padding:8px 0;border-bottom:1px solid #e6e6e5;">'
+            +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">'
+              +'<span style="font-size:12px;font-weight:700;color:#3c3c3b;">'+(c.companyName||'Unknown').replace(/</g,'&lt;')+'</span>'
+              +'<span style="font-size:11px;color:#9d9d9d;">'+c.notes.length+' note'+(c.notes.length===1?'':'s')+'</span>'
+            +'</div>'
             +c.notes.map(n=>
-              '<div style="padding:3px 0 3px 10px;border-left:2px solid #ddc8f0;margin-bottom:2px;">'
-                +'<a href="'+(n.noteUrl||'#')+'" target="_blank" style="font-size:11px;color:#7030a0;text-decoration:none;" onmouseover="this.style.textDecoration=\'underline\'" onmouseout="this.style.textDecoration=\'none\'">'+(n.noteName||'(untitled)').replace(/</g,'&lt;')+'</a>'
-                +' <span style="font-size:10px;color:#b0b0b0;">'+fmtDate(n.createdAt)+'</span>'
+              '<div style="display:flex;justify-content:space-between;align-items:flex-start;padding:4px 0 4px 12px;">'
+                +'<a href="'+(n.noteUrl||'#')+'" target="_blank" style="font-size:12px;color:#7030a0;text-decoration:none;flex:1;min-width:0;" onmouseover="this.style.textDecoration=\'underline\'" onmouseout="this.style.textDecoration=\'none\'">'+(n.noteName||'(untitled)').replace(/</g,'&lt;')+'</a>'
+                +'<span style="font-size:11px;color:#9d9d9d;white-space:nowrap;margin-left:12px;">'+fmtDate(n.createdAt)+'</span>'
               +'</div>'
             ).join('')
           +'</div>'
@@ -3206,48 +3208,33 @@ class Component extends DCLogic {
             </div>` : '';
           const signalsExpanded = !!S.drills['signals_'+f.id];
           const extOpen = signalsExpanded && !!S.drills['pb_ext_'+f.id];
-          const intOpen = signalsExpanded && !!S.drills['pb_int_'+f.id];
           const sigData = S.featInsightsData[f.id];
           const extCompanies = sigData ? (sigData.externalCompanies || []) : null;
-          const intCompanies = sigData ? (sigData.internalCompanies || []) : null;
           const extCount = sigData ? (sigData.extNoteCount || 0) : f.noteCount;
-          const intCount = sigData ? (sigData.intNoteCount || 0) : 0;
-          const _tile = (bg,bdr,labelCol,label,count,countCol,subtxt,openKey,featureId,extraNote) =>
-            '<div style="background:'+bg+';border:1px solid '+bdr+';border-radius:10px;padding:12px 14px;'+(count>0?'cursor:pointer;':'')+'" '+(count>0?'data-'+openKey+'="'+featureId+'"':'')+'>'
-            +'<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:'+labelCol+';margin-bottom:8px;">'+label+'</div>'
-            +(count > 0
-              ? '<div style="font-size:20px;font-weight:900;color:'+countCol+';">'+count+'</div>'
-                +'<div style="font-size:11px;color:#9d7fc0;margin-top:2px;">note'+(count===1?'':'s')+(subtxt?' · '+subtxt:'')+'</div>'
-                +(extraNote?'<div style="font-size:11px;font-weight:600;color:'+countCol+';margin-top:8px;">'+extraNote+'</div>':'')
-              : '<div style="font-size:20px;font-weight:900;color:#e0e0e0;">—</div>'
-                +'<div style="font-size:11px;color:#c0c0c0;margin-top:4px;">No linked notes</div>')
-            +'</div>';
           const accountSignals = !signalsExpanded ? '' : `
             <div style="margin-top:14px;padding-top:14px;border-top:1px solid #f1f1f0;">
-              <div style="margin-bottom:14px;">
-                <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#9d9d9d;margin-bottom:8px;">External</div>
-                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
-                  <div style="background:#fff8f0;border:1px solid #f5e0c0;border-radius:10px;padding:12px 14px;">
-                    <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#c2600f;margin-bottom:8px;">Salesforce</div>
-                    <div style="font-size:20px;font-weight:900;color:#e0e0e0;">—</div>
-                    <div style="font-size:11px;color:#c0c0c0;margin-top:4px;">Subscriptions coming soon</div>
-                  </div>
-                  <div style="background:#f0f8ff;border:1px solid #b3d4f5;border-radius:10px;padding:12px 14px;">
-                    <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#1565c0;margin-bottom:8px;">Zendesk</div>
-                    <div style="font-size:20px;font-weight:900;color:#e0e0e0;">—</div>
-                    <div style="font-size:11px;color:#c0c0c0;margin-top:4px;">Ticket signals coming soon</div>
-                  </div>
-                  ${_tile('#f5f0fa','#ddc8f0','#7030a0','Productboard',extCount,'#7030a0',fmtDate(f.latestNoteAt),'pb-ext',f.id,extOpen?'Hide ↑':'View notes →')}
+              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
+                <div style="background:#fff8f0;border:1px solid #f5e0c0;border-radius:10px;padding:12px 14px;">
+                  <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#c2600f;margin-bottom:8px;">Salesforce</div>
+                  <div style="font-size:20px;font-weight:900;color:#e0e0e0;">—</div>
+                  <div style="font-size:11px;color:#c0c0c0;margin-top:4px;">Subscriptions coming soon</div>
                 </div>
-                ${extOpen ? insightsDrillHtml(extCompanies) : ''}
-              </div>
-              <div>
-                <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#9d9d9d;margin-bottom:8px;">Internal <span style="font-weight:400;text-transform:none;">(Aurora)</span></div>
-                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
-                  ${_tile('#f5f0fa','#ddc8f0','#7030a0','Productboard',intCount,'#7030a0','',  'pb-int',f.id,intOpen?'Hide ↑':'View notes →')}
+                <div style="background:#f0f8ff;border:1px solid #b3d4f5;border-radius:10px;padding:12px 14px;">
+                  <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#1565c0;margin-bottom:8px;">Zendesk</div>
+                  <div style="font-size:20px;font-weight:900;color:#e0e0e0;">—</div>
+                  <div style="font-size:11px;color:#c0c0c0;margin-top:4px;">Ticket signals coming soon</div>
                 </div>
-                ${intOpen ? insightsDrillHtml(intCompanies) : ''}
+                <div style="background:#f5f0fa;border:1px solid #ddc8f0;border-radius:10px;padding:12px 14px;${extCount>0?'cursor:pointer;':''}" ${extCount>0?'data-pb-ext="'+f.id+'"':''}>
+                  <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#7030a0;margin-bottom:8px;">Productboard</div>
+                  ${extCount > 0
+                    ? '<div style="font-size:20px;font-weight:900;color:#7030a0;">'+extCount+'</div>'
+                      +'<div style="font-size:11px;color:#9d7fc0;margin-top:2px;">note'+(extCount===1?'':'s')+' · '+fmtDate(f.latestNoteAt)+'</div>'
+                      +'<div style="font-size:11px;font-weight:600;color:#7030a0;margin-top:8px;">'+(extOpen?'Hide ↑':'View notes →')+'</div>'
+                    : '<div style="font-size:20px;font-weight:900;color:#e0e0e0;">—</div>'
+                      +'<div style="font-size:11px;color:#c0c0c0;margin-top:4px;">No linked notes</div>'}
+                </div>
               </div>
+              ${extOpen ? insightsDrillHtml(extCompanies) : ''}
             </div>`;
           return `
             <div style="background:#fff;border:1px solid #e6e6e5;border-radius:12px;padding:18px 20px;margin-bottom:12px;box-shadow:0 1px 3px rgba(60,60,59,0.07);">
@@ -3290,9 +3277,7 @@ class Component extends DCLogic {
       const insBtn = e.target.closest('[data-insights-id]');
       if(insBtn) { this.toggleInsights(insBtn.dataset.insightsId); return; }
       const extBtn = e.target.closest('[data-pb-ext]');
-      if(extBtn) { this.togglePbNotes(extBtn.dataset.pbExt, 'ext'); return; }
-      const intBtn = e.target.closest('[data-pb-int]');
-      if(intBtn) { this.togglePbNotes(intBtn.dataset.pbInt, 'int'); return; }
+      if(extBtn) { this.togglePbNotes(extBtn.dataset.pbExt); return; }
     };
 
     // ── assistant view-model ──
