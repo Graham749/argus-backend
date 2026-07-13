@@ -114,9 +114,20 @@ FROM dbo.v_gold_pb_feature_prioritization_final
 ORDER BY prioritization_score DESC
     `;
 
-    const rows = await queryLakehouse(query);
+    const [rows, noteCounts] = await Promise.all([
+      queryLakehouse(query),
+      queryLakehouse(`
+        SELECT feature_id, COUNT(DISTINCT note_id) AS note_count, MAX(note_created_at) AS latest_note_at
+        FROM v_gold_pb_note_company_feature
+        WHERE is_archived = 0
+        GROUP BY feature_id
+      `)
+    ]);
+    const noteMap = {};
+    (noteCounts || []).forEach(r => { noteMap[r.feature_id] = { noteCount: Number(r.note_count) || 0, latestNoteAt: r.latest_note_at }; });
+    const features = rows.map(f => ({ ...f, noteCount: noteMap[f.featureId]?.noteCount || 0, latestNoteAt: noteMap[f.featureId]?.latestNoteAt || null }));
 
-    const payload = { features: rows, syncedAt: new Date().toISOString(), rowCount: rows.length };
+    const payload = { features, syncedAt: new Date().toISOString(), rowCount: features.length };
     cachedResult = payload;
     cacheTs = Date.now();
     res.json(payload);
