@@ -2777,13 +2777,13 @@ class Component extends DCLogic {
   }
   toggleDrill(id){ this.setState(s=>({drills:{...s.drills,[id]:!s.drills[id]}})); }
   toggleInsights(featureId){
-    // Badge click — just toggles the Account signals section open/closed
-    this.toggleDrill('signals_'+featureId);
+    // Badge click — opens scoring breakdown (which contains account signals)
+    this.toggleDrill('feat_'+featureId);
   }
   togglePbNotes(featureId){
     const key = 'pb_ext_'+featureId;
     const wasOpen = !!this.state.drills[key];
-    const newDrills = {...this.state.drills, [key]: !wasOpen, ['signals_'+featureId]: true};
+    const newDrills = {...this.state.drills, [key]: !wasOpen, ['feat_'+featureId]: true};
     this.setV({drills: newDrills});
     if(!wasOpen && !this.state.featInsightsData[featureId]){
       fetch('/api/feature-insights?featureId='+encodeURIComponent(featureId))
@@ -3089,6 +3089,36 @@ class Component extends DCLogic {
                 +'</div>'
               : '')
             +'</div>';
+          const extOpen = expanded && !!S.drills['pb_ext_'+f.id];
+          const sigData = S.featInsightsData[f.id];
+          const extCompanies = sigData ? (sigData.externalCompanies || []) : null;
+          const extCount = sigData ? (sigData.extNoteCount || 0) : f.noteCount;
+          const accountSignals = !expanded ? '' : `
+            <div style="margin-top:14px;padding-top:14px;border-top:1px solid #f1f1f0;">
+              <p style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#9d9d9d;margin-bottom:10px;">Account signals</p>
+              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
+                <div style="background:#fff8f0;border:1px solid #f5e0c0;border-radius:10px;padding:12px 14px;">
+                  <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#c2600f;margin-bottom:8px;">Salesforce</div>
+                  <div style="font-size:20px;font-weight:900;color:#e0e0e0;">—</div>
+                  <div style="font-size:11px;color:#c0c0c0;margin-top:4px;">Subscriptions coming soon</div>
+                </div>
+                <div style="background:#f0f8ff;border:1px solid #b3d4f5;border-radius:10px;padding:12px 14px;">
+                  <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#1565c0;margin-bottom:8px;">Zendesk</div>
+                  <div style="font-size:20px;font-weight:900;color:#e0e0e0;">—</div>
+                  <div style="font-size:11px;color:#c0c0c0;margin-top:4px;">Ticket signals coming soon</div>
+                </div>
+                <div style="background:#f5f0fa;border:1px solid #ddc8f0;border-radius:10px;padding:12px 14px;${extCount>0?'cursor:pointer;':''}" ${extCount>0?'data-pb-ext="'+f.id+'"':''}>
+                  <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#7030a0;margin-bottom:8px;">Productboard</div>
+                  ${extCount > 0
+                    ? '<div style="font-size:20px;font-weight:900;color:#7030a0;">'+extCount+'</div>'
+                      +'<div style="font-size:11px;color:#9d7fc0;margin-top:2px;">note'+(extCount===1?'':'s')+' · '+fmtDate(f.latestNoteAt)+'</div>'
+                      +'<div style="font-size:11px;font-weight:600;color:#7030a0;margin-top:8px;">'+(extOpen?'Hide ↑':'View notes →')+'</div>'
+                    : '<div style="font-size:20px;font-weight:900;color:#e0e0e0;">—</div>'
+                      +'<div style="font-size:11px;color:#c0c0c0;margin-top:4px;">No linked notes</div>'}
+                </div>
+              </div>
+              ${extOpen ? insightsDrillHtml(extCompanies) : ''}
+            </div>`;
           const breakdown = expanded ? `
             <div style="margin-top:14px;padding-top:14px;border-top:1px solid #f1f1f0;">
               <p style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#9d9d9d;margin-bottom:${isSubScore?'4px':'10px'};">Priority score breakdown</p>
@@ -3205,37 +3235,8 @@ class Component extends DCLogic {
                 <span style="font-size:11px;color:#9d9d9d;margin-left:auto;">${baseScore} × ${Number(activeMultiplier).toFixed(1)} =</span>
                 <span style="font-size:13px;font-weight:700;color:#3c3c3b;">${parentCtxOpen ? Number(f.featureScore).toFixed(2) : Number(f.finalScore).toFixed(2)}</span>
               </div>
+              ${accountSignals}
             </div>` : '';
-          const signalsExpanded = !!S.drills['signals_'+f.id];
-          const extOpen = signalsExpanded && !!S.drills['pb_ext_'+f.id];
-          const sigData = S.featInsightsData[f.id];
-          const extCompanies = sigData ? (sigData.externalCompanies || []) : null;
-          const extCount = sigData ? (sigData.extNoteCount || 0) : f.noteCount;
-          const accountSignals = !signalsExpanded ? '' : `
-            <div style="margin-top:14px;padding-top:14px;border-top:1px solid #f1f1f0;">
-              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
-                <div style="background:#fff8f0;border:1px solid #f5e0c0;border-radius:10px;padding:12px 14px;">
-                  <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#c2600f;margin-bottom:8px;">Salesforce</div>
-                  <div style="font-size:20px;font-weight:900;color:#e0e0e0;">—</div>
-                  <div style="font-size:11px;color:#c0c0c0;margin-top:4px;">Subscriptions coming soon</div>
-                </div>
-                <div style="background:#f0f8ff;border:1px solid #b3d4f5;border-radius:10px;padding:12px 14px;">
-                  <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#1565c0;margin-bottom:8px;">Zendesk</div>
-                  <div style="font-size:20px;font-weight:900;color:#e0e0e0;">—</div>
-                  <div style="font-size:11px;color:#c0c0c0;margin-top:4px;">Ticket signals coming soon</div>
-                </div>
-                <div style="background:#f5f0fa;border:1px solid #ddc8f0;border-radius:10px;padding:12px 14px;${extCount>0?'cursor:pointer;':''}" ${extCount>0?'data-pb-ext="'+f.id+'"':''}>
-                  <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#7030a0;margin-bottom:8px;">Productboard</div>
-                  ${extCount > 0
-                    ? '<div style="font-size:20px;font-weight:900;color:#7030a0;">'+extCount+'</div>'
-                      +'<div style="font-size:11px;color:#9d7fc0;margin-top:2px;">note'+(extCount===1?'':'s')+' · '+fmtDate(f.latestNoteAt)+'</div>'
-                      +'<div style="font-size:11px;font-weight:600;color:#7030a0;margin-top:8px;">'+(extOpen?'Hide ↑':'View notes →')+'</div>'
-                    : '<div style="font-size:20px;font-weight:900;color:#e0e0e0;">—</div>'
-                      +'<div style="font-size:11px;color:#c0c0c0;margin-top:4px;">No linked notes</div>'}
-                </div>
-              </div>
-              ${extOpen ? insightsDrillHtml(extCompanies) : ''}
-            </div>`;
           return `
             <div style="background:#fff;border:1px solid #e6e6e5;border-radius:12px;padding:18px 20px;margin-bottom:12px;box-shadow:0 1px 3px rgba(60,60,59,0.07);">
               <div style="display:flex;align-items:flex-start;gap:16px;">
@@ -3255,16 +3256,13 @@ class Component extends DCLogic {
                       <div style="height:8px;background:#f1f1f0;border-radius:4px;overflow:hidden;">${bar(scoreBarPct,'#ffcc00')}</div>
                     </div>
                     <div style="font-size:12px;color:#6d6d6c;">${f.subfeatureCount>0 ? f.subfeatureCount+(f.subfeatureCount===1?' subfeature':' subfeatures') : 'No subfeatures'}</div>
-                    <div style="margin-left:auto;display:flex;gap:6px;align-items:center;">
-                      <button data-toggle-id="feat_${f.id}" style="font-size:12px;font-weight:700;color:#288184;background:none;border:none;cursor:pointer;">${expanded?'Hide ↑':'Scoring breakdown →'}</button>
-                      <button data-toggle-id="signals_${f.id}" style="font-size:12px;font-weight:700;color:${signalsExpanded?'#7030a0':'#6d6d6c'};border:1.5px solid ${signalsExpanded?'#7030a0':'#ddc8f0'};border-radius:6px;padding:3px 10px;cursor:pointer;background:${signalsExpanded?'#f5f0fa':'none'};">${signalsExpanded?'Hide ↑':'Account signals →'+(f.noteCount>0?' ('+f.noteCount+')':'')}</button>
-                    </div>
+                    <button data-toggle-id="feat_${f.id}" style="margin-left:auto;font-size:12px;font-weight:700;color:#288184;background:none;border:none;cursor:pointer;">${expanded?'Hide ↑':'Scoring breakdown →'}</button>
                   </div>
                   <div style="display:flex;align-items:baseline;justify-content:space-between;margin-top:6px;padding-top:6px;border-top:1px solid #f7f7f6;flex-wrap:wrap;gap:4px;">
                     <a href="https://auroraer.productboard.com/detail/${f.id}" target="_blank" style="font-size:10px;color:#c8c8c8;font-family:monospace;text-decoration:none;" onmouseover="this.style.color='#7030a0'" onmouseout="this.style.color='#c8c8c8'">feature_id ${f.id} ↗</a>
                     <span style="font-size:11px;color:#9d9d9d;">Feature ${Number(f.featureScore).toFixed(2)} · subfeature ${Number(f.maxSubScore).toFixed(2)} · final ${Number(f.finalScore).toFixed(2)}${f.fromSub?' ↑ sub':''}</span>
                   </div>
-                  ${breakdown}${accountSignals}
+                  ${breakdown}
                 </div>
               </div>
             </div>`;
