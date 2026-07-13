@@ -340,6 +340,8 @@ input{font-family:inherit;}
           <div id="pbError" style="display:none;padding:16px;background:#fdeee0;border-radius:8px;font-size:12px;color:#c2600f;text-align:center;"></div>
 
           <div id="pbSummaryView" style="display:none;">
+            <!-- Company profile bar — populated by JS when data loads -->
+            <div id="pbCompanyProfile" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 12px;background:#f7f7f6;border-radius:8px;margin-bottom:12px;font-size:12px;"></div>
             <!-- Stat tiles — click Delivered / In Pipeline / Unlinked to drilldown -->
             <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px;">
               <!-- Total Notes — clickable drilldown -->
@@ -566,7 +568,7 @@ input{font-family:inherit;}
           <span style="white-space:nowrap;"><span style="font-weight:700;color:#3c3c3b;font-family:monospace;">gold_feature_priority</span> · Microsoft Fabric · {{ featRowsLabel }}</span>
         </div>
 
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:22px;">
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:22px;">
           <div onClick="{{ summaryCards.all.onClick }}" style="{{ summaryCards.all.style }}">
             <div style="font-size:11px;color:#6d6d6c;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;">Features scored</div>
             <div style="font-size:28px;font-weight:700;">{{ featSummary.total }}</div>
@@ -594,6 +596,17 @@ input{font-family:inherit;}
           </sc-if>
         </div>
 
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:10px;">
+          <button onClick="{{ toggleFilters }}" style="display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;color:#3c3c3b;background:#f7f7f6;border:1.5px solid #e6e6e5;border-radius:8px;padding:5px 12px;cursor:pointer;white-space:nowrap;">Filters {{ filtersArrow }}</button>
+          <sc-if value="{{ featFiltersCollapsed }}">
+            <sc-for list="{{ activeFilterPills }}" as="p" hint-placeholder-count="0">
+              <button onClick="{{ p.onClick }}" style="{{ p.pillStyle }}">{{ p.label }} ×</button>
+            </sc-for>
+            <span style="display:inline-flex;align-items:center;font-size:11px;font-weight:600;padding:2px 9px;border-radius:12px;background:#f0f0f0;color:#6d6d6c;border:1px solid #e0e0e0;">{{ currentSortLabel }}</span>
+          </sc-if>
+        </div>
+        <sc-if value="{{ featFiltersOpen }}">
+        <div>
         <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:8px;">
           <sc-for list="{{ featTabs }}" as="t" hint-placeholder-count="5">
             <button onClick="{{ t.onClick }}" style="{{ t.style }}">{{ t.label }}</button>
@@ -618,8 +631,39 @@ input{font-family:inherit;}
           </sc-for>
         </div>
         <div style="margin-bottom:18px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+          <span style="font-size:11px;font-weight:600;color:#9d9d9d;margin-right:2px;">PB Status</span>
+          <sc-for list="{{ statusFilterBtns }}" as="b" hint-placeholder-count="8">
+            <button onClick="{{ b.onClick }}" style="{{ b.style }}">{{ b.label }}</button>
+          </sc-for>
+        </div>
+        <div style="margin-bottom:6px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+          <span style="font-size:11px;font-weight:600;color:#9d9d9d;margin-right:2px;">Region group</span>
+          <sc-for list="{{ groupFilterBtns }}" as="b" hint-placeholder-count="5">
+            <button onClick="{{ b.onClick }}" style="{{ b.style }}">{{ b.label }}</button>
+          </sc-for>
+        </div>
+        <sc-if value="{{ hasGroupFilter }}">
+          <div style="margin-bottom:18px;display:flex;gap:4px;flex-wrap:wrap;align-items:center;padding-left:2px;">
+            <span style="font-size:10px;font-weight:600;color:#9d9d9d;margin-right:2px;">Includes</span>
+            <sc-for list="{{ selectedMarketTags }}" as="t" hint-placeholder-count="6">
+              <button onClick="{{ t.onClick }}" style="{{ t.style }}">{{ t.label }}</button>
+            </sc-for>
+          </div>
+        </sc-if>
+        <sc-if value="{{ !hasGroupFilter }}">
+          <div style="margin-bottom:18px;"></div>
+        </sc-if>
+        <div style="margin-bottom:18px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
           <span style="font-size:11px;font-weight:600;color:#9d9d9d;margin-right:2px;">Insights</span>
           <sc-for list="{{ insightsBtns }}" as="b" hint-placeholder-count="4">
+            <button onClick="{{ b.onClick }}" style="{{ b.style }}">{{ b.label }}</button>
+          </sc-for>
+        </div>
+        </div>
+        </sc-if>
+        <div style="margin-bottom:18px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+          <span style="font-size:11px;font-weight:600;color:#9d9d9d;margin-right:2px;">Sort by</span>
+          <sc-for list="{{ sortBtns }}" as="b" hint-placeholder-count="3">
             <button onClick="{{ b.onClick }}" style="{{ b.style }}">{{ b.label }}</button>
           </sc-for>
         </div>
@@ -1154,7 +1198,7 @@ document.addEventListener('click', function(e) {
   }
   // ZD tile drilldown
   var zdTile = e.target.closest('#zdOpenTile, #zdPendingTile, #zdSolvedTile, #zdClosedTile');
-  if (zdTile && window.__zdShowDrilldown && zdTile.style.cursor !== 'default') {
+  if (zdTile && window.__zdShowDrilldown) {
     var zdStatusMap = { zdOpenTile: 'open', zdPendingTile: 'pending', zdSolvedTile: 'solved', zdClosedTile: 'closed' };
     window.__zdShowDrilldown(zdStatusMap[zdTile.id]);
     return;
@@ -1162,9 +1206,7 @@ document.addEventListener('click', function(e) {
   // ZD back button
   if (e.target.closest('#zdBackButton')) {
     var zdDv = document.getElementById('zdDetailView');
-    var zdSv = document.getElementById('zdSummaryView');
     if (zdDv) zdDv.style.display = 'none';
-    if (zdSv) zdSv.style.display = 'block';
     return;
   }
 
@@ -1239,7 +1281,7 @@ class Component extends DCLogic {
     const savedRange        = ls.getItem('argusRange')        || '3m';
     this.state = {
       view: savedView, healthClient: savedHealthClient, range: savedRange, briefClient:'rwe',
-      featProduct:'all', featCritFilter:null, featEffFilter:null, featScoreSource:null, featSearch:'', featInsights:'all', drills:{}, featInsightsData:{}, featuresLoaded:false, featLoading:false, features:[],
+      featProduct:'all', featCritFilter:null, featEffFilter:null, featScoreSource:null, featStatusFilter:[], featHideDelivered:true, featGroupFilter:[], featMarketExclusions:[], featFiltersOpen:true, featSearch:'', featInsights:'all', featSort:'score', drills:{}, featInsightsData:{}, companyFeatsData:{}, featuresLoaded:false, featLoading:false, features:[],
       mdmLoaded:false, mdmLoading:false, mdmSummary:null, mdmDuplicates:[],
       chat:[{role:'argus', html:'Hello — I can brief you on any client account, or help you spot patterns across your portfolio. Try asking about a specific client, or a cross-portfolio question like &ldquo;which clients are at churn risk?&rdquo;'}],
       chatInput:'', typing:false, started:false,
@@ -1467,12 +1509,11 @@ class Component extends DCLogic {
           }).join('');
         }
       }
-      show('zdSummaryView', false);
       show('zdDetailView', true);
     };
 
     const backBtn = document.getElementById('zdBackButton');
-    if (backBtn) backBtn.onclick = () => { show('zdDetailView', false); show('zdSummaryView', true); };
+    if (backBtn) backBtn.onclick = () => { show('zdDetailView', false); };
 
     fetch(`/api/zd-tickets?account=${encodeURIComponent(accountName)}&t=${Date.now()}`)
       .then(r => r.json())
@@ -1510,13 +1551,8 @@ class Component extends DCLogic {
         [['Open',s.open],['Pending',s.pending],['Solved',s.solved],['Closed',s.closed]].forEach(([label, count]) => {
           const tile = document.getElementById('zd' + label + 'Tile');
           if (!tile) return;
-          if (count > 0) {
-            tile.style.cursor = 'pointer';
-            tile.title = 'Click to view ' + label.toLowerCase() + ' tickets';
-          } else {
-            tile.style.cursor = 'default';
-            tile.title = 'No ' + label.toLowerCase() + ' tickets';
-          }
+          tile.style.cursor = 'pointer';
+          tile.title = 'Click to view ' + label.toLowerCase() + ' tickets';
         });
         setText('zdTotalResolved',s.solved + s.closed);
         setText('zdAvgResolution', data.avgResolutionDays != null ? data.avgResolutionDays : '—');
@@ -1661,7 +1697,7 @@ class Component extends DCLogic {
       pbLoadEl.innerHTML =
         '<style>@keyframes pbProg{from{width:0%}to{width:88%}}</style>'
         +'<div style="max-width:520px;margin:40px auto;padding:32px;text-align:center;">'
-          +'<div style="font-size:15px;font-weight:600;color:#3c3c3b;margin-bottom:16px;">Loading ProductBoard insights from Fabric</div>'
+          +'<div style="font-size:15px;font-weight:600;color:#3c3c3b;margin-bottom:16px;">Loading Productboard insights from Fabric</div>'
           +'<div style="height:5px;border-radius:3px;background:#f1f1f0;overflow:hidden;margin-bottom:20px;">'
             +'<div style="height:100%;border-radius:3px;background:linear-gradient(90deg,#288184,#00be86);animation:pbProg 7s ease-out forwards;"></div>'
           +'</div>'
@@ -1719,6 +1755,54 @@ class Component extends DCLogic {
         const _unlinked = (data.unlinkedNotes || []).length;
         const _delCount = _allNotes.filter(n => n.bucket === 'delivered').length;
         const _pipCount = _allNotes.filter(n => n.bucket === 'pipeline' || n.bucket === 'review').length;
+        // Company profile bar
+        const _profileEl = document.getElementById('pbCompanyProfile');
+        if (_profileEl) {
+          const _dom = data.pbCompanyDomain;
+          _profileEl.innerHTML =
+            `<span style="font-weight:700;color:#3c3c3b;">${(data.pbCompanyName||'').replace(/</g,'&lt;')}</span>`
+            +(_dom ? `<span style="color:#d0d0d0;">·</span><span style="color:#9d9d9d;">${_dom}</span>` : '')
+            +`<span style="color:#d0d0d0;">·</span><span style="color:#6d6d6c;">${_allNotes.length + _unlinked} notes</span>`
+            +(s.totalFeatures ? `<span style="color:#d0d0d0;">·</span><span style="color:#6d6d6c;">${s.totalFeatures} features linked</span>` : '');
+        }
+
+        // Linked features view — swaps drilldown panel content to a feature-centric list
+        window.__pbShowLinkedFeatures = () => {
+          const panel = document.getElementById('pbDrilldown');
+          if (!panel) return;
+          const escHtml = s => (s||'').replace(/</g,'&lt;');
+          const statusColors = { Delivered:['#e6faf4','#00664f'], 'In Progress':['#fff8e1','#b89400'], 'Under Review':['#eef2ff','#3730a3'] };
+          const featRows = data.features.length === 0
+            ? `<div style="padding:20px;text-align:center;font-size:12px;color:#9d9d9d;">No linked features found.</div>`
+            : `<div style="overflow-x:auto;border-top:1px solid #e6e6e5;"><table style="width:100%;border-collapse:collapse;font-size:12px;">
+                <colgroup><col><col style="width:90px"><col style="width:60px"></colgroup>
+                <thead style="background:#f7f7f6;border-bottom:1px solid #e6e6e5;position:sticky;top:0;">
+                  <tr>
+                    <th style="padding:9px 12px;text-align:left;font-weight:700;color:#3c3c3b;">Feature</th>
+                    <th style="padding:9px 12px;text-align:center;font-weight:700;color:#3c3c3b;">Status</th>
+                    <th style="padding:9px 12px;text-align:center;font-weight:700;color:#3c3c3b;">Notes</th>
+                  </tr>
+                </thead>
+                <tbody>${data.features.map(f=>{
+                  const sc = statusColors[f.status] || ['#f1f1f0','#6d6d6c'];
+                  const badge = `<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;background:${sc[0]};color:${sc[1]};">${escHtml(f.status)}</span>`;
+                  return `<tr style="border-bottom:1px solid #f1f1f0;">
+                    <td style="padding:10px 12px;"><a href="https://auroraer.productboard.com/feature-board/features/${f.featureId}" target="_blank" style="font-size:11px;font-weight:600;color:#7030a0;text-decoration:none;">${escHtml(f.featureName||'(untitled)')}</a></td>
+                    <td style="padding:10px 12px;text-align:center;">${badge}</td>
+                    <td style="padding:10px 12px;text-align:center;color:#6d6d6c;">${f.notes.length}</td>
+                  </tr>`;
+                }).join('')}</tbody>
+              </table></div>`;
+          panel.innerHTML =
+            `<div style="padding:10px 16px;background:#f7f7f6;border-bottom:1px solid #e6e6e5;display:flex;align-items:center;gap:12px;">
+              <button id="pbDrillBack" style="padding:5px 12px;border-radius:6px;border:1px solid #e6e6e5;background:#fff;color:#3c3c3b;font-size:11px;font-weight:700;cursor:pointer;">← Back to Summary</button>
+              <span style="font-size:12px;color:#7030a0;font-weight:600;">Linked Features (${data.features.length})</span>
+            </div>
+            <div style="max-height:370px;overflow-y:auto;">${featRows}</div>`;
+          panel.style.display = 'block';
+          window.__pbOpenDropdown = null;
+        };
+
         setText('pbTotalNotes', _allNotes.length + _unlinked);
         setText('pbTotalFeatures', `${s.totalFeatures} features`);
         setText('pbDeliveredCount', _delCount);
@@ -1746,17 +1830,21 @@ class Component extends DCLogic {
         const renderNoteRows = (notes) => notes.map(n => {
           const hasFeat = n.features && n.features.length > 0;
           return `<tbody>
-            <tr style="border-bottom:1px solid #f1f1f0;${hasFeat?'cursor:pointer;':''}"
+            <tr style="border-bottom:${hasFeat?'none':'1px solid #f1f1f0'};${hasFeat?'cursor:pointer;':''}"
                 ${hasFeat?`onclick="(function(el){var nb=el.closest('tbody').nextElementSibling;var chev=el.querySelector('.pb-chev');if(!nb||!nb.classList.contains('pb-feat-tb'))return;nb.style.display=nb.style.display==='none'?'':'none';chev.textContent=nb.style.display===''?'▴':'▾';})(this)"`:''}>
-              <td style="padding:10px 12px;">${noteTitle(n.noteName, n.noteUrl)}</td>
+              <td style="padding:10px 12px;">
+                ${noteTitle(n.noteName, n.noteUrl)}
+                ${n.noteExcerpt ? `<div style="font-size:11px;color:#6d6d6c;margin-top:3px;line-height:1.4;">${n.noteExcerpt.replace(/</g,'&lt;')}</div>` : ''}
+              </td>
               <td style="padding:10px 12px;text-align:center;font-size:12px;color:#6d6d6c;">${hasFeat?n.features.length:'—'}</td>
               <td style="padding:10px 12px;text-align:center;font-size:11px;color:#9d9d9d;white-space:nowrap;">${fmt(n.createdAt)}</td>
-              <td style="padding:10px 12px;text-align:center;width:24px;">${hasFeat?`<span class="pb-chev" style="font-size:10px;color:#9d9d9d;">▾</span>`:''}</td>
+              <td style="padding:10px 12px;text-align:center;width:24px;">${hasFeat?`<span class="pb-chev" style="font-size:10px;color:#9d9d9d;">▴</span>`:''}</td>
             </tr>
           </tbody>
-          ${hasFeat?`<tbody class="pb-feat-tb" style="display:none;">${n.features.map(f=>`
+          ${hasFeat?`<tbody class="pb-feat-tb">${n.features.map(f=>`
             <tr style="background:#fafafa;">
-              <td style="padding:8px 12px 8px 28px;border-bottom:1px solid #f1f1f0;">
+              <td style="padding:6px 12px 6px 28px;border-bottom:1px solid #f1f1f0;">
+                <span style="font-size:10px;color:#b0b0b0;margin-right:4px;">↳</span>
                 <a href="https://auroraer.productboard.com/feature-board/features/${f.featureId}" target="_blank" style="font-size:11px;font-weight:600;color:#7030a0;text-decoration:none;">${(f.featureName||'(untitled)').replace(/</g,'&lt;')}</a>
               </td>
               <td colspan="3" style="border-bottom:1px solid #f1f1f0;"></td>
@@ -1879,10 +1967,14 @@ class Component extends DCLogic {
             const drillLabel = { total:'All Notes — by category', delivered:'Delivered', pipeline:'In Progress', unlinked:'Unlinked Notes' }[key] || key;
             const contentHtml = key === 'total' ? totalDrillHtml() : key === 'unlinked' ? unlinkedDrillHtml() : noteDrillHtml(key);
 
+            const linkedFeatBtn = data.features.length > 0
+              ? `<button onclick="window.__pbShowLinkedFeatures()" style="margin-left:auto;font-size:11px;font-weight:700;padding:3px 10px;border-radius:6px;border:1px solid #d8c8ea;background:#fff;color:#7030a0;cursor:pointer;white-space:nowrap;">View ${data.features.length} features →</button>`
+              : '';
             panel.innerHTML = `
-              <div style="padding:10px 16px;background:#f7f7f6;border-bottom:1px solid #e6e6e5;display:flex;align-items:center;gap:12px;">
+              <div style="padding:10px 16px;background:#f7f7f6;border-bottom:1px solid #e6e6e5;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
                 <button id="pbDrillBack" style="padding:5px 12px;border-radius:6px;border:1px solid #e6e6e5;background:#fff;color:#3c3c3b;font-size:11px;font-weight:700;cursor:pointer;">← Back to Summary</button>
                 <span style="font-size:12px;color:${drillColor};font-weight:600;">${drillLabel}</span>
+                ${linkedFeatBtn}
               </div>
               <div style="max-height:370px;overflow-y:auto;">${contentHtml}</div>`;
             panel.style.display = 'block';
@@ -2299,7 +2391,6 @@ class Component extends DCLogic {
   }
 
   showDrilldown(group){
-    document.getElementById('sfSummaryView').style.display = 'none';
     document.getElementById('sfDetailView').style.display = 'block';
     document.getElementById('sfDrilldownTitle').textContent = `${group} Subscriptions`;
 
@@ -2668,10 +2759,12 @@ class Component extends DCLogic {
         subCriticality:   f.subCriticality || '',
         subEfficiency:    f.subEfficiency  || '',
         subRegionText:    f.subRegionText  || '',
-        noteCount:        Number(f.noteCount)     || 0,
-        extNoteCount:     Number(f.extNoteCount)  || 0,
-        intNoteCount:     Number(f.intNoteCount)  || 0,
-        latestNoteAt:     f.latestNoteAt || null
+        noteCount:        Number(f.noteCount)        || 0,
+        extNoteCount:     Number(f.extNoteCount)    || 0,
+        intNoteCount:     Number(f.intNoteCount)    || 0,
+        extCompanyCount:  Number(f.extCompanyCount) || 0,
+        latestNoteAt:     f.latestNoteAt || null,
+        pbStatus:         f.pbStatus || ''
       }));
       clearInterval(window.__featMsgInterval);
       this.setState({features, featuresLoaded: true, featLoading: false});
@@ -2792,6 +2885,17 @@ class Component extends DCLogic {
         .then(r=>r.json())
         .then(data=>{ this.setV({featInsightsData:{...this.state.featInsightsData,[featureId]:data}}); })
         .catch(err=>{ this.setV({featInsightsData:{...this.state.featInsightsData,[featureId]:{error:err.message}}}); });
+    }
+  }
+  toggleCompanyFeats(companyId, featureId){
+    const key = 'co_feats_'+companyId;
+    const wasOpen = !!this.state.drills[key];
+    this.setV({drills:{...this.state.drills,[key]:!wasOpen}});
+    if(!wasOpen && !this.state.companyFeatsData[companyId]){
+      fetch('/api/company-features?companyId='+encodeURIComponent(companyId)+'&excludeFeatureId='+encodeURIComponent(featureId))
+        .then(r=>r.json())
+        .then(data=>{ this.setV({companyFeatsData:{...this.state.companyFeatsData,[companyId]:data}}); })
+        .catch(err=>{ this.setV({companyFeatsData:{...this.state.companyFeatsData,[companyId]:{error:err.message}}}); });
     }
   }
 
@@ -2928,6 +3032,45 @@ class Component extends DCLogic {
     const regionStyle={fontSize:'11px',fontWeight:700,padding:'2px 9px',borderRadius:'20px',background:'#e9f2f2',color:'#288184'};
     const compBar=(pts,cap,col)=>({display:'block',height:'100%',borderRadius:'3px',width:Math.round(pts/cap*100)+'%',background:col});
 
+    const MARKET_GROUPS = [
+      { label:'CE',             markets:['SEE','DEU','CEE','NOD','BALTCS','WORLDWIDE','EMEA'] },
+      { label:'GBR/IRX',        markets:['GBR','IRX','EMEA','EXTERNAL ORIGIN REGIONS','WORLDWIDE'] },
+      { label:'Central Europe', markets:['IBE','ITA','FRA','SWE','EMEA','WORLDWIDE'] },
+      { label:'APAC',           markets:['JPN','EXTERNAL ORIGIN REGIONS','IND','KOR','AUS-NEW','AUS-WEN','APAC','PHL','MYS'] },
+      { label:'AMERICAS',       markets:['US','ONT','MEX','WORLDWIDE','AIES','CHL','BRA','NORAM','LATAM'] },
+    ];
+    const featureMarkets = f => f.fromSub && f.subId
+      ? (f.subRegionText||'').split(',').map(s=>s.trim().replace(/\s*\(.*\)/,'').trim()).filter(Boolean)
+      : f.matchedRegions.map(r=>r.name);
+    const selectedGroupMarkets = [...new Set(
+      MARKET_GROUPS.filter(g=>S.featGroupFilter.includes(g.label)).flatMap(g=>g.markets)
+    )].sort();
+    const effectiveMarketSet = new Set(selectedGroupMarkets.filter(m=>!S.featMarketExclusions.includes(m)));
+    const groupFilterBtns = MARKET_GROUPS.map(g => {
+      const active = S.featGroupFilter.includes(g.label);
+      const next = active ? S.featGroupFilter.filter(x=>x!==g.label) : [...S.featGroupFilter, g.label];
+      // Clear exclusions that no longer belong to any selected group when a group is toggled off
+      const remainingGroups = MARKET_GROUPS.filter(gg=>next.includes(gg.label));
+      const remainingMarkets = new Set(remainingGroups.flatMap(gg=>gg.markets));
+      const nextExclusions = S.featMarketExclusions.filter(m=>remainingMarkets.has(m));
+      return { label:g.label, onClick:()=>this.setV({featGroupFilter:next, featMarketExclusions:nextExclusions}),
+        style:{display:'inline-flex',alignItems:'center',fontSize:'12px',fontWeight:active?700:500,padding:'5px 12px',borderRadius:'8px',cursor:'pointer',
+          border:'1.5px solid '+(active?'#288184':'#cecece'),background:active?'#e9f2f2':'#fff',color:active?'#288184':'#6d6d6c'} };
+    });
+    const hasGroupFilter = S.featGroupFilter.length > 0;
+    const selectedMarketTags = selectedGroupMarkets.map(m => {
+      const excluded = S.featMarketExclusions.includes(m);
+      const nextExcl = excluded ? S.featMarketExclusions.filter(x=>x!==m) : [...S.featMarketExclusions, m];
+      return { label:m, excluded,
+        onClick:()=>this.setV({featMarketExclusions:nextExcl}),
+        style:{display:'inline-flex',alignItems:'center',fontSize:'11px',fontWeight:excluded?400:600,
+          padding:'2px 8px',borderRadius:'12px',cursor:'pointer',userSelect:'none',
+          border:'1.5px solid '+(excluded?'#d0d0d0':'#288184'),
+          background:excluded?'#f5f5f5':'#e9f2f2',
+          color:excluded?'#b0b0b0':'#288184',
+          textDecoration:excluded?'line-through':'none'} };
+    });
+
     const featSearchTerm = S.featSearch.trim().toLowerCase();
     const isIdSearch = featSearchTerm.length >= 8 && /^[0-9a-f-]+$/i.test(featSearchTerm);
     const filtered=scored
@@ -2938,8 +3081,17 @@ class Component extends DCLogic {
         }
         return true;
       })
-      .filter(f=> (S.featProduct==='all'||f.productName===S.featProduct) && (!S.featCritFilter || (S.featCritFilter==='Blocker+Critical'?(f.criticality==='Blocker'||f.criticality==='Critical'):f.criticality===S.featCritFilter)) && (!S.featEffFilter || f.efficiency===S.featEffFilter) && (!S.featScoreSource || f.scoreSource===S.featScoreSource) && (S.featInsights==='all'||(S.featInsights==='has_ext'?f.extNoteCount>0:S.featInsights==='has_int'?f.intNoteCount>0:f.noteCount===0)))
-      .sort((a,b)=> b.finalScore-a.finalScore || (critRank[b.criticality]-critRank[a.criticality]));
+      .filter(f=> (S.featProduct==='all'||f.productName===S.featProduct) && (!S.featCritFilter || (S.featCritFilter==='Blocker+Critical'?(f.criticality==='Blocker'||f.criticality==='Critical'):f.criticality===S.featCritFilter)) && (!S.featEffFilter || f.efficiency===S.featEffFilter) && (!S.featScoreSource || f.scoreSource===S.featScoreSource) && (!S.featStatusFilter.length || S.featStatusFilter.includes(f.pbStatus)) && (!S.featHideDelivered || !['Released','Internally released'].includes(f.pbStatus)) && (!S.featGroupFilter.length || featureMarkets(f).some(m=>effectiveMarketSet.has(m))) && (S.featInsights==='all'||(S.featInsights==='has_ext'?f.extNoteCount>0:S.featInsights==='has_int'?f.intNoteCount>0:f.noteCount===0)))
+      .sort((a,b)=>{
+        if(S.featSort==='regional'){
+          const ra=a.rawRegionalPriority??999, rb=b.rawRegionalPriority??999;
+          return ra-rb || b.finalScore-a.finalScore;
+        }
+        if(S.featSort==='insights') return (b.noteCount||0)-(a.noteCount||0) || b.finalScore-a.finalScore;
+        return b.finalScore-a.finalScore || (critRank[b.criticality]-critRank[a.criticality]);
+      });
+    const totalExtNotes = filtered.reduce((s,f)=>s+(f.extNoteCount||0),0);
+    const totalIntNotes = filtered.reduce((s,f)=>s+(f.intNoteCount||0),0);
     const feats=filtered.map((f,i)=>{
       const expanded=!!S.drills['feat_'+f.id];
       return {
@@ -2975,30 +3127,74 @@ class Component extends DCLogic {
     const fmtDate = d => { if(!d) return '—'; const dt=new Date(d); return isNaN(dt)?'—':dt.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}); };
     const iBtnBase = {fontSize:'11px',fontWeight:600,padding:'4px 12px',borderRadius:'6px',border:'1.5px solid #e6e6e5',background:'#fff',color:'#6d6d6c',cursor:'pointer'};
     const iBtnAct  = {fontSize:'11px',fontWeight:700,padding:'4px 12px',borderRadius:'6px',border:'1.5px solid #7030a0',background:'#f5f0fa',color:'#7030a0',cursor:'pointer'};
+    const STATUS_ORDER = ['In progress','Shaping','Active priorities','Quick win','Planned','New idea','Not priorities','Parked priorities','Blocked By Region','Released','Internally released'];
+    const STATUS_COLOR = {
+      'In progress':'#3730a3','Shaping':'#3730a3','Active priorities':'#3730a3','Quick win':'#3730a3','Planned':'#3730a3',
+      'Released':'#00966b','Internally released':'#00966b',
+    };
+    const STATUS_BG = {
+      'In progress':'#eef2ff','Shaping':'#eef2ff','Active priorities':'#eef2ff','Quick win':'#eef2ff','Planned':'#eef2ff',
+      'Released':'#e6f7f1','Internally released':'#e6f7f1',
+    };
+    const allStatuses = [...new Set(S.features.map(f=>f.pbStatus).filter(Boolean))].sort((a,b)=>{
+      const ai=STATUS_ORDER.indexOf(a), bi=STATUS_ORDER.indexOf(b);
+      return (ai<0?99:ai)-(bi<0?99:bi);
+    });
+    const DELIVERED_STATUSES = ['Released','Internally released'];
+    const visibleStatuses = S.featHideDelivered ? allStatuses.filter(s=>!DELIVERED_STATUSES.includes(s)) : allStatuses;
+    const statusFilterBtns = [
+      ...visibleStatuses.map(s => {
+        const active = S.featStatusFilter.includes(s);
+        const isDelivered = DELIVERED_STATUSES.includes(s);
+        const col = active ? (STATUS_COLOR[s]||'#7030a0') : '#6d6d6c';
+        const bg  = active ? (STATUS_BG[s]||'#f5f0fa') : '#fff';
+        const next = active ? S.featStatusFilter.filter(x=>x!==s) : [...S.featStatusFilter, s];
+        return { label:s, onClick:()=>this.setV({featStatusFilter:next, ...(isDelivered&&!active?{featHideDelivered:false}:{})}),
+          style:{display:'inline-flex',alignItems:'center',fontSize:'12px',fontWeight:active?700:500,padding:'5px 12px',borderRadius:'8px',cursor:'pointer',
+            border:'1.5px solid '+(active?(STATUS_COLOR[s]||'#7030a0'):'#cecece'),background:bg,color:col} };
+      }),
+      { label: S.featHideDelivered ? '+ Show delivered' : '– Hide delivered',
+        onClick: ()=>this.setV({featHideDelivered:!S.featHideDelivered, ...(S.featHideDelivered?{featStatusFilter:[]}:{})}),
+        style:{display:'inline-flex',alignItems:'center',fontSize:'11px',fontWeight:500,padding:'5px 10px',borderRadius:'8px',cursor:'pointer',border:'1.5px dashed #cecece',background:'#fff',color:'#9d9d9d'} },
+    ];
+    const sortBtns = [
+      {val:'score',    label:'Priority score'},
+      {val:'regional', label:'Regional priority'},
+      {val:'insights', label:'Insight count'},
+    ].map(s=>({ label:s.label, onClick:()=>this.setV({featSort:s.val}),
+      style:S.featSort===s.val?iBtnAct:iBtnBase }));
     const insightsBtns = [
       {label:'All',           onClick:()=>this.setV({featInsights:'all'}),     style:S.featInsights==='all'    ?iBtnAct:iBtnBase},
       {label:'Has ext',       onClick:()=>this.setV({featInsights:'has_ext'}), style:S.featInsights==='has_ext'?iBtnAct:iBtnBase},
       {label:'Has int',       onClick:()=>this.setV({featInsights:'has_int'}), style:S.featInsights==='has_int'?iBtnAct:iBtnBase},
       {label:'No insights',   onClick:()=>this.setV({featInsights:'none'}),    style:S.featInsights==='none'   ?iBtnAct:iBtnBase},
     ];
-    const insightsDrillHtml = (companies) => {
+    const insightsDrillHtml = (companies, featureId) => {
       if (!companies) return '<div style="background:#f7f7f6;border-radius:8px;padding:12px;margin-top:10px;font-size:12px;color:#9d9d9d;font-style:italic;">Loading notes…</div>';
       if (!companies.length) return '<div style="background:#f7f7f6;border-radius:8px;padding:12px;margin-top:10px;font-size:12px;color:#9d9d9d;">No notes found.</div>';
-      return '<div style="background:#f7f7f6;border-radius:8px;padding:4px 12px;margin-top:10px;">'
-        +companies.map(c=>
-          '<div style="padding:8px 0;border-bottom:1px solid #e6e6e5;">'
-            +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">'
-              +'<span style="font-size:12px;font-weight:700;color:#3c3c3b;">'+(c.companyName||'Unknown').replace(/</g,'&lt;')+'</span>'
-              +'<span style="font-size:11px;color:#9d9d9d;">'+c.notes.length+' note'+(c.notes.length===1?'':'s')+'</span>'
+      return '<div style="background:#f7f7f6;border-radius:8px;padding:4px 12px;margin-top:10px;max-height:400px;overflow-y:auto;">'
+        +companies.map(c=>{
+          const domain = c.companyDomain ? '<span style="font-size:10px;color:#9d9d9d;margin-left:6px;">'+c.companyDomain+'</span>' : '';
+
+          return '<div style="padding:8px 0;border-bottom:1px solid #e6e6e5;">'
+            // Company header row
+            +'<div style="display:flex;align-items:baseline;gap:0;min-width:0;margin-bottom:6px;">'
+              +(c.companyName
+              ? '<span style="font-size:12px;font-weight:700;color:#3c3c3b;">'+c.companyName.replace(/</g,'&lt;')+'</span>'+domain
+              : '<span style="font-size:12px;font-style:italic;color:#b0b0af;">No company linked</span>')
             +'</div>'
+            // Notes
             +c.notes.map(n=>
-              '<div style="display:flex;justify-content:space-between;align-items:flex-start;padding:4px 0 4px 12px;">'
-                +'<a href="'+(n.noteUrl||'#')+'" target="_blank" style="font-size:12px;color:#7030a0;text-decoration:none;flex:1;min-width:0;" onmouseover="this.style.textDecoration=\'underline\'" onmouseout="this.style.textDecoration=\'none\'">'+(n.noteName||'(untitled)').replace(/</g,'&lt;')+'</a>'
-                +'<span style="font-size:11px;color:#9d9d9d;white-space:nowrap;margin-left:12px;">'+fmtDate(n.createdAt)+'</span>'
+              '<div style="padding:4px 0 6px 12px;">'
+                +'<div style="display:flex;justify-content:space-between;align-items:baseline;">'
+                  +'<a href="'+(n.noteUrl||'#')+'" target="_blank" style="font-size:12px;color:#7030a0;text-decoration:none;flex:1;min-width:0;" onmouseover="this.style.textDecoration=\'underline\'" onmouseout="this.style.textDecoration=\'none\'">'+(n.noteName||'(untitled)').replace(/</g,'&lt;')+'</a>'
+                  +'<span style="font-size:11px;color:#9d9d9d;white-space:nowrap;margin-left:12px;">'+fmtDate(n.createdAt)+'</span>'
+                +'</div>'
+                +(n.noteExcerpt ? '<div style="font-size:11px;color:#6d6d6c;margin-top:2px;line-height:1.4;">'+n.noteExcerpt.replace(/</g,'&lt;')+'</div>' : '')
               +'</div>'
             ).join('')
-          +'</div>'
-        ).join('')
+          +'</div>';
+        }).join('')
         +'</div>';
     };
     const critColor={Blocker:['#f5e6f5','#7030a0'],Critical:['#fbeaea','#d23f3f'],High:['#fdeee0','#c2600f'],Medium:['#f1f1f0','#6d6d6c'],Low:['#f1f1f0','#9d9d9d']};
@@ -3096,6 +3292,7 @@ class Component extends DCLogic {
           const sigData = S.featInsightsData[f.id];
           const extCompanies = sigData ? (sigData.companies || []) : null;
           const extCount = sigData ? (sigData.noteCount || 0) : f.noteCount;
+          const extCompanyCount = sigData ? extCompanies.filter(c => c.companyId).length : null;
           const accountSignals = !expanded ? '' : `
             <div style="margin-top:14px;padding-top:14px;border-top:1px solid #f1f1f0;">
               <p style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#9d9d9d;margin-bottom:10px;">Account signals</p>
@@ -3115,12 +3312,13 @@ class Component extends DCLogic {
                   ${extCount > 0
                     ? '<div style="font-size:20px;font-weight:900;color:#7030a0;">'+extCount+'</div>'
                       +'<div style="font-size:11px;color:#9d7fc0;margin-top:2px;">note'+(extCount===1?'':'s')+' · '+fmtDate(f.latestNoteAt)+'</div>'
+                      +(extCompanyCount !== null ? '<div style="font-size:11px;color:#9d7fc0;margin-top:2px;">'+extCompanyCount+' compan'+(extCompanyCount===1?'y':'ies')+'</div>' : '')
                       +'<div style="font-size:11px;font-weight:600;color:#7030a0;margin-top:8px;">'+(extOpen?'Hide ↑':'View notes →')+'</div>'
                     : '<div style="font-size:20px;font-weight:900;color:#e0e0e0;">—</div>'
                       +'<div style="font-size:11px;color:#c0c0c0;margin-top:4px;">No linked notes</div>'}
                 </div>
               </div>
-              ${extOpen ? insightsDrillHtml(extCompanies) : ''}
+              ${extOpen ? insightsDrillHtml(extCompanies, f.id) : ''}
             </div>`;
           const breakdown = expanded ? `
             <div style="margin-top:14px;padding-top:14px;border-top:1px solid #f1f1f0;">
@@ -3251,7 +3449,8 @@ class Component extends DCLogic {
                     ${badge(activeEff  ? activeEff+' - Efficiency'   : '— Efficiency',  ec[0], ec[1])}
                     ${badge(activeCrit ? activeCrit+' - Criticality' : '— Criticality', cc[0], cc[1])}
                     ${f.fromSub ? badge('↑ subfeature','#f0e9f7','#7030a0') : ''}
-                    ${f.noteCount > 0 ? `<span style="font-size:11px;font-weight:700;padding:2px 9px;border-radius:20px;background:#f5f0fa;color:#7030a0;cursor:pointer;" data-insights-id="${f.id}">● ${[f.extNoteCount>0?f.extNoteCount+' ext':'',f.intNoteCount>0?f.intNoteCount+' int':''].filter(Boolean).join(' · ')}</span>` : ''}
+                    ${f.pbStatus ? `<span style="font-size:11px;font-weight:700;padding:2px 9px;border-radius:20px;background:${STATUS_BG[f.pbStatus]||'#f1f1f0'};color:${STATUS_COLOR[f.pbStatus]||'#6d6d6c'};">${f.pbStatus}</span>` : ''}
+                    ${f.noteCount > 0 ? `<span style="font-size:11px;font-weight:700;padding:2px 9px;border-radius:20px;background:#f5f0fa;color:#7030a0;cursor:pointer;" data-insights-id="${f.id}">● ${[f.extNoteCount>0?f.extNoteCount+' ext':'',f.intNoteCount>0?f.intNoteCount+' int':'',f.extCompanyCount>0?f.extCompanyCount+' co':''].filter(Boolean).join(' · ')}</span>` : ''}
                   </div>
                   <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-top:12px;">
                     <div style="flex:1;min-width:200px;">
@@ -3279,6 +3478,8 @@ class Component extends DCLogic {
       if(insBtn) { this.toggleInsights(insBtn.dataset.insightsId); return; }
       const extBtn = e.target.closest('[data-pb-ext]');
       if(extBtn) { this.togglePbNotes(extBtn.dataset.pbExt); return; }
+      const coBtn = e.target.closest('[data-co-feats]');
+      if(coBtn) { this.toggleCompanyFeats(coBtn.dataset.coFeats, coBtn.dataset.featId); return; }
     };
 
     // ── assistant view-model ──
@@ -3315,6 +3516,18 @@ class Component extends DCLogic {
       label, onClick:()=>this.setV({briefClient:key}),
       style: S.briefClient===key?{...briefBase,borderColor:'#ffcc00',background:'#fff8e1',fontWeight:700}:briefBase }));
 
+    const _pill = {display:'inline-flex',alignItems:'center',gap:'4px',fontSize:'11px',fontWeight:600,padding:'2px 9px',borderRadius:'12px',cursor:'pointer',background:'#f5f0fa',color:'#7030a0',border:'1px solid #ddc8f0'};
+    const activeFilterPills = [
+      ...(S.featProduct!=='all' ? [{label:S.featProduct, onClick:(e)=>{e.stopPropagation();this.setV({featProduct:'all'});}}] : []),
+      ...(S.featCritFilter ? [{label:S.featCritFilter, onClick:(e)=>{e.stopPropagation();this.setV({featCritFilter:null});}}] : []),
+      ...(S.featEffFilter ? [{label:S.featEffFilter+' efficiency', onClick:(e)=>{e.stopPropagation();this.setV({featEffFilter:null});}}] : []),
+      ...(S.featScoreSource ? [{label:S.featScoreSource, onClick:(e)=>{e.stopPropagation();this.setV({featScoreSource:null});}}] : []),
+      ...S.featStatusFilter.map(s=>({label:s, onClick:(e)=>{e.stopPropagation();this.setV({featStatusFilter:S.featStatusFilter.filter(x=>x!==s)});}})),
+      ...S.featGroupFilter.map(g=>({label:g, onClick:(e)=>{e.stopPropagation();this.setV({featGroupFilter:S.featGroupFilter.filter(x=>x!==g),featMarketExclusions:[]});}})),
+      ...(S.featInsights!=='all' ? [{label:S.featInsights==='has_ext'?'Has ext':S.featInsights==='has_int'?'Has int':'No insights', onClick:(e)=>{e.stopPropagation();this.setV({featInsights:'all'});}}] : []),
+    ].map(p=>({...p, pillStyle:_pill}));
+    const toggleFilters = ()=>this.setV({featFiltersOpen:!S.featFiltersOpen});
+
     return {
       syncedAgo:S.buildStatus.syncLabel || 'Synced just now', amName:S.currentUser.name, amInitials:S.currentUser.initials,
       goHealth:(e)=>{e&&e.preventDefault();this.setV({view:'health'});},
@@ -3328,7 +3541,9 @@ class Component extends DCLogic {
       healthTabsHtml, rangesHtml, healthTabs, ranges, hc,
       toggleUsers:()=>this.toggleDrill('users_'+S.healthClient), drillUsers:!!S.drills['users_'+S.healthClient],
       toggleSubs:()=>this.toggleDrill('subs_'+S.healthClient), drillSubs:!!S.drills['subs_'+S.healthClient],
-      featTabs, critFilterBtns, effFilterBtns, srcBtns, insightsBtns, feats, featSummary, summaryCards, featEmpty:feats.length===0, featsHtml, onFeatClick,
+      featTabs, critFilterBtns, effFilterBtns, srcBtns, statusFilterBtns, groupFilterBtns, hasGroupFilter, selectedMarketTags, insightsBtns, sortBtns, feats, featSummary, summaryCards, featEmpty:feats.length===0, featsHtml, onFeatClick,
+      featFiltersOpen:S.featFiltersOpen, featFiltersCollapsed:!S.featFiltersOpen, filtersArrow:S.featFiltersOpen?'▲':'▼', toggleFilters, activeFilterPills,
+      currentSortLabel:'● '+[totalExtNotes>0?totalExtNotes+' ext':'',totalIntNotes>0?totalIntNotes+' int':''].filter(Boolean).join(' · '),
       featSearch:S.featSearch, onFeatSearch:(e)=>this.setV({featSearch:e.target.value}), clearFeatSearch:()=>{ const inp=document.querySelector('[placeholder*="Search by feature"]'); if(inp)inp.value=''; this.setV({featSearch:''}); }, hasFeatSearch:!!S.featSearch.trim(),
       featRowsLabel:`${S.features.length} rows · synced 4 min ago`,
       chat, typing:S.typing, showSuggestions:!S.started, suggestions,

@@ -49,6 +49,47 @@ function bucket(status) {
   return 'review';
 }
 
+const stripHtml = (s) => {
+  if (!s) return null;
+  const lines = s
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/(?:p|div|li|tr|td|th|h[1-6])>/gi, '\n')
+    .replace(/<[^>]*>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .split('\n')
+    .map(l => l.trim())
+    .filter(l => l);
+
+  // Detect email header block — English (From/Subject) or German Outlook (Von/Betreff)
+  const FROM_RE    = /^(From|Von):\s/i;
+  const SUBJECT_RE = /\b(Subject|Betreff):\s/i;
+  const fromIdx = lines.findIndex(l => FROM_RE.test(l));
+  if (fromIdx >= 0) {
+    const subjectIdx = lines.findIndex(l => SUBJECT_RE.test(l));
+    if (subjectIdx < 0) return null; // headers fill entire excerpt; no body visible
+    const subjectLine = lines[subjectIdx];
+    let relevant;
+    if (/^(Subject|Betreff):\s/i.test(subjectLine)) {
+      // Subject on its own line — body starts on next line
+      relevant = lines.slice(subjectIdx + 1);
+    } else {
+      // Subject embedded in a combined header line — extract content after the subject value
+      const afterSubject = subjectLine
+        .replace(/^.*?(Subject|Betreff):\s*/i, '')
+        .replace(/https?:\/\/\S+/g, '')
+        .trim();
+      relevant = [...(afterSubject ? [afterSubject] : []), ...lines.slice(subjectIdx + 1)];
+    }
+    return relevant.join(' ').replace(/\s+/g, ' ').trim() || null;
+  }
+
+  return lines.join(' ').replace(/\s+/g, ' ').trim() || null;
+};
+
 async function pbInsights(req, res) {
   const account = (req.query.account || '').trim();
   if (!account) return res.status(400).json({ error: 'account query param required' });
@@ -61,7 +102,7 @@ async function pbInsights(req, res) {
 
     // 1. Resolve pb_company_id from MDM
     const mdmRows = await queryLakehouse(`
-      SELECT TOP 1 pb_company_id, pb_company_name
+      SELECT TOP 1 pb_company_id, pb_company_name, pb_company_domain
       FROM v_silver_mdm_account
       WHERE sf_account_name = '${escaped}'
         AND has_pb_company = 1
@@ -72,8 +113,9 @@ async function pbInsights(req, res) {
       return res.json({ pbCompanyId: null, pbCompanyName: null, summary: null, features: [] });
     }
 
-    const pbCompanyId   = mdmRows[0].pb_company_id;
-    const pbCompanyName = mdmRows[0].pb_company_name;
+    const pbCompanyId     = mdmRows[0].pb_company_id;
+    const pbCompanyName   = mdmRows[0].pb_company_name;
+    const pbCompanyDomain = mdmRows[0].pb_company_domain || null;
     const esc2 = pbCompanyId.replace(/'/g, "''");
 
     // 2. Features + notes + unlinked notes in parallel
@@ -97,7 +139,7 @@ async function pbInsights(req, res) {
         SELECT
           note_id,
           note_name,
-          LEFT(note_content, 300) AS note_excerpt,
+          LEFT(note_content, 1200) AS note_excerpt,
           note_html_url,
           note_created_at,
           feature_id,
@@ -132,7 +174,7 @@ async function pbInsights(req, res) {
       notesByFeature[n.feature_id].push({
         noteId:      n.note_id,
         noteName:    n.note_name,
-        noteExcerpt: n.note_excerpt,
+        noteExcerpt: stripHtml(n.note_excerpt),
         noteUrl:     n.note_html_url,
         createdAt:   n.note_created_at,
         processed:   !!n.is_processed,
@@ -157,7 +199,7 @@ async function pbInsights(req, res) {
     const unlinkedNotes = (unlinkedRows || []).map(r => ({
       noteId:      r.note_id,
       noteName:    r.note_name,
-      noteExcerpt: r.note_excerpt,
+      noteExcerpt: stripHtml(r.note_excerpt),
       noteUrl:     r.note_html_url,
       createdAt:   r.note_created_at,
     }));
@@ -165,6 +207,7 @@ async function pbInsights(req, res) {
     const payload = {
       pbCompanyId,
       pbCompanyName,
+      pbCompanyDomain,
       summary: {
         totalNotes:        noteRows.length,
         totalFeatures:     features.length,

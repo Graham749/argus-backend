@@ -6,7 +6,7 @@ let tokenExpiry = null;
 
 let cachedResult = null;
 let cacheTs = null;
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
 
 async function getAccessToken() {
   const now = Date.now();
@@ -70,9 +70,9 @@ async function features(req, res) {
 
     const query = `
 SELECT
-    feature_id              AS featureId,
-    feature_name            AS featureName,
-    product_name            AS productName,
+    g.feature_id            AS featureId,
+    g.feature_name          AS featureName,
+    g.product_name          AS productName,
     efficiency_label        AS criticalityLabel,
     efficiency_impact       AS efficiencyImpact,
     raw_regional_priority   AS rawRegionalPriority,
@@ -109,8 +109,10 @@ SELECT
     sub_region_multiplier   AS subRegionMultiplier,
     sub_criticality         AS subCriticality,
     sub_efficiency          AS subEfficiency,
-    sub_region_text         AS subRegionText
-FROM dbo.v_gold_pb_feature_prioritization_final
+    sub_region_text         AS subRegionText,
+    sf.[Status]             AS pbStatus
+FROM dbo.v_gold_pb_feature_prioritization_final g
+LEFT JOIN dbo.v_silver_pb_features sf ON sf.feature_id = g.feature_id
 ORDER BY prioritization_score DESC
     `;
 
@@ -120,11 +122,20 @@ ORDER BY prioritization_score DESC
         SELECT
           n.feature_id,
           COUNT(DISTINCT n.note_id) AS note_count,
-          COUNT(DISTINCT CASE WHEN LOWER(COALESCE(pc.company_name,'')) LIKE '%aurora%' THEN n.note_id END) AS int_note_count,
-          COUNT(DISTINCT CASE WHEN LOWER(COALESCE(pc.company_name,'')) NOT LIKE '%aurora%' THEN n.note_id END) AS ext_note_count,
+          COUNT(DISTINCT CASE
+            WHEN LOWER(COALESCE(pc.company_name, '')) LIKE '%aurora%'
+            THEN n.note_id END) AS int_note_count,
+          COUNT(DISTINCT CASE
+            WHEN pc.company_name IS NOT NULL
+             AND LOWER(pc.company_name) NOT LIKE '%aurora%'
+            THEN n.note_id END) AS ext_note_count,
+          COUNT(DISTINCT CASE
+            WHEN pc.company_name IS NOT NULL
+             AND LOWER(pc.company_name) NOT LIKE '%aurora%'
+            THEN NULLIF(n.pb_company_id, '') END) AS ext_company_count,
           MAX(n.note_created_at) AS latest_note_at
         FROM v_gold_pb_note_company_feature n
-        LEFT JOIN v_silver_pb_companies pc ON pc.pb_company_id = n.pb_company_id
+        LEFT JOIN v_silver_pb_companies pc ON pc.pb_company_id = NULLIF(n.pb_company_id, '')
         WHERE n.is_archived = 0
         GROUP BY n.feature_id
       `)
@@ -132,18 +143,20 @@ ORDER BY prioritization_score DESC
     const noteMap = {};
     (noteCounts || []).forEach(r => {
       noteMap[r.feature_id] = {
-        noteCount:    Number(r.note_count)     || 0,
-        extNoteCount: Number(r.ext_note_count) || 0,
-        intNoteCount: Number(r.int_note_count) || 0,
-        latestNoteAt: r.latest_note_at
+        noteCount:       Number(r.note_count)        || 0,
+        extNoteCount:    Number(r.ext_note_count)    || 0,
+        intNoteCount:    Number(r.int_note_count)    || 0,
+        extCompanyCount: Number(r.ext_company_count) || 0,
+        latestNoteAt:    r.latest_note_at
       };
     });
     const features = rows.map(f => ({
       ...f,
-      noteCount:    noteMap[f.featureId]?.noteCount    || 0,
-      extNoteCount: noteMap[f.featureId]?.extNoteCount || 0,
-      intNoteCount: noteMap[f.featureId]?.intNoteCount || 0,
-      latestNoteAt: noteMap[f.featureId]?.latestNoteAt || null
+      noteCount:       noteMap[f.featureId]?.noteCount       || 0,
+      extNoteCount:    noteMap[f.featureId]?.extNoteCount    || 0,
+      intNoteCount:    noteMap[f.featureId]?.intNoteCount    || 0,
+      extCompanyCount: noteMap[f.featureId]?.extCompanyCount || 0,
+      latestNoteAt:    noteMap[f.featureId]?.latestNoteAt    || null
     }));
 
     const payload = { features, syncedAt: new Date().toISOString(), rowCount: features.length };
