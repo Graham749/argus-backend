@@ -79,9 +79,14 @@ async function featureInsights(req, res) {
       }
     }
 
-    const companies = Object.values(companyMap).sort((a, b) => b.notes.length - a.notes.length);
-    const noteCount = companies.reduce((s, c) => s + c.notes.length, 0);
-    const payload = { featureId, noteCount, companies };
+    const isInternal = name => /\baurora\b/i.test(name || '');
+    const all = Object.values(companyMap).sort((a, b) => b.notes.length - a.notes.length);
+    const externalCompanies = all.filter(c => !isInternal(c.companyName));
+    const internalCompanies = all.filter(c =>  isInternal(c.companyName));
+    const extNoteCount = externalCompanies.reduce((s, c) => s + c.notes.length, 0);
+    const intNoteCount = internalCompanies.reduce((s, c) => s + c.notes.length, 0);
+    const noteCount = extNoteCount + intNoteCount;
+    const payload = { featureId, noteCount, extNoteCount, intNoteCount, externalCompanies, internalCompanies };
     resultCache[featureId] = { ts: Date.now(), data: payload };
     res.json(payload);
   } catch (err) {

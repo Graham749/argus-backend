@@ -2777,9 +2777,14 @@ class Component extends DCLogic {
   }
   toggleDrill(id){ this.setState(s=>({drills:{...s.drills,[id]:!s.drills[id]}})); }
   toggleInsights(featureId){
-    const key = 'insights_'+featureId;
+    // Badge click — just toggles the Account signals section open/closed
+    this.toggleDrill('signals_'+featureId);
+  }
+  togglePbNotes(featureId, type){
+    const key = 'pb_'+type+'_'+featureId;
     const wasOpen = !!this.state.drills[key];
-    this.toggleDrill(key);
+    const newDrills = {...this.state.drills, [key]: !wasOpen, ['signals_'+featureId]: true};
+    this.setV({drills: newDrills});
     if(!wasOpen && !this.state.featInsightsData[featureId]){
       fetch('/api/feature-insights?featureId='+encodeURIComponent(featureId))
         .then(r=>r.json())
@@ -2973,13 +2978,11 @@ class Component extends DCLogic {
       {label:'Has insights', onClick:()=>this.setV({featInsights:'has'}),  style:S.featInsights==='has' ?iBtnAct:iBtnBase},
       {label:'No insights',  onClick:()=>this.setV({featInsights:'none'}), style:S.featInsights==='none'?iBtnAct:iBtnBase},
     ];
-    const insightsDrillHtml = (featureId) => {
-      const data = S.featInsightsData[featureId];
-      if (!data) return '<div style="padding:10px 0 2px;font-size:12px;color:#9d9d9d;font-style:italic;">Loading notes…</div>';
-      if (data.error) return `<div style="padding:10px 0 2px;font-size:12px;color:#c2600f;">${data.error}</div>`;
-      if (!data.companies || !data.companies.length) return '<div style="padding:10px 0 2px;font-size:12px;color:#9d9d9d;">No notes found.</div>';
+    const insightsDrillHtml = (companies) => {
+      if (!companies) return '<div style="padding:10px 0 2px;font-size:12px;color:#9d9d9d;font-style:italic;">Loading notes…</div>';
+      if (!companies.length) return '<div style="padding:10px 0 2px;font-size:12px;color:#9d9d9d;">No notes found.</div>';
       return '<div style="margin-top:10px;border-top:1px solid #e0d0f8;padding-top:8px;">'
-        +data.companies.map(c=>
+        +companies.map(c=>
           '<div style="margin-bottom:8px;">'
             +'<div style="font-size:11px;font-weight:700;color:#3c3c3b;margin-bottom:3px;">'+(c.companyName||'Unknown').replace(/</g,'&lt;')
               +' <span style="font-weight:400;color:#9d9d9d;">('+c.notes.length+' note'+(c.notes.length===1?'':'s')+')</span></div>'
@@ -3200,24 +3203,52 @@ class Component extends DCLogic {
                 <span style="font-size:11px;color:#9d9d9d;margin-left:auto;">${baseScore} × ${Number(activeMultiplier).toFixed(1)} =</span>
                 <span style="font-size:13px;font-weight:700;color:#3c3c3b;">${parentCtxOpen ? Number(f.featureScore).toFixed(2) : Number(f.finalScore).toFixed(2)}</span>
               </div>
-              ${f.noteCount > 0 ? `<div style="margin-top:12px;padding:12px 14px;background:#f5f0fa;border-radius:8px;border-left:3px solid #7030a0;">
-                <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
-                  <div>
-                    <span style="font-size:12px;font-weight:700;color:#7030a0;">PB Insights</span>
-                    <span style="font-size:11px;color:#9d9d9d;margin-left:8px;">${f.noteCount} note${f.noteCount===1?'':'s'} · latest ${fmtDate(f.latestNoteAt)}</span>
-                  </div>
-                  <button data-insights-id="${f.id}" style="font-size:11px;font-weight:700;color:#7030a0;background:none;border:1px solid #ddc8f0;border-radius:6px;padding:4px 10px;cursor:pointer;">${S.drills['insights_'+f.id]?'Hide notes':'View notes →'}</button>
-                </div>
-                ${S.drills['insights_'+f.id] ? insightsDrillHtml(f.id) : ''}
-              </div>` : ''}
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding-top:10px;border-top:1px solid #f1f1f0;flex-wrap:wrap;gap:8px;">
-                <div style="display:flex;flex-direction:column;gap:3px;">
-                  <a href="https://auroraer.productboard.com/detail/${f.id}" target="_blank" style="font-size:11px;color:#b5b5b4;font-family:monospace;text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">feature_id ${f.id} ↗</a>
-                  ${isSubScore ? `<a href="https://auroraer.productboard.com/detail/${f.subId}" target="_blank" style="font-size:11px;color:#9d7fc0;font-family:monospace;text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">subfeature_id ${f.subId} ↗</a>` : ''}
-                </div>
-                <span style="font-size:12px;color:#6d6d6c;">Feature ${Number(f.featureScore).toFixed(2)} · best subfeature ${Number(f.maxSubScore).toFixed(2)} · final ${Number(f.finalScore).toFixed(2)}${f.fromSub?' ↑ sub':''}</span>
-              </div>
             </div>` : '';
+          const signalsExpanded = !!S.drills['signals_'+f.id];
+          const extOpen = signalsExpanded && !!S.drills['pb_ext_'+f.id];
+          const intOpen = signalsExpanded && !!S.drills['pb_int_'+f.id];
+          const sigData = S.featInsightsData[f.id];
+          const extCompanies = sigData ? (sigData.externalCompanies || []) : null;
+          const intCompanies = sigData ? (sigData.internalCompanies || []) : null;
+          const extCount = sigData ? (sigData.extNoteCount || 0) : f.noteCount;
+          const intCount = sigData ? (sigData.intNoteCount || 0) : 0;
+          const _tile = (bg,bdr,labelCol,label,count,countCol,subtxt,openKey,featureId,extraNote) =>
+            '<div style="background:'+bg+';border:1px solid '+bdr+';border-radius:10px;padding:12px 14px;'+(count>0?'cursor:pointer;':'')+'" '+(count>0?'data-'+openKey+'="'+featureId+'"':'')+'>'
+            +'<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:'+labelCol+';margin-bottom:8px;">'+label+'</div>'
+            +(count > 0
+              ? '<div style="font-size:20px;font-weight:900;color:'+countCol+';">'+count+'</div>'
+                +'<div style="font-size:11px;color:#9d7fc0;margin-top:2px;">note'+(count===1?'':'s')+(subtxt?' · '+subtxt:'')+'</div>'
+                +(extraNote?'<div style="font-size:11px;font-weight:600;color:'+countCol+';margin-top:8px;">'+extraNote+'</div>':'')
+              : '<div style="font-size:20px;font-weight:900;color:#e0e0e0;">—</div>'
+                +'<div style="font-size:11px;color:#c0c0c0;margin-top:4px;">No linked notes</div>')
+            +'</div>';
+          const accountSignals = !signalsExpanded ? '' : `
+            <div style="margin-top:14px;padding-top:14px;border-top:1px solid #f1f1f0;">
+              <div style="margin-bottom:14px;">
+                <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#9d9d9d;margin-bottom:8px;">External</div>
+                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
+                  <div style="background:#fff8f0;border:1px solid #f5e0c0;border-radius:10px;padding:12px 14px;">
+                    <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#c2600f;margin-bottom:8px;">Salesforce</div>
+                    <div style="font-size:20px;font-weight:900;color:#e0e0e0;">—</div>
+                    <div style="font-size:11px;color:#c0c0c0;margin-top:4px;">Subscriptions coming soon</div>
+                  </div>
+                  <div style="background:#f0f8ff;border:1px solid #b3d4f5;border-radius:10px;padding:12px 14px;">
+                    <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#1565c0;margin-bottom:8px;">Zendesk</div>
+                    <div style="font-size:20px;font-weight:900;color:#e0e0e0;">—</div>
+                    <div style="font-size:11px;color:#c0c0c0;margin-top:4px;">Ticket signals coming soon</div>
+                  </div>
+                  ${_tile('#f5f0fa','#ddc8f0','#7030a0','Productboard',extCount,'#7030a0',fmtDate(f.latestNoteAt),'pb-ext',f.id,extOpen?'Hide ↑':'View notes →')}
+                </div>
+                ${extOpen ? insightsDrillHtml(extCompanies) : ''}
+              </div>
+              <div>
+                <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#9d9d9d;margin-bottom:8px;">Internal <span style="font-weight:400;text-transform:none;">(Aurora)</span></div>
+                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
+                  ${_tile('#f5f0fa','#ddc8f0','#7030a0','Productboard',intCount,'#7030a0','',  'pb-int',f.id,intOpen?'Hide ↑':'View notes →')}
+                </div>
+                ${intOpen ? insightsDrillHtml(intCompanies) : ''}
+              </div>
+            </div>`;
           return `
             <div style="background:#fff;border:1px solid #e6e6e5;border-radius:12px;padding:18px 20px;margin-bottom:12px;box-shadow:0 1px 3px rgba(60,60,59,0.07);">
               <div style="display:flex;align-items:flex-start;gap:16px;">
@@ -3237,9 +3268,16 @@ class Component extends DCLogic {
                       <div style="height:8px;background:#f1f1f0;border-radius:4px;overflow:hidden;">${bar(scoreBarPct,'#ffcc00')}</div>
                     </div>
                     <div style="font-size:12px;color:#6d6d6c;">${f.subfeatureCount>0 ? f.subfeatureCount+(f.subfeatureCount===1?' subfeature':' subfeatures') : 'No subfeatures'}</div>
-                    <button data-toggle-id="feat_${f.id}" style="margin-left:auto;font-size:12px;font-weight:700;color:#288184;background:none;border:none;cursor:pointer;">${expanded?'Hide breakdown':'Scoring breakdown'}</button>
+                    <div style="margin-left:auto;display:flex;gap:6px;align-items:center;">
+                      <button data-toggle-id="feat_${f.id}" style="font-size:12px;font-weight:700;color:#288184;background:none;border:none;cursor:pointer;">${expanded?'Hide ↑':'Scoring breakdown →'}</button>
+                      <button data-toggle-id="signals_${f.id}" style="font-size:12px;font-weight:700;color:${signalsExpanded?'#7030a0':'#6d6d6c'};border:1.5px solid ${signalsExpanded?'#7030a0':'#ddc8f0'};border-radius:6px;padding:3px 10px;cursor:pointer;background:${signalsExpanded?'#f5f0fa':'none'};">${signalsExpanded?'Hide ↑':'Account signals →'+(f.noteCount>0?' ('+f.noteCount+')':'')}</button>
+                    </div>
                   </div>
-                  ${breakdown}
+                  <div style="display:flex;align-items:baseline;justify-content:space-between;margin-top:6px;padding-top:6px;border-top:1px solid #f7f7f6;flex-wrap:wrap;gap:4px;">
+                    <a href="https://auroraer.productboard.com/detail/${f.id}" target="_blank" style="font-size:10px;color:#c8c8c8;font-family:monospace;text-decoration:none;" onmouseover="this.style.color='#7030a0'" onmouseout="this.style.color='#c8c8c8'">feature_id ${f.id} ↗</a>
+                    <span style="font-size:11px;color:#9d9d9d;">Feature ${Number(f.featureScore).toFixed(2)} · subfeature ${Number(f.maxSubScore).toFixed(2)} · final ${Number(f.finalScore).toFixed(2)}${f.fromSub?' ↑ sub':''}</span>
+                  </div>
+                  ${breakdown}${accountSignals}
                 </div>
               </div>
             </div>`;
@@ -3251,6 +3289,10 @@ class Component extends DCLogic {
       if(btn) { this.toggleDrill(btn.dataset.toggleId); return; }
       const insBtn = e.target.closest('[data-insights-id]');
       if(insBtn) { this.toggleInsights(insBtn.dataset.insightsId); return; }
+      const extBtn = e.target.closest('[data-pb-ext]');
+      if(extBtn) { this.togglePbNotes(extBtn.dataset.pbExt, 'ext'); return; }
+      const intBtn = e.target.closest('[data-pb-int]');
+      if(intBtn) { this.togglePbNotes(intBtn.dataset.pbInt, 'int'); return; }
     };
 
     // ── assistant view-model ──
@@ -3300,7 +3342,7 @@ class Component extends DCLogic {
       healthTabsHtml, rangesHtml, healthTabs, ranges, hc,
       toggleUsers:()=>this.toggleDrill('users_'+S.healthClient), drillUsers:!!S.drills['users_'+S.healthClient],
       toggleSubs:()=>this.toggleDrill('subs_'+S.healthClient), drillSubs:!!S.drills['subs_'+S.healthClient],
-      featTabs, critFilterBtns, effFilterBtns, srcBtns, feats, featSummary, summaryCards, featEmpty:feats.length===0, featsHtml, onFeatClick,
+      featTabs, critFilterBtns, effFilterBtns, srcBtns, insightsBtns, feats, featSummary, summaryCards, featEmpty:feats.length===0, featsHtml, onFeatClick,
       featSearch:S.featSearch, onFeatSearch:(e)=>this.setV({featSearch:e.target.value}), clearFeatSearch:()=>{ const inp=document.querySelector('[placeholder*="Search by feature"]'); if(inp)inp.value=''; this.setV({featSearch:''}); }, hasFeatSearch:!!S.featSearch.trim(),
       featRowsLabel:`${S.features.length} rows · synced 4 min ago`,
       chat, typing:S.typing, showSuggestions:!S.started, suggestions,
