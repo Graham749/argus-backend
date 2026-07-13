@@ -117,15 +117,34 @@ ORDER BY prioritization_score DESC
     const [rows, noteCounts] = await Promise.all([
       queryLakehouse(query),
       queryLakehouse(`
-        SELECT feature_id, COUNT(DISTINCT note_id) AS note_count, MAX(note_created_at) AS latest_note_at
-        FROM v_gold_pb_note_company_feature
-        WHERE is_archived = 0
-        GROUP BY feature_id
+        SELECT
+          n.feature_id,
+          COUNT(DISTINCT n.note_id) AS note_count,
+          COUNT(DISTINCT CASE WHEN LOWER(COALESCE(pc.company_name,'')) LIKE '%aurora%' THEN n.note_id END) AS int_note_count,
+          COUNT(DISTINCT CASE WHEN LOWER(COALESCE(pc.company_name,'')) NOT LIKE '%aurora%' THEN n.note_id END) AS ext_note_count,
+          MAX(n.note_created_at) AS latest_note_at
+        FROM v_gold_pb_note_company_feature n
+        LEFT JOIN v_silver_pb_companies pc ON pc.pb_company_id = n.pb_company_id
+        WHERE n.is_archived = 0
+        GROUP BY n.feature_id
       `)
     ]);
     const noteMap = {};
-    (noteCounts || []).forEach(r => { noteMap[r.feature_id] = { noteCount: Number(r.note_count) || 0, latestNoteAt: r.latest_note_at }; });
-    const features = rows.map(f => ({ ...f, noteCount: noteMap[f.featureId]?.noteCount || 0, latestNoteAt: noteMap[f.featureId]?.latestNoteAt || null }));
+    (noteCounts || []).forEach(r => {
+      noteMap[r.feature_id] = {
+        noteCount:    Number(r.note_count)     || 0,
+        extNoteCount: Number(r.ext_note_count) || 0,
+        intNoteCount: Number(r.int_note_count) || 0,
+        latestNoteAt: r.latest_note_at
+      };
+    });
+    const features = rows.map(f => ({
+      ...f,
+      noteCount:    noteMap[f.featureId]?.noteCount    || 0,
+      extNoteCount: noteMap[f.featureId]?.extNoteCount || 0,
+      intNoteCount: noteMap[f.featureId]?.intNoteCount || 0,
+      latestNoteAt: noteMap[f.featureId]?.latestNoteAt || null
+    }));
 
     const payload = { features, syncedAt: new Date().toISOString(), rowCount: features.length };
     cachedResult = payload;

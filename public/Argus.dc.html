@@ -619,7 +619,7 @@ input{font-family:inherit;}
         </div>
         <div style="margin-bottom:18px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
           <span style="font-size:11px;font-weight:600;color:#9d9d9d;margin-right:2px;">Insights</span>
-          <sc-for list="{{ insightsBtns }}" as="b" hint-placeholder-count="3">
+          <sc-for list="{{ insightsBtns }}" as="b" hint-placeholder-count="4">
             <button onClick="{{ b.onClick }}" style="{{ b.style }}">{{ b.label }}</button>
           </sc-for>
         </div>
@@ -2668,7 +2668,9 @@ class Component extends DCLogic {
         subCriticality:   f.subCriticality || '',
         subEfficiency:    f.subEfficiency  || '',
         subRegionText:    f.subRegionText  || '',
-        noteCount:        Number(f.noteCount) || 0,
+        noteCount:        Number(f.noteCount)     || 0,
+        extNoteCount:     Number(f.extNoteCount)  || 0,
+        intNoteCount:     Number(f.intNoteCount)  || 0,
         latestNoteAt:     f.latestNoteAt || null
       }));
       clearInterval(window.__featMsgInterval);
@@ -2936,7 +2938,7 @@ class Component extends DCLogic {
         }
         return true;
       })
-      .filter(f=> (S.featProduct==='all'||f.productName===S.featProduct) && (!S.featCritFilter || (S.featCritFilter==='Blocker+Critical'?(f.criticality==='Blocker'||f.criticality==='Critical'):f.criticality===S.featCritFilter)) && (!S.featEffFilter || f.efficiency===S.featEffFilter) && (!S.featScoreSource || f.scoreSource===S.featScoreSource) && (S.featInsights==='all'||(S.featInsights==='has'?f.noteCount>0:f.noteCount===0)))
+      .filter(f=> (S.featProduct==='all'||f.productName===S.featProduct) && (!S.featCritFilter || (S.featCritFilter==='Blocker+Critical'?(f.criticality==='Blocker'||f.criticality==='Critical'):f.criticality===S.featCritFilter)) && (!S.featEffFilter || f.efficiency===S.featEffFilter) && (!S.featScoreSource || f.scoreSource===S.featScoreSource) && (S.featInsights==='all'||(S.featInsights==='has_ext'?f.extNoteCount>0:S.featInsights==='has_int'?f.intNoteCount>0:f.noteCount===0)))
       .sort((a,b)=> b.finalScore-a.finalScore || (critRank[b.criticality]-critRank[a.criticality]));
     const feats=filtered.map((f,i)=>{
       const expanded=!!S.drills['feat_'+f.id];
@@ -2974,9 +2976,10 @@ class Component extends DCLogic {
     const iBtnBase = {fontSize:'11px',fontWeight:600,padding:'4px 12px',borderRadius:'6px',border:'1.5px solid #e6e6e5',background:'#fff',color:'#6d6d6c',cursor:'pointer'};
     const iBtnAct  = {fontSize:'11px',fontWeight:700,padding:'4px 12px',borderRadius:'6px',border:'1.5px solid #7030a0',background:'#f5f0fa',color:'#7030a0',cursor:'pointer'};
     const insightsBtns = [
-      {label:'All',          onClick:()=>this.setV({featInsights:'all'}),  style:S.featInsights==='all' ?iBtnAct:iBtnBase},
-      {label:'Has insights', onClick:()=>this.setV({featInsights:'has'}),  style:S.featInsights==='has' ?iBtnAct:iBtnBase},
-      {label:'No insights',  onClick:()=>this.setV({featInsights:'none'}), style:S.featInsights==='none'?iBtnAct:iBtnBase},
+      {label:'All',           onClick:()=>this.setV({featInsights:'all'}),     style:S.featInsights==='all'    ?iBtnAct:iBtnBase},
+      {label:'Has ext',       onClick:()=>this.setV({featInsights:'has_ext'}), style:S.featInsights==='has_ext'?iBtnAct:iBtnBase},
+      {label:'Has int',       onClick:()=>this.setV({featInsights:'has_int'}), style:S.featInsights==='has_int'?iBtnAct:iBtnBase},
+      {label:'No insights',   onClick:()=>this.setV({featInsights:'none'}),    style:S.featInsights==='none'   ?iBtnAct:iBtnBase},
     ];
     const insightsDrillHtml = (companies) => {
       if (!companies) return '<div style="background:#f7f7f6;border-radius:8px;padding:12px;margin-top:10px;font-size:12px;color:#9d9d9d;font-style:italic;">Loading notes…</div>';
@@ -3248,7 +3251,7 @@ class Component extends DCLogic {
                     ${badge(activeEff  ? activeEff+' - Efficiency'   : '— Efficiency',  ec[0], ec[1])}
                     ${badge(activeCrit ? activeCrit+' - Criticality' : '— Criticality', cc[0], cc[1])}
                     ${f.fromSub ? badge('↑ subfeature','#f0e9f7','#7030a0') : ''}
-                    ${f.noteCount > 0 ? `<span style="font-size:11px;font-weight:700;padding:2px 9px;border-radius:20px;background:#f5f0fa;color:#7030a0;cursor:pointer;" data-insights-id="${f.id}">● ${f.noteCount} insight${f.noteCount===1?'':'s'}</span>` : ''}
+                    ${f.noteCount > 0 ? `<span style="font-size:11px;font-weight:700;padding:2px 9px;border-radius:20px;background:#f5f0fa;color:#7030a0;cursor:pointer;" data-insights-id="${f.id}">● ${[f.extNoteCount>0?f.extNoteCount+' ext':'',f.intNoteCount>0?f.intNoteCount+' int':''].filter(Boolean).join(' · ')}</span>` : ''}
                   </div>
                   <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-top:12px;">
                     <div style="flex:1;min-width:200px;">
