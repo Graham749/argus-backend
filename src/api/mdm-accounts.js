@@ -191,6 +191,7 @@ async function mdmAccounts(req, res) {
           mdm.sf_account_id,
           SUM(ph.ph_total_events)     AS ph_total_events,
           SUM(ph.ph_unique_users)     AS ph_unique_users,
+          MIN(ph.ph_first_seen)       AS ph_first_seen,
           MAX(ph.ph_last_seen)        AS ph_last_seen,
           SUM(ph.ph_events_last_30d)  AS ph_events_last_30d,
           SUM(ph.ph_events_last_7d)   AS ph_events_last_7d,
@@ -198,7 +199,12 @@ async function mdmAccounts(req, res) {
           SUM(ph.ph_leaderboards)     AS ph_leaderboards,
           SUM(ph.ph_benchmarks)       AS ph_benchmarks,
           MAX(ph.ph_top_feature)      AS ph_top_feature,
-          STRING_AGG(ph.ph_tenant, '; ') AS ph_tenants
+          STRING_AGG(ph.ph_tenant, '; ') AS ph_tenants,
+          MAX(CASE
+            WHEN ph.ph_tenant_format = 'short_code' THEN 'Account Code'
+            WHEN ph.ph_tenant = mdm.sf_website_domain THEN 'Website Domain'
+            ELSE 'EOS Domain'
+          END) AS ph_match_method
         FROM dbo.v_silver_mdm_account mdm
         JOIN dbo.v_silver_posthog_account_activity ph
           ON ph.ph_tenant = mdm.sf_website_domain
@@ -233,6 +239,7 @@ async function mdmAccounts(req, res) {
       phMetrics[r.sf_account_id] = {
         totalEvents:      Number(r.ph_total_events)     || 0,
         uniqueUsers:      Number(r.ph_unique_users)     || 0,
+        firstSeen:        r.ph_first_seen ? new Date(r.ph_first_seen).toISOString().slice(0, 10) : null,
         lastSeen:         r.ph_last_seen ? new Date(r.ph_last_seen).toISOString().slice(0, 10) : null,
         eventsLast30d:    Number(r.ph_events_last_30d)  || 0,
         eventsLast7d:     Number(r.ph_events_last_7d)   || 0,
@@ -241,6 +248,7 @@ async function mdmAccounts(req, res) {
         benchmarks:       Number(r.ph_benchmarks)       || 0,
         topFeature:       r.ph_top_feature || null,
         tenants:          r.ph_tenants || null,
+        matchMethod:      r.ph_match_method || null,
       };
     });
 
