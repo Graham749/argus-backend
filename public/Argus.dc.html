@@ -1315,15 +1315,10 @@ if (localStorage.getItem('sidebarCollapsed') === 'true') {
 }
 
 document.addEventListener('click', function(e) {
-  // SF risk card drilldown — toggle if same card clicked again
+  // SF risk card drilldown
   var sfCard = e.target.closest('.sfSummaryCard');
   if (sfCard && window.__argus) {
-    var group = sfCard.getAttribute('data-group');
-    if (window.__sfActiveDrilldown === group) {
-      window.__argus.showSummary();
-    } else {
-      window.__argus.showDrilldown(group);
-    }
+    window.__argus.showDrilldown(sfCard.getAttribute('data-group'));
     return;
   }
   // SF back button
@@ -3153,8 +3148,18 @@ class Component extends DCLogic {
   }
 
   showDrilldown(group){
+    // Debounce: per-card addEventListener and global click handler both fire for the same click
+    if (window.__sfDrillDebounce) return;
+    window.__sfDrillDebounce = true;
+    setTimeout(function() { window.__sfDrillDebounce = false; }, 50);
+
+    // Toggle: clicking the active card collapses the drilldown
+    if (window.__sfActiveDrilldown === group) {
+      this.showSummary();
+      return;
+    }
+
     document.getElementById('sfDetailView').style.display = 'block';
-    document.getElementById('sfSummaryView').style.display = 'none';
     document.getElementById('sfDrilldownTitle').textContent = `${group} Subscriptions`;
     window.__sfActiveDrilldown = group;
     document.querySelectorAll('.sfSummaryCard').forEach(function(c) {
