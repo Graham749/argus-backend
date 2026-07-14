@@ -376,6 +376,74 @@ input{font-family:inherit;}
           </div>
         </div>
 
+        <!-- PostHog Analytics Card -->
+        <div id="phInsightsCard" style="background:#fff;border:1px solid #e6e6e5;border-radius:12px;padding:20px;box-shadow:0 1px 3px rgba(60,60,59,0.07);margin-bottom:28px;">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+            <div style="width:44px;height:44px;flex-shrink:0;background:#1a1a1a;border-radius:8px;display:flex;align-items:center;justify-content:center;padding:6px;box-sizing:border-box;">
+              <img src="./assets/posthog-logomark.svg" alt="PostHog" style="width:32px;height:auto;" />
+            </div>
+            <div style="flex:1;">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <div id="phWidgetTitle" style="font-size:13px;font-weight:700;">PostHog Analytics</div>
+                <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:#00be86;font-weight:600;">
+                  <span style="font-size:12px;line-height:1;">●</span>Live data
+                </div>
+              </div>
+              <div style="font-size:11px;color:#9d9d9d;margin-top:2px;">EOS platform usage — pageviews &amp; feature engagement by week</div>
+            </div>
+          </div>
+
+          <div id="phNoAccount" style="padding:20px 0;text-align:center;color:#9d9d9d;font-size:13px;">Select an account above to view PostHog analytics</div>
+          <div id="phLoading" style="display:none;"></div>
+          <div id="phNoMatch" style="display:none;padding:16px;background:#f7f7f6;border-radius:8px;font-size:12px;color:#9d9d9d;text-align:center;">No PostHog data matched to this account</div>
+          <div id="phError" style="display:none;padding:16px;background:#fdeee0;border-radius:8px;font-size:12px;color:#c2600f;text-align:center;"></div>
+
+          <div id="phSummaryView" style="display:none;">
+            <!-- Stat tiles -->
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px;">
+              <div style="background:#fff8f3;border-radius:8px;padding:12px;border:1px solid #fcd9b8;">
+                <div style="font-size:10px;font-weight:700;color:#a84000;text-transform:uppercase;margin-bottom:4px;">Users</div>
+                <div style="font-size:22px;font-weight:700;color:#e36a00;" id="phUsers">—</div>
+                <div style="font-size:10px;color:#9d9d9d;margin-top:2px;">unique identities</div>
+              </div>
+              <div style="background:#fff8f3;border-radius:8px;padding:12px;border:1px solid #fcd9b8;">
+                <div style="font-size:10px;font-weight:700;color:#a84000;text-transform:uppercase;margin-bottom:4px;">Events (30d)</div>
+                <div style="font-size:22px;font-weight:700;color:#e36a00;" id="phEvents30d">—</div>
+                <div style="font-size:10px;color:#9d9d9d;margin-top:2px;" id="phEvents7d">— last 7 days</div>
+              </div>
+              <div style="background:#f7f7f6;border-radius:8px;padding:12px;border:1px solid #e6e6e5;">
+                <div style="font-size:10px;font-weight:700;color:#6d6d6c;text-transform:uppercase;margin-bottom:4px;">First Active</div>
+                <div style="font-size:17px;font-weight:700;color:#3c3c3b;" id="phFirstSeen">—</div>
+                <div style="font-size:10px;color:#9d9d9d;margin-top:2px;" id="phMatchMethod">—</div>
+              </div>
+              <div style="background:#f7f7f6;border-radius:8px;padding:12px;border:1px solid #e6e6e5;">
+                <div style="font-size:10px;font-weight:700;color:#6d6d6c;text-transform:uppercase;margin-bottom:4px;">Last Active</div>
+                <div style="font-size:17px;font-weight:700;color:#3c3c3b;" id="phLastSeen">—</div>
+                <div style="font-size:10px;color:#9d9d9d;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" id="phTenantDisplay">—</div>
+              </div>
+            </div>
+
+            <!-- Dark chart panel -->
+            <div style="background:#0f0f0f;border-radius:10px;padding:14px 16px 12px;margin-bottom:12px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:6px;">
+                <div style="font-size:10px;font-weight:700;color:#fff;letter-spacing:0.06em;">WEEKLY EVENT TREND</div>
+                <div style="display:flex;gap:10px;font-size:9px;font-weight:600;flex-wrap:wrap;">
+                  <span style="color:#F54E00;">&#9632; Investment Cases</span>
+                  <span style="color:#F9BD2B;">&#9632; Leaderboards</span>
+                  <span style="color:#FFE285;">&#9632; Benchmarks</span>
+                  <span style="color:#444;">&#9632; Other</span>
+                </div>
+              </div>
+              <div id="phChart" style="min-height:96px;"></div>
+            </div>
+
+            <!-- Open in PostHog -->
+            <div style="display:flex;justify-content:flex-end;">
+              <a id="phOpenLink" href="https://eu.posthog.com/project/125621/dashboard/596794" target="_blank" style="font-size:11px;font-weight:700;color:#e36a00;border:1.5px solid #fcd9b8;border-radius:6px;padding:6px 14px;text-decoration:none;background:#fff8f3;">&#8599; Open in PostHog</a>
+            </div>
+          </div>
+        </div>
+
         <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:20px;" dangerouslySetInnerHTML="{{ healthTabsHtml }}"></div>
 
         <div style="display:flex;gap:4px;margin-bottom:22px;" dangerouslySetInnerHTML="{{ rangesHtml }}"></div>
@@ -1344,6 +1412,7 @@ class Component extends DCLogic {
           this.fetchSalesforceSubscriptions(accountName);
           this.fetchZdTickets(accountName);
           this.fetchPbInsights(accountName);
+          this.fetchPhTrends(accountName);
         }
       });
 
@@ -1975,6 +2044,131 @@ class Component extends DCLogic {
       });
   }
 
+  fetchPhTrends(accountName) {
+    const show = (id, visible) => { const el = document.getElementById(id); if (el) el.style.display = visible ? 'block' : 'none'; };
+    const setText = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+
+    show('phNoAccount', false);
+    show('phNoMatch', false);
+    show('phError', false);
+    show('phSummaryView', false);
+    show('phLoading', true);
+
+    const phLoadEl = document.getElementById('phLoading');
+    if (phLoadEl) {
+      phLoadEl.innerHTML =
+        '<div style="max-width:520px;margin:20px auto;padding:20px;text-align:center;">'
+        +'<div style="font-size:13px;font-weight:600;color:#3c3c3b;margin-bottom:12px;">Loading PostHog analytics from Fabric</div>'
+        +'<div style="height:4px;border-radius:2px;background:#f1f1f0;overflow:hidden;">'
+          +'<div style="height:100%;border-radius:2px;background:linear-gradient(90deg,#F54E00,#F9BD2B);animation:pbProg 5s ease-out forwards;"></div>'
+        +'</div></div>';
+    }
+
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const fmtDate = function(d) {
+      if (!d) return '—';
+      const p = d.split('-');
+      return p.length === 3 ? p[2]+'-'+months[parseInt(p[1],10)-1]+'-'+p[0].slice(2) : d;
+    };
+
+    fetch('/api/ph-trends?account=' + encodeURIComponent(accountName) + '&t=' + Date.now())
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        show('phLoading', false);
+        if (!data.summary) { show('phNoMatch', true); return; }
+
+        const s = data.summary;
+        setText('phUsers',    s.uniqueUsers.toLocaleString());
+        setText('phEvents30d', s.events30d.toLocaleString());
+        setText('phEvents7d',  (s.events7d || 0).toLocaleString() + ' last 7 days');
+        setText('phFirstSeen', fmtDate(s.firstSeen));
+        setText('phMatchMethod', data.matchMethod || '—');
+        setText('phLastSeen',  fmtDate(s.lastSeen));
+        setText('phTenantDisplay', (data.tenants || []).join(', ') || '—');
+
+        // Build PostHog deep-link with tenant filter
+        var tenantArr = (data.tenants || []).map(function(t) { return t.indexOf('.') === -1 ? t.toUpperCase() : t; });
+        var phFilterJson = JSON.stringify({properties:[{key:'tenant',value:tenantArr,operator:'exact',type:'person'}]});
+        var phUrl = 'https://eu.posthog.com/project/125621/dashboard/596794?query_filters=' + encodeURIComponent(phFilterJson);
+        var linkEl = document.getElementById('phOpenLink');
+        if (linkEl) linkEl.href = phUrl;
+
+        // Build SVG bar chart
+        var chartEl = document.getElementById('phChart');
+        if (chartEl) {
+          var weekly = data.weekly || [];
+          if (weekly.length === 0) {
+            chartEl.innerHTML = '<div style="color:#555;font-size:11px;padding:28px 0;text-align:center;">No weekly event data available</div>';
+          } else {
+            var W = 560, H = 80, padX = 2;
+            var barW = Math.max(6, Math.floor((W - padX * Math.max(weekly.length - 1, 0)) / weekly.length));
+            var maxVal = Math.max.apply(null, weekly.map(function(w) { return w.events; }).concat([1]));
+
+            var svgParts = [];
+            var linePts = [];
+
+            // Subtle grid lines
+            for (var g = 1; g <= 4; g++) {
+              var gy = Math.round(H - H * g / 4);
+              svgParts.push('<line x1="0" y1="'+gy+'" x2="'+W+'" y2="'+gy+'" stroke="#ffffff" stroke-width="0.5" opacity="0.07"/>');
+            }
+
+            weekly.forEach(function(w, i) {
+              var x = i * (barW + padX);
+              var totalH = Math.round((w.events / maxVal) * H);
+              var icH    = Math.round((w.investmentCases / maxVal) * H);
+              var lbH    = Math.round((w.leaderboards / maxVal) * H);
+              var bmH    = Math.round((w.benchmarks / maxVal) * H);
+              var unH    = Math.max(0, totalH - icH - lbH - bmH);
+
+              var currY = H;
+              if (unH > 0)  { svgParts.push('<rect x="'+x+'" y="'+(currY-unH)+'" width="'+barW+'" height="'+unH+'" fill="#3a3a3a" rx="1"/>');  currY -= unH; }
+              if (icH > 0)  { svgParts.push('<rect x="'+x+'" y="'+(currY-icH)+'" width="'+barW+'" height="'+icH+'" fill="#F54E00" rx="1"/>');  currY -= icH; }
+              if (lbH > 0)  { svgParts.push('<rect x="'+x+'" y="'+(currY-lbH)+'" width="'+barW+'" height="'+lbH+'" fill="#F9BD2B" rx="1"/>');  currY -= lbH; }
+              if (bmH > 0)  { svgParts.push('<rect x="'+x+'" y="'+(currY-bmH)+'" width="'+barW+'" height="'+bmH+'" fill="#FFE285" rx="1"/>'); }
+
+              var cx = (x + barW / 2).toFixed(1);
+              var topY = H - totalH;
+              linePts.push((i === 0 ? 'M' : 'L') + cx + ',' + topY);
+
+              // Week label every 3rd bar and last bar
+              if (i % 3 === 0 || i === weekly.length - 1) {
+                var lbl = (w.weekStart || '').slice(5).replace('-', '/');
+                svgParts.push('<text x="'+cx+'" y="'+(H+13)+'" font-size="7" fill="#666" text-anchor="middle" font-family="sans-serif">'+lbl+'</text>');
+              }
+            });
+
+            // Glowing trend line
+            svgParts.push('<path d="'+linePts.join(' ')+'" stroke="#F54E00" stroke-width="1.5" fill="none" opacity="0.8" filter="url(#ph-glow)"/>');
+
+            // Highlight dot on last bar
+            var last = weekly[weekly.length - 1];
+            var lastX = ((weekly.length - 1) * (barW + padX) + barW / 2).toFixed(1);
+            var lastY = H - Math.round((last.events / maxVal) * H);
+            svgParts.push('<circle cx="'+lastX+'" cy="'+lastY+'" r="3" fill="#F54E00" filter="url(#ph-glow)"/>');
+
+            var svg = '<svg width="100%" viewBox="0 0 '+W+' '+(H+18)+'" style="display:block;">'
+              +'<defs>'
+                +'<filter id="ph-glow" x="-50%" y="-50%" width="200%" height="200%">'
+                  +'<feGaussianBlur stdDeviation="2.5" result="blur"/>'
+                  +'<feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>'
+                +'</filter>'
+              +'</defs>'
+              + svgParts.join('')
+              +'</svg>';
+            chartEl.innerHTML = svg;
+          }
+        }
+
+        show('phSummaryView', true);
+      })
+      .catch(function(err) {
+        show('phLoading', false);
+        var errEl = document.getElementById('phError');
+        if (errEl) { errEl.textContent = 'Error loading PostHog data: ' + err.message; show('phError', true); }
+      });
+  }
+
   populateAccountsDropdown(select, accounts){
     if(!select || !accounts) return;
 
@@ -2007,7 +2201,7 @@ class Component extends DCLogic {
           try{ localStorage.setItem('argusHealthAccount', target); }catch(e){}
         }
         this.updateAccountTitles(target);
-        setTimeout(() => { this.fetchSalesforceSubscriptions(target); this.fetchZdTickets(target); this.fetchPbInsights(target); }, 100);
+        setTimeout(() => { this.fetchSalesforceSubscriptions(target); this.fetchZdTickets(target); this.fetchPbInsights(target); this.fetchPhTrends(target); }, 100);
       }
     }
   }
@@ -2018,6 +2212,7 @@ class Component extends DCLogic {
     set('sfWidgetTitle',   'Salesforce Subscriptions');
     set('zdWidgetTitle',   'Zendesk Support Tickets');
     set('pbWidgetTitle',   'Productboard Insights');
+    set('phWidgetTitle',   'PostHog Analytics');
   }
 
   fetchSalesforceSubscriptions(accountName){

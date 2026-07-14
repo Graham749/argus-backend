@@ -15,6 +15,7 @@ const zdTickets = require('./api/zd-tickets');
 const pbInsights = require('./api/pb-insights');
 const featureInsights = require('./api/feature-insights');
 const companyFeatures = require('./api/company-features');
+const phTrends = require('./api/ph-trends');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -64,6 +65,7 @@ app.get('/api/zd-tickets', zdTickets);
 app.get('/api/pb-insights', pbInsights);
 app.get('/api/feature-insights', featureInsights);
 app.get('/api/company-features', companyFeatures);
+app.get('/api/ph-trends', phTrends);
 
 // Serve Argus dashboard at root
 app.get('/', (req, res) => {
