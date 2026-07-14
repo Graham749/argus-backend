@@ -3649,7 +3649,6 @@ class Component extends DCLogic {
           const phRowData = window.__mdmPhMetrics && a.sfAccountId ? (window.__mdmPhMetrics[a.sfAccountId] || null) : null;
           const phPill = phRowData
             ? '<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:#fff3e8;color:#e36a00;white-space:nowrap;">'+(phRowData.matchMethod||'Matched')+'</span>'
-              +'<span style="font-size:10px;color:#9d9d9d;margin-left:5px;">'+phRowData.eventsLast30d.toLocaleString()+' events</span>'
             : '<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:#f1f1f0;color:#9d9d9d;white-space:nowrap;">No data</span>';
           const mainRow = '<tr style="border-bottom:1px solid #f1f1f0;cursor:pointer;'+(a.pbOnly?'background:#fdf9ff;':'')+(isExp?'background:#fafafa;':'')+'" onclick="(function(){window.__mdmExpandedId=window.__mdmExpandedId==='+tid+'?null:'+tid+';window.__mdmRefresh&&window.__mdmRefresh();})()">'
             +'<td style="padding:9px 10px;">'+nameCell+'</td>'
@@ -3805,7 +3804,7 @@ class Component extends DCLogic {
           const toolbarRow = a.sfAccountName
             ? '<tr style="background:#fafafa;">'
                 +'<td colspan="5" style="padding:8px 14px 0;">'
-                  +'<button onclick="(function(){var acct=\''+a.sfAccountName.replace(/'/g,"\\'")+'\';window.__argusTargetAccount=acct;try{localStorage.setItem(\'argusHealthAccount\',acct);}catch(e){}window.__argus&&window.__argus.setV({view:\'health\'});window.scrollTo(0,0);})()" style="font-size:10px;color:#3c3c3b;cursor:pointer;display:inline-flex;align-items:center;gap:3px;padding:4px 10px;border:1px solid #e6e6e5;border-radius:5px;background:#f7f7f6;">→ View Client health card</button>'
+                  +'<button onclick="(function(){var acct=\''+a.sfAccountName.replace(/'/g,"\\'")+'\';window.__argusTargetAccount=acct;try{localStorage.setItem(\'argusHealthAccount\',acct);}catch(e){}window.__argus&&window.__argus.setV({view:\'health\'});window.scrollTo(0,0);})()" style="font-size:12px;font-weight:700;color:#fff;cursor:pointer;display:inline-flex;align-items:center;gap:4px;padding:6px 14px;border:none;border-radius:6px;background:#288184;">→ View Client health card</button>'
                 +'</td>'
               +'</tr>'
             : '';
