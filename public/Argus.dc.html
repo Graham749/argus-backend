@@ -111,7 +111,7 @@ input{font-family:inherit;}
         <!-- Salesforce Subscriptions Card (Live Data) -->
         <div style="background:#fff;border:1px solid #e6e6e5;border-radius:12px;padding:20px;box-shadow:0 1px 3px rgba(60,60,59,0.07);margin-bottom:28px;">
           <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
-            <img src="./assets/Salesforce-Logo.jpg" alt="Salesforce" style="width:44px;height:44px;object-fit:contain;border-radius:8px;" />
+            <img src="./assets/salesforce-2.svg" alt="Salesforce" style="width:44px;height:44px;object-fit:contain;flex-shrink:0;" />
             <div style="flex:1;">
               <div style="display:flex;align-items:center;gap:8px;">
                 <div id="sfWidgetTitle" style="font-size:13px;font-weight:700;">Salesforce Subscriptions</div>
@@ -379,7 +379,7 @@ input{font-family:inherit;}
         <!-- PostHog Analytics Card -->
         <div id="phInsightsCard" style="background:#fff;border:1px solid #e6e6e5;border-radius:12px;padding:20px;box-shadow:0 1px 3px rgba(60,60,59,0.07);margin-bottom:28px;">
           <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
-            <div style="width:44px;height:44px;flex-shrink:0;background:#1a1a1a;border-radius:8px;display:flex;align-items:center;justify-content:center;padding:6px;box-sizing:border-box;">
+            <div style="width:44px;height:44px;flex-shrink:0;background:#fff;border:1px solid #e6e6e5;border-radius:8px;display:flex;align-items:center;justify-content:center;padding:6px;box-sizing:border-box;">
               <img src="./assets/posthog-logomark.svg" alt="PostHog" style="width:32px;height:auto;" />
             </div>
             <div style="flex:1;">
@@ -423,23 +423,17 @@ input{font-family:inherit;}
               </div>
             </div>
 
-            <!-- Dark chart panel -->
-            <div style="background:#0f0f0f;border-radius:10px;padding:14px 16px 12px;margin-bottom:12px;">
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:6px;">
-                <div style="font-size:10px;font-weight:700;color:#fff;letter-spacing:0.06em;">WEEKLY EVENT TREND</div>
-                <div style="display:flex;gap:10px;font-size:9px;font-weight:600;flex-wrap:wrap;">
-                  <span style="color:#F54E00;">&#9632; Investment Cases</span>
-                  <span style="color:#F9BD2B;">&#9632; Leaderboards</span>
-                  <span style="color:#FFE285;">&#9632; Benchmarks</span>
-                  <span style="color:#444;">&#9632; Other</span>
+            <!-- Chart panel -->
+            <div style="background:#fff;border:1px solid #f0f0ee;border-radius:10px;padding:12px 14px 10px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                <div style="font-size:10px;font-weight:700;color:#3c3c3b;letter-spacing:0.06em;">EVENT TREND</div>
+                <div style="display:flex;gap:5px;">
+                  <button id="phBtn-weekly" style="font-size:10px;font-weight:600;padding:3px 11px;border-radius:12px;cursor:pointer;border:1.5px solid #3c3c3b;background:#3c3c3b;color:#fff;">Weekly</button>
+                  <button id="phBtn-daily"  style="font-size:10px;font-weight:600;padding:3px 11px;border-radius:12px;cursor:pointer;border:1.5px solid #d4d4d4;background:#fff;color:#6d6d6c;">Daily</button>
                 </div>
               </div>
-              <div id="phChart" style="min-height:96px;"></div>
-            </div>
-
-            <!-- Open in PostHog -->
-            <div style="display:flex;justify-content:flex-end;">
-              <a id="phOpenLink" href="https://eu.posthog.com/project/125621/dashboard/596794" target="_blank" style="font-size:11px;font-weight:700;color:#e36a00;border:1.5px solid #fcd9b8;border-radius:6px;padding:6px 14px;text-decoration:none;background:#fff8f3;">&#8599; Open in PostHog</a>
+              <div id="phChart" style="min-height:72px;"></div>
+              <div id="phLegend" style="display:flex;gap:14px;margin-top:8px;flex-wrap:wrap;"></div>
             </div>
           </div>
         </div>
@@ -2045,8 +2039,8 @@ class Component extends DCLogic {
   }
 
   fetchPhTrends(accountName) {
-    const show = (id, visible) => { const el = document.getElementById(id); if (el) el.style.display = visible ? 'block' : 'none'; };
-    const setText = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+    var show    = function(id, visible) { var el = document.getElementById(id); if (el) el.style.display = visible ? 'block' : 'none'; };
+    var setText = function(id, val)     { var el = document.getElementById(id); if (el) el.textContent = val; };
 
     show('phNoAccount', false);
     show('phNoMatch', false);
@@ -2054,21 +2048,151 @@ class Component extends DCLogic {
     show('phSummaryView', false);
     show('phLoading', true);
 
-    const phLoadEl = document.getElementById('phLoading');
+    var phLoadEl = document.getElementById('phLoading');
     if (phLoadEl) {
       phLoadEl.innerHTML =
         '<div style="max-width:520px;margin:20px auto;padding:20px;text-align:center;">'
         +'<div style="font-size:13px;font-weight:600;color:#3c3c3b;margin-bottom:12px;">Loading PostHog analytics from Fabric</div>'
-        +'<div style="height:4px;border-radius:2px;background:#f1f1f0;overflow:hidden;">'
-          +'<div style="height:100%;border-radius:2px;background:linear-gradient(90deg,#F54E00,#F9BD2B);animation:pbProg 5s ease-out forwards;"></div>'
+        +'<div style="height:5px;border-radius:3px;background:#f1f1f0;overflow:hidden;margin-bottom:20px;">'
+          +'<div style="height:100%;border-radius:3px;background:linear-gradient(90deg,#288184,#00be86);animation:pbProg 7s ease-out forwards;"></div>'
         +'</div></div>';
     }
 
-    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    const fmtDate = function(d) {
+    var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    var fmtDate = function(d) {
       if (!d) return '—';
-      const p = d.split('-');
+      var p = d.split('-');
       return p.length === 3 ? p[2]+'-'+months[parseInt(p[1],10)-1]+'-'+p[0].slice(2) : d;
+    };
+
+    // Define all chart globals NOW so button clicks work even before re-fetch completes
+    window.__phSeries = [
+      { key: 'investmentCases', btnId: 'ph-btn-ic', color: '#F54E00', label: 'Investment Cases' },
+      { key: 'leaderboards',    btnId: 'ph-btn-lb', color: '#1D4AFF', label: 'Leaderboards' },
+      { key: 'benchmarks',      btnId: 'ph-btn-bm', color: '#c98f00', label: 'Benchmarks' },
+    ];
+
+    window.__phBuild = function() {
+      var chartEl  = document.getElementById('phChart');
+      var legendEl = document.getElementById('phLegend');
+      if (!chartEl || !window.__phData || !window.__phState) return;
+      var state  = window.__phState;
+      var series = window.__phSeries;
+
+      // Granularity button active state
+      ['weekly','daily'].forEach(function(v) {
+        var btn = document.getElementById('phBtn-'+v);
+        if (!btn) return;
+        var on = v === state.view;
+        btn.style.background = on ? '#3c3c3b' : '#fff';
+        btn.style.color      = on ? '#fff'    : '#6d6d6c';
+        btn.style.border     = on ? '1.5px solid #3c3c3b' : '1.5px solid #d4d4d4';
+      });
+
+      // Legend below chart — small square + label, click to toggle
+      if (legendEl) {
+        legendEl.innerHTML = series.map(function(s) {
+          var on = !!state[s.key];
+          return '<span data-phkey="'+s.key+'" style="cursor:pointer;display:inline-flex;align-items:center;gap:4px;font-size:10px;color:'+(on?'#4d4d4c':'#b0b0b0')+';text-decoration:'+(on?'none':'line-through')+';">'
+            +'<span style="display:inline-block;width:8px;height:8px;border-radius:1px;background:'+(on?s.color:'#d4d4d4')+';flex-shrink:0;"></span>'
+            + s.label
+            +'</span>';
+        }).join('');
+        legendEl.onclick = function(e) {
+          var span = e.target.closest('[data-phkey]');
+          if (!span || !window.__phState) return;
+          var k = span.getAttribute('data-phkey');
+          window.__phState[k] = !window.__phState[k];
+          window.__phBuild();
+        };
+      }
+
+      var pts = state.view === 'daily' ? window.__phData.daily : window.__phData.weekly;
+      if (!pts || pts.length === 0) {
+        chartEl.innerHTML = '<div style="color:#9d9d9d;font-size:11px;padding:28px 0;text-align:center;">No data for this view</div>';
+        return;
+      }
+
+      // Ensure tooltip div in body
+      if (!document.getElementById('phTooltip')) {
+        var tipEl = document.createElement('div');
+        tipEl.id = 'phTooltip';
+        tipEl.style.cssText = 'display:none;position:fixed;background:#fff;color:#3c3c3b;border:1px solid #e6e6e5;border-radius:6px;padding:8px 12px;font-size:11px;pointer-events:none;z-index:9999;line-height:1.7;box-shadow:0 2px 8px rgba(60,60,59,0.12);';
+        document.body.appendChild(tipEl);
+      }
+
+      var n = pts.length;
+      var W = 560, H = 72, padL = 4, padR = 4, padT = 4, padB = 4;
+      var cW = W - padL - padR, cH = H - padT - padB;
+
+      var maxVal = 1;
+      pts.forEach(function(d) {
+        series.forEach(function(s) {
+          if (state[s.key] && (d[s.key]||0) > maxVal) maxVal = d[s.key];
+        });
+      });
+
+      var xs = pts.map(function(d, i) {
+        return padL + (n > 1 ? (i/(n-1))*cW : cW/2);
+      });
+
+      var parts = [];
+
+      // Thin lines + endpoint dot per visible series (no grid lines)
+      series.forEach(function(s) {
+        if (!state[s.key]) return;
+        var ys = pts.map(function(d) {
+          return padT + cH - ((d[s.key]||0)/maxVal)*cH;
+        });
+        var lineD = 'M'+xs.map(function(x,i){return x.toFixed(1)+','+ys[i].toFixed(1);}).join(' L');
+        parts.push('<path d="'+lineD+'" stroke="'+s.color+'" stroke-width="1.2" fill="none" stroke-linejoin="round" stroke-linecap="round"/>');
+        parts.push('<circle cx="'+xs[n-1].toFixed(1)+'" cy="'+ys[n-1].toFixed(1)+'" r="2.5" fill="'+s.color+'" stroke="#fff" stroke-width="1"/>');
+      });
+
+      // Transparent overlay for tooltip — covers only the chart area
+      parts.push('<rect x="0" y="0" width="'+W+'" height="'+H+'" fill="transparent" style="cursor:crosshair;" onmousemove="window.__phMoveTip(event)" onmouseleave="window.__phHideTip()"/>');
+
+      chartEl.innerHTML = '<svg width="100%" viewBox="0 0 '+W+' '+H+'" style="display:block;">'+parts.join('')+'</svg>';
+    };
+
+    window.__phSetView = function(v) {
+      if (!window.__phState) return;
+      window.__phState.view = v;
+      window.__phBuild();
+    };
+
+    window.__phToggle = function(k) {
+      if (!window.__phState) return;
+      window.__phState[k] = !window.__phState[k];
+      window.__phBuild();
+    };
+
+    window.__phMoveTip = function(evt) {
+      var tip = document.getElementById('phTooltip');
+      if (!tip || !window.__phData || !window.__phState || !window.__phSeries) return;
+      var state = window.__phState;
+      var pts = state.view === 'daily' ? window.__phData.daily : window.__phData.weekly;
+      if (!pts || pts.length === 0) return;
+      var bounds = evt.target.getBoundingClientRect();
+      var relX   = bounds.width > 0 ? (evt.clientX - bounds.left) / bounds.width : 0;
+      var idx    = pts.length > 1 ? Math.max(0, Math.min(pts.length-1, Math.round(relX*(pts.length-1)))) : 0;
+      var d      = pts[idx];
+      var lblKey = state.view === 'daily' ? 'dayStart' : 'weekStart';
+      var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      var fmtTip = function(iso) { if (!iso) return '—'; var p = iso.split('-'); return p.length === 3 ? p[2]+'-'+months[parseInt(p[1],10)-1]+'-'+p[0].slice(2) : iso; };
+      var html   = '<div style="font-weight:700;color:#3c3c3b;margin-bottom:3px;">'+fmtTip(d[lblKey])+'</div>';
+      window.__phSeries.forEach(function(s) {
+        if (state[s.key]) html += '<div><span style="color:'+s.color+'">&#9632;</span> '+s.label+': <b>'+(d[s.key]||0)+'</b></div>';
+      });
+      tip.innerHTML    = html;
+      tip.style.display = 'block';
+      tip.style.left   = (evt.clientX + 14) + 'px';
+      tip.style.top    = (evt.clientY - 10) + 'px';
+    };
+
+    window.__phHideTip = function() {
+      var tip = document.getElementById('phTooltip');
+      if (tip) tip.style.display = 'none';
     };
 
     fetch('/api/ph-trends?account=' + encodeURIComponent(accountName) + '&t=' + Date.now())
@@ -2077,89 +2201,24 @@ class Component extends DCLogic {
         show('phLoading', false);
         if (!data.summary) { show('phNoMatch', true); return; }
 
-        const s = data.summary;
-        setText('phUsers',    s.uniqueUsers.toLocaleString());
-        setText('phEvents30d', s.events30d.toLocaleString());
-        setText('phEvents7d',  (s.events7d || 0).toLocaleString() + ' last 7 days');
-        setText('phFirstSeen', fmtDate(s.firstSeen));
+        var s = data.summary;
+        setText('phUsers',       s.uniqueUsers.toLocaleString());
+        setText('phEvents30d',   s.events30d.toLocaleString());
+        setText('phEvents7d',    (s.events7d||0).toLocaleString()+' last 7 days');
+        setText('phFirstSeen',   fmtDate(s.firstSeen));
         setText('phMatchMethod', data.matchMethod || '—');
-        setText('phLastSeen',  fmtDate(s.lastSeen));
-        setText('phTenantDisplay', (data.tenants || []).join(', ') || '—');
+        setText('phLastSeen',    fmtDate(s.lastSeen));
+        setText('phTenantDisplay', (data.tenants||[]).join(', ') || '—');
 
-        // Build PostHog deep-link with tenant filter
-        var tenantArr = (data.tenants || []).map(function(t) { return t.indexOf('.') === -1 ? t.toUpperCase() : t; });
-        var phFilterJson = JSON.stringify({properties:[{key:'tenant',value:tenantArr,operator:'exact',type:'person'}]});
-        var phUrl = 'https://eu.posthog.com/project/125621/dashboard/596794?query_filters=' + encodeURIComponent(phFilterJson);
-        var linkEl = document.getElementById('phOpenLink');
-        if (linkEl) linkEl.href = phUrl;
+        window.__phData  = { weekly: data.weekly || [], daily: data.daily || [] };
+        window.__phState = { view: 'weekly', investmentCases: true, leaderboards: true, benchmarks: true };
 
-        // Build SVG bar chart
-        var chartEl = document.getElementById('phChart');
-        if (chartEl) {
-          var weekly = data.weekly || [];
-          if (weekly.length === 0) {
-            chartEl.innerHTML = '<div style="color:#555;font-size:11px;padding:28px 0;text-align:center;">No weekly event data available</div>';
-          } else {
-            var W = 560, H = 80, padX = 2;
-            var barW = Math.max(6, Math.floor((W - padX * Math.max(weekly.length - 1, 0)) / weekly.length));
-            var maxVal = Math.max.apply(null, weekly.map(function(w) { return w.events; }).concat([1]));
+        var bW = document.getElementById('phBtn-weekly');
+        var bD = document.getElementById('phBtn-daily');
+        if (bW) bW.onclick = function() { window.__phState.view = 'weekly'; window.__phBuild(); };
+        if (bD) bD.onclick = function() { window.__phState.view = 'daily';  window.__phBuild(); };
 
-            var svgParts = [];
-            var linePts = [];
-
-            // Subtle grid lines
-            for (var g = 1; g <= 4; g++) {
-              var gy = Math.round(H - H * g / 4);
-              svgParts.push('<line x1="0" y1="'+gy+'" x2="'+W+'" y2="'+gy+'" stroke="#ffffff" stroke-width="0.5" opacity="0.07"/>');
-            }
-
-            weekly.forEach(function(w, i) {
-              var x = i * (barW + padX);
-              var totalH = Math.round((w.events / maxVal) * H);
-              var icH    = Math.round((w.investmentCases / maxVal) * H);
-              var lbH    = Math.round((w.leaderboards / maxVal) * H);
-              var bmH    = Math.round((w.benchmarks / maxVal) * H);
-              var unH    = Math.max(0, totalH - icH - lbH - bmH);
-
-              var currY = H;
-              if (unH > 0)  { svgParts.push('<rect x="'+x+'" y="'+(currY-unH)+'" width="'+barW+'" height="'+unH+'" fill="#3a3a3a" rx="1"/>');  currY -= unH; }
-              if (icH > 0)  { svgParts.push('<rect x="'+x+'" y="'+(currY-icH)+'" width="'+barW+'" height="'+icH+'" fill="#F54E00" rx="1"/>');  currY -= icH; }
-              if (lbH > 0)  { svgParts.push('<rect x="'+x+'" y="'+(currY-lbH)+'" width="'+barW+'" height="'+lbH+'" fill="#F9BD2B" rx="1"/>');  currY -= lbH; }
-              if (bmH > 0)  { svgParts.push('<rect x="'+x+'" y="'+(currY-bmH)+'" width="'+barW+'" height="'+bmH+'" fill="#FFE285" rx="1"/>'); }
-
-              var cx = (x + barW / 2).toFixed(1);
-              var topY = H - totalH;
-              linePts.push((i === 0 ? 'M' : 'L') + cx + ',' + topY);
-
-              // Week label every 3rd bar and last bar
-              if (i % 3 === 0 || i === weekly.length - 1) {
-                var lbl = (w.weekStart || '').slice(5).replace('-', '/');
-                svgParts.push('<text x="'+cx+'" y="'+(H+13)+'" font-size="7" fill="#666" text-anchor="middle" font-family="sans-serif">'+lbl+'</text>');
-              }
-            });
-
-            // Glowing trend line
-            svgParts.push('<path d="'+linePts.join(' ')+'" stroke="#F54E00" stroke-width="1.5" fill="none" opacity="0.8" filter="url(#ph-glow)"/>');
-
-            // Highlight dot on last bar
-            var last = weekly[weekly.length - 1];
-            var lastX = ((weekly.length - 1) * (barW + padX) + barW / 2).toFixed(1);
-            var lastY = H - Math.round((last.events / maxVal) * H);
-            svgParts.push('<circle cx="'+lastX+'" cy="'+lastY+'" r="3" fill="#F54E00" filter="url(#ph-glow)"/>');
-
-            var svg = '<svg width="100%" viewBox="0 0 '+W+' '+(H+18)+'" style="display:block;">'
-              +'<defs>'
-                +'<filter id="ph-glow" x="-50%" y="-50%" width="200%" height="200%">'
-                  +'<feGaussianBlur stdDeviation="2.5" result="blur"/>'
-                  +'<feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>'
-                +'</filter>'
-              +'</defs>'
-              + svgParts.join('')
-              +'</svg>';
-            chartEl.innerHTML = svg;
-          }
-        }
-
+        window.__phBuild();
         show('phSummaryView', true);
       })
       .catch(function(err) {

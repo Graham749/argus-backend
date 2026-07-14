@@ -60,7 +60,15 @@ async function phTrends(req, res) {
   try {
     const escaped = account.replace(/'/g, "''");
 
-    const [summaryRows, weeklyRows] = await Promise.all([
+    const tenantsCte = `
+      WITH tenants AS (
+        SELECT ph.ph_tenant
+        FROM dbo.v_silver_posthog_account_activity ph
+        INNER JOIN dbo.v_silver_mdm_account mdm ON (${MDM_JOIN})
+        WHERE mdm.sf_account_name = '${escaped}'
+      )`;
+
+    const [summaryRows, weeklyRows, dailyRows] = await Promise.all([
       // Summary — one row per matched tenant, aggregated in JS
       queryLakehouse(`
         SELECT
@@ -83,15 +91,8 @@ async function phTrends(req, res) {
         INNER JOIN dbo.v_silver_mdm_account mdm ON (${MDM_JOIN})
         WHERE mdm.sf_account_name = '${escaped}'
       `),
-      // Weekly trend — from raw events table, grouped by ISO Monday
-      // '2000-01-03' is a known Monday; DATEDIFF/7*7 integer arithmetic gives week offset
-      queryLakehouse(`
-        WITH tenants AS (
-          SELECT ph.ph_tenant
-          FROM dbo.v_silver_posthog_account_activity ph
-          INNER JOIN dbo.v_silver_mdm_account mdm ON (${MDM_JOIN})
-          WHERE mdm.sf_account_name = '${escaped}'
-        )
+      // Weekly — ISO Monday buckets ('2000-01-03' is a known Monday)
+      queryLakehouse(tenantsCte + `
         SELECT
           CAST(DATEADD(DAY, DATEDIFF(DAY,'2000-01-03',e.timestamp)/7*7, '2000-01-03') AS DATE) AS week_start,
           COUNT(*)                                                                               AS events,
@@ -104,11 +105,26 @@ async function phTrends(req, res) {
         WHERE e.timestamp IS NOT NULL
         GROUP BY CAST(DATEADD(DAY, DATEDIFF(DAY,'2000-01-03',e.timestamp)/7*7, '2000-01-03') AS DATE)
         ORDER BY week_start
+      `),
+      // Daily — calendar day buckets
+      queryLakehouse(tenantsCte + `
+        SELECT
+          CAST(e.timestamp AS DATE)                                                              AS day_start,
+          COUNT(*)                                                                               AS events,
+          COUNT(DISTINCT e.person_id)                                                            AS users,
+          SUM(CASE WHEN e.feature = 'investment-cases' THEN 1 ELSE 0 END)                       AS investment_cases,
+          SUM(CASE WHEN e.feature = 'leaderboards'     THEN 1 ELSE 0 END)                       AS leaderboards,
+          SUM(CASE WHEN e.feature = 'benchmarks'       THEN 1 ELSE 0 END)                       AS benchmarks
+        FROM dbo.posthog_notebook_events e
+        INNER JOIN tenants t ON LOWER(LTRIM(RTRIM(e.tenant))) = t.ph_tenant
+        WHERE e.timestamp IS NOT NULL
+        GROUP BY CAST(e.timestamp AS DATE)
+        ORDER BY day_start
       `)
     ]);
 
     if (!summaryRows || summaryRows.length === 0) {
-      return res.json({ tenants: [], summary: null, weekly: [] });
+      return res.json({ tenants: [], summary: null, weekly: [], daily: [] });
     }
 
     const tenants     = summaryRows.map(r => r.ph_tenant);
@@ -136,11 +152,21 @@ async function phTrends(req, res) {
       benchmarks:      Number(r.benchmarks)       || 0,
     }));
 
+    const daily = (dailyRows || []).map(r => ({
+      dayStart:        r.day_start ? new Date(r.day_start).toISOString().slice(0, 10) : null,
+      events:          Number(r.events)           || 0,
+      users:           Number(r.users)            || 0,
+      investmentCases: Number(r.investment_cases) || 0,
+      leaderboards:    Number(r.leaderboards)     || 0,
+      benchmarks:      Number(r.benchmarks)       || 0,
+    }));
+
     const payload = {
       tenants,
       matchMethod,
       summary: { totalEvents, uniqueUsers, events30d, events7d, firstSeen, lastSeen, investmentCases, leaderboards, benchmarks },
       weekly,
+      daily,
     };
 
     resultCache[account] = { ts: Date.now(), data: payload };
