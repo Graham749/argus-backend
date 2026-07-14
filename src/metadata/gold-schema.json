@@ -1,0 +1,256 @@
+{
+  "description": "Aurora Energy Research Gold Layer Analytics Schema - For Ask Argus AI queries",
+  "lastUpdated": "2026-06-30",
+  "views": [
+    {
+      "name": "v_gold_sf_customer_health",
+      "source": "Salesforce",
+      "domain": "Customer Account Management",
+      "description": "Customer account health metrics with subscription risk assessment, renewal tracking, and churn probability",
+      "purpose": "Answer questions about account health, renewal dates, ARR, churn risk, CSM assignments",
+      "columns": [
+        {
+          "name": "reporting_account_id",
+          "type": "string",
+          "description": "Salesforce account ID (parent if multi-entity account)"
+        },
+        {
+          "name": "account_type",
+          "type": "string",
+          "description": "Account type (e.g., customer, prospect)"
+        },
+        {
+          "name": "primary_account_name",
+          "type": "string",
+          "description": "Customer company name"
+        },
+        {
+          "name": "child_account_count",
+          "type": "integer",
+          "description": "Number of child accounts under this parent"
+        },
+        {
+          "name": "tier",
+          "type": "string",
+          "description": "Account tier (Enterprise, Mid-market, SMB, etc.)"
+        },
+        {
+          "name": "account_manager",
+          "type": "string",
+          "description": "Assigned account manager name"
+        },
+        {
+          "name": "total_arr",
+          "type": "decimal",
+          "description": "Total Annual Recurring Revenue in GBP"
+        },
+        {
+          "name": "total_mrr",
+          "type": "decimal",
+          "description": "Total Monthly Recurring Revenue in GBP"
+        },
+        {
+          "name": "active_subscription_count",
+          "type": "integer",
+          "description": "Number of active subscriptions"
+        },
+        {
+          "name": "at_risk_subscription_count",
+          "type": "integer",
+          "description": "Number of subscriptions at risk (renewal <30 days or termination in progress)"
+        },
+        {
+          "name": "total_subscription_count",
+          "type": "integer",
+          "description": "Total subscriptions (active + terminating)"
+        },
+        {
+          "name": "next_renewal_date",
+          "type": "date",
+          "description": "Date of next subscription renewal"
+        },
+        {
+          "name": "days_to_next_renewal",
+          "type": "integer",
+          "description": "Days until next renewal (negative = overdue)"
+        },
+        {
+          "name": "churn_probability",
+          "type": "decimal",
+          "description": "Estimated churn probability (0-1)"
+        },
+        {
+          "name": "churn_risk_score",
+          "type": "integer",
+          "description": "Churn risk score (0-100, higher = more risk)"
+        },
+        {
+          "name": "subscription_health_score",
+          "type": "integer",
+          "description": "Health score based on active subscriptions (0-100)"
+        },
+        {
+          "name": "renewal_urgency_score",
+          "type": "integer",
+          "description": "Urgency of upcoming renewals (0-100)"
+        },
+        {
+          "name": "overall_health_score",
+          "type": "decimal",
+          "description": "Composite health score (0-100)"
+        },
+        {
+          "name": "health_status",
+          "type": "string",
+          "description": "Health status (HEALTHY, AT_RISK, URGENT, CRITICAL)"
+        },
+        {
+          "name": "urgent_renewal_flag",
+          "type": "integer",
+          "description": "1 if renewal in next 30 days, 0 otherwise"
+        },
+        {
+          "name": "renewal_upcoming_flag",
+          "type": "integer",
+          "description": "1 if renewal in next 90 days, 0 otherwise"
+        },
+        {
+          "name": "high_churn_risk_flag",
+          "type": "integer",
+          "description": "1 if churn probability >50%, 0 otherwise"
+        },
+        {
+          "name": "expiring_products_flag",
+          "type": "integer",
+          "description": "1 if products expiring soon, 0 otherwise"
+        },
+        {
+          "name": "unassigned_csm_flag",
+          "type": "integer",
+          "description": "1 if no CSM/account manager assigned, 0 otherwise"
+        }
+      ],
+      "exampleQueries": [
+        "Which accounts have renewal dates in the next 90 days?",
+        "Top 10 accounts by ARR",
+        "How many accounts are at churn risk?",
+        "Which accounts have urgent renewals (next 30 days)?"
+      ]
+    },
+    {
+      "name": "v_gold_pb_feature_prioritization",
+      "source": "Productboard",
+      "domain": "Product Operations",
+      "description": "Feature prioritization scores combining criticality, efficiency, regional demand, and strategic alignment",
+      "purpose": "Answer questions about feature priorities, scoring, regional demand, and engineering planning",
+      "columns": [
+        {
+          "name": "feature_id",
+          "type": "string",
+          "description": "Unique feature identifier from Productboard"
+        },
+        {
+          "name": "feature_name",
+          "type": "string",
+          "description": "Human-readable feature name"
+        },
+        {
+          "name": "rank_score",
+          "type": "integer",
+          "description": "Ranked position (1 = highest priority)"
+        },
+        {
+          "name": "criticality_score",
+          "type": "integer",
+          "description": "Critical importance score (0-100)"
+        },
+        {
+          "name": "efficiency_score",
+          "type": "integer",
+          "description": "Effort/efficiency score (0-100)"
+        },
+        {
+          "name": "strategic_region_score",
+          "type": "integer",
+          "description": "Strategic regional alignment score (0-100)"
+        },
+        {
+          "name": "total_region_count",
+          "type": "integer",
+          "description": "Number of regions requesting this feature"
+        },
+        {
+          "name": "region_multiplier",
+          "type": "numeric",
+          "description": "Regional weighting multiplier"
+        },
+        {
+          "name": "prioritization_score",
+          "type": "numeric",
+          "description": "Final composite priority score (weighted)"
+        },
+        {
+          "name": "base_priority_score",
+          "type": "numeric",
+          "description": "Base priority before regional weighting"
+        }
+      ],
+      "exampleQueries": [
+        "Top 10 features by priority score",
+        "Which features have the highest regional demand?",
+        "What's the quickest high-value feature to build?"
+      ]
+    },
+    {
+      "name": "v_gold_lookup_fxrates",
+      "source": "Finance",
+      "domain": "Finance",
+      "description": "Currency exchange rates for converting ARR/MRR to GBP equivalent",
+      "purpose": "Convert revenue metrics to GBP for reporting",
+      "columns": [
+        {
+          "name": "currency_iso_code",
+          "type": "string",
+          "description": "ISO 4217 currency code (e.g., EUR, USD, GBP)"
+        },
+        {
+          "name": "gbp_rate",
+          "type": "decimal",
+          "description": "Exchange rate to GBP (1 unit of currency = X GBP)"
+        },
+        {
+          "name": "source",
+          "type": "string",
+          "description": "Source of the exchange rate (e.g., ECB, Bloomberg)"
+        }
+      ],
+      "exampleQueries": [
+        "What's the current EUR to GBP rate?"
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "from": "v_gold_sf_customer_health",
+      "to": "v_gold_lookup_fxrates",
+      "via": "currency conversion",
+      "description": "Use fxrates to convert total_arr to GBP if needed"
+    }
+  ],
+  "queryGuidelines": {
+    "safe_filters": [
+      "health_status IN ('HEALTHY', 'AT_RISK', 'URGENT')",
+      "days_to_next_renewal > 0 AND days_to_next_renewal < 90",
+      "tier IN ('Enterprise', 'Mid-market', 'SMB')",
+      "total_arr > 50000",
+      "churn_risk_score > 60"
+    ],
+    "common_aggregations": [
+      "COUNT(*) - number of records",
+      "SUM(total_arr) - total ARR",
+      "AVG(overall_health_score) - average health",
+      "COUNT(CASE WHEN urgent_renewal_flag = 1 THEN 1 END) - urgent renewals"
+    ],
+    "note": "Always use WHERE filters to narrow scope before aggregating. Gold views are optimized for analytical queries but prefer filtered scans."
+  }
+}

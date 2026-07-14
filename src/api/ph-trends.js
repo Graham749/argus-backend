@@ -50,9 +50,71 @@ const MDM_JOIN = `
   OR (ph.ph_tenant_format = 'short_code' AND ph.ph_tenant = LOWER(mdm.sf_account_code))
 `;
 
+const mapWeekly = r => ({
+  weekStart:       r.week_start ? new Date(r.week_start).toISOString().slice(0, 10) : null,
+  events:          Number(r.events)           || 0,
+  users:           Number(r.users)            || 0,
+  investmentCases: Number(r.investment_cases) || 0,
+  leaderboards:    Number(r.leaderboards)     || 0,
+  benchmarks:      Number(r.benchmarks)       || 0,
+  untagged:        Number(r.untagged)         || 0,
+});
+const mapDaily = r => ({
+  dayStart:        r.day_start ? new Date(r.day_start).toISOString().slice(0, 10) : null,
+  events:          Number(r.events)           || 0,
+  users:           Number(r.users)            || 0,
+  investmentCases: Number(r.investment_cases) || 0,
+  leaderboards:    Number(r.leaderboards)     || 0,
+  benchmarks:      Number(r.benchmarks)       || 0,
+  untagged:        Number(r.untagged)         || 0,
+});
+
 async function phTrends(req, res) {
-  const account = (req.query.account || '').trim();
+  const account  = (req.query.account  || '').trim();
+  const personId = (req.query.personId || '').trim();
   if (!account) return res.status(400).json({ error: 'account query param required' });
+
+  // Single-user cross-filter: return weekly/daily for one person_id only (no cache)
+  if (personId) {
+    try {
+      const escapedPid = personId.replace(/'/g, "''");
+      const personFilter = `WHERE e.person_id = '${escapedPid}' AND e.timestamp IS NOT NULL`;
+      const [weeklyRows, dailyRows] = await Promise.all([
+        queryLakehouse(`
+          SELECT
+            CAST(DATEADD(DAY, DATEDIFF(DAY,'2000-01-03',e.timestamp)/7*7, '2000-01-03') AS DATE) AS week_start,
+            COUNT(*)                                                                               AS events,
+            COUNT(DISTINCT e.person_id)                                                            AS users,
+            SUM(CASE WHEN e.feature = 'investment-cases'                           THEN 1 ELSE 0 END) AS investment_cases,
+            SUM(CASE WHEN e.feature = 'leaderboards'                               THEN 1 ELSE 0 END) AS leaderboards,
+            SUM(CASE WHEN e.feature = 'benchmarks'                                 THEN 1 ELSE 0 END) AS benchmarks,
+            SUM(CASE WHEN e.feature IS NULL OR e.feature NOT IN ('investment-cases','leaderboards','benchmarks') THEN 1 ELSE 0 END) AS untagged
+          FROM dbo.posthog_notebook_events e
+          ${personFilter}
+          GROUP BY CAST(DATEADD(DAY, DATEDIFF(DAY,'2000-01-03',e.timestamp)/7*7, '2000-01-03') AS DATE)
+          ORDER BY week_start
+        `),
+        queryLakehouse(`
+          SELECT
+            CAST(e.timestamp AS DATE)                                                              AS day_start,
+            COUNT(*)                                                                               AS events,
+            COUNT(DISTINCT e.person_id)                                                            AS users,
+            SUM(CASE WHEN e.feature = 'investment-cases'                           THEN 1 ELSE 0 END) AS investment_cases,
+            SUM(CASE WHEN e.feature = 'leaderboards'                               THEN 1 ELSE 0 END) AS leaderboards,
+            SUM(CASE WHEN e.feature = 'benchmarks'                                 THEN 1 ELSE 0 END) AS benchmarks,
+            SUM(CASE WHEN e.feature IS NULL OR e.feature NOT IN ('investment-cases','leaderboards','benchmarks') THEN 1 ELSE 0 END) AS untagged
+          FROM dbo.posthog_notebook_events e
+          ${personFilter}
+          GROUP BY CAST(e.timestamp AS DATE)
+          ORDER BY day_start
+        `),
+      ]);
+      return res.json({ weekly: (weeklyRows || []).map(mapWeekly), daily: (dailyRows || []).map(mapDaily) });
+    } catch (err) {
+      console.error('[ph-trends/personId]', err);
+      return res.status(500).json({ error: err.message });
+    }
+  }
 
   const cached = resultCache[account];
   if (cached && Date.now() - cached.ts < CACHE_TTL) return res.json(cached.data);
@@ -97,9 +159,10 @@ async function phTrends(req, res) {
           CAST(DATEADD(DAY, DATEDIFF(DAY,'2000-01-03',e.timestamp)/7*7, '2000-01-03') AS DATE) AS week_start,
           COUNT(*)                                                                               AS events,
           COUNT(DISTINCT e.person_id)                                                            AS users,
-          SUM(CASE WHEN e.feature = 'investment-cases' THEN 1 ELSE 0 END)                       AS investment_cases,
-          SUM(CASE WHEN e.feature = 'leaderboards'     THEN 1 ELSE 0 END)                       AS leaderboards,
-          SUM(CASE WHEN e.feature = 'benchmarks'       THEN 1 ELSE 0 END)                       AS benchmarks
+          SUM(CASE WHEN e.feature = 'investment-cases'                           THEN 1 ELSE 0 END) AS investment_cases,
+          SUM(CASE WHEN e.feature = 'leaderboards'                               THEN 1 ELSE 0 END) AS leaderboards,
+          SUM(CASE WHEN e.feature = 'benchmarks'                                 THEN 1 ELSE 0 END) AS benchmarks,
+          SUM(CASE WHEN e.feature IS NULL OR e.feature NOT IN ('investment-cases','leaderboards','benchmarks') THEN 1 ELSE 0 END) AS untagged
         FROM dbo.posthog_notebook_events e
         INNER JOIN tenants t ON LOWER(LTRIM(RTRIM(e.tenant))) = t.ph_tenant
         WHERE e.timestamp IS NOT NULL
@@ -112,9 +175,10 @@ async function phTrends(req, res) {
           CAST(e.timestamp AS DATE)                                                              AS day_start,
           COUNT(*)                                                                               AS events,
           COUNT(DISTINCT e.person_id)                                                            AS users,
-          SUM(CASE WHEN e.feature = 'investment-cases' THEN 1 ELSE 0 END)                       AS investment_cases,
-          SUM(CASE WHEN e.feature = 'leaderboards'     THEN 1 ELSE 0 END)                       AS leaderboards,
-          SUM(CASE WHEN e.feature = 'benchmarks'       THEN 1 ELSE 0 END)                       AS benchmarks
+          SUM(CASE WHEN e.feature = 'investment-cases'                           THEN 1 ELSE 0 END) AS investment_cases,
+          SUM(CASE WHEN e.feature = 'leaderboards'                               THEN 1 ELSE 0 END) AS leaderboards,
+          SUM(CASE WHEN e.feature = 'benchmarks'                                 THEN 1 ELSE 0 END) AS benchmarks,
+          SUM(CASE WHEN e.feature IS NULL OR e.feature NOT IN ('investment-cases','leaderboards','benchmarks') THEN 1 ELSE 0 END) AS untagged
         FROM dbo.posthog_notebook_events e
         INNER JOIN tenants t ON LOWER(LTRIM(RTRIM(e.tenant))) = t.ph_tenant
         WHERE e.timestamp IS NOT NULL
@@ -143,23 +207,8 @@ async function phTrends(req, res) {
     const firstSeen  = firstDates.length ? new Date(firstDates[0]).toISOString().slice(0, 10) : null;
     const lastSeen   = lastDates.length  ? new Date(lastDates[lastDates.length - 1]).toISOString().slice(0, 10) : null;
 
-    const weekly = (weeklyRows || []).map(r => ({
-      weekStart:       r.week_start ? new Date(r.week_start).toISOString().slice(0, 10) : null,
-      events:          Number(r.events)           || 0,
-      users:           Number(r.users)            || 0,
-      investmentCases: Number(r.investment_cases) || 0,
-      leaderboards:    Number(r.leaderboards)     || 0,
-      benchmarks:      Number(r.benchmarks)       || 0,
-    }));
-
-    const daily = (dailyRows || []).map(r => ({
-      dayStart:        r.day_start ? new Date(r.day_start).toISOString().slice(0, 10) : null,
-      events:          Number(r.events)           || 0,
-      users:           Number(r.users)            || 0,
-      investmentCases: Number(r.investment_cases) || 0,
-      leaderboards:    Number(r.leaderboards)     || 0,
-      benchmarks:      Number(r.benchmarks)       || 0,
-    }));
+    const weekly = (weeklyRows || []).map(mapWeekly);
+    const daily  = (dailyRows  || []).map(mapDaily);
 
     const payload = {
       tenants,

@@ -301,14 +301,14 @@ input{font-family:inherit;}
             <div style="overflow-x:auto;border:1px solid #e6e6e5;border-radius:8px;max-height:400px;overflow-y:auto;">
               <table style="width:100%;border-collapse:collapse;font-size:12px;">
                 <thead style="background:#f7f7f6;border-bottom:1px solid #e6e6e5;position:sticky;top:0;z-index:1;">
-                  <tr>
-                    <th style="padding:10px 12px;text-align:left;font-weight:700;color:#3c3c3b;">Priority</th>
-                    <th style="padding:10px 12px;text-align:left;font-weight:700;color:#3c3c3b;">Subject</th>
-                    <th style="padding:10px 12px;text-align:center;font-weight:700;color:#3c3c3b;">Ticket #</th>
-                    <th style="padding:10px 12px;text-align:center;font-weight:700;color:#3c3c3b;">Status</th>
-                    <th style="padding:10px 12px;text-align:center;font-weight:700;color:#3c3c3b;">Created</th>
-                    <th id="zdDaysColHeader" style="padding:10px 12px;text-align:center;font-weight:700;color:#3c3c3b;">Time Spent (mins)</th>
-                    <th style="padding:10px 12px;text-align:center;font-weight:700;color:#3c3c3b;">Replies</th>
+                  <tr id="zdDrilldownHeaderRow">
+                    <th data-sort="priority" style="padding:10px 12px;text-align:left;font-weight:700;color:#3c3c3b;cursor:pointer;white-space:nowrap;">Priority <span class="zd-chev" style="opacity:0;">▾</span></th>
+                    <th data-sort="subject" style="padding:10px 12px;text-align:left;font-weight:700;color:#3c3c3b;cursor:pointer;white-space:nowrap;">Subject <span class="zd-chev" style="opacity:0;">▾</span></th>
+                    <th data-sort="id" style="padding:10px 12px;text-align:center;font-weight:700;color:#3c3c3b;cursor:pointer;white-space:nowrap;">Ticket # <span class="zd-chev" style="opacity:0;">▾</span></th>
+                    <th data-sort="status" style="padding:10px 12px;text-align:center;font-weight:700;color:#3c3c3b;cursor:pointer;white-space:nowrap;">Status <span class="zd-chev" style="opacity:0;">▾</span></th>
+                    <th data-sort="createdAt" style="padding:10px 12px;text-align:center;font-weight:700;color:#3c3c3b;cursor:pointer;white-space:nowrap;">Created <span class="zd-chev">▼</span></th>
+                    <th id="zdDaysColHeader" data-sort="timeSpentMinutes" style="padding:10px 12px;text-align:center;font-weight:700;color:#3c3c3b;cursor:pointer;white-space:nowrap;">Time Spent (mins) <span class="zd-chev" style="opacity:0;">▾</span></th>
+                    <th data-sort="replies" style="padding:10px 12px;text-align:center;font-weight:700;color:#3c3c3b;cursor:pointer;white-space:nowrap;">Replies <span class="zd-chev" style="opacity:0;">▾</span></th>
                   </tr>
                 </thead>
                 <tbody id="zdDrilldownBody"></tbody>
@@ -398,10 +398,19 @@ input{font-family:inherit;}
           <div id="phNoMatch" style="display:none;padding:16px;background:#f7f7f6;border-radius:8px;font-size:12px;color:#9d9d9d;text-align:center;">No PostHog data matched to this account</div>
           <div id="phError" style="display:none;padding:16px;background:#fdeee0;border-radius:8px;font-size:12px;color:#c2600f;text-align:center;"></div>
 
+          <!-- Persistent account metadata — stays visible in both summary and users view -->
+          <div id="phInfoBar" style="display:none;margin-bottom:10px;padding:7px 12px;background:#f7f7f6;border-radius:8px;border:1px solid #e6e6e5;gap:16px;flex-wrap:wrap;align-items:center;">
+            <span style="font-size:10px;color:#6d6d6c;">First Active <strong id="phInfoFirst" style="color:#3c3c3b;margin-left:4px;">—</strong></span>
+            <span style="color:#e6e6e5;font-size:12px;">|</span>
+            <span style="font-size:10px;color:#6d6d6c;">Last Active <strong id="phInfoLast" style="color:#3c3c3b;margin-left:4px;">—</strong></span>
+            <span style="color:#e6e6e5;font-size:12px;">|</span>
+            <span id="phInfoMatch" style="font-size:10px;color:#9d9d9d;"></span>
+          </div>
+
           <div id="phSummaryView" style="display:none;">
             <!-- Stat tiles -->
             <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px;">
-              <div style="background:#fff8f3;border-radius:8px;padding:12px;border:1px solid #fcd9b8;">
+              <div id="phUsersTile" style="background:#fff8f3;border-radius:8px;padding:12px;border:1px solid #fcd9b8;cursor:pointer;">
                 <div style="font-size:10px;font-weight:700;color:#a84000;text-transform:uppercase;margin-bottom:4px;">Users</div>
                 <div style="font-size:22px;font-weight:700;color:#e36a00;" id="phUsers">—</div>
                 <div style="font-size:10px;color:#9d9d9d;margin-top:2px;">unique identities</div>
@@ -412,28 +421,80 @@ input{font-family:inherit;}
                 <div style="font-size:10px;color:#9d9d9d;margin-top:2px;" id="phEvents7d">— last 7 days</div>
               </div>
               <div style="background:#f7f7f6;border-radius:8px;padding:12px;border:1px solid #e6e6e5;">
-                <div style="font-size:10px;font-weight:700;color:#6d6d6c;text-transform:uppercase;margin-bottom:4px;">First Active</div>
-                <div style="font-size:17px;font-weight:700;color:#3c3c3b;" id="phFirstSeen">—</div>
-                <div style="font-size:10px;color:#9d9d9d;margin-top:2px;" id="phMatchMethod">—</div>
+                <div style="font-size:10px;font-weight:700;color:#6d6d6c;text-transform:uppercase;margin-bottom:4px;">Avg / Week</div>
+                <div style="font-size:22px;font-weight:700;color:#3c3c3b;" id="phAvgWeek">—</div>
+                <div style="font-size:10px;color:#9d9d9d;margin-top:2px;">events per active week</div>
               </div>
               <div style="background:#f7f7f6;border-radius:8px;padding:12px;border:1px solid #e6e6e5;">
-                <div style="font-size:10px;font-weight:700;color:#6d6d6c;text-transform:uppercase;margin-bottom:4px;">Last Active</div>
-                <div style="font-size:17px;font-weight:700;color:#3c3c3b;" id="phLastSeen">—</div>
-                <div style="font-size:10px;color:#9d9d9d;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" id="phTenantDisplay">—</div>
+                <div style="font-size:10px;font-weight:700;color:#6d6d6c;text-transform:uppercase;margin-bottom:4px;">Active Weeks</div>
+                <div style="font-size:22px;font-weight:700;color:#3c3c3b;" id="phActiveWeeks">—</div>
+                <div style="font-size:10px;color:#9d9d9d;margin-top:2px;" id="phActiveWeeksLabel">of — weeks tracked</div>
+              </div>
+            </div>
+
+            <!-- KPI comparison cards -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+              <div style="background:#f7f7f6;border-radius:8px;padding:12px;border:1px solid #e6e6e5;">
+                <div style="font-size:10px;font-weight:700;color:#6d6d6c;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;">Last Week</div>
+                <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
+                  <div>
+                    <div style="font-size:22px;font-weight:700;color:#3c3c3b;line-height:1;" id="phKpiWkVal">—</div>
+                    <div style="font-size:10px;color:#9d9d9d;margin-top:4px;" id="phKpiWkDates">—</div>
+                  </div>
+                  <div style="text-align:right;flex-shrink:0;">
+                    <div style="font-size:12px;font-weight:700;" id="phKpiWkDelta">—</div>
+                    <div style="font-size:10px;color:#9d9d9d;margin-top:4px;" id="phKpiWkPrev">—</div>
+                  </div>
+                </div>
+              </div>
+              <div style="background:#f7f7f6;border-radius:8px;padding:12px;border:1px solid #e6e6e5;">
+                <div style="font-size:10px;font-weight:700;color:#6d6d6c;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;">Last Month</div>
+                <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
+                  <div>
+                    <div style="font-size:22px;font-weight:700;color:#3c3c3b;line-height:1;" id="phKpiMoVal">—</div>
+                    <div style="font-size:10px;color:#9d9d9d;margin-top:4px;" id="phKpiMoDates">—</div>
+                  </div>
+                  <div style="text-align:right;flex-shrink:0;">
+                    <div style="font-size:12px;font-weight:700;" id="phKpiMoDelta">—</div>
+                    <div style="font-size:10px;color:#9d9d9d;margin-top:4px;" id="phKpiMoPrev">—</div>
+                  </div>
+                </div>
               </div>
             </div>
 
             <!-- Chart panel -->
             <div style="background:#fff;border:1px solid #f0f0ee;border-radius:10px;padding:12px 14px 10px;">
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
                 <div style="font-size:10px;font-weight:700;color:#3c3c3b;letter-spacing:0.06em;">EVENT TREND</div>
-                <div style="display:flex;gap:5px;">
-                  <button id="phBtn-weekly" style="font-size:10px;font-weight:600;padding:3px 11px;border-radius:12px;cursor:pointer;border:1.5px solid #3c3c3b;background:#3c3c3b;color:#fff;">Weekly</button>
-                  <button id="phBtn-daily"  style="font-size:10px;font-weight:600;padding:3px 11px;border-radius:12px;cursor:pointer;border:1.5px solid #d4d4d4;background:#fff;color:#6d6d6c;">Daily</button>
-                </div>
+                <div id="phChartContext" style="display:none;font-size:10px;color:#e36a00;font-weight:600;"></div>
+                <button id="phResetUserBtn" style="display:none;font-size:9px;padding:2px 8px;border-radius:10px;border:1px solid #e6e6e5;background:#fff;color:#6d6d6c;cursor:pointer;font-weight:600;">✕ All users</button>
               </div>
               <div id="phChart" style="min-height:72px;"></div>
               <div id="phLegend" style="display:flex;gap:14px;margin-top:8px;flex-wrap:wrap;"></div>
+            </div>
+          </div>
+
+          <!-- Users drilldown — appears below chart, cross-filters it -->
+          <div id="phUsersView" style="display:none;margin-top:14px;">
+            <div style="margin-bottom:12px;display:flex;align-items:center;gap:12px;">
+              <button id="phUsersBackBtn" style="padding:6px 12px;border-radius:6px;border:1px solid #e6e6e5;background:#fff;color:#e36a00;font-size:11px;font-weight:700;cursor:pointer;">← Back to Summary</button>
+              <span style="font-size:12px;color:#6d6d6c;">Click a row to filter the chart to that user</span>
+            </div>
+            <div style="overflow-x:auto;border:1px solid #e6e6e5;border-radius:8px;max-height:420px;overflow-y:auto;">
+              <table style="width:100%;border-collapse:collapse;font-size:12px;">
+                <thead style="background:#f7f7f6;border-bottom:1px solid #e6e6e5;position:sticky;top:0;z-index:1;">
+                  <tr id="phUsersHeaderRow">
+                    <th data-sort="display"    style="padding:10px 12px;text-align:left;font-weight:700;color:#3c3c3b;cursor:pointer;user-select:none;white-space:nowrap;">User (UUID) <span class="ph-chev">▾</span></th>
+                    <th data-sort="totalEvents" style="padding:10px 12px;text-align:left;font-weight:700;color:#3c3c3b;cursor:pointer;user-select:none;white-space:nowrap;">Total Events <span class="ph-chev">▾</span></th>
+                    <th data-sort="investmentCases" style="padding:10px 12px;text-align:left;font-weight:700;color:#F54E00;cursor:pointer;user-select:none;white-space:nowrap;">Investment Cases <span class="ph-chev">▾</span></th>
+                    <th data-sort="leaderboards" style="padding:10px 12px;text-align:left;font-weight:700;color:#1D4AFF;cursor:pointer;user-select:none;white-space:nowrap;">Leaderboards <span class="ph-chev">▾</span></th>
+                    <th data-sort="benchmarks"  style="padding:10px 12px;text-align:left;font-weight:700;color:#c98f00;cursor:pointer;user-select:none;white-space:nowrap;">Benchmarks <span class="ph-chev">▾</span></th>
+                    <th data-sort="untagged"    style="padding:10px 12px;text-align:left;font-weight:700;color:#3c3c3b;cursor:pointer;user-select:none;white-space:nowrap;">Untagged <span class="ph-chev">▾</span></th>
+                    <th data-sort="lastSeen"    style="padding:10px 12px;text-align:left;font-weight:700;color:#3c3c3b;cursor:pointer;user-select:none;white-space:nowrap;">Last Seen <span class="ph-chev" style="opacity:1;">▼</span></th>
+                  </tr>
+                </thead>
+                <tbody id="phUsersBody"></tbody>
+              </table>
             </div>
           </div>
         </div>
@@ -1515,44 +1576,83 @@ class Component extends DCLogic {
 
     // Wire up drilldown/back handlers once
     window.__zdShowDrilldown = (status) => {
-      const tickets = (window.__zdTickets || []).filter(t => {
+      const allTickets = (window.__zdTickets || []).filter(t => {
         if (status === 'open') return t.status === 'open' || t.status === 'new';
         return t.status === status;
-      }).sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+      });
 
       const titleEl = document.getElementById('zdDrilldownTitle');
-      if (titleEl) titleEl.textContent = tickets.length + ' ' + status + ' ticket' + (tickets.length !== 1 ? 's' : '');
-      const isResolved = status === 'solved' || status === 'closed';
-      const daysColEl = document.getElementById('zdDaysColHeader');
-      if (daysColEl) daysColEl.textContent = 'Time Spent (mins)';
+      if (titleEl) titleEl.textContent = allTickets.length + ' ' + status + ' ticket' + (allTickets.length !== 1 ? 's' : '');
 
       const priorityColour = { urgent:'#d32f2f', high:'#e65100', normal:'#1565c0', low:'#6d6d6c' };
       const priorityBg     = { urgent:'#fdeee0', high:'#fff3e0', normal:'#e3f2fd', low:'#f7f7f6' };
+      const priorityRank   = { urgent:0, high:1, normal:2, low:3 };
       const statusStyle    = { open:'background:#fff3e0;color:#e65100;', new:'background:#fff3e0;color:#e65100;', pending:'background:#fff8e1;color:#f9a825;', solved:'background:#e8f5e9;color:#2e7d32;', closed:'background:#f7f7f6;color:#6d6d6c;' };
 
-      const tbody = document.getElementById('zdDrilldownBody');
-      if (tbody) {
-        if (tickets.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="6" style="padding:20px;text-align:center;color:#9d9d9d;font-size:12px;">No tickets</td></tr>';
-        } else {
-          tbody.innerHTML = tickets.map(t => {
-            const p = (t.priority || 'normal').toLowerCase();
-            const st = t.status.toLowerCase();
-            const spentMins = t.timeSpentMinutes || 0;
-            const daysOpen = spentMins > 0 ? spentMins : '—';
-            const daysNum = spentMins / 60;
-            return '<tr style="border-bottom:1px solid #f1f1f0;">'
-              + '<td style="padding:9px 12px;"><span style="font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;background:'+priorityBg[p]+';color:'+priorityColour[p]+';text-transform:uppercase;">'+(p==='normal'?'STD':p.toUpperCase())+'</span></td>'
-              + '<td style="padding:9px 12px;font-size:12px;color:#3c3c3b;max-width:320px;"><a href="https://auroraer.zendesk.com/agent/tickets/'+t.id+'" target="_blank" style="color:#03363D;text-decoration:none;" onmouseover="this.style.textDecoration=\'underline\'" onmouseout="this.style.textDecoration=\'none\'">'+t.subject+'</a></td>'
-              + '<td style="padding:9px 12px;text-align:center;font-size:11px;"><a href="https://auroraer.zendesk.com/agent/tickets/'+t.id+'" target="_blank" style="color:#6d6d6c;text-decoration:none;" onmouseover="this.style.textDecoration=\'underline\'" onmouseout="this.style.textDecoration=\'none\'">#'+t.id+'</a></td>'
-              + '<td style="padding:9px 12px;text-align:center;"><span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px;'+(statusStyle[st]||'background:#f7f7f6;color:#6d6d6c;')+'">'+ st.toUpperCase()+'</span></td>'
-              + '<td style="padding:9px 12px;text-align:center;font-size:12px;color:#6d6d6c;">'+new Date(t.createdAt).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})+'</td>'
-              + '<td style="padding:9px 12px;text-align:center;font-size:12px;font-weight:700;color:'+(daysNum>40?'#d32f2f':daysNum>8?'#e65100':'#3c3c3b')+';">'+daysOpen+'</td>'
-              + '<td style="padding:9px 12px;text-align:center;font-size:12px;color:#6d6d6c;">'+t.replies+'</td>'
-              + '</tr>';
-          }).join('');
+      var zdSortCol = 'createdAt', zdSortDir = -1;
+
+      var renderZdRows = function() {
+        var sorted = allTickets.slice().sort(function(a, b) {
+          var av, bv;
+          if (zdSortCol === 'priority') {
+            av = priorityRank[a.priority] != null ? priorityRank[a.priority] : 2;
+            bv = priorityRank[b.priority] != null ? priorityRank[b.priority] : 2;
+            return zdSortDir * (av - bv);
+          }
+          if (zdSortCol === 'subject') return zdSortDir * (a.subject||'').localeCompare(b.subject||'');
+          if (zdSortCol === 'status')  return zdSortDir * (a.status||'').localeCompare(b.status||'');
+          if (zdSortCol === 'createdAt') return zdSortDir * (new Date(a.createdAt) - new Date(b.createdAt));
+          av = Number(a[zdSortCol]) || 0;
+          bv = Number(b[zdSortCol]) || 0;
+          return zdSortDir * (av - bv);
+        });
+
+        var headerRow = document.getElementById('zdDrilldownHeaderRow');
+        if (headerRow) {
+          headerRow.querySelectorAll('.zd-chev').forEach(function(el) { el.style.opacity = '0'; el.textContent = '▾'; });
+          var activeTh = headerRow.querySelector('th[data-sort="'+zdSortCol+'"]');
+          if (activeTh) {
+            var chev = activeTh.querySelector('.zd-chev');
+            if (chev) { chev.style.opacity = '1'; chev.textContent = zdSortDir === -1 ? '▼' : '▲'; }
+          }
         }
+
+        var tbody = document.getElementById('zdDrilldownBody');
+        if (!tbody) return;
+        if (sorted.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="7" style="padding:20px;text-align:center;color:#9d9d9d;font-size:12px;">No tickets</td></tr>';
+          return;
+        }
+        tbody.innerHTML = sorted.map(function(t) {
+          var p = (t.priority || 'normal').toLowerCase();
+          var st = t.status.toLowerCase();
+          var spentMins = t.timeSpentMinutes || 0;
+          var daysOpen = spentMins > 0 ? spentMins : '—';
+          var daysNum = spentMins / 60;
+          return '<tr style="border-bottom:1px solid #f1f1f0;">'
+            + '<td style="padding:9px 12px;"><span style="font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;background:'+(priorityBg[p]||'#f7f7f6')+';color:'+(priorityColour[p]||'#6d6d6c')+';text-transform:uppercase;">'+(p==='normal'?'STD':p.toUpperCase())+'</span></td>'
+            + '<td style="padding:9px 12px;font-size:12px;color:#3c3c3b;max-width:320px;"><a href="https://auroraer.zendesk.com/agent/tickets/'+t.id+'" target="_blank" style="color:#03363D;text-decoration:none;" onmouseover="this.style.textDecoration=\'underline\'" onmouseout="this.style.textDecoration=\'none\'">'+t.subject+'</a></td>'
+            + '<td style="padding:9px 12px;text-align:center;font-size:11px;"><a href="https://auroraer.zendesk.com/agent/tickets/'+t.id+'" target="_blank" style="color:#6d6d6c;text-decoration:none;" onmouseover="this.style.textDecoration=\'underline\'" onmouseout="this.style.textDecoration=\'none\'">#'+t.id+'</a></td>'
+            + '<td style="padding:9px 12px;text-align:center;"><span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px;'+(statusStyle[st]||'background:#f7f7f6;color:#6d6d6c;')+'">'+st.toUpperCase()+'</span></td>'
+            + '<td style="padding:9px 12px;text-align:center;font-size:12px;color:#6d6d6c;">'+new Date(t.createdAt).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})+'</td>'
+            + '<td style="padding:9px 12px;text-align:center;font-size:12px;font-weight:700;color:'+(daysNum>40?'#d32f2f':daysNum>8?'#e65100':'#3c3c3b')+';">'+daysOpen+'</td>'
+            + '<td style="padding:9px 12px;text-align:center;font-size:12px;color:#6d6d6c;">'+t.replies+'</td>'
+            + '</tr>';
+        }).join('');
+      };
+
+      var headerRow = document.getElementById('zdDrilldownHeaderRow');
+      if (headerRow) {
+        headerRow.onclick = function(e) {
+          var th = e.target.closest('th[data-sort]');
+          if (!th) return;
+          var col = th.getAttribute('data-sort');
+          if (zdSortCol === col) { zdSortDir *= -1; } else { zdSortCol = col; zdSortDir = -1; }
+          renderZdRows();
+        };
       }
+
+      renderZdRows();
       show('zdDetailView', true);
     };
 
@@ -2047,16 +2147,32 @@ class Component extends DCLogic {
     show('phError', false);
     show('phSummaryView', false);
     show('phLoading', true);
+    var phInfoBarEl = document.getElementById('phInfoBar');
+    if (phInfoBarEl) phInfoBarEl.style.display = 'none';
 
+    if (!window.__argusNextMsg) window.__argusNextMsg = (function(){
+      var _all=['Querying the data lake…','Crunching feature engagement metrics…','Joining PostHog tenants to MDM…','Aggregating weekly event buckets…','Counting your power users…','Fetching investment case views…','Mapping leaderboard activity…','Benchmarks data incoming…','Cross-referencing tenant domains…','Almost there…'];
+      var _q=[];
+      return function(){if(!_q.length){_q=_all.slice();for(var i=_q.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=_q[i];_q[i]=_q[j];_q[j]=t;}}return _q.pop();};
+    })();
     var phLoadEl = document.getElementById('phLoading');
     if (phLoadEl) {
       phLoadEl.innerHTML =
-        '<div style="max-width:520px;margin:20px auto;padding:20px;text-align:center;">'
-        +'<div style="font-size:13px;font-weight:600;color:#3c3c3b;margin-bottom:12px;">Loading PostHog analytics from Fabric</div>'
-        +'<div style="height:5px;border-radius:3px;background:#f1f1f0;overflow:hidden;margin-bottom:20px;">'
-          +'<div style="height:100%;border-radius:3px;background:linear-gradient(90deg,#288184,#00be86);animation:pbProg 7s ease-out forwards;"></div>'
-        +'</div></div>';
+        '<style>@keyframes phProg{from{width:0%}to{width:88%}}</style>'
+        +'<div style="max-width:520px;margin:20px auto;padding:20px;text-align:center;">'
+          +'<div style="font-size:13px;font-weight:600;color:#3c3c3b;margin-bottom:12px;">Loading PostHog analytics from Fabric</div>'
+          +'<div style="height:5px;border-radius:3px;background:#f1f1f0;overflow:hidden;margin-bottom:12px;">'
+            +'<div style="height:100%;border-radius:3px;background:linear-gradient(90deg,#288184,#00be86);animation:phProg 7s ease-out forwards;"></div>'
+          +'</div>'
+          +'<div id="ph-loading-msg" style="font-size:12px;color:#9d9d9d;font-style:italic;min-height:18px;">'+window.__argusNextMsg()+'</div>'
+        +'</div>';
     }
+    clearInterval(window.__phMsgInterval);
+    window.__phMsgInterval = setInterval(function() {
+      var el = document.getElementById('ph-loading-msg');
+      if (!el) { clearInterval(window.__phMsgInterval); return; }
+      el.textContent = window.__argusNextMsg();
+    }, 4000);
 
     var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     var fmtDate = function(d) {
@@ -2067,9 +2183,10 @@ class Component extends DCLogic {
 
     // Define all chart globals NOW so button clicks work even before re-fetch completes
     window.__phSeries = [
-      { key: 'investmentCases', btnId: 'ph-btn-ic', color: '#F54E00', label: 'Investment Cases' },
-      { key: 'leaderboards',    btnId: 'ph-btn-lb', color: '#1D4AFF', label: 'Leaderboards' },
-      { key: 'benchmarks',      btnId: 'ph-btn-bm', color: '#c98f00', label: 'Benchmarks' },
+      { key: 'investmentCases', color: '#F54E00', label: 'Investment Cases' },
+      { key: 'leaderboards',    color: '#1D4AFF', label: 'Leaderboards' },
+      { key: 'benchmarks',      color: '#c98f00', label: 'Benchmarks' },
+      { key: 'untagged',        color: '#9d9d9c', label: 'Untagged' },
     ];
 
     window.__phBuild = function() {
@@ -2079,15 +2196,6 @@ class Component extends DCLogic {
       var state  = window.__phState;
       var series = window.__phSeries;
 
-      // Granularity button active state
-      ['weekly','daily'].forEach(function(v) {
-        var btn = document.getElementById('phBtn-'+v);
-        if (!btn) return;
-        var on = v === state.view;
-        btn.style.background = on ? '#3c3c3b' : '#fff';
-        btn.style.color      = on ? '#fff'    : '#6d6d6c';
-        btn.style.border     = on ? '1.5px solid #3c3c3b' : '1.5px solid #d4d4d4';
-      });
 
       // Legend below chart — small square + label, click to toggle
       if (legendEl) {
@@ -2122,7 +2230,7 @@ class Component extends DCLogic {
       }
 
       var n = pts.length;
-      var W = 560, H = 72, padL = 4, padR = 4, padT = 4, padB = 4;
+      var W = 560, H = 76, padL = 30, padR = 4, padT = 8, padB = 4;
       var cW = W - padL - padR, cH = H - padT - padB;
 
       var maxVal = 1;
@@ -2136,9 +2244,16 @@ class Component extends DCLogic {
         return padL + (n > 1 ? (i/(n-1))*cW : cW/2);
       });
 
+      var fmtN = function(v) { return v >= 1000 ? (v/1000).toFixed(1).replace(/\.0$/,'')+'k' : ''+v; };
+
       var parts = [];
 
-      // Thin lines + endpoint dot per visible series (no grid lines)
+      // Y-axis labels: max at top, 0 at bottom
+      parts.push('<text x="'+(padL-5)+'" y="'+(padT+4)+'" font-size="8" fill="#c0c0be" text-anchor="end" font-family="sans-serif">'+fmtN(maxVal)+'</text>');
+      parts.push('<text x="'+(padL-5)+'" y="'+(padT+cH)+'" font-size="8" fill="#c0c0be" text-anchor="end" font-family="sans-serif">0</text>');
+
+      // Lines + dots at every data point per visible series
+      var showAllDots = n <= 52; // dot at each point when data is not too dense
       series.forEach(function(s) {
         if (!state[s.key]) return;
         var ys = pts.map(function(d) {
@@ -2146,7 +2261,15 @@ class Component extends DCLogic {
         });
         var lineD = 'M'+xs.map(function(x,i){return x.toFixed(1)+','+ys[i].toFixed(1);}).join(' L');
         parts.push('<path d="'+lineD+'" stroke="'+s.color+'" stroke-width="1.2" fill="none" stroke-linejoin="round" stroke-linecap="round"/>');
-        parts.push('<circle cx="'+xs[n-1].toFixed(1)+'" cy="'+ys[n-1].toFixed(1)+'" r="2.5" fill="'+s.color+'" stroke="#fff" stroke-width="1"/>');
+        if (showAllDots) {
+          ys.forEach(function(y, i) {
+            if ((pts[i][s.key]||0) === 0) return; // skip zero-value points
+            var isLast = i === n - 1;
+            parts.push('<circle cx="'+xs[i].toFixed(1)+'" cy="'+y.toFixed(1)+'" r="'+(isLast?'2.5':'2')+'" fill="'+s.color+'" stroke="#fff" stroke-width="1"/>');
+          });
+        } else {
+          parts.push('<circle cx="'+xs[n-1].toFixed(1)+'" cy="'+ys[n-1].toFixed(1)+'" r="2.5" fill="'+s.color+'" stroke="#fff" stroke-width="1"/>');
+        }
       });
 
       // Transparent overlay for tooltip — covers only the chart area
@@ -2195,9 +2318,168 @@ class Component extends DCLogic {
       if (tip) tip.style.display = 'none';
     };
 
+    var months2 = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    var fmtD2 = function(iso) { if (!iso) return '—'; var p = String(iso).slice(0,10).split('-'); return p.length===3 ? p[2]+'-'+months2[parseInt(p[1],10)-1]+'-'+p[0].slice(2) : iso; };
+
+    window.__phResetUser = function() {
+      window.__phSelectedPid = null;
+      if (window.__phDataAll) window.__phData = window.__phDataAll;
+      var ctx = document.getElementById('phChartContext');
+      var rst = document.getElementById('phResetUserBtn');
+      if (ctx) ctx.style.display = 'none';
+      if (rst) rst.style.display = 'none';
+      document.querySelectorAll('#phUsersBody tr').forEach(function(tr) {
+        tr.style.background = '';
+        tr.style.outline = '';
+      });
+      window.__phBuild && window.__phBuild();
+    };
+
+    window.__phSelectUser = function(personId, label) {
+      window.__phSelectedPid = personId;
+      var ctx = document.getElementById('phChartContext');
+      var rst = document.getElementById('phResetUserBtn');
+      if (ctx) { ctx.style.display = 'inline'; ctx.textContent = label; }
+      if (rst) { rst.style.display = 'inline-block'; }
+
+      document.querySelectorAll('#phUsersBody tr').forEach(function(tr) {
+        var isSelected = tr.getAttribute('data-pid') === personId;
+        tr.style.background   = isSelected ? '#fff8f3' : '';
+        tr.style.outline      = isSelected ? '1.5px solid #fcd9b8' : '';
+        tr.style.outlineOffset = isSelected ? '-1px' : '';
+      });
+
+      fetch('/api/ph-trends?account=' + encodeURIComponent(accountName) + '&personId=' + encodeURIComponent(personId) + '&t=' + Date.now())
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          window.__phData = { weekly: data.weekly || [], daily: data.daily || [] };
+          window.__phBuild && window.__phBuild();
+        })
+        .catch(function() {});
+    };
+
+    window.__phShowUsers = function() {
+      var usersEl = document.getElementById('phUsersView');
+      var bodyEl  = document.getElementById('phUsersBody');
+      if (!usersEl || !bodyEl) return;
+      usersEl.style.display = 'block';
+
+      var backBtn = document.getElementById('phUsersBackBtn');
+      if (backBtn) backBtn.onclick = function() {
+        usersEl.style.display = 'none';
+        window.__phResetUser && window.__phResetUser();
+      };
+
+      var resetBtn = document.getElementById('phResetUserBtn');
+      if (resetBtn) resetBtn.onclick = function() { window.__phResetUser && window.__phResetUser(); };
+
+      bodyEl.innerHTML = '<tr><td colspan="7" style="padding:24px;text-align:center;color:#9d9d9d;font-size:12px;">Loading users…</td></tr>';
+
+      fetch('/api/ph-users?account=' + encodeURIComponent(accountName) + '&t=' + Date.now())
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (!data.users || !data.users.length) {
+            bodyEl.innerHTML = '<tr><td colspan="7" style="padding:24px;text-align:center;color:#9d9d9d;font-size:12px;">No user data found</td></tr>';
+            return;
+          }
+
+          var allUsers = data.users.map(function(u) {
+            u._display = u.personName || (u.personId ? u.personId.split('-')[0] : '—');
+            return u;
+          });
+
+          var sumEv = allUsers.reduce(function(s,u){ return s + u.totalEvents; }, 0);
+          var sumIC = allUsers.reduce(function(s,u){ return s + u.investmentCases; }, 0);
+          var sumLB = allUsers.reduce(function(s,u){ return s + u.leaderboards; }, 0);
+          var sumBM = allUsers.reduce(function(s,u){ return s + u.benchmarks; }, 0);
+          var sumUT = allUsers.reduce(function(s,u){ return s + (u.untagged||0); }, 0);
+
+          var maxEv = Math.max(1, allUsers.reduce(function(m,u){ return Math.max(m, u.totalEvents); }, 0));
+          var maxIC = Math.max(1, allUsers.reduce(function(m,u){ return Math.max(m, u.investmentCases); }, 0));
+          var maxLB = Math.max(1, allUsers.reduce(function(m,u){ return Math.max(m, u.leaderboards); }, 0));
+          var maxBM = Math.max(1, allUsers.reduce(function(m,u){ return Math.max(m, u.benchmarks); }, 0));
+          var maxUT = Math.max(1, allUsers.reduce(function(m,u){ return Math.max(m, u.untagged||0); }, 0));
+
+          var bar = function(val, max, col) {
+            var pct = max > 0 ? Math.min(100, Math.round(val/max*100)) : 0;
+            return '<div style="display:flex;align-items:center;gap:7px;">'
+              +'<div style="width:70px;height:5px;background:#f1f1f0;border-radius:3px;flex-shrink:0;overflow:hidden;">'
+                +'<div style="width:'+pct+'%;height:100%;background:'+col+';border-radius:3px;"></div>'
+              +'</div>'
+              +'<span style="font-size:11px;color:#3c3c3b;min-width:22px;">'+val+'</span>'
+            +'</div>';
+          };
+
+          // Inject totals into thead
+          var ths = document.querySelectorAll('#phUsersHeaderRow th');
+          var totals = [null, sumEv, sumIC, sumLB, sumBM, sumUT, null];
+          totals.forEach(function(t, i) {
+            if (t === null || !ths[i]) return;
+            var sp = ths[i].querySelector('.ph-total') || document.createElement('span');
+            sp.className = 'ph-total';
+            sp.style.cssText = 'margin-left:3px;font-weight:400;color:#9d9d9d;font-size:10px;';
+            sp.textContent = '(' + t.toLocaleString() + ')';
+            if (!ths[i].querySelector('.ph-total')) ths[i].appendChild(sp);
+          });
+
+          // Sort state
+          var sortCol = 'lastSeen', sortDir = -1;
+
+          var renderRows = function() {
+            var sorted = allUsers.slice().sort(function(a, b) {
+              var av = a[sortCol] !== undefined ? a[sortCol] : (a._display||'');
+              var bv = b[sortCol] !== undefined ? b[sortCol] : (b._display||'');
+              if (sortCol === 'display') { av = a._display||''; bv = b._display||''; }
+              if (typeof av === 'string') return sortDir * av.localeCompare(bv);
+              return sortDir * ((bv||0) - (av||0));
+            });
+            // Update chevrons
+            document.querySelectorAll('#phUsersHeaderRow th[data-sort]').forEach(function(th) {
+              var chev = th.querySelector('.ph-chev');
+              if (!chev) return;
+              var isCur = th.getAttribute('data-sort') === sortCol;
+              chev.textContent = isCur ? (sortDir === -1 ? ' ▼' : ' ▲') : ' ▾';
+              chev.style.opacity = isCur ? '1' : '0.4';
+            });
+            bodyEl.innerHTML = sorted.map(function(u, i) {
+              var pid = (u.personId || '').replace(/'/g, '');
+              var lbl = (u._display||'').replace(/'/g, '');
+              var selBg = window.__phSelectedPid === pid ? 'background:#fff8f3;outline:1.5px solid #fcd9b8;outline-offset:-1px;' : (i%2===1?'background:#fafafa;':'');
+              return '<tr data-pid="'+pid+'" style="cursor:pointer;border-bottom:1px solid #f1f1f0;'+selBg+'" onclick="window.__phSelectUser(\''+pid+'\',\''+lbl+'\')">'
+                +'<td style="padding:10px 12px;font-size:12px;color:#3c3c3b;font-family:monospace;white-space:nowrap;">'+u._display+'</td>'
+                +'<td style="padding:10px 12px;">'+bar(u.totalEvents, maxEv, '#3c3c3b')+'</td>'
+                +'<td style="padding:10px 12px;">'+bar(u.investmentCases, maxIC, '#F54E00')+'</td>'
+                +'<td style="padding:10px 12px;">'+bar(u.leaderboards, maxLB, '#1D4AFF')+'</td>'
+                +'<td style="padding:10px 12px;">'+bar(u.benchmarks, maxBM, '#c98f00')+'</td>'
+                +'<td style="padding:10px 12px;">'+bar(u.untagged||0, maxUT, '#b0b0b0')+'</td>'
+                +'<td style="padding:10px 12px;font-size:12px;color:#6d6d6c;white-space:nowrap;">'+fmtD2(u.lastSeen)+'</td>'
+                +'</tr>';
+            }).join('');
+          };
+
+          // Wire header clicks for sort
+          var headerRow = document.getElementById('phUsersHeaderRow');
+          if (headerRow) {
+            headerRow.onclick = function(e) {
+              var th = e.target.closest('th[data-sort]');
+              if (!th) return;
+              var col = th.getAttribute('data-sort');
+              if (sortCol === col) { sortDir *= -1; } else { sortCol = col; sortDir = -1; }
+              renderRows();
+            };
+          }
+
+          renderRows();
+        })
+        .catch(function(err) {
+          bodyEl.innerHTML = '<tr><td colspan="7" style="padding:16px 12px;color:#c2600f;font-size:11px;">Error: '+err.message+'</td></tr>';
+        });
+    };
+
     fetch('/api/ph-trends?account=' + encodeURIComponent(accountName) + '&t=' + Date.now())
       .then(function(r) { return r.json(); })
       .then(function(data) {
+        clearInterval(window.__phMsgInterval);
         show('phLoading', false);
         if (!data.summary) { show('phNoMatch', true); return; }
 
@@ -2205,23 +2487,117 @@ class Component extends DCLogic {
         setText('phUsers',       s.uniqueUsers.toLocaleString());
         setText('phEvents30d',   s.events30d.toLocaleString());
         setText('phEvents7d',    (s.events7d||0).toLocaleString()+' last 7 days');
-        setText('phFirstSeen',   fmtDate(s.firstSeen));
-        setText('phMatchMethod', data.matchMethod || '—');
-        setText('phLastSeen',    fmtDate(s.lastSeen));
-        setText('phTenantDisplay', (data.tenants||[]).join(', ') || '—');
+        // Persistent info bar — First/Last Active always visible
+        setText('phInfoFirst', fmtDate(s.firstSeen));
+        setText('phInfoLast',  fmtDate(s.lastSeen));
+        var matchLabel = (data.matchMethod || '') + (data.tenants && data.tenants.length ? ' · ' + data.tenants.join(', ') : '');
+        setText('phInfoMatch', matchLabel);
+        var infoBar = document.getElementById('phInfoBar');
+        if (infoBar) infoBar.style.display = 'flex';
 
-        window.__phData  = { weekly: data.weekly || [], daily: data.daily || [] };
-        window.__phState = { view: 'weekly', investmentCases: true, leaderboards: true, benchmarks: true };
+        window.__phData    = { weekly: data.weekly || [], daily: data.daily || [] };
+        window.__phDataAll = window.__phData;
+        window.__phSelectedPid = null;
+        window.__phState = { view: 'weekly', investmentCases: true, leaderboards: true, benchmarks: true, untagged: true };
 
-        var bW = document.getElementById('phBtn-weekly');
-        var bD = document.getElementById('phBtn-daily');
-        if (bW) bW.onclick = function() { window.__phState.view = 'weekly'; window.__phBuild(); };
-        if (bD) bD.onclick = function() { window.__phState.view = 'daily';  window.__phBuild(); };
+        // Engagement metrics + KPI cards
+        (function() {
+          var MO = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+          function addDays(iso, n) {
+            var d = new Date(iso + 'T00:00:00Z');
+            d.setUTCDate(d.getUTCDate() + n);
+            return d.toISOString().slice(0, 10);
+          }
+          function fmtS(iso) {
+            if (!iso) return '—';
+            var p = iso.split('-');
+            return p[2].replace(/^0/,'') + ' ' + MO[parseInt(p[1],10)-1];
+          }
+          function fmtMo(ym) {
+            var p = ym.split('-');
+            return MO[parseInt(p[1],10)-1] + ' ' + p[0];
+          }
+          function setDelta(elId, curr, prev) {
+            var el = document.getElementById(elId);
+            if (!el) return;
+            if (prev == null || curr == null) { el.innerHTML = '—'; return; }
+            var diff = curr - prev;
+            var pct  = prev > 0 ? ' (' + Math.round(Math.abs(diff)/prev*100) + '%)' : '';
+            if (diff > 0) el.innerHTML = '<span style="color:#2e7d32;">&#9650; +'+diff+pct+'</span>';
+            else if (diff < 0) el.innerHTML = '<span style="color:#c62828;">&#9660; '+diff+pct+'</span>';
+            else el.innerHTML = '<span style="color:#9d9d9d;">&#8212; no change</span>';
+          }
+
+          var wkly = window.__phData.weekly || [];
+          var activeWkCount  = wkly.filter(function(w){ return w.events>0; }).length;
+          var totalWkCount   = wkly.length;
+          var totalEvWk      = wkly.reduce(function(a,w){ return a+(w.events||0); }, 0);
+          var avgPerActiveWk = activeWkCount>0 ? Math.round(totalEvWk/activeWkCount) : 0;
+          setText('phAvgWeek',     activeWkCount>0 ? avgPerActiveWk.toLocaleString() : '—');
+          setText('phActiveWeeks', activeWkCount>0 ? activeWkCount : '—');
+
+          // Active Weeks label with date range
+          var firstWk = wkly.length>0 ? wkly[0].weekStart : null;
+          var lastWkStart = wkly.length>0 ? wkly[wkly.length-1].weekStart : null;
+          var lastWkEnd   = lastWkStart ? addDays(lastWkStart, 6) : null;
+          var wkRangeStr  = firstWk && lastWkEnd ? fmtS(firstWk)+' – '+fmtS(lastWkEnd) : '';
+          setText('phActiveWeeksLabel', 'of '+totalWkCount+' wks'+(wkRangeStr?' · '+wkRangeStr:''));
+
+          // Determine today's ISO date for "complete period" checks
+          var todayIso = (function() {
+            var n = new Date(); n.setHours(0,0,0,0);
+            return n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0');
+          })();
+          var todayYm = todayIso.slice(0,7);
+
+          // Last COMPLETE week vs the one before — skip current in-progress week
+          var completeWks = wkly.filter(function(w) { return addDays(w.weekStart,6) < todayIso; });
+          if (completeWks.length >= 2) {
+            var lw = completeWks[completeWks.length-1];
+            var pw = completeWks[completeWks.length-2];
+            setText('phKpiWkVal',   lw.events.toLocaleString());
+            setText('phKpiWkDates', fmtS(lw.weekStart)+' – '+fmtS(addDays(lw.weekStart,6)));
+            setDelta('phKpiWkDelta', lw.events, pw.events);
+            setText('phKpiWkPrev',  'vs '+fmtS(pw.weekStart)+' – '+fmtS(addDays(pw.weekStart,6))+' ('+pw.events+')');
+          } else if (completeWks.length === 1) {
+            var lw = completeWks[0];
+            setText('phKpiWkVal',   lw.events.toLocaleString());
+            setText('phKpiWkDates', fmtS(lw.weekStart)+' – '+fmtS(addDays(lw.weekStart,6)));
+            setText('phKpiWkDelta', '—'); setText('phKpiWkPrev', 'no prior week');
+          }
+
+          // Last COMPLETE month vs the one before — skip current partial month
+          var moMap = {};
+          (window.__phData.daily || []).forEach(function(d) {
+            var ym = d.dayStart ? d.dayStart.slice(0,7) : null;
+            if (!ym) return;
+            moMap[ym] = (moMap[ym]||0) + (d.events||0);
+          });
+          var completeMoKeys = Object.keys(moMap).sort().filter(function(ym){ return ym < todayYm; });
+          if (completeMoKeys.length >= 2) {
+            var lmk = completeMoKeys[completeMoKeys.length-1];
+            var pmk = completeMoKeys[completeMoKeys.length-2];
+            setText('phKpiMoVal',   moMap[lmk].toLocaleString());
+            setText('phKpiMoDates', fmtMo(lmk));
+            setDelta('phKpiMoDelta', moMap[lmk], moMap[pmk]);
+            setText('phKpiMoPrev',  'vs '+fmtMo(pmk)+' ('+moMap[pmk].toLocaleString()+')');
+          } else if (completeMoKeys.length === 1) {
+            var lmk = completeMoKeys[0];
+            setText('phKpiMoVal',   moMap[lmk].toLocaleString());
+            setText('phKpiMoDates', fmtMo(lmk));
+            setText('phKpiMoDelta', '—'); setText('phKpiMoPrev', 'no prior month');
+          }
+        })();
+
+        var tile = document.getElementById('phUsersTile');
+        if (tile) tile.onclick = function() { window.__phShowUsers && window.__phShowUsers(); };
 
         window.__phBuild();
         show('phSummaryView', true);
       })
       .catch(function(err) {
+        clearInterval(window.__phMsgInterval);
         show('phLoading', false);
         var errEl = document.getElementById('phError');
         if (errEl) { errEl.textContent = 'Error loading PostHog data: ' + err.message; show('phError', true); }
