@@ -4647,6 +4647,8 @@ class Component extends DCLogic {
               +'var c=document.getElementById(\'mdm-w1-chev\');'
               +'if(b)b.style.display=window.__mdmW1C?\'none\':\'block\';'
               +'if(c)c.textContent=window.__mdmW1C?\'▾\':\'▴\';'
+              +'var _b=document.getElementById(\'mdm-collapseall-btn\');'
+              +'if(_b){var _a=window.__mdmW1C&&window.__mdmW2C&&window.__mdmW3C;_b.textContent=_a?\'Expand widgets\':\'Collapse widgets\';}'
               +'})()';
             return '<div style="background:#fff;border:1px solid #e6e6e5;border-radius:12px;margin-bottom:16px;box-shadow:0 1px 3px rgba(60,60,59,0.07);overflow:hidden;">'
               +'<div onclick="'+toggle+'" style="padding:14px 20px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;user-select:none;" onmouseenter="this.style.background=\'#fafafa\'" onmouseleave="this.style.background=\'\'">'
@@ -4762,6 +4764,8 @@ class Component extends DCLogic {
               +'var c=document.getElementById(\'mdm-w2-chev\');'
               +'if(b)b.style.display=window.__mdmW2C?\'none\':\'block\';'
               +'if(c)c.textContent=window.__mdmW2C?\'▾\':\'▴\';'
+              +'var _b=document.getElementById(\'mdm-collapseall-btn\');'
+              +'if(_b){var _a=window.__mdmW1C&&window.__mdmW2C&&window.__mdmW3C;_b.textContent=_a?\'Expand widgets\':\'Collapse widgets\';}'
               +'})()';
             return '<div style="background:#fff;border:1px solid #e6e6e5;border-radius:12px;margin-bottom:16px;box-shadow:0 1px 3px rgba(60,60,59,0.07);overflow:hidden;">'
               +'<div onclick="'+toggle+'" style="padding:14px 20px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;user-select:none;" onmouseenter="this.style.background=\'#fafafa\'" onmouseleave="this.style.background=\'\'">'
@@ -4817,6 +4821,8 @@ class Component extends DCLogic {
               +'var c=document.getElementById(\'mdm-w3-chev\');'
               +'if(b)b.style.display=window.__mdmW3C?\'none\':\'block\';'
               +'if(c)c.textContent=window.__mdmW3C?\'▾\':\'▴\';'
+              +'var _b=document.getElementById(\'mdm-collapseall-btn\');'
+              +'if(_b){var _a=window.__mdmW1C&&window.__mdmW2C&&window.__mdmW3C;_b.textContent=_a?\'Expand widgets\':\'Collapse widgets\';}'
               +'})()';
             return '<div style="background:#fff;border:1px solid #e6e6e5;border-radius:12px;margin-bottom:16px;box-shadow:0 1px 3px rgba(60,60,59,0.07);overflow:hidden;">'
               +'<div onclick="'+toggle+'" style="padding:14px 20px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;user-select:none;" onmouseenter="this.style.background=\'#fafafa\'" onmouseleave="this.style.background=\'\'">'
