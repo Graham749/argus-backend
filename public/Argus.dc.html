@@ -109,8 +109,8 @@ input{font-family:inherit;}
         </div>
 
         <!-- Salesforce Subscriptions Card (Live Data) -->
-        <div style="background:#fff;border:1px solid #e6e6e5;border-radius:12px;padding:20px;box-shadow:0 1px 3px rgba(60,60,59,0.07);margin-bottom:28px;">
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+        <div id="sfCard" style="background:#fff;border:1px solid #e6e6e5;border-radius:12px;padding:20px;box-shadow:0 1px 3px rgba(60,60,59,0.07);margin-bottom:28px;">
+          <div id="sfCardHeader" style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
             <img src="./assets/salesforce-2.svg" alt="Salesforce" style="width:44px;height:44px;object-fit:contain;flex-shrink:0;" />
             <div style="flex:1;">
               <div style="display:flex;align-items:center;gap:8px;">
@@ -121,8 +121,10 @@ input{font-family:inherit;}
               </div>
               <div style="font-size:11px;color:#9d9d9d;margin-top:2px;">Subscriptions by ARR</div>
             </div>
+            <span id="sfCollapseChev" style="font-size:16px;color:#9d9d9d;flex-shrink:0;margin-left:8px;">▴</span>
           </div>
 
+          <div id="sfCardBody">
           <!-- No account selected -->
           <div id="sfNoAccount" style="padding:20px 0;text-align:center;color:#9d9d9d;font-size:13px;">Select an account above to view subscription data</div>
 
@@ -215,11 +217,12 @@ input{font-family:inherit;}
           <div id="sfErrorMessage" style="padding:20px;text-align:center;color:#d32f2f;display:none;">
             <span style="font-size:13px;" id="sfErrorText"></span>
           </div>
+          </div><!-- /sfCardBody -->
         </div>
 
         <!-- Zendesk Tickets Card (Live Data) -->
         <div id="zdTicketsCard" style="background:#fff;border:1px solid #e6e6e5;border-radius:12px;padding:20px;box-shadow:0 1px 3px rgba(60,60,59,0.07);margin-bottom:28px;">
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+          <div id="zdCardHeader" style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
             <img src="./assets/Zendesk.png" alt="Zendesk" style="width:44px;height:44px;object-fit:contain;border-radius:8px;" />
             <div style="flex:1;">
               <div style="display:flex;align-items:center;gap:8px;">
@@ -230,8 +233,10 @@ input{font-family:inherit;}
               </div>
               <div style="font-size:11px;color:#9d9d9d;margin-top:2px;">Ticket activity for selected account</div>
             </div>
+            <span id="zdCollapseChev" style="font-size:16px;color:#9d9d9d;flex-shrink:0;margin-left:8px;">▴</span>
           </div>
 
+          <div id="zdCardBody">
           <!-- No account selected -->
           <div id="zdNoAccount" style="padding:20px 0;text-align:center;color:#9d9d9d;font-size:13px;">Select an account above to view ticket data</div>
 
@@ -315,11 +320,12 @@ input{font-family:inherit;}
               </table>
             </div>
           </div>
+          </div><!-- /zdCardBody -->
         </div>
 
         <!-- Productboard Insights Card -->
         <div id="pbInsightsCard" style="background:#fff;border:1px solid #e6e6e5;border-radius:12px;padding:20px;box-shadow:0 1px 3px rgba(60,60,59,0.07);margin-bottom:28px;">
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+          <div id="pbCardHeader" style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
             <div style="width:44px;height:44px;flex-shrink:0;">
               <img src="./assets/Productboard Logo Vector.svg .png" alt="Productboard" style="width:44px;height:44px;object-fit:contain;border-radius:8px;" />
             </div>
@@ -332,8 +338,10 @@ input{font-family:inherit;}
               </div>
               <div style="font-size:11px;color:#9d9d9d;margin-top:2px;">Customer feedback linked to product features</div>
             </div>
+            <span id="pbCollapseChev" style="font-size:16px;color:#9d9d9d;flex-shrink:0;margin-left:8px;">▴</span>
           </div>
 
+          <div id="pbCardBody">
           <div id="pbNoAccount" style="padding:20px 0;text-align:center;color:#9d9d9d;font-size:13px;">Select an account above to view feedback data</div>
           <div id="pbLoading" style="display:none;"></div>
           <div id="pbNoMatch" style="display:none;padding:16px;background:#f7f7f6;border-radius:8px;font-size:12px;color:#9d9d9d;text-align:center;">No Productboard company matched to this account</div>
@@ -374,11 +382,12 @@ input{font-family:inherit;}
             <!-- Drilldown panel — expands below tiles when a tile is clicked -->
             <div id="pbDrilldown" style="display:none;border:1px solid #e6e6e5;border-radius:10px;background:#fff;overflow:hidden;"></div>
           </div>
-        </div>
+          </div><!-- /pbCardBody -->
+        </div><!-- /pbInsightsCard -->
 
         <!-- PostHog Analytics Card -->
         <div id="phInsightsCard" style="background:#fff;border:1px solid #e6e6e5;border-radius:12px;padding:20px;box-shadow:0 1px 3px rgba(60,60,59,0.07);margin-bottom:28px;">
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+          <div id="phCardHeader" style="display:flex;align-items:center;gap:10px;margin-bottom:16px;cursor:pointer;user-select:none;">
             <div style="width:44px;height:44px;flex-shrink:0;background:#fff;border:1px solid #e6e6e5;border-radius:8px;display:flex;align-items:center;justify-content:center;padding:6px;box-sizing:border-box;">
               <img src="./assets/posthog-logomark.svg" alt="PostHog" style="width:32px;height:auto;" />
             </div>
@@ -391,8 +400,10 @@ input{font-family:inherit;}
               </div>
               <div style="font-size:11px;color:#9d9d9d;margin-top:2px;">EOS platform usage — pageviews &amp; feature engagement by week</div>
             </div>
+            <span id="phCollapseChev" style="font-size:16px;color:#9d9d9d;flex-shrink:0;margin-left:8px;">▴</span>
           </div>
 
+          <div id="phCardBody">
           <div id="phNoAccount" style="padding:20px 0;text-align:center;color:#9d9d9d;font-size:13px;">Select an account above to view PostHog analytics</div>
           <div id="phLoading" style="display:none;"></div>
           <div id="phNoMatch" style="display:none;padding:16px;background:#f7f7f6;border-radius:8px;font-size:12px;color:#9d9d9d;text-align:center;">No PostHog data matched to this account</div>
@@ -497,6 +508,7 @@ input{font-family:inherit;}
               </table>
             </div>
           </div>
+          </div><!-- /phCardBody -->
         </div>
 
         <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:20px;" dangerouslySetInnerHTML="{{ healthTabsHtml }}"></div>
@@ -1403,6 +1415,9 @@ class Component extends DCLogic {
     // Load accounts immediately on construction (survives navigation remount)
     setTimeout(() => this.loadAccountsList(), 10);
 
+    // Wire card collapse/expand headers (runs after x-dc renders the DOM)
+    setTimeout(() => this.setupCardCollapses(), 300);
+
     // Poll to detect navigation remount and reload accounts
     this.pollTimer = setInterval(() => {
       const select = document.getElementById('sfAccountSelector');
@@ -1425,6 +1440,31 @@ class Component extends DCLogic {
     this.loadMdm();
     // Setup Salesforce subscriptions immediately (don't wait)
     this.setupSalesforceSubscriptions();
+  }
+
+  setupCardCollapses(){
+    var cards = [
+      { hdr: 'sfCardHeader', body: 'sfCardBody', chev: 'sfCollapseChev' },
+      { hdr: 'zdCardHeader', body: 'zdCardBody', chev: 'zdCollapseChev' },
+      { hdr: 'pbCardHeader', body: 'pbCardBody', chev: 'pbCollapseChev' },
+      { hdr: 'phCardHeader', body: 'phCardBody', chev: 'phCollapseChev' },
+    ];
+    cards.forEach(function(c) {
+      var hdr  = document.getElementById(c.hdr);
+      var body = document.getElementById(c.body);
+      var chev = document.getElementById(c.chev);
+      if (!hdr || !body) return;
+      hdr._collapsed = false;
+      hdr.onclick      = function() {
+        hdr._collapsed = !hdr._collapsed;
+        body.style.display = hdr._collapsed ? 'none' : 'block';
+        if (chev) chev.textContent = hdr._collapsed ? '▾' : '▴';
+      };
+      hdr.onmouseenter = function() { this.style.opacity = '0.85'; };
+      hdr.onmouseleave = function() { this.style.opacity = '1'; };
+      hdr.style.cursor     = 'pointer';
+      hdr.style.userSelect = 'none';
+    });
   }
 
   setupSalesforceSubscriptions(){
@@ -2149,6 +2189,13 @@ class Component extends DCLogic {
     show('phLoading', true);
     var phInfoBarEl = document.getElementById('phInfoBar');
     if (phInfoBarEl) phInfoBarEl.style.display = 'none';
+    // Expand PostHog card body on new account load
+    var phHdrEl  = document.getElementById('phCardHeader');
+    var phBodyEl = document.getElementById('phCardBody');
+    var phChevEl = document.getElementById('phCollapseChev');
+    if (phHdrEl)  phHdrEl._collapsed = false;
+    if (phBodyEl) phBodyEl.style.display = 'block';
+    if (phChevEl) phChevEl.textContent = '▴';
 
     if (!window.__argusNextMsg) window.__argusNextMsg = (function(){
       var _all=['Querying the data lake…','Crunching feature engagement metrics…','Joining PostHog tenants to MDM…','Aggregating weekly event buckets…','Counting your power users…','Fetching investment case views…','Mapping leaderboard activity…','Benchmarks data incoming…','Cross-referencing tenant domains…','Almost there…'];
@@ -2180,6 +2227,8 @@ class Component extends DCLogic {
       var p = d.split('-');
       return p.length === 3 ? p[2]+'-'+months[parseInt(p[1],10)-1]+'-'+p[0].slice(2) : d;
     };
+
+
 
     // Define all chart globals NOW so button clicks work even before re-fetch completes
     window.__phSeries = [
