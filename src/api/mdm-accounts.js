@@ -42,7 +42,7 @@ async function queryLakehouse(query) {
 
 async function mdmAccounts(req, res) {
   try {
-    const [summaryRows, accountRows, hierarchyRows, dupRows, pbOnlyRows, zdUserRows, zdTicketRows, pbNoteRows, sfSubRows] = await Promise.all([
+    const [summaryRows, accountRows, hierarchyRows, dupRows, pbOnlyRows, zdUserRows, zdTicketRows, pbNoteRows, sfSubRows, phCovRows, phRows] = await Promise.all([
       queryLakehouse(`
         SELECT
           COUNT(*)                                                              AS total,
@@ -152,6 +152,64 @@ async function mdmAccounts(req, res) {
         SELECT account_id, COUNT(*) AS sub_count
         FROM v_silver_sf_subscriptions
         GROUP BY account_id
+      `),
+      // PostHog tenant → SF match coverage (PostHog-side view)
+      // Uses DISTINCT tenant in aggregations to avoid double-counting when one tenant matches multiple SF accounts
+      queryLakehouse(`
+        WITH ph_classified AS (
+          SELECT
+            ph.ph_tenant,
+            ph.ph_tenant_format,
+            MAX(CASE WHEN mdm.sf_account_id IS NOT NULL AND ph.ph_tenant = mdm.sf_website_domain           THEN 1 ELSE 0 END) AS is_website_match,
+            MAX(CASE WHEN mdm.sf_account_id IS NOT NULL
+                          AND ph.ph_tenant != ISNULL(mdm.sf_website_domain,'')
+                          AND mdm.sf_eos_access_domains IS NOT NULL
+                          AND ';'+mdm.sf_eos_access_domains+';' LIKE '%;'+ph.ph_tenant+';%'               THEN 1 ELSE 0 END) AS is_eos_match,
+            MAX(CASE WHEN mdm.sf_account_id IS NOT NULL                                                    THEN 1 ELSE 0 END) AS is_any_match
+          FROM dbo.v_silver_posthog_account_activity ph
+          LEFT JOIN dbo.v_silver_mdm_account mdm
+            ON ph.ph_tenant = mdm.sf_website_domain
+            OR (mdm.sf_eos_access_domains IS NOT NULL AND ';'+mdm.sf_eos_access_domains+';' LIKE '%;'+ph.ph_tenant+';%')
+            OR (mdm.sf_eos_access_domains_2 IS NOT NULL AND ';'+mdm.sf_eos_access_domains_2+';' LIKE '%;'+ph.ph_tenant+';%')
+            OR (ph.ph_tenant_format = 'short_code' AND UPPER(ph.ph_tenant) = UPPER(mdm.sf_account_code))
+          GROUP BY ph.ph_tenant, ph.ph_tenant_format
+        )
+        SELECT
+          COUNT(*)                                                                               AS ph_total_tenants,
+          SUM(CASE WHEN ph_tenant_format = 'domain'     THEN 1 ELSE 0 END)                     AS ph_domain_tenants,
+          SUM(CASE WHEN ph_tenant_format = 'uuid'       THEN 1 ELSE 0 END)                     AS ph_uuid_tenants,
+          SUM(CASE WHEN ph_tenant_format = 'short_code' THEN 1 ELSE 0 END)                     AS ph_shortcode_tenants,
+          SUM(CASE WHEN is_website_match = 1            THEN 1 ELSE 0 END)                     AS ph_website_match,
+          SUM(CASE WHEN is_eos_match     = 1            THEN 1 ELSE 0 END)                     AS ph_eos_match,
+          SUM(CASE WHEN ph_tenant_format = 'short_code' AND is_any_match = 1 THEN 1 ELSE 0 END) AS ph_acct_code_match,
+          SUM(CASE WHEN is_any_match = 0 AND ph_tenant_format = 'domain'    THEN 1 ELSE 0 END) AS ph_no_sf_match
+        FROM ph_classified
+      `),
+      // PostHog EOS usage per SF account — domain-joined via website_domain and eos_access_domains
+      queryLakehouse(`
+        SELECT
+          mdm.sf_account_id,
+          SUM(ph.ph_total_events)     AS ph_total_events,
+          SUM(ph.ph_unique_users)     AS ph_unique_users,
+          MAX(ph.ph_last_seen)        AS ph_last_seen,
+          SUM(ph.ph_events_last_30d)  AS ph_events_last_30d,
+          SUM(ph.ph_events_last_7d)   AS ph_events_last_7d,
+          SUM(ph.ph_investment_cases) AS ph_investment_cases,
+          SUM(ph.ph_leaderboards)     AS ph_leaderboards,
+          SUM(ph.ph_benchmarks)       AS ph_benchmarks,
+          MAX(ph.ph_top_feature)      AS ph_top_feature,
+          STRING_AGG(ph.ph_tenant, '; ') AS ph_tenants
+        FROM dbo.v_silver_mdm_account mdm
+        JOIN dbo.v_silver_posthog_account_activity ph
+          ON ph.ph_tenant = mdm.sf_website_domain
+          OR (mdm.sf_eos_access_domains IS NOT NULL
+              AND ';' + mdm.sf_eos_access_domains + ';' LIKE '%;' + ph.ph_tenant + ';%')
+          OR (mdm.sf_eos_access_domains_2 IS NOT NULL
+              AND ';' + mdm.sf_eos_access_domains_2 + ';' LIKE '%;' + ph.ph_tenant + ';%')
+          OR (ph.ph_tenant_format = 'short_code'
+              AND UPPER(ph.ph_tenant) = UPPER(mdm.sf_account_code))
+        WHERE mdm.sf_account_id IS NOT NULL
+        GROUP BY mdm.sf_account_id
       `)
     ]);
 
@@ -169,6 +227,22 @@ async function mdmAccounts(req, res) {
 
     const sfSubCounts = {};
     sfSubRows.forEach(r => { sfSubCounts[r.account_id] = Number(r.sub_count) || 0; });
+
+    const phMetrics = {};
+    (phRows || []).forEach(r => {
+      phMetrics[r.sf_account_id] = {
+        totalEvents:      Number(r.ph_total_events)     || 0,
+        uniqueUsers:      Number(r.ph_unique_users)     || 0,
+        lastSeen:         r.ph_last_seen ? new Date(r.ph_last_seen).toISOString().slice(0, 10) : null,
+        eventsLast30d:    Number(r.ph_events_last_30d)  || 0,
+        eventsLast7d:     Number(r.ph_events_last_7d)   || 0,
+        investmentCases:  Number(r.ph_investment_cases) || 0,
+        leaderboards:     Number(r.ph_leaderboards)     || 0,
+        benchmarks:       Number(r.ph_benchmarks)       || 0,
+        topFeature:       r.ph_top_feature || null,
+        tenants:          r.ph_tenants || null,
+      };
+    });
 
     // Build hierarchy maps in JavaScript — O(1) lookup, no DB join needed
     const hierById = {};
@@ -287,7 +361,16 @@ async function mdmAccounts(req, res) {
         pbWebsite:         Number(summary.pbWebsite)         || 0,
         pbEos:             Number(summary.pbEos)             || 0,
         pbName:            Number(summary.pbName)            || 0,
-        nameCollisions:    Number(summary.nameCollisions)    || 0
+        nameCollisions:    Number(summary.nameCollisions)    || 0,
+        phLinked:          Object.keys(phMetrics).length,
+        phTotalTenants:    Number((phCovRows[0] || {}).ph_total_tenants)    || 0,
+        phDomainTenants:   Number((phCovRows[0] || {}).ph_domain_tenants)  || 0,
+        phUuidTenants:     Number((phCovRows[0] || {}).ph_uuid_tenants)    || 0,
+        phShortcodeTenants:Number((phCovRows[0] || {}).ph_shortcode_tenants)|| 0,
+        phWebsiteMatch:    Number((phCovRows[0] || {}).ph_website_match)    || 0,
+        phEosDomainMatch:  Number((phCovRows[0] || {}).ph_eos_match)        || 0,
+        phAcctCodeMatch:   Number((phCovRows[0] || {}).ph_acct_code_match)  || 0,
+        phNoMatch:         Number((phCovRows[0] || {}).ph_no_sf_match)      || 0
       },
       accounts,
       duplicates,
@@ -295,6 +378,7 @@ async function mdmAccounts(req, res) {
       zdTickets,
       pbNotes,
       sfSubCounts,
+      phMetrics,
       syncedAt: new Date().toISOString()
     });
   } catch (err) {

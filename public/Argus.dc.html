@@ -2815,6 +2815,7 @@ class Component extends DCLogic {
       window.__mdmZdTickets  = data.zdTickets   || {};
       window.__mdmPbNotes    = data.pbNotes     || {};
       window.__mdmSfSubCounts= data.sfSubCounts || {};
+      window.__mdmPhMetrics  = data.phMetrics   || {};
       if (window.__mdmSearch   === undefined) window.__mdmSearch   = '';
       if (window.__mdmConfFilter === undefined) window.__mdmConfFilter = null;
       if (window.__mdmExpandedId === undefined) window.__mdmExpandedId = null;
@@ -3016,7 +3017,7 @@ class Component extends DCLogic {
     const MARKET_GROUPS = [
       { label:'CE',             markets:['SEE','DEU','CEE','NOD','BALTCS','WORLDWIDE','EMEA'] },
       { label:'GBR/IRX',        markets:['GBR','IRX','EMEA','EXTERNAL ORIGIN REGIONS','WORLDWIDE'] },
-      { label:'Central Europe', markets:['IBE','ITA','FRA','SWE','EMEA','WORLDWIDE'] },
+      { label:'SWE',            markets:['IBE','ITA','FRA','SWE','EMEA','WORLDWIDE'] },
       { label:'APAC',           markets:['JPN','EXTERNAL ORIGIN REGIONS','IND','KOR','AUS-NEW','AUS-WEN','APAC','PHL','MYS'] },
       { label:'AMERICAS',       markets:['US','ONT','MEX','WORLDWIDE','AIES','CHL','BRA','NORAM','LATAM'] },
     ];
@@ -3644,16 +3645,22 @@ class Component extends DCLogic {
           const dc = (lbl,val) => val
             ? '<div style="display:flex;gap:6px;margin-bottom:3px;"><span style="font-size:10px;font-weight:700;color:#9d9d9d;min-width:100px;">'+lbl+'</span><span style="font-size:11px;color:#3c3c3b;">'+val+'</span></div>'
             : '';
+          const phRowData = window.__mdmPhMetrics && a.sfAccountId ? (window.__mdmPhMetrics[a.sfAccountId] || null) : null;
+          const phPill = phRowData
+            ? '<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:#fff3e8;color:#e36a00;white-space:nowrap;">'+phRowData.eventsLast30d.toLocaleString()+' events</span>'
+              +'<span style="font-size:10px;color:#9d9d9d;margin-left:5px;">'+phRowData.lastSeen+'</span>'
+            : '<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:#f1f1f0;color:#9d9d9d;white-space:nowrap;">No data</span>';
           const mainRow = '<tr style="border-bottom:1px solid #f1f1f0;cursor:pointer;'+(a.pbOnly?'background:#fdf9ff;':'')+(isExp?'background:#fafafa;':'')+'" onclick="(function(){window.__mdmExpandedId=window.__mdmExpandedId==='+tid+'?null:'+tid+';window.__mdmRefresh&&window.__mdmRefresh();})()">'
             +'<td style="padding:9px 10px;">'+nameCell+'</td>'
             +'<td style="padding:9px 10px;">'+zdPill+'</td>'
             +'<td style="padding:9px 10px;">'+pbPill+'</td>'
+            +'<td style="padding:9px 10px;">'+phPill+'</td>'
             +'<td style="padding:9px 10px;text-align:center;color:#9d9d9d;font-size:14px;">'+(isExp?'▴':'▾')+'</td>'
             +'</tr>';
           if(!isExp) return mainRow;
           if(a.pbOnly) {
             const pbDetailRow = '<tr style="background:#fdf9ff;">'
-              +'<td colspan="4" style="padding:0 12px 16px 12px;">'
+              +'<td colspan="5" style="padding:0 12px 16px 12px;">'
               +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;padding:14px;background:#fff;border:1px solid #ede0f7;border-radius:8px;">'
                 +'<div>'
                   +'<div style="font-size:10px;font-weight:700;color:#9d9d9d;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">Salesforce</div>'
@@ -3684,8 +3691,8 @@ class Component extends DCLogic {
             return mainRow + pbDetailRow;
           }
           const detailRow = '<tr style="background:#fafafa;">'
-            +'<td colspan="4" style="padding:0 12px 16px 12px;">'
-            +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;padding:14px;background:#fff;border:1px solid #f1f1f0;border-radius:8px;">'
+            +'<td colspan="5" style="padding:0 12px 16px 12px;">'
+            +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:16px;padding:14px;background:#fff;border:1px solid #f1f1f0;border-radius:8px;">'
               +(function(){
                   const accountLink = function(id, name) {
                     return '<span style="font-size:11px;color:#288184;cursor:pointer;text-decoration:underline;" onclick="(function(){window.__mdmSearch=\''+id+'\';window.__mdmExpandedId=\''+id+'\';var inp=document.getElementById(\'mdm-search\');if(inp)inp.value=\''+id+'\';window.__mdmRefresh&&window.__mdmRefresh();})()">'+name+'</span>';
@@ -3747,7 +3754,48 @@ class Component extends DCLogic {
                         +(pbN?'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;">'+stat(pbN,'Feedback')+'</div>':'')
                         +'<div style="margin-top:8px;"><a href="https://auroraer.productboard.com/detail/'+a.pbCompanyId+'" target="_blank" style="font-size:10px;color:#7030a0;text-decoration:none;display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border:1px solid #ddc8f0;border-radius:4px;background:#fdf9ff;">↗ Open in Productboard</a></div>'
                       : '<div style="font-size:11px;color:#9d9d9d;">No Productboard company matched</div>')
-                  +'</div>';
+                  +'</div>'
+                  +(function(){
+                      const ph = window.__mdmPhMetrics && a.sfAccountId ? (window.__mdmPhMetrics[a.sfAccountId] || null) : null;
+                      const featureLabel = {'investment-cases':'Investment Cases','leaderboards':'Leaderboards','benchmarks':'Benchmarks'};
+                      const featureBar = function(label, val, total, col) {
+                        const pct = total ? Math.round(val / total * 100) : 0;
+                        return '<div style="margin-bottom:6px;">'
+                          +'<div style="display:flex;justify-content:space-between;margin-bottom:2px;">'
+                            +'<span style="font-size:10px;color:#6d6d6c;">'+label+'</span>'
+                            +'<span style="font-size:10px;font-weight:700;color:#3c3c3b;">'+val.toLocaleString()+'</span>'
+                          +'</div>'
+                          +'<div style="height:5px;background:#f1f1f0;border-radius:3px;overflow:hidden;">'
+                            +'<div style="height:100%;width:'+pct+'%;background:'+col+';border-radius:3px;"></div>'
+                          +'</div>'
+                        +'</div>';
+                      };
+                      if (!ph) return '<div>'
+                        +'<div style="font-size:10px;font-weight:700;color:#e36a00;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">PostHog</div>'
+                        +'<div style="font-size:11px;color:#9d9d9d;">No PostHog activity matched</div>'
+                      +'</div>';
+                      const totalFeatureEvents = ph.investmentCases + ph.leaderboards + ph.benchmarks;
+                      const fmtDate = function(d) { return d ? d : '—'; };
+                      return '<div>'
+                        +'<div style="font-size:10px;font-weight:700;color:#e36a00;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">PostHog</div>'
+                        +'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;">'
+                          +stat(ph.uniqueUsers,'Users')
+                          +stat(ph.eventsLast30d.toLocaleString(),'Events (30d)')
+                          +stat(ph.totalEvents.toLocaleString(),'Total Events')
+                        +'</div>'
+                        +dc('Last Active', fmtDate(ph.lastSeen))
+                        +(ph.topFeature?dc('Top Feature', featureLabel[ph.topFeature]||ph.topFeature):'')
+                        +(ph.tenants?dc('Tenant(s)', ph.tenants):'')
+                        +(totalFeatureEvents > 0
+                          ? '<div style="margin-top:10px;padding-top:10px;border-top:1px solid #f1f1f0;">'
+                              +'<div style="font-size:10px;font-weight:700;color:#9d9d9d;margin-bottom:8px;">Feature Breakdown</div>'
+                              +featureBar('Investment Cases', ph.investmentCases, totalFeatureEvents, '#e36a00')
+                              +featureBar('Leaderboards',     ph.leaderboards,    totalFeatureEvents, '#f5a623')
+                              +featureBar('Benchmarks',       ph.benchmarks,      totalFeatureEvents, '#f7c97a')
+                            +'</div>'
+                          : '')
+                      +'</div>';
+                    })();
                 })()
             +'</div>'
             +'</td>'
@@ -3786,7 +3834,7 @@ class Component extends DCLogic {
             : 'Top 200 by subscriptions · ' + all + ' total — search to find others';
           tbody.innerHTML = total
             ? display.map(window.__mdmRow).join('')
-            : '<tr><td colspan="4" style="padding:32px;text-align:center;color:#9d9d9d;">No accounts match this filter</td></tr>';
+            : '<tr><td colspan="5" style="padding:32px;text-align:center;color:#9d9d9d;">No accounts match this filter</td></tr>';
         };
 
         // Schedule table population after x-dc sets innerHTML
@@ -3829,10 +3877,10 @@ class Component extends DCLogic {
             if (window.__mdmW2C === undefined) window.__mdmW2C = true;
             if (window.__mdmW3C === undefined) window.__mdmW3C = true;
             if (window.__mdmW4C === undefined) window.__mdmW4C = true;
-            const allC = window.__mdmW1C && window.__mdmW2C && window.__mdmW3C && window.__mdmW4C && !window.__mdmDupExpanded;
+            const allC = window.__mdmW1C && window.__mdmW2C && window.__mdmW3C && window.__mdmW4C && window.__mdmW5C && !window.__mdmDupExpanded;
             const colAll = '(function(){'
-              +'var toC=!(window.__mdmW1C&&window.__mdmW2C&&window.__mdmW3C&&window.__mdmW4C&&!window.__mdmDupExpanded);'
-              +'[1,2,3,4].forEach(function(n){'
+              +'var toC=!(window.__mdmW1C&&window.__mdmW2C&&window.__mdmW3C&&window.__mdmW4C&&window.__mdmW5C&&!window.__mdmDupExpanded);'
+              +'[1,2,3,4,5].forEach(function(n){'
                 +'window[\'__mdmW\'+n+\'C\']=toC;'
                 +'var b=document.getElementById(\'mdm-w\'+n+\'-body\');'
                 +'var c=document.getElementById(\'mdm-w\'+n+\'-chev\');'
@@ -3872,7 +3920,7 @@ class Component extends DCLogic {
               +'</div>'
               +'<div id="mdm-w1-body" style="display:'+(collapsed?'none':'block')+';padding:0 20px 16px;border-top:1px solid #f1f1f0;">'
                 +'<div style="height:16px;"></div>'
-                +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:#f1f1f0;border-radius:8px;overflow:hidden;">'
+                +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:1px;background:#f1f1f0;border-radius:8px;overflow:hidden;">'
 
               // Salesforce column
               +'<div style="background:#fff;padding:16px 20px;">'
@@ -3935,10 +3983,38 @@ class Component extends DCLogic {
                 +'</div>'
               +'</div>'
 
+              // PostHog / PostHog column
+              +'<div style="background:#fff;padding:16px 20px;">'
+                +'<div style="font-size:11px;font-weight:700;color:#e36a00;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:14px;">PostHog &nbsp;<span style="font-weight:400;color:#9d9d9d;font-size:10px;text-transform:none;letter-spacing:0;">'+(sm.phTotalTenants||0).toLocaleString()+' tenants</span></div>'
+                +'<div style="display:flex;flex-direction:column;gap:12px;">'
+                  +'<div>'
+                    +'<div style="font-size:10px;font-weight:700;color:#9d9d9d;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;">PostHog → SF</div>'
+                    +'<div style="display:flex;align-items:baseline;gap:6px;">'
+                      +'<span style="font-size:22px;font-weight:900;color:#e36a00;">'+pct((sm.phWebsiteMatch||0)+(sm.phEosDomainMatch||0)+(sm.phAcctCodeMatch||0),(sm.phDomainTenants||0)+(sm.phShortcodeTenants||0)||1)+'</span>'
+                      +'<span style="font-size:11px;color:#9d9d9d;">of matchable tenants linked to SF</span>'
+                    +'</div>'
+                    +covBar((sm.phWebsiteMatch||0)+(sm.phEosDomainMatch||0)+(sm.phAcctCodeMatch||0),(sm.phDomainTenants||0)+(sm.phShortcodeTenants||0)||1,'#e36a00')
+                    +'<div style="font-size:11px;color:#9d9d9d;">'+((sm.phWebsiteMatch||0)+(sm.phEosDomainMatch||0)+(sm.phAcctCodeMatch||0)).toLocaleString()+' matched &nbsp;·&nbsp; '+(sm.phNoMatch||0).toLocaleString()+' not in SF</div>'
+                    +'<div style="margin-top:6px;padding:5px 8px;background:#f7f7f6;border-radius:6px;font-size:10px;color:#9d9d9d;">'
+                      +(sm.phUuidTenants||0).toLocaleString()+' UUID tenants — no domain or account code, excluded from %'
+                    +'</div>'
+                  +'</div>'
+                  +'<div style="border-top:1px solid #f1f1f0;padding-top:12px;">'
+                    +'<div style="font-size:10px;font-weight:700;color:#9d9d9d;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;">SF → PostHog</div>'
+                    +'<div style="display:flex;align-items:baseline;gap:6px;">'
+                      +'<span style="font-size:22px;font-weight:900;color:#e36a00;">'+pct(sm.phLinked||0,sm.total)+'</span>'
+                      +'<span style="font-size:11px;color:#9d9d9d;">of SF accounts with EOS activity</span>'
+                    +'</div>'
+                    +covBar(sm.phLinked||0, sm.total, '#e36a00')
+                    +'<div style="font-size:11px;color:#9d9d9d;">'+(sm.phLinked||0).toLocaleString()+' matched &nbsp;·&nbsp; '+(sm.total-(sm.phLinked||0)).toLocaleString()+' no activity</div>'
+                  +'</div>'
+                +'</div>'
+              +'</div>'
+
             +'</div>'
             +'<div style="margin-top:12px;font-size:11px;color:#9d9d9d;">Coverage is from Salesforce outward — Zendesk and Productboard accounts with no SF record are not shown here.</div>'
-              +'</div>'
-            +'</div>';
+          +'</div>'
+        +'</div>';
           })()
 
           // Match Criteria card
@@ -4108,6 +4184,97 @@ class Component extends DCLogic {
             +'</div>';
           })()
 
+          // PostHog Match Confidence Distribution
+          +(()=>{
+            if (window.__mdmW5C === undefined) window.__mdmW5C = true;
+            const collapsed = window.__mdmW5C;
+            const toggle = '(function(){'
+              +'window.__mdmW5C=!window.__mdmW5C;'
+              +'var b=document.getElementById(\'mdm-w5-body\');'
+              +'var c=document.getElementById(\'mdm-w5-chev\');'
+              +'if(b)b.style.display=window.__mdmW5C?\'none\':\'block\';'
+              +'if(c)c.textContent=window.__mdmW5C?\'▾\':\'▴\';'
+              +'})()';
+            const phMatched    = (sm.phWebsiteMatch||0) + (sm.phEosDomainMatch||0) + (sm.phAcctCodeMatch||0);
+            const phUnmatch    = (sm.phUuidTenants||0);
+            const phTotal      = sm.phTotalTenants || 1;
+            const phMatchable  = (sm.phDomainTenants||0) + (sm.phShortcodeTenants||0) || 1;
+            const phWebPct     = phTotal ? (sm.phWebsiteMatch||0)    / phTotal : 0;
+            const phEosPct     = phTotal ? (sm.phEosDomainMatch||0)  / phTotal : 0;
+            const phAcctPct    = phTotal ? (sm.phAcctCodeMatch||0)   / phTotal : 0;
+            const phUnmatchPct = phTotal ? phUnmatch                 / phTotal : 0;
+            const phNonePct    = phTotal ? (sm.phNoMatch||0)         / phTotal : 0;
+            return '<div style="background:#fff;border:1px solid #e6e6e5;border-radius:12px;margin-bottom:16px;box-shadow:0 1px 3px rgba(60,60,59,0.07);overflow:hidden;">'
+              +'<div onclick="'+toggle+'" style="padding:14px 20px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;user-select:none;" onmouseenter="this.style.background=\'#fafafa\'" onmouseleave="this.style.background=\'\'">'
+                +'<div>'
+                  +'<div style="font-size:12px;font-weight:700;color:#6d6d6c;text-transform:uppercase;letter-spacing:0.08em;">PostHog Match Confidence</div>'
+                  +'<div style="font-size:11px;color:#9d9d9d;margin-top:2px;">'+phTotal.toLocaleString()+' tenants total · '+phMatched.toLocaleString()+' matched · '+(sm.phUuidTenants||0).toLocaleString()+' UUID (unmatchable)</div>'
+                +'</div>'
+                +'<span id="mdm-w5-chev" style="font-size:14px;color:#9d9d9d;flex-shrink:0;margin-left:12px;">'+(collapsed?'▾':'▴')+'</span>'
+              +'</div>'
+              +'<div id="mdm-w5-body" style="display:'+(collapsed?'none':'block')+';padding:0 20px 20px;border-top:1px solid #f1f1f0;">'
+                +'<div style="height:16px;"></div>'
+                +'<div style="display:flex;height:12px;border-radius:6px;overflow:hidden;background:#f1f1f0;">'
+                  +'<div style="width:'+Math.round(phWebPct*100)+'%;background:#e36a00;" title="Website domain: '+(sm.phWebsiteMatch||0)+'"></div>'
+                  +'<div style="width:'+Math.round(phEosPct*100)+'%;background:#f5a623;" title="EOS domain: '+(sm.phEosDomainMatch||0)+'"></div>'
+                  +'<div style="width:'+Math.round(phAcctPct*100)+'%;background:#f7c97a;" title="Account code: '+(sm.phAcctCodeMatch||0)+'"></div>'
+                  +'<div style="width:'+Math.round(phNonePct*100)+'%;background:#d4d4d4;" title="Domain but no SF match: '+(sm.phNoMatch||0)+'"></div>'
+                  +'<div style="width:'+Math.round(phUnmatchPct*100)+'%;background:#f1e0cc;border-left:1px dashed #e36a00;" title="UUID (unmatchable): '+phUnmatch+'"></div>'
+                +'</div>'
+                +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr;gap:10px;margin-top:14px;">'
+                  +'<div style="display:flex;flex-direction:column;gap:3px;">'
+                    +'<div style="display:flex;align-items:center;gap:6px;">'
+                      +'<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#e36a00;flex-shrink:0;"></span>'
+                      +'<span style="font-size:11px;font-weight:700;color:#3c3c3b;">Website Domain</span>'
+                    +'</div>'
+                    +'<div style="font-size:20px;font-weight:900;color:#e36a00;padding-left:16px;">'+(sm.phWebsiteMatch||0).toLocaleString()+'</div>'
+                    +'<div style="font-size:10px;color:#9d9d9d;padding-left:16px;">'+pct(sm.phWebsiteMatch||0,phMatchable)+' · sf_website_domain</div>'
+                  +'</div>'
+                  +'<div style="display:flex;flex-direction:column;gap:3px;">'
+                    +'<div style="display:flex;align-items:center;gap:6px;">'
+                      +'<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#f5a623;flex-shrink:0;"></span>'
+                      +'<span style="font-size:11px;font-weight:700;color:#3c3c3b;">EOS Domain</span>'
+                    +'</div>'
+                    +'<div style="font-size:20px;font-weight:900;color:#f5a623;padding-left:16px;">'+(sm.phEosDomainMatch||0).toLocaleString()+'</div>'
+                    +'<div style="font-size:10px;color:#9d9d9d;padding-left:16px;">'+pct(sm.phEosDomainMatch||0,phMatchable)+' · eos_access_domains list</div>'
+                  +'</div>'
+                  +'<div style="display:flex;flex-direction:column;gap:3px;">'
+                    +'<div style="display:flex;align-items:center;gap:6px;">'
+                      +'<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#f7c97a;flex-shrink:0;"></span>'
+                      +'<span style="font-size:11px;font-weight:700;color:#3c3c3b;">Account Code</span>'
+                    +'</div>'
+                    +'<div style="font-size:20px;font-weight:900;color:#c8920a;padding-left:16px;">'+(sm.phAcctCodeMatch||0).toLocaleString()+'</div>'
+                    +'<div style="font-size:10px;color:#9d9d9d;padding-left:16px;">'+pct(sm.phAcctCodeMatch||0,phMatchable)+' · sf_account_code (short codes)</div>'
+                  +'</div>'
+                  +'<div style="display:flex;flex-direction:column;gap:3px;">'
+                    +'<div style="display:flex;align-items:center;gap:6px;">'
+                      +'<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#d4d4d4;flex-shrink:0;"></span>'
+                      +'<span style="font-size:11px;font-weight:700;color:#3c3c3b;">No SF Match</span>'
+                    +'</div>'
+                    +'<div style="font-size:20px;font-weight:900;color:#9d9d9d;padding-left:16px;">'+(sm.phNoMatch||0).toLocaleString()+'</div>'
+                    +'<div style="font-size:10px;color:#9d9d9d;padding-left:16px;">'+pct(sm.phNoMatch||0,phMatchable)+' · domain format, no SF account found</div>'
+                  +'</div>'
+                  +'<div style="display:flex;flex-direction:column;gap:3px;">'
+                    +'<div style="display:flex;align-items:center;gap:6px;">'
+                      +'<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#f1e0cc;border:1px dashed #e36a00;flex-shrink:0;"></span>'
+                      +'<span style="font-size:11px;font-weight:700;color:#3c3c3b;">UUID</span>'
+                    +'</div>'
+                    +'<div style="font-size:20px;font-weight:900;color:#c8a070;padding-left:16px;">'+(sm.phUuidTenants||0).toLocaleString()+'</div>'
+                    +'<div style="font-size:10px;color:#9d9d9d;padding-left:16px;">'+pct(sm.phUuidTenants||0,phTotal)+' · PostHog internal ID, no domain</div>'
+                  +'</div>'
+                +'</div>'
+                +'<div style="margin-top:14px;padding:10px 14px;background:#fff8f3;border:1px solid #fde8d0;border-radius:8px;">'
+                  +'<div style="font-size:11px;font-weight:700;color:#9d9d9d;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;">Match method</div>'
+                  +step(1,'<strong>Website domain</strong> — PostHog tenant = SF <code style="font-size:10px;background:#f1f1f0;padding:1px 4px;border-radius:3px;">sf_website_domain</code>')
+                  +step(2,'<strong>EOS domain</strong> — PostHog tenant in SF <code style="font-size:10px;background:#f1f1f0;padding:1px 4px;border-radius:3px;">sf_eos_access_domains</code> semicolon list')
+                  +step(3,'<strong>Account code</strong> — PostHog short-code tenant = SF <code style="font-size:10px;background:#f1f1f0;padding:1px 4px;border-radius:3px;">Account_Identifier_Code__c</code> (48/48 matched)')
+                  +step(4,'<strong>UUID tenants</strong> — PostHog internal session IDs with no account identity; excluded from match % denominator')
+                  +'<div style="margin-left:28px;font-size:11px;color:#9d9d9d;margin-top:6px;">Match % uses '+(sm.phDomainTenants||0).toLocaleString()+' domain + '+(sm.phShortcodeTenants||0).toLocaleString()+' short-code tenants ('+(((sm.phDomainTenants||0)+(sm.phShortcodeTenants||0)).toLocaleString())+' matchable of '+(sm.phTotalTenants||0).toLocaleString()+' total).</div>'
+                +'</div>'
+              +'</div>'
+            +'</div>';
+          })()
+
           // Salesforce Duplicate Accounts widget
           + (()=>{
             const dups = S.mdmDuplicates || [];
@@ -4213,9 +4380,10 @@ class Component extends DCLogic {
                 +'<th style="text-align:left;padding:10px 10px;font-size:11px;font-weight:700;color:#9d9d9d;text-transform:uppercase;letter-spacing:0.06em;">SF Account</th>'
                 +'<th style="text-align:left;padding:10px 10px;font-size:11px;font-weight:700;color:#288184;text-transform:uppercase;letter-spacing:0.06em;">Zendesk</th>'
                 +'<th style="text-align:left;padding:10px 10px;font-size:11px;font-weight:700;color:#7030a0;text-transform:uppercase;letter-spacing:0.06em;">Productboard</th>'
+                +'<th style="text-align:left;padding:10px 10px;font-size:11px;font-weight:700;color:#e36a00;text-transform:uppercase;letter-spacing:0.06em;">PostHog</th>'
                 +'<th style="width:32px;"></th>'
               +'</tr></thead>'
-              +'<tbody id="mdm-tbody"><tr><td colspan="4" style="padding:32px;text-align:center;color:#9d9d9d;">Loading…</td></tr></tbody>'
+              +'<tbody id="mdm-tbody"><tr><td colspan="5" style="padding:32px;text-align:center;color:#9d9d9d;">Loading…</td></tr></tbody>'
             +'</table></div>'
           +'</div>';
 
