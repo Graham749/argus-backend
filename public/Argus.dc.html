@@ -3692,7 +3692,7 @@ class Component extends DCLogic {
           }
           const detailRow = '<tr style="background:#fafafa;">'
             +'<td colspan="5" style="padding:0 12px 16px 12px;">'
-            +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:1px;background:#f1f1f0;border:1px solid #f1f1f0;border-radius:8px;overflow:hidden;">'
+            +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;background:#fff;border:1px solid #f1f1f0;border-radius:8px;overflow:hidden;">'
               +(function(){
                   const accountLink = function(id, name) {
                     return '<span style="font-size:11px;color:#288184;cursor:pointer;text-decoration:underline;" onclick="(function(){window.__mdmSearch=\''+id+'\';window.__mdmExpandedId=\''+id+'\';var inp=document.getElementById(\'mdm-search\');if(inp)inp.value=\''+id+'\';window.__mdmRefresh&&window.__mdmRefresh();})()">'+name+'</span>';
@@ -3709,7 +3709,7 @@ class Component extends DCLogic {
                         +'<span style="font-size:9px;color:#9d9d9d;margin-top:2px;text-align:center;white-space:nowrap;">'+lbl+'</span>'
                       +'</div>'
                     : '';
-                  return '<div style="background:#fff;padding:14px 16px;">'
+                  return '<div style="background:#fff;padding:14px 16px;border-right:1px solid #f1f1f0;">'
                     +'<div style="font-size:10px;font-weight:700;color:#3c3c3b;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">Salesforce</div>'
                     +dc('Account Name', a.sfAccountName)
                     +dc('Account ID', a.sfAccountId)
@@ -3735,7 +3735,7 @@ class Component extends DCLogic {
                       +'<button onclick="(function(){var acct=\''+a.sfAccountName.replace(/'/g,"\\'")+'\';window.__argusTargetAccount=acct;try{localStorage.setItem(\'argusHealthAccount\',acct);}catch(e){}window.__argus&&window.__argus.setV({view:\'health\'});window.scrollTo(0,0);})()" style="font-size:10px;color:#3c3c3b;cursor:pointer;display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border:1px solid #e6e6e5;border-radius:4px;background:#f7f7f6;">→ View Client health card</button>'
                       +'</div>':'')
                     +'</div>'
-                  +'<div style="background:#fff;padding:14px 16px;">'
+                  +'<div style="background:#fff;padding:14px 16px;border-right:1px solid #f1f1f0;">'
                     +'<div style="font-size:10px;font-weight:700;color:#288184;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">Zendesk</div>'
                     +(a.hasZdOrg
                       ? dc('Org Name',a.zdOrgName)+dc('Org ID',a.zdOrgId)+dc('Primary Domain',a.zdPrimaryDomain)+dc('Match Method',a.zdMatchConfidence==='HIGH'?'Name + Domain':a.zdMatchConfidence==='MEDIUM'?'Name only':'—')
@@ -3747,7 +3747,7 @@ class Component extends DCLogic {
                         +'<div style="margin-top:8px;"><a href="https://auroraer.zendesk.com/agent/organizations/'+a.zdOrgId+'/tickets" target="_blank" style="font-size:10px;color:#288184;text-decoration:none;display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border:1px solid #cde8e8;border-radius:4px;background:#f5fafa;">↗ Open in Zendesk</a></div>'
                       : '<div style="font-size:11px;color:#9d9d9d;">No Zendesk organisation found</div>')
                   +'</div>'
-                  +'<div style="background:#fff;padding:14px 16px;">'
+                  +'<div style="background:#fff;padding:14px 16px;border-right:1px solid #f1f1f0;">'
                     +'<div style="font-size:10px;font-weight:700;color:#7030a0;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">Productboard</div>'
                     +(a.hasPbCompany
                       ? dc('Company Name',a.pbCompanyName)+dc('Company ID',a.pbCompanyId)+dc('Primary Domain',a.pbCompanyDomain)+dc('Match Method',a.pbMatchMethod==='website_domain'?'Website Domain':a.pbMatchMethod==='eos_domain'?'EOS Domain':'Name only')
@@ -3774,7 +3774,8 @@ class Component extends DCLogic {
                         +'<div style="font-size:10px;font-weight:700;color:#e36a00;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">PostHog</div>'
                         +'<div style="font-size:11px;color:#9d9d9d;">No PostHog activity matched</div>'
                       +'</div>';
-                      const totalFeatureEvents = ph.investmentCases + ph.leaderboards + ph.benchmarks;
+                      const taggedEvents = ph.investmentCases + ph.leaderboards + ph.benchmarks;
+                      const untaggedEvents = Math.max(0, ph.totalEvents - taggedEvents);
                       const fmtDate = function(d) { return d ? d : '—'; };
                       return '<div style="background:#fff;padding:14px 16px;">'
                         +'<div style="font-size:10px;font-weight:700;color:#e36a00;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">PostHog</div>'
@@ -3786,12 +3787,13 @@ class Component extends DCLogic {
                         +dc('Latest Event', fmtDate(ph.lastSeen))
                         +(ph.topFeature?dc('Top Feature', featureLabel[ph.topFeature]||ph.topFeature):'')
                         +(ph.matchMethod?dc('Matched Method', ph.matchMethod):'')
-                        +(totalFeatureEvents > 0
+                        +(ph.totalEvents > 0
                           ? '<div style="margin-top:10px;padding-top:10px;border-top:1px solid #f1f1f0;">'
                               +'<div style="font-size:10px;font-weight:700;color:#9d9d9d;margin-bottom:8px;">Feature Breakdown</div>'
-                              +featureBar('Investment Cases', ph.investmentCases, totalFeatureEvents, '#e36a00')
-                              +featureBar('Leaderboards',     ph.leaderboards,    totalFeatureEvents, '#f5a623')
-                              +featureBar('Benchmarks',       ph.benchmarks,      totalFeatureEvents, '#f7c97a')
+                              +featureBar('Investment Cases', ph.investmentCases, ph.totalEvents, '#e36a00')
+                              +featureBar('Leaderboards',     ph.leaderboards,    ph.totalEvents, '#f5a623')
+                              +featureBar('Benchmarks',       ph.benchmarks,      ph.totalEvents, '#f7c97a')
+                              +(untaggedEvents > 0 ? featureBar('Untagged', untaggedEvents, ph.totalEvents, '#d4d4d4') : '')
                             +'</div>'
                           : '')
                       +'</div>';
