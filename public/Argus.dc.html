@@ -3731,6 +3731,9 @@ class Component extends DCLogic {
                           +children.map(function(c){ return '<div style="margin-bottom:4px;">'+accountLink(c.sfAccountId, c.sfAccountName)+'</div>'; }).join('')
                         +'</div>'
                       : '')
+                    +(a.sfAccountId?'<div style="margin-top:10px;">'
+                      +'<a href="https://auroraer.lightning.force.com/lightning/r/Account/'+a.sfAccountId+'/view" target="_blank" style="font-size:10px;color:#288184;text-decoration:none;display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border:1px solid #cde8e8;border-radius:4px;background:#f5fafa;">↗ Open in Salesforce</a>'
+                      +'</div>':'')
                     +'</div>'
                   +'<div style="background:#fff;padding:14px 16px;border-right:1px solid #f1f1f0;">'
                     +'<div style="font-size:10px;font-weight:700;color:#288184;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">Zendesk</div>'
@@ -3799,14 +3802,13 @@ class Component extends DCLogic {
             +'</div>'
             +'</td>'
             +'</tr>';
-          const toolbarRow = '<tr style="background:#fafafa;">'
-            +'<td colspan="5" style="padding:8px 14px 0;">'
-              +'<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">'
-                +(a.sfAccountId?'<a href="https://auroraer.lightning.force.com/lightning/r/Account/'+a.sfAccountId+'/view" target="_blank" style="font-size:10px;color:#288184;text-decoration:none;display:inline-flex;align-items:center;gap:3px;padding:4px 10px;border:1px solid #cde8e8;border-radius:5px;background:#f5fafa;">↗ Open in Salesforce</a>':'')
-                +(a.sfAccountName?'<button onclick="(function(){var acct=\''+a.sfAccountName.replace(/'/g,"\\'")+'\';window.__argusTargetAccount=acct;try{localStorage.setItem(\'argusHealthAccount\',acct);}catch(e){}window.__argus&&window.__argus.setV({view:\'health\'});window.scrollTo(0,0);})()" style="font-size:10px;color:#3c3c3b;cursor:pointer;display:inline-flex;align-items:center;gap:3px;padding:4px 10px;border:1px solid #e6e6e5;border-radius:5px;background:#f7f7f6;">→ View Client health card</button>':'')
-              +'</div>'
-            +'</td>'
-            +'</tr>';
+          const toolbarRow = a.sfAccountName
+            ? '<tr style="background:#fafafa;">'
+                +'<td colspan="5" style="padding:8px 14px 0;">'
+                  +'<button onclick="(function(){var acct=\''+a.sfAccountName.replace(/'/g,"\\'")+'\';window.__argusTargetAccount=acct;try{localStorage.setItem(\'argusHealthAccount\',acct);}catch(e){}window.__argus&&window.__argus.setV({view:\'health\'});window.scrollTo(0,0);})()" style="font-size:10px;color:#3c3c3b;cursor:pointer;display:inline-flex;align-items:center;gap:3px;padding:4px 10px;border:1px solid #e6e6e5;border-radius:5px;background:#f7f7f6;">→ View Client health card</button>'
+                +'</td>'
+              +'</tr>'
+            : '';
           return mainRow + toolbarRow + detailRow;
         };
 
