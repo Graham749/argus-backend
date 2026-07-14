@@ -3709,7 +3709,7 @@ class Component extends DCLogic {
                         +'<span style="font-size:9px;color:#9d9d9d;margin-top:2px;text-align:center;white-space:nowrap;">'+lbl+'</span>'
                       +'</div>'
                     : '';
-                  return '<div style="background:#fff;padding:14px 16px;border-right:1px solid #f1f1f0;">'
+                  return '<div style="background:#fff;padding:14px 16px;border-right:1px solid #f1f1f0;display:flex;flex-direction:column;">'
                     +'<div style="font-size:10px;font-weight:700;color:#3c3c3b;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">Salesforce</div>'
                     +dc('Account Name', a.sfAccountName)
                     +dc('Account ID', a.sfAccountId)
@@ -3730,11 +3730,11 @@ class Component extends DCLogic {
                           +children.map(function(c){ return '<div style="margin-bottom:4px;">'+accountLink(c.sfAccountId, c.sfAccountName)+'</div>'; }).join('')
                         +'</div>'
                       : '')
-                    +(a.sfAccountId?'<div style="margin-top:10px;">'
-                      +'<a href="https://auroraer.lightning.force.com/lightning/r/Account/'+a.sfAccountId+'/view" target="_blank" style="font-size:10px;color:#288184;text-decoration:none;display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border:1px solid #cde8e8;border-radius:4px;background:#f5fafa;">↗ Open in Salesforce</a>'
+                    +(a.sfAccountId?'<div style="margin-top:auto;padding-top:10px;display:flex;justify-content:flex-end;">'
+                      +'<a href="https://auroraer.lightning.force.com/lightning/r/Account/'+a.sfAccountId+'/view" target="_blank" style="font-size:10px;color:#3c3c3b;text-decoration:none;display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border:1px solid #c8c8c7;border-radius:4px;background:#f7f7f6;">↗ Open in Salesforce</a>'
                       +'</div>':'')
                     +'</div>'
-                  +'<div style="background:#fff;padding:14px 16px;border-right:1px solid #f1f1f0;">'
+                  +'<div style="background:#fff;padding:14px 16px;border-right:1px solid #f1f1f0;display:flex;flex-direction:column;">'
                     +'<div style="font-size:10px;font-weight:700;color:#288184;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">Zendesk</div>'
                     +(a.hasZdOrg
                       ? dc('Org Name',a.zdOrgName)+dc('Org ID',a.zdOrgId)+dc('Primary Domain',a.zdPrimaryDomain)+dc('Match Method',a.zdMatchConfidence==='HIGH'?'Name + Domain':a.zdMatchConfidence==='MEDIUM'?'Name only':'—')
@@ -3743,15 +3743,15 @@ class Component extends DCLogic {
                           +stat(zdT.open||0,'Open Tickets')
                           +stat(zdT.total||0,'Total Tickets')
                         +'</div>'
-                        +'<div style="margin-top:8px;"><a href="https://auroraer.zendesk.com/agent/organizations/'+a.zdOrgId+'/tickets" target="_blank" style="font-size:10px;color:#288184;text-decoration:none;display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border:1px solid #cde8e8;border-radius:4px;background:#f5fafa;">↗ Open in Zendesk</a></div>'
+                        +'<div style="margin-top:auto;padding-top:10px;display:flex;justify-content:flex-end;"><a href="https://auroraer.zendesk.com/agent/organizations/'+a.zdOrgId+'/tickets" target="_blank" style="font-size:10px;color:#288184;text-decoration:none;display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border:1px solid #cde8e8;border-radius:4px;background:#f5fafa;">↗ Open in Zendesk</a></div>'
                       : '<div style="font-size:11px;color:#9d9d9d;">No Zendesk organisation found</div>')
                   +'</div>'
-                  +'<div style="background:#fff;padding:14px 16px;border-right:1px solid #f1f1f0;">'
+                  +'<div style="background:#fff;padding:14px 16px;border-right:1px solid #f1f1f0;display:flex;flex-direction:column;">'
                     +'<div style="font-size:10px;font-weight:700;color:#7030a0;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">Productboard</div>'
                     +(a.hasPbCompany
                       ? dc('Company Name',a.pbCompanyName)+dc('Company ID',a.pbCompanyId)+dc('Primary Domain',a.pbCompanyDomain)+dc('Match Method',a.pbMatchMethod==='website_domain'?'Website Domain':a.pbMatchMethod==='eos_domain'?'EOS Domain':'Name only')
                         +(pbN?'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;">'+stat(pbN,'Feedback')+'</div>':'')
-                        +'<div style="margin-top:8px;"><a href="https://auroraer.productboard.com/detail/'+a.pbCompanyId+'" target="_blank" style="font-size:10px;color:#7030a0;text-decoration:none;display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border:1px solid #ddc8f0;border-radius:4px;background:#fdf9ff;">↗ Open in Productboard</a></div>'
+                        +'<div style="margin-top:auto;padding-top:10px;display:flex;justify-content:flex-end;"><a href="https://auroraer.productboard.com/detail/'+a.pbCompanyId+'" target="_blank" style="font-size:10px;color:#7030a0;text-decoration:none;display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border:1px solid #ddc8f0;border-radius:4px;background:#fdf9ff;">↗ Open in Productboard</a></div>'
                       : '<div style="font-size:11px;color:#9d9d9d;">No Productboard company matched</div>')
                   +'</div>'
                   +(function(){
@@ -3769,14 +3769,24 @@ class Component extends DCLogic {
                           +'</div>'
                         +'</div>';
                       };
-                      if (!ph) return '<div style="background:#fff;padding:14px 16px;">'
+                      if (!ph) return '<div style="background:#fff;padding:14px 16px;display:flex;flex-direction:column;">'
                         +'<div style="font-size:10px;font-weight:700;color:#e36a00;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">PostHog</div>'
                         +'<div style="font-size:11px;color:#9d9d9d;">No PostHog activity matched</div>'
                       +'</div>';
                       const taggedEvents = ph.investmentCases + ph.leaderboards + ph.benchmarks;
                       const untaggedEvents = Math.max(0, ph.totalEvents - taggedEvents);
-                      const fmtDate = function(d) { return d ? d : '—'; };
-                      return '<div style="background:#fff;padding:14px 16px;">'
+                      const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+                      const fmtDate = function(d) {
+                        if (!d) return '—';
+                        const p = d.split('-');
+                        return p.length === 3 ? p[2]+'-'+months[parseInt(p[1],10)-1]+'-'+p[0].slice(2) : d;
+                      };
+                      const phTenantArr = ph.tenants ? ph.tenants.split('; ').map(function(t){
+                        return t.indexOf('.') === -1 ? t.toUpperCase() : t;
+                      }) : [];
+                      const phFilterJson = JSON.stringify({properties:[{key:'tenant',value:phTenantArr,operator:'exact',type:'person'}]});
+                      const phUrl = 'https://eu.posthog.com/project/125621/dashboard/596794?query_filters='+encodeURIComponent(phFilterJson);
+                      return '<div style="background:#fff;padding:14px 16px;display:flex;flex-direction:column;">'
                         +'<div style="font-size:10px;font-weight:700;color:#e36a00;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">PostHog</div>'
                         +'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;">'
                           +stat(ph.uniqueUsers,'Users')
@@ -3786,16 +3796,6 @@ class Component extends DCLogic {
                         +dc('Latest Event', fmtDate(ph.lastSeen))
                         +(ph.tenants?dc('Primary Domain', ph.tenants):'')
                         +(ph.matchMethod?dc('Matched Method', ph.matchMethod):'')
-                        +(ph.tenants?(function(){
-                            const tenantArr = ph.tenants.split('; ').map(function(t){
-                              return t.indexOf('.') === -1 ? t.toUpperCase() : t;
-                            });
-                            const filterJson = JSON.stringify({properties:[{key:'tenant',value:tenantArr,operator:'exact',type:'person'}]});
-                            const phUrl = 'https://eu.posthog.com/project/125621/dashboard/596794?query_filters='+encodeURIComponent(filterJson);
-                            return '<div style="margin-top:10px;">'
-                              +'<a href="'+phUrl+'" target="_blank" style="font-size:10px;color:#e36a00;text-decoration:none;display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border:1px solid #fcd9b8;border-radius:4px;background:#fff8f3;">↗ Open in PostHog</a>'
-                            +'</div>';
-                          })():'')
                         +(ph.totalEvents > 0
                           ? '<div style="margin-top:10px;padding-top:10px;border-top:1px solid #f1f1f0;">'
                               +'<div style="font-size:10px;font-weight:700;color:#9d9d9d;margin-bottom:8px;">Feature Breakdown</div>'
@@ -3805,6 +3805,9 @@ class Component extends DCLogic {
                               +(untaggedEvents > 0 ? featureBar('Untagged', untaggedEvents, ph.totalEvents, '#d4d4d4') : '')
                             +'</div>'
                           : '')
+                        +(ph.tenants?'<div style="margin-top:auto;padding-top:10px;display:flex;justify-content:flex-end;">'
+                          +'<a href="'+phUrl+'" target="_blank" style="font-size:10px;color:#e36a00;text-decoration:none;display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border:1px solid #fcd9b8;border-radius:4px;background:#fff8f3;">↗ Open in PostHog</a>'
+                          +'</div>':'')
                       +'</div>';
                     })();
                 })()
@@ -3886,7 +3889,7 @@ class Component extends DCLogic {
               +'<div style="flex:1"></div>'
               +'<button onclick="window.openEngagementChart&&window.openEngagementChart()" style="padding:7px 16px;background:#3c3c3b;color:#fff;border:none;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:0.03em;">External Customer Engagement</button>'
             +'</div>'
-            +'<div style="font-size:14px;color:#6d6d6c;margin-top:4px;">Salesforce is the master — Zendesk and Productboard are matched as satellites</div>'
+            +'<div style="font-size:14px;color:#6d6d6c;margin-top:4px;">Salesforce is the master — Zendesk, Productboard and PostHog are matched as satellites</div>'
           +'</div>'
 
           // Collapse-all toggle
@@ -4030,7 +4033,7 @@ class Component extends DCLogic {
               +'</div>'
 
             +'</div>'
-            +'<div style="margin-top:12px;font-size:11px;color:#9d9d9d;">Coverage is from Salesforce outward — Zendesk and Productboard accounts with no SF record are not shown here.</div>'
+            +'<div style="margin-top:12px;font-size:11px;color:#9d9d9d;">Coverage is from Salesforce outward — Zendesk, Productboard and PostHog accounts with no SF record are not shown here.</div>'
           +'</div>'
         +'</div>';
           })()
