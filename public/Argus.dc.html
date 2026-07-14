@@ -106,6 +106,7 @@ input{font-family:inherit;}
           <select id="sfAccountSelector" style="flex:1;padding:8px 12px;border:1px solid #e6e6e5;border-radius:6px;font-size:13px;cursor:pointer;max-width:480px;">
             <option value="">-- Loading accounts... --</option>
           </select>
+          <button id="collapseAllBtn" style="padding:6px 14px;border:1px solid #e6e6e5;border-radius:6px;background:#f7f7f6;font-size:11px;font-weight:600;color:#6d6d6c;cursor:pointer;white-space:nowrap;flex-shrink:0;">Collapse All</button>
         </div>
 
         <!-- Salesforce Subscriptions Card (Live Data) -->
@@ -1459,12 +1460,46 @@ class Component extends DCLogic {
         hdr._collapsed = !hdr._collapsed;
         body.style.display = hdr._collapsed ? 'none' : 'block';
         if (chev) chev.textContent = hdr._collapsed ? '▾' : '▴';
+        updateCollapseAllBtn();
       };
       hdr.onmouseenter = function() { this.style.opacity = '0.85'; };
       hdr.onmouseleave = function() { this.style.opacity = '1'; };
       hdr.style.cursor     = 'pointer';
       hdr.style.userSelect = 'none';
     });
+
+    function updateCollapseAllBtn() {
+      var btn = document.getElementById('collapseAllBtn');
+      if (!btn) return;
+      var anyExpanded = cards.some(function(c) {
+        var hdr = document.getElementById(c.hdr);
+        return hdr && !hdr._collapsed;
+      });
+      btn.textContent = anyExpanded ? 'Collapse All' : 'Expand All';
+    }
+
+    var btn = document.getElementById('collapseAllBtn');
+    if (btn) {
+      btn.onclick = function() {
+        var anyExpanded = cards.some(function(c) {
+          var hdr = document.getElementById(c.hdr);
+          return hdr && !hdr._collapsed;
+        });
+        var target = anyExpanded; // true = collapse all, false = expand all
+        cards.forEach(function(c) {
+          var hdr  = document.getElementById(c.hdr);
+          var body = document.getElementById(c.body);
+          var chev = document.getElementById(c.chev);
+          if (!hdr || !body) return;
+          hdr._collapsed = target;
+          body.style.display = target ? 'none' : 'block';
+          if (chev) chev.textContent = target ? '▾' : '▴';
+        });
+        btn.textContent = target ? 'Expand All' : 'Collapse All';
+      };
+      btn.onmouseenter = function() { this.style.background = '#ececeb'; };
+      btn.onmouseleave = function() { this.style.background = '#f7f7f6'; };
+    }
   }
 
   setupSalesforceSubscriptions(){
