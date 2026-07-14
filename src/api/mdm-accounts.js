@@ -42,7 +42,7 @@ async function queryLakehouse(query) {
 
 async function mdmAccounts(req, res) {
   try {
-    const [summaryRows, accountRows, hierarchyRows, dupRows, pbOnlyRows, zdUserRows, zdTicketRows, pbNoteRows, sfSubRows, phCovRows, phRows] = await Promise.all([
+    const [summaryRows, accountRows, hierarchyRows, dupRows, pbOnlyRows, zdUserRows, zdTicketRows, pbNoteRows, sfSubRows, phCovRows, phRows, phUnmatchedRows] = await Promise.all([
       queryLakehouse(`
         SELECT
           COUNT(*)                                                              AS total,
@@ -216,6 +216,27 @@ async function mdmAccounts(req, res) {
               AND UPPER(ph.ph_tenant) = UPPER(mdm.sf_account_code))
         WHERE mdm.sf_account_id IS NOT NULL
         GROUP BY mdm.sf_account_id
+      `),
+      // PostHog domain tenants with no SF match
+      queryLakehouse(`
+        SELECT
+          ph.ph_tenant,
+          ph.ph_total_events,
+          ph.ph_unique_users,
+          ph.ph_last_seen,
+          ph.ph_events_last_30d,
+          ph.ph_top_feature
+        FROM dbo.v_silver_posthog_account_activity ph
+        WHERE ph.ph_tenant_format = 'domain'
+          AND NOT EXISTS (
+            SELECT 1 FROM dbo.v_silver_mdm_account mdm
+            WHERE ph.ph_tenant = mdm.sf_website_domain
+               OR (mdm.sf_eos_access_domains IS NOT NULL
+                   AND ';'+mdm.sf_eos_access_domains+';' LIKE '%;'+ph.ph_tenant+';%')
+               OR (mdm.sf_eos_access_domains_2 IS NOT NULL
+                   AND ';'+mdm.sf_eos_access_domains_2+';' LIKE '%;'+ph.ph_tenant+';%')
+          )
+        ORDER BY ph.ph_total_events DESC
       `)
     ]);
 
@@ -251,6 +272,15 @@ async function mdmAccounts(req, res) {
         matchMethod:      r.ph_match_method || null,
       };
     });
+
+    const phUnmatched = (phUnmatchedRows || []).map(r => ({
+      tenant:       r.ph_tenant,
+      totalEvents:  Number(r.ph_total_events)    || 0,
+      uniqueUsers:  Number(r.ph_unique_users)    || 0,
+      lastSeen:     r.ph_last_seen ? new Date(r.ph_last_seen).toISOString().slice(0, 10) : null,
+      events30d:    Number(r.ph_events_last_30d) || 0,
+      topFeature:   r.ph_top_feature || null,
+    }));
 
     // Build hierarchy maps in JavaScript — O(1) lookup, no DB join needed
     const hierById = {};
@@ -387,6 +417,7 @@ async function mdmAccounts(req, res) {
       pbNotes,
       sfSubCounts,
       phMetrics,
+      phUnmatched,
       syncedAt: new Date().toISOString()
     });
   } catch (err) {

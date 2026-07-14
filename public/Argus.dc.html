@@ -2816,6 +2816,7 @@ class Component extends DCLogic {
       window.__mdmPbNotes    = data.pbNotes     || {};
       window.__mdmSfSubCounts= data.sfSubCounts || {};
       window.__mdmPhMetrics  = data.phMetrics   || {};
+      window.__mdmPhUnmatched = data.phUnmatched || [];
       if (window.__mdmSearch   === undefined) window.__mdmSearch   = '';
       if (window.__mdmConfFilter === undefined) window.__mdmConfFilter = null;
       if (window.__mdmExpandedId === undefined) window.__mdmExpandedId = null;
@@ -4255,6 +4256,7 @@ class Component extends DCLogic {
                     +'</div>'
                     +'<div style="font-size:20px;font-weight:900;color:#9d9d9d;padding-left:16px;">'+(sm.phNoMatch||0).toLocaleString()+'</div>'
                     +'<div style="font-size:10px;color:#9d9d9d;padding-left:16px;">'+pct(sm.phNoMatch||0,phMatchable)+' · domain format, no SF account found</div>'
+                    +'<button onclick="window.__mdmShowPhUnmatched&&window.__mdmShowPhUnmatched()" style="margin-top:6px;margin-left:16px;font-size:10px;font-weight:700;color:#6d6d6c;background:#f7f7f6;border:1px solid #e6e6e5;border-radius:5px;padding:3px 10px;cursor:pointer;">View unmatched domains ↗</button>'
                   +'</div>'
                   +'<div style="display:flex;flex-direction:column;gap:3px;">'
                     +'<div style="display:flex;align-items:center;gap:6px;">'
@@ -4275,6 +4277,60 @@ class Component extends DCLogic {
                 +'</div>'
               +'</div>'
             +'</div>';
+          })()
+
+          // PostHog unmatched domains modal (injected once into body)
+          +(()=>{
+            if (!document.getElementById('ph-unmatched-modal')) {
+              const modal = document.createElement('div');
+              modal.id = 'ph-unmatched-modal';
+              modal.style.cssText = 'display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.45);align-items:center;justify-content:center;';
+              modal.innerHTML = '<div style="background:#fff;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.18);width:720px;max-width:95vw;max-height:80vh;display:flex;flex-direction:column;">'
+                +'<div style="padding:16px 20px;border-bottom:1px solid #f1f1f0;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">'
+                  +'<div>'
+                    +'<div style="font-size:13px;font-weight:700;color:#3c3c3b;">Unmatched PostHog Domains</div>'
+                    +'<div style="font-size:11px;color:#9d9d9d;margin-top:2px;">Domain-format tenants with no Salesforce account — candidates for sf_eos_access_domains</div>'
+                  +'</div>'
+                  +'<button onclick="document.getElementById(\'ph-unmatched-modal\').style.display=\'none\'" style="font-size:18px;color:#9d9d9d;background:none;border:none;cursor:pointer;padding:0 4px;line-height:1;">×</button>'
+                +'</div>'
+                +'<div id="ph-unmatched-table" style="overflow-y:auto;flex:1;padding:0 20px 16px;"></div>'
+              +'</div>';
+              modal.addEventListener('click', function(e){ if(e.target===modal) modal.style.display='none'; });
+              document.body.appendChild(modal);
+            }
+            window.__mdmShowPhUnmatched = function() {
+              const modal = document.getElementById('ph-unmatched-modal');
+              const tbody = document.getElementById('ph-unmatched-table');
+              const rows  = window.__mdmPhUnmatched || [];
+              const featureLabel = {'investment-cases':'Investment Cases','leaderboards':'Leaderboards','benchmarks':'Benchmarks'};
+              let html = '<table style="width:100%;border-collapse:collapse;font-size:12px;margin-top:12px;">'
+                +'<thead><tr style="border-bottom:2px solid #f1f1f0;">'
+                  +'<th style="text-align:left;padding:6px 8px;font-size:10px;font-weight:700;color:#9d9d9d;text-transform:uppercase;letter-spacing:0.06em;white-space:nowrap;">Domain</th>'
+                  +'<th style="text-align:right;padding:6px 8px;font-size:10px;font-weight:700;color:#9d9d9d;text-transform:uppercase;letter-spacing:0.06em;white-space:nowrap;">Events</th>'
+                  +'<th style="text-align:right;padding:6px 8px;font-size:10px;font-weight:700;color:#9d9d9d;text-transform:uppercase;letter-spacing:0.06em;white-space:nowrap;">30d</th>'
+                  +'<th style="text-align:right;padding:6px 8px;font-size:10px;font-weight:700;color:#9d9d9d;text-transform:uppercase;letter-spacing:0.06em;white-space:nowrap;">Users</th>'
+                  +'<th style="text-align:left;padding:6px 8px;font-size:10px;font-weight:700;color:#9d9d9d;text-transform:uppercase;letter-spacing:0.06em;white-space:nowrap;">Last Seen</th>'
+                  +'<th style="text-align:left;padding:6px 8px;font-size:10px;font-weight:700;color:#9d9d9d;text-transform:uppercase;letter-spacing:0.06em;white-space:nowrap;">Primary Domain</th>'
+                +'</tr></thead><tbody>';
+              rows.forEach(function(r, i) {
+                const bg = i % 2 === 1 ? 'background:#fafafa;' : '';
+                const parts = r.tenant.split('.');
+                const primaryDomain = parts.length > 2 ? parts.slice(-2).join('.') : r.tenant;
+                const isSub = primaryDomain !== r.tenant;
+                html += '<tr style="border-bottom:1px solid #f7f7f6;'+bg+'">'
+                  +'<td style="padding:7px 8px;font-weight:600;color:#3c3c3b;">'+r.tenant+'</td>'
+                  +'<td style="padding:7px 8px;text-align:right;color:#6d6d6c;">'+r.totalEvents.toLocaleString()+'</td>'
+                  +'<td style="padding:7px 8px;text-align:right;color:'+(r.events30d>0?'#3c3c3b':'#d4d4d4')+';">'+r.events30d.toLocaleString()+'</td>'
+                  +'<td style="padding:7px 8px;text-align:right;color:#6d6d6c;">'+r.uniqueUsers+'</td>'
+                  +'<td style="padding:7px 8px;color:#9d9d9d;white-space:nowrap;">'+(r.lastSeen||'—')+'</td>'
+                  +'<td style="padding:7px 8px;color:'+(isSub?'#e36a00':'#9d9d9d')+';">'+primaryDomain+(isSub?' ↑':'')+'</td>'
+                +'</tr>';
+              });
+              html += '</tbody></table>';
+              tbody.innerHTML = html;
+              modal.style.display = 'flex';
+            };
+            return '';
           })()
 
           // Salesforce Duplicate Accounts widget
