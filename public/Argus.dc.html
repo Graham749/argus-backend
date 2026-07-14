@@ -3791,7 +3791,7 @@ class Component extends DCLogic {
                               return t.indexOf('.') === -1 ? t.toUpperCase() : t;
                             });
                             const filterJson = JSON.stringify({properties:[{key:'tenant',value:tenantArr,operator:'exact',type:'person'}]});
-                            const phUrl = 'https://eu.posthog.com/dashboard/818750?query_filters='+encodeURIComponent(filterJson);
+                            const phUrl = 'https://eu.posthog.com/project/125621/dashboard/596794?query_filters='+encodeURIComponent(filterJson);
                             return '<div style="margin-top:10px;">'
                               +'<a href="'+phUrl+'" target="_blank" style="font-size:10px;color:#e36a00;text-decoration:none;display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border:1px solid #fcd9b8;border-radius:4px;background:#fff8f3;">↗ Open in PostHog</a>'
                             +'</div>';
