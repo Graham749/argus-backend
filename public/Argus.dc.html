@@ -4554,8 +4554,7 @@ class Component extends DCLogic {
             return '<button onclick="(function(){window.__mdmConfFilter='+vAttr+';window.__mdmRefresh&&window.__mdmRefresh();})()" style="'+style+'">'+label+'</button>';
           };
           return btn(null, 'All', '#288184')
-            + btn('NO_ZD', zdNotMatched+' SF no link to ZD', '#e07000')
-            + btn('NO_PB', pbUnlinked+' PB Company no link to SF', '#7030a0');
+            + btn('NO_ZD', zdNotMatched+' SF no link to ZD', '#e07000');
         })();
 
         // Define row renderer and filter function as globals so search/expand never trigger re-render
@@ -4579,13 +4578,11 @@ class Component extends DCLogic {
                 +(a.sfAccountType==='child'&&a.parentAccountName?'<span style="font-size:10px;color:#9d9d9d;">↑ '+a.parentAccountName+'</span>':'')
                 +(a.sfNameCollision?'<span style="font-size:9px;color:#e07000;" title="Duplicate SF name">⚠</span>':'')
               +'</div>';
+          const zdConf = (a.zdMatchConfidence||'').toUpperCase();
           const zdPill = a.hasZdOrg
-            ? '<div style="display:flex;flex-direction:column;gap:1px;min-width:0;">'
-                +'<span style="font-size:11px;font-weight:600;color:#288184;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="'+(a.zdOrgName||'')+'">'+( a.zdOrgName||'—')+'</span>'
-                +(a.zdPrimaryDomain
-                  ? '<span style="font-size:10px;color:#6d6d6c;font-family:monospace;">'+a.zdPrimaryDomain+'</span>'
-                  : '<span style="font-size:10px;color:#c0c0c0;font-style:italic;">no domain</span>')
-              +'</div>'
+            ? (zdConf === 'HIGH'
+                ? '<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:#e6fdf6;color:#00664f;white-space:nowrap;" title="'+( a.zdOrgName||'')+' · '+(a.zdPrimaryDomain||'no domain')+'">High</span>'
+                : '<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:#fffbe6;color:#b89400;white-space:nowrap;" title="'+( a.zdOrgName||'')+' · no domain confirmed'+'">Medium</span>')
             : '<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:#f1f1f0;color:#9d9d9d;white-space:nowrap;">No Match</span>';
           const pbPill = !a.hasPbCompany
             ? '<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:#f1f1f0;color:#9d9d9d;white-space:nowrap;">No Match</span>'
@@ -5080,7 +5077,7 @@ class Component extends DCLogic {
               +'<div onclick="'+toggle+'" style="padding:14px 20px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;user-select:none;" onmouseenter="this.style.background=\'#fafafa\'" onmouseleave="this.style.background=\'\'">'
                 +'<div>'
                   +'<div style="font-size:12px;font-weight:700;color:#6d6d6c;text-transform:uppercase;letter-spacing:0.08em;">Zendesk Match Confidence</div>'
-                  +'<div style="font-size:11px;color:#9d9d9d;margin-top:2px;">Quality of the '+sm.zdLinked.toLocaleString()+' SF accounts matched to Zendesk</div>'
+                  +'<div style="font-size:11px;color:#9d9d9d;margin-top:2px;">'+sm.zdLinked.toLocaleString()+' matched · '+zdNotMatched.toLocaleString()+' no ZD org found</div>'
                 +'</div>'
                 +'<span id="mdm-w3-chev" style="font-size:14px;color:#9d9d9d;flex-shrink:0;margin-left:12px;">'+(collapsed?'▾':'▴')+'</span>'
               +'</div>'
@@ -5089,15 +5086,16 @@ class Component extends DCLogic {
                 +'<div style="display:flex;height:12px;border-radius:6px;overflow:hidden;background:#f1f1f0;">'
               +'<div style="width:'+Math.round(highPct*100)+'%;background:#00be86;" title="HIGH: '+sm.highCount+'"></div>'
               +'<div style="width:'+Math.round(medPct*100)+'%;background:#ffcc00;" title="MEDIUM: '+sm.mediumCount+'"></div>'
+              +'<div style="width:'+Math.round((sm.total?zdNotMatched/sm.total:0)*100)+'%;background:#e6e6e5;" title="No ZD match: '+zdNotMatched+'"></div>'
             +'</div>'
-            +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px;">'
+            +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:14px;">'
               +'<div style="display:flex;flex-direction:column;gap:3px;">'
                 +'<div style="display:flex;align-items:center;gap:6px;">'
                   +'<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#00be86;flex-shrink:0;"></span>'
                   +'<span style="font-size:12px;font-weight:700;color:#3c3c3b;">High</span>'
                 +'</div>'
                 +'<div style="font-size:20px;font-weight:900;color:#00be86;padding-left:16px;">'+sm.highCount.toLocaleString()+'</div>'
-                +'<div style="font-size:11px;color:#9d9d9d;padding-left:16px;">'+pct(sm.highCount,sm.zdLinked)+' of matched · name + domain confirmed</div>'
+                +'<div style="font-size:11px;color:#9d9d9d;padding-left:16px;">'+pct(sm.highCount,sm.total)+' of SF · name + domain confirmed</div>'
               +'</div>'
               +'<div style="display:flex;flex-direction:column;gap:3px;">'
                 +'<div style="display:flex;align-items:center;gap:6px;">'
@@ -5105,7 +5103,16 @@ class Component extends DCLogic {
                   +'<span style="font-size:12px;font-weight:700;color:#3c3c3b;">Medium</span>'
                 +'</div>'
                 +'<div style="font-size:20px;font-weight:900;color:#b89400;padding-left:16px;">'+sm.mediumCount.toLocaleString()+'</div>'
-                +'<div style="font-size:11px;color:#9d9d9d;padding-left:16px;">'+pct(sm.mediumCount,sm.zdLinked)+' of matched · name only, no domain</div>'
+                +'<div style="font-size:11px;color:#9d9d9d;padding-left:16px;">'+pct(sm.mediumCount,sm.total)+' of SF · name only, no domain</div>'
+              +'</div>'
+              +'<div style="display:flex;flex-direction:column;gap:3px;">'
+                +'<div style="display:flex;align-items:center;gap:6px;">'
+                  +'<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#e6e6e5;flex-shrink:0;"></span>'
+                  +'<span style="font-size:12px;font-weight:700;color:#3c3c3b;">No Match</span>'
+                +'</div>'
+                +'<div style="font-size:20px;font-weight:900;color:#9d9d9d;padding-left:16px;">'+zdNotMatched.toLocaleString()+'</div>'
+                +'<div style="font-size:11px;color:#9d9d9d;padding-left:16px;">'+pct(zdNotMatched,sm.total)+' of SF · no Zendesk org found</div>'
+                +'<button onclick="(function(){window.__mdmConfFilter=\'NO_ZD\';window.__mdmRefresh&&window.__mdmRefresh();})()" style="margin-top:6px;margin-left:16px;font-size:10px;font-weight:700;color:#6d6d6c;background:#f7f7f6;border:1px solid #e6e6e5;border-radius:5px;padding:3px 10px;cursor:pointer;">View in table ↗</button>'
               +'</div>'
               +'</div>'
             +'</div>'
@@ -5171,6 +5178,7 @@ class Component extends DCLogic {
                 +'</div>'
                 +'<div style="font-size:20px;font-weight:900;color:#9d9d9d;padding-left:16px;">'+pbNoMatch.toLocaleString()+'</div>'
                 +'<div style="font-size:11px;color:#9d9d9d;padding-left:16px;">'+pct(pbNoMatch,sm.pbTotal)+' of PB · no SF account found</div>'
+                +'<button onclick="(function(){window.__mdmConfFilter=\'NO_PB\';window.__mdmRefresh&&window.__mdmRefresh();document.getElementById(\'mdm-section\')||window.scrollTo(0,0);})()" style="margin-top:6px;margin-left:16px;font-size:10px;font-weight:700;color:#6d6d6c;background:#f7f7f6;border:1px solid #e6e6e5;border-radius:5px;padding:3px 10px;cursor:pointer;">View in table ↗</button>'
               +'</div>'
             +'</div>'
               +'</div>'
@@ -5440,7 +5448,6 @@ class Component extends DCLogic {
                 +'style="padding:8px 16px;background:#288184;color:#fff;border:none;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;">Search</button>'
             +'</div>'
             +filterBtns
-            +'<button onclick="window.__mdmShowPhUnmatched&&window.__mdmShowPhUnmatched()" style="font-size:12px;font-weight:700;padding:5px 14px;border-radius:20px;cursor:pointer;border:1.5px solid #d4d4d4;background:#fff;color:#6d6d6c;white-space:nowrap;">'+(sm.phNoMatch||0)+' PostHog unmatched ↗</button>'
             +'<span id="mdm-count-label" style="font-size:12px;color:#9d9d9d;white-space:nowrap;margin-left:auto;">Loading…</span>'
           +'</div>'
 
