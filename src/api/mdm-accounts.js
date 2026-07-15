@@ -153,25 +153,19 @@ async function mdmAccounts(req, res) {
         FROM v_silver_sf_subscriptions
         GROUP BY account_id
       `),
-      // PostHog tenant → SF match coverage (PostHog-side view)
-      // Uses DISTINCT tenant in aggregations to avoid double-counting when one tenant matches multiple SF accounts
+      // PostHog tenant → SF match coverage — uses v_gold_mdm_posthog which has the
+      // correct REPLACE+LIKE EOS domain logic baked in as native SQL
       queryLakehouse(`
         WITH ph_classified AS (
           SELECT
             ph.ph_tenant,
             ph.ph_tenant_format,
-            MAX(CASE WHEN mdm.sf_account_id IS NOT NULL AND ph.ph_tenant = mdm.sf_website_domain           THEN 1 ELSE 0 END) AS is_website_match,
-            MAX(CASE WHEN mdm.sf_account_id IS NOT NULL
-                          AND ph.ph_tenant != ISNULL(mdm.sf_website_domain,'')
-                          AND mdm.sf_eos_access_domains IS NOT NULL
-                          AND ';'+mdm.sf_eos_access_domains+';' LIKE '%;'+ph.ph_tenant+';%'               THEN 1 ELSE 0 END) AS is_eos_match,
-            MAX(CASE WHEN mdm.sf_account_id IS NOT NULL                                                    THEN 1 ELSE 0 END) AS is_any_match
+            MAX(CASE WHEN g.match_method = 'Website Domain' THEN 1 ELSE 0 END) AS is_website_match,
+            MAX(CASE WHEN g.match_method = 'EOS Domain'     THEN 1 ELSE 0 END) AS is_eos_match,
+            MAX(CASE WHEN g.match_method = 'Account Code'   THEN 1 ELSE 0 END) AS is_acct_code_match,
+            MAX(CASE WHEN g.ph_tenant IS NOT NULL           THEN 1 ELSE 0 END) AS is_any_match
           FROM dbo.v_silver_posthog_account_activity ph
-          LEFT JOIN dbo.v_silver_mdm_account mdm
-            ON ph.ph_tenant = mdm.sf_website_domain
-            OR (mdm.sf_eos_access_domains IS NOT NULL AND ';'+mdm.sf_eos_access_domains+';' LIKE '%;'+ph.ph_tenant+';%')
-            OR (mdm.sf_eos_access_domains_2 IS NOT NULL AND ';'+mdm.sf_eos_access_domains_2+';' LIKE '%;'+ph.ph_tenant+';%')
-            OR (ph.ph_tenant_format = 'short_code' AND UPPER(ph.ph_tenant) = UPPER(mdm.sf_account_code))
+          LEFT JOIN dbo.v_gold_mdm_posthog g ON g.ph_tenant = ph.ph_tenant
           GROUP BY ph.ph_tenant, ph.ph_tenant_format
         )
         SELECT
@@ -179,45 +173,31 @@ async function mdmAccounts(req, res) {
           SUM(CASE WHEN ph_tenant_format = 'domain'     THEN 1 ELSE 0 END)                     AS ph_domain_tenants,
           SUM(CASE WHEN ph_tenant_format = 'uuid'       THEN 1 ELSE 0 END)                     AS ph_uuid_tenants,
           SUM(CASE WHEN ph_tenant_format = 'short_code' THEN 1 ELSE 0 END)                     AS ph_shortcode_tenants,
-          SUM(CASE WHEN is_website_match = 1            THEN 1 ELSE 0 END)                     AS ph_website_match,
-          SUM(CASE WHEN is_eos_match     = 1            THEN 1 ELSE 0 END)                     AS ph_eos_match,
-          SUM(CASE WHEN ph_tenant_format = 'short_code' AND is_any_match = 1 THEN 1 ELSE 0 END) AS ph_acct_code_match,
-          SUM(CASE WHEN is_any_match = 0 AND ph_tenant_format = 'domain'    THEN 1 ELSE 0 END) AS ph_no_sf_match
+          SUM(CASE WHEN is_website_match   = 1          THEN 1 ELSE 0 END)                     AS ph_website_match,
+          SUM(CASE WHEN is_eos_match       = 1          THEN 1 ELSE 0 END)                     AS ph_eos_match,
+          SUM(CASE WHEN is_acct_code_match = 1          THEN 1 ELSE 0 END)                     AS ph_acct_code_match,
+          SUM(CASE WHEN is_any_match = 0 AND ph_tenant_format = 'domain' THEN 1 ELSE 0 END)    AS ph_no_sf_match
         FROM ph_classified
       `),
-      // PostHog EOS usage per SF account — domain-joined via website_domain and eos_access_domains
+      // PostHog usage per SF account — via gold view (correct EOS domain matching baked in)
       queryLakehouse(`
         SELECT
-          mdm.sf_account_id,
-          SUM(ph.ph_total_events)     AS ph_total_events,
-          SUM(ph.ph_unique_users)     AS ph_unique_users,
-          MIN(ph.ph_first_seen)       AS ph_first_seen,
-          MAX(ph.ph_last_seen)        AS ph_last_seen,
-          SUM(ph.ph_events_last_30d)  AS ph_events_last_30d,
-          SUM(ph.ph_events_last_7d)   AS ph_events_last_7d,
-          SUM(ph.ph_investment_cases) AS ph_investment_cases,
-          SUM(ph.ph_leaderboards)     AS ph_leaderboards,
-          SUM(ph.ph_benchmarks)       AS ph_benchmarks,
-          MAX(ph.ph_top_feature)      AS ph_top_feature,
-          STRING_AGG(ph.ph_tenant, '; ') AS ph_tenants,
-          MAX(CASE
-            WHEN ph.ph_tenant_format = 'short_code' THEN 'Account Code'
-            WHEN ph.ph_tenant = mdm.sf_website_domain THEN 'Website Domain'
-            ELSE 'EOS Domain'
-          END) AS ph_match_method
-        FROM dbo.v_silver_mdm_account mdm
-        JOIN dbo.v_silver_posthog_account_activity ph
-          ON ph.ph_tenant = mdm.sf_website_domain
-          OR (mdm.sf_eos_access_domains IS NOT NULL
-              AND ';' + mdm.sf_eos_access_domains + ';' LIKE '%;' + ph.ph_tenant + ';%')
-          OR (mdm.sf_eos_access_domains_2 IS NOT NULL
-              AND ';' + mdm.sf_eos_access_domains_2 + ';' LIKE '%;' + ph.ph_tenant + ';%')
-          OR (ph.ph_tenant_format = 'short_code'
-              AND UPPER(ph.ph_tenant) = UPPER(mdm.sf_account_code))
-        WHERE mdm.sf_account_id IS NOT NULL
-        GROUP BY mdm.sf_account_id
+          sf_account_id,
+          SUM(ph_total_events)     AS ph_total_events,
+          SUM(ph_unique_users)     AS ph_unique_users,
+          MIN(ph_first_seen)       AS ph_first_seen,
+          MAX(ph_last_seen)        AS ph_last_seen,
+          SUM(ph_events_last_30d)  AS ph_events_last_30d,
+          SUM(ph_events_last_7d)   AS ph_events_last_7d,
+          SUM(ph_investment_cases) AS ph_investment_cases,
+          SUM(ph_leaderboards)     AS ph_leaderboards,
+          SUM(ph_benchmarks)       AS ph_benchmarks,
+          STRING_AGG(ph_tenant, '; ') AS ph_tenants,
+          MAX(match_method)        AS ph_match_method
+        FROM dbo.v_gold_mdm_posthog
+        GROUP BY sf_account_id
       `),
-      // PostHog domain tenants with no SF match
+      // PostHog domain tenants with no SF match — those absent from the gold view
       queryLakehouse(`
         SELECT
           ph.ph_tenant,
@@ -228,14 +208,7 @@ async function mdmAccounts(req, res) {
           ph.ph_top_feature
         FROM dbo.v_silver_posthog_account_activity ph
         WHERE ph.ph_tenant_format = 'domain'
-          AND NOT EXISTS (
-            SELECT 1 FROM dbo.v_silver_mdm_account mdm
-            WHERE ph.ph_tenant = mdm.sf_website_domain
-               OR (mdm.sf_eos_access_domains IS NOT NULL
-                   AND ';'+mdm.sf_eos_access_domains+';' LIKE '%;'+ph.ph_tenant+';%')
-               OR (mdm.sf_eos_access_domains_2 IS NOT NULL
-                   AND ';'+mdm.sf_eos_access_domains_2+';' LIKE '%;'+ph.ph_tenant+';%')
-          )
+          AND ph.ph_tenant NOT IN (SELECT ph_tenant FROM dbo.v_gold_mdm_posthog)
         ORDER BY ph.ph_total_events DESC
       `)
     ]);
