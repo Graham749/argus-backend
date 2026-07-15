@@ -4964,11 +4964,11 @@ class Component extends DCLogic {
                   +'<div>'
                     +'<div style="font-size:10px;font-weight:700;color:#9d9d9d;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;">PostHog → SF</div>'
                     +'<div style="display:flex;align-items:baseline;gap:6px;">'
-                      +'<span style="font-size:22px;font-weight:900;color:#e36a00;">'+pct((sm.phWebsiteMatch||0)+(sm.phEosDomainMatch||0)+(sm.phAcctCodeMatch||0)+(sm.phZdMatch||0),(sm.phDomainTenants||0)+(sm.phShortcodeTenants||0)||1)+'</span>'
+                      +'<span style="font-size:22px;font-weight:900;color:#e36a00;">'+pct(sm.phAnyMatch||0,(sm.phDomainTenants||0)+(sm.phShortcodeTenants||0)||1)+'</span>'
                       +'<span style="font-size:11px;color:#9d9d9d;">of matchable tenants linked to SF</span>'
                     +'</div>'
-                    +covBar((sm.phWebsiteMatch||0)+(sm.phEosDomainMatch||0)+(sm.phAcctCodeMatch||0)+(sm.phZdMatch||0),(sm.phDomainTenants||0)+(sm.phShortcodeTenants||0)||1,'#e36a00')
-                    +'<div style="font-size:11px;color:#9d9d9d;">'+((sm.phWebsiteMatch||0)+(sm.phEosDomainMatch||0)+(sm.phAcctCodeMatch||0)+(sm.phZdMatch||0)).toLocaleString()+' matched &nbsp;·&nbsp; '+(sm.phNoMatch||0).toLocaleString()+' not in SF</div>'
+                    +covBar(sm.phAnyMatch||0,(sm.phDomainTenants||0)+(sm.phShortcodeTenants||0)||1,'#e36a00')
+                    +'<div style="font-size:11px;color:#9d9d9d;">'+(sm.phAnyMatch||0).toLocaleString()+' matched &nbsp;·&nbsp; '+(sm.phNoMatch||0).toLocaleString()+' not in SF</div>'
                     +'<div style="margin-top:6px;padding:5px 8px;background:#f7f7f6;border-radius:6px;font-size:10px;color:#9d9d9d;">'
                       +(sm.phUuidTenants||0).toLocaleString()+' UUID tenants — no domain or account code, excluded from %'
                     +'</div>'
@@ -5201,7 +5201,7 @@ class Component extends DCLogic {
               +'<div onclick="'+toggle+'" style="padding:14px 20px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;user-select:none;" onmouseenter="this.style.background=\'#fafafa\'" onmouseleave="this.style.background=\'\'">'
                 +'<div>'
                   +'<div style="font-size:12px;font-weight:700;color:#6d6d6c;text-transform:uppercase;letter-spacing:0.08em;">PostHog Match Confidence</div>'
-                  +'<div style="font-size:11px;color:#9d9d9d;margin-top:2px;">'+phTotal.toLocaleString()+' tenants total · '+phMatched.toLocaleString()+' matched · '+(sm.phUuidTenants||0).toLocaleString()+' UUID (unmatchable)</div>'
+                  +'<div style="font-size:11px;color:#9d9d9d;margin-top:2px;">'+phTotal.toLocaleString()+' tenants total · '+(sm.phAnyMatch||0).toLocaleString()+' matched · '+(sm.phUuidTenants||0).toLocaleString()+' UUID (unmatchable)</div>'
                 +'</div>'
                 +'<span id="mdm-w5-chev" style="font-size:14px;color:#9d9d9d;flex-shrink:0;margin-left:12px;">'+(collapsed?'▾':'▴')+'</span>'
               +'</div>'

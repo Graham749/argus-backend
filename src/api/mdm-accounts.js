@@ -174,11 +174,12 @@ async function mdmAccounts(req, res) {
           SUM(CASE WHEN ph_tenant_format = 'domain'     THEN 1 ELSE 0 END)                     AS ph_domain_tenants,
           SUM(CASE WHEN ph_tenant_format = 'uuid'       THEN 1 ELSE 0 END)                     AS ph_uuid_tenants,
           SUM(CASE WHEN ph_tenant_format = 'short_code' THEN 1 ELSE 0 END)                     AS ph_shortcode_tenants,
-          SUM(CASE WHEN is_website_match   = 1          THEN 1 ELSE 0 END)                     AS ph_website_match,
-          SUM(CASE WHEN is_eos_match       = 1          THEN 1 ELSE 0 END)                     AS ph_eos_match,
-          SUM(CASE WHEN is_acct_code_match = 1          THEN 1 ELSE 0 END)                     AS ph_acct_code_match,
-          SUM(CASE WHEN is_zd_match        = 1          THEN 1 ELSE 0 END)                     AS ph_zd_match,
-          SUM(CASE WHEN is_any_match = 0 AND ph_tenant_format = 'domain' THEN 1 ELSE 0 END)    AS ph_no_sf_match
+          SUM(CASE WHEN is_website_match   = 1                                                   THEN 1 ELSE 0 END) AS ph_website_match,
+          SUM(CASE WHEN is_eos_match       = 1                                                   THEN 1 ELSE 0 END) AS ph_eos_match,
+          SUM(CASE WHEN is_acct_code_match = 1                                                   THEN 1 ELSE 0 END) AS ph_acct_code_match,
+          SUM(CASE WHEN is_zd_match        = 1                                                   THEN 1 ELSE 0 END) AS ph_zd_match,
+          SUM(CASE WHEN is_any_match = 1 AND ph_tenant_format IN ('domain','short_code')         THEN 1 ELSE 0 END) AS ph_any_match,
+          SUM(CASE WHEN is_any_match = 0 AND ph_tenant_format = 'domain'                         THEN 1 ELSE 0 END) AS ph_no_sf_match
         FROM ph_classified
       `),
       // PostHog usage per SF account — via gold view (correct EOS domain matching baked in)
@@ -384,6 +385,7 @@ async function mdmAccounts(req, res) {
         phEosDomainMatch:  Number((phCovRows[0] || {}).ph_eos_match)        || 0,
         phAcctCodeMatch:   Number((phCovRows[0] || {}).ph_acct_code_match)  || 0,
         phZdMatch:         Number((phCovRows[0] || {}).ph_zd_match)         || 0,
+        phAnyMatch:        Number((phCovRows[0] || {}).ph_any_match)        || 0,
         phNoMatch:         Number((phCovRows[0] || {}).ph_no_sf_match)      || 0
       },
       accounts,
