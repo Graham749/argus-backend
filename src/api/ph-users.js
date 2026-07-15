@@ -50,6 +50,7 @@ function buildDomainSet(mdm) {
   add(mdm.sf_website_domain);
   if (mdm.sf_eos_access_domains)   mdm.sf_eos_access_domains.split(';').forEach(add);
   if (mdm.sf_eos_access_domains_2) mdm.sf_eos_access_domains_2.split(';').forEach(add);
+  add(mdm.zd_primary_email_domain);
   if (mdm.sf_account_code) add(mdm.sf_account_code);
   domains.delete('');
   return domains;
@@ -68,7 +69,8 @@ async function phUsers(req, res) {
     // Step 1: get MDM domain info
     const mdmRows = await queryLakehouse(`
       SELECT TOP 1
-        sf_website_domain, sf_eos_access_domains, sf_eos_access_domains_2, sf_account_code
+        sf_website_domain, sf_eos_access_domains, sf_eos_access_domains_2,
+        zd_primary_email_domain, sf_account_code
       FROM dbo.v_silver_mdm_account
       WHERE sf_account_name = '${escaped}'
     `);

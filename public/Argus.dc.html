@@ -4579,10 +4579,13 @@ class Component extends DCLogic {
                 +(a.sfAccountType==='child'&&a.parentAccountName?'<span style="font-size:10px;color:#9d9d9d;">↑ '+a.parentAccountName+'</span>':'')
                 +(a.sfNameCollision?'<span style="font-size:9px;color:#e07000;" title="Duplicate SF name">⚠</span>':'')
               +'</div>';
-          const zdPill = a.zdMatchConfidence==='HIGH'
-            ? '<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:#e6faf4;color:#00966b;white-space:nowrap;">Name + Domain</span>'
-            : a.zdMatchConfidence==='MEDIUM'
-            ? '<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:#fff8e1;color:#b89400;white-space:nowrap;">Name</span>'
+          const zdPill = a.hasZdOrg
+            ? '<div style="display:flex;flex-direction:column;gap:1px;min-width:0;">'
+                +'<span style="font-size:11px;font-weight:600;color:#288184;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="'+(a.zdOrgName||'')+'">'+( a.zdOrgName||'—')+'</span>'
+                +(a.zdPrimaryDomain
+                  ? '<span style="font-size:10px;color:#6d6d6c;font-family:monospace;">'+a.zdPrimaryDomain+'</span>'
+                  : '<span style="font-size:10px;color:#c0c0c0;font-style:italic;">no domain</span>')
+              +'</div>'
             : '<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:#f1f1f0;color:#9d9d9d;white-space:nowrap;">No Match</span>';
           const pbPill = !a.hasPbCompany
             ? '<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:#f1f1f0;color:#9d9d9d;white-space:nowrap;">No Match</span>'
