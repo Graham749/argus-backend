@@ -71,13 +71,13 @@ async function phUsers(req, res) {
         MAX(e.person_name)                                                              AS person_name,
         COUNT(*)                                                                        AS total_events,
         CAST(MAX(e.timestamp) AS DATE)                                                  AS last_seen,
-        SUM(CASE WHEN e.feature = 'investment-cases'                               THEN 1 ELSE 0 END) AS investment_cases,
-        SUM(CASE WHEN e.feature = 'leaderboards'                                   THEN 1 ELSE 0 END) AS leaderboards,
-        SUM(CASE WHEN e.feature = 'benchmarks'                                     THEN 1 ELSE 0 END) AS benchmarks,
-        SUM(CASE WHEN e.feature IS NULL OR e.feature NOT IN ('investment-cases','leaderboards','benchmarks') THEN 1 ELSE 0 END) AS untagged
+        SUM(CASE WHEN e.pathname LIKE '%/investment-cases%' THEN 1 ELSE 0 END) AS investment_cases,
+        SUM(CASE WHEN e.pathname LIKE '%/leaderboards%'     THEN 1 ELSE 0 END) AS leaderboards,
+        SUM(CASE WHEN e.pathname LIKE '%/benchmarks%'       THEN 1 ELSE 0 END) AS benchmarks,
+        SUM(CASE WHEN e.pathname NOT LIKE '%/investment-cases%' AND e.pathname NOT LIKE '%/leaderboards%' AND e.pathname NOT LIKE '%/benchmarks%' THEN 1 ELSE 0 END) AS untagged
       FROM dbo.posthog_notebook_events e
       INNER JOIN tenants t ON LOWER(LTRIM(RTRIM(e.tenant))) = t.ph_tenant
-      WHERE e.person_id IS NOT NULL
+      WHERE e.person_id IS NOT NULL AND e.event = '$pageview'
       GROUP BY e.person_id
       ORDER BY total_events DESC
     `);

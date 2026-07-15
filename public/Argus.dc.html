@@ -489,8 +489,19 @@ input{font-family:inherit;}
 
             <!-- Chart panel -->
             <div style="background:#fff;border:1px solid #f0f0ee;border-radius:10px;padding:12px 14px 10px;">
-              <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
                 <div style="font-size:10px;font-weight:700;color:#3c3c3b;letter-spacing:0.06em;">EVENT TREND</div>
+                <div id="phViewToggle" style="display:flex;gap:2px;">
+                  <button id="phViewDay"   style="font-size:9px;padding:2px 7px;border-radius:4px;border:1px solid #e6e6e5;background:#fff;color:#6d6d6c;cursor:pointer;font-weight:600;">Day</button>
+                  <button id="phViewWeek"  style="font-size:9px;padding:2px 7px;border-radius:4px;border:1px solid #e6e6e5;background:#fff;color:#6d6d6c;cursor:pointer;font-weight:600;">Week</button>
+                  <button id="phViewMonth" style="font-size:9px;padding:2px 7px;border-radius:4px;border:1px solid #e6e6e5;background:#fff;color:#6d6d6c;cursor:pointer;font-weight:600;">Month</button>
+                </div>
+                <span style="color:#e6e6e5;font-size:10px;">|</span>
+                <div id="phMetricToggle" style="display:flex;gap:2px;">
+                  <button id="phMetricFeatures" style="font-size:9px;padding:2px 7px;border-radius:4px;border:1px solid #F54E00;background:#fff4f0;color:#F54E00;cursor:pointer;font-weight:600;">Features</button>
+                  <button id="phMetricEvents"   style="font-size:9px;padding:2px 7px;border-radius:4px;border:1px solid #e6e6e5;background:#fff;color:#6d6d6c;cursor:pointer;font-weight:600;">All Events</button>
+                  <button id="phMetricUsers"    style="font-size:9px;padding:2px 7px;border-radius:4px;border:1px solid #e6e6e5;background:#fff;color:#6d6d6c;cursor:pointer;font-weight:600;">Distinct Users</button>
+                </div>
                 <div id="phChartContext" style="display:none;font-size:10px;color:#e36a00;font-weight:600;"></div>
                 <button id="phResetUserBtn" style="display:none;font-size:9px;padding:2px 8px;border-radius:10px;border:1px solid #e6e6e5;background:#fff;color:#6d6d6c;cursor:pointer;font-weight:600;">✕ All users</button>
               </div>
@@ -1515,6 +1526,37 @@ class Component extends DCLogic {
     }
   }
 
+  loadAccountWithMatchCheck(accountName) {
+    // Hide all satellite cards immediately — show only matched ones after check
+    var zdCard = document.getElementById('zdTicketsCard');
+    var pbCard = document.getElementById('pbInsightsCard');
+    var phCard = document.getElementById('phInsightsCard');
+    if (zdCard) zdCard.style.display = 'none';
+    if (pbCard) pbCard.style.display = 'none';
+    if (phCard) phCard.style.display = 'none';
+
+    this.fetchSalesforceSubscriptions(accountName);
+
+    fetch('/api/account-matches?account=' + encodeURIComponent(accountName))
+      .then(r => r.json())
+      .then(matches => {
+        if (zdCard) zdCard.style.display = matches.hasZd ? '' : 'none';
+        if (pbCard) pbCard.style.display = matches.hasPb ? '' : 'none';
+        if (phCard) phCard.style.display = matches.hasPh ? '' : 'none';
+        if (matches.hasZd) this.fetchZdTickets(accountName);
+        if (matches.hasPb) this.fetchPbInsights(accountName);
+        if (matches.hasPh) this.fetchPhTrends(accountName);
+      })
+      .catch(() => {
+        if (zdCard) zdCard.style.display = '';
+        if (pbCard) pbCard.style.display = '';
+        if (phCard) phCard.style.display = '';
+        this.fetchZdTickets(accountName);
+        this.fetchPbInsights(accountName);
+        this.fetchPhTrends(accountName);
+      });
+  }
+
   setupSalesforceSubscriptions(){
     // Load accounts immediately in background
     this.loadAccountsList();
@@ -1539,7 +1581,6 @@ class Component extends DCLogic {
           try{ localStorage.setItem('argusHealthAccount', accountName); }catch(e){}
           this.updateAccountTitles(accountName);
           this.currentServiceTypeFilter = 'all';
-          // Reset button styling to show All selected
           const filterBtns = document.querySelectorAll('.sfServiceTypeFilter');
           filterBtns.forEach(b => {
             if(b.dataset.type === 'all'){
@@ -1552,12 +1593,21 @@ class Component extends DCLogic {
               b.style.border = '1px solid #e6e6e5';
             }
           });
-          this.fetchSalesforceSubscriptions(accountName);
-          this.fetchZdTickets(accountName);
-          this.fetchPbInsights(accountName);
-          this.fetchPhTrends(accountName);
+          this.loadAccountWithMatchCheck(accountName);
         }
       });
+
+      // Remount fix: if accounts already cached and a target is pending, apply it now
+      const pendingTarget = window.__argusTargetAccount;
+      if (pendingTarget && select.options.length > 1) {
+        select.value = pendingTarget;
+        if (select.value === pendingTarget) {
+          window.__argusTargetAccount = null;
+          try { localStorage.setItem('argusHealthAccount', pendingTarget); } catch(e) {}
+          this.updateAccountTitles(pendingTarget);
+          setTimeout(() => this.loadAccountWithMatchCheck(pendingTarget), 50);
+        }
+      }
 
       // Add event listeners for summary cards
       document.querySelectorAll('.sfSummaryCard').forEach(card => {
@@ -2325,25 +2375,34 @@ class Component extends DCLogic {
       var series = window.__phSeries;
 
 
-      // Legend below chart — small square + label, click to toggle
+      var metric = window.__phSelectedPid ? 'features' : (state.metric || 'features');
+
+      // Legend — only visible in features mode
       if (legendEl) {
-        legendEl.innerHTML = series.map(function(s) {
-          var on = !!state[s.key];
-          return '<span data-phkey="'+s.key+'" style="cursor:pointer;display:inline-flex;align-items:center;gap:4px;font-size:10px;color:'+(on?'#4d4d4c':'#b0b0b0')+';text-decoration:'+(on?'none':'line-through')+';">'
-            +'<span style="display:inline-block;width:8px;height:8px;border-radius:1px;background:'+(on?s.color:'#d4d4d4')+';flex-shrink:0;"></span>'
-            + s.label
-            +'</span>';
-        }).join('');
-        legendEl.onclick = function(e) {
-          var span = e.target.closest('[data-phkey]');
-          if (!span || !window.__phState) return;
-          var k = span.getAttribute('data-phkey');
-          window.__phState[k] = !window.__phState[k];
-          window.__phBuild();
-        };
+        legendEl.style.display = (metric === 'features') ? 'flex' : 'none';
+        if (metric === 'features') {
+          legendEl.innerHTML = series.map(function(s) {
+            var on = !!state[s.key];
+            return '<span data-phkey="'+s.key+'" style="cursor:pointer;display:inline-flex;align-items:center;gap:4px;font-size:10px;color:'+(on?'#4d4d4c':'#b0b0b0')+';text-decoration:'+(on?'none':'line-through')+';">'
+              +'<span style="display:inline-block;width:8px;height:8px;border-radius:1px;background:'+(on?s.color:'#d4d4d4')+';flex-shrink:0;"></span>'
+              + s.label+'</span>';
+          }).join('');
+          legendEl.onclick = function(e) {
+            var span = e.target.closest('[data-phkey]');
+            if (!span || !window.__phState) return;
+            window.__phState[span.getAttribute('data-phkey')] = !window.__phState[span.getAttribute('data-phkey')];
+            window.__phBuild();
+          };
+        }
       }
 
-      var pts = state.view === 'daily' ? window.__phData.daily : window.__phData.weekly;
+      // Metric buttons hidden when a user is cross-filtered
+      var metricToggleEl = document.getElementById('phMetricToggle');
+      if (metricToggleEl) metricToggleEl.style.display = window.__phSelectedPid ? 'none' : 'flex';
+
+      var pts = state.view === 'day' ? window.__phData.daily
+              : state.view === 'month' ? window.__phAggMonthly(window.__phData.daily)
+              : window.__phData.weekly;
       if (!pts || pts.length === 0) {
         chartEl.innerHTML = '<div style="color:#9d9d9d;font-size:11px;padding:28px 0;text-align:center;">No data for this view</div>';
         return;
@@ -2361,10 +2420,21 @@ class Component extends DCLogic {
       var W = 560, H = 76, padL = 30, padR = 4, padT = 8, padB = 4;
       var cW = W - padL - padR, cH = H - padT - padB;
 
+      // Determine active series for this metric
+      var userSeries = [
+        { key: 'investmentCasesUsers', color: '#F54E00', label: 'Investment Cases' },
+        { key: 'leaderboardsUsers',    color: '#1D4AFF', label: 'Leaderboards' },
+        { key: 'benchmarksUsers',      color: '#c98f00', label: 'Benchmarks' },
+        { key: 'untaggedUsers',        color: '#9d9d9c', label: 'Untagged' },
+      ];
+      var activeSeries = metric === 'events' ? [{ key: 'events', color: '#288184', label: 'All Events' }]
+                       : metric === 'users'  ? userSeries
+                       : series.filter(function(s) { return !!state[s.key]; });
+
       var maxVal = 1;
       pts.forEach(function(d) {
-        series.forEach(function(s) {
-          if (state[s.key] && (d[s.key]||0) > maxVal) maxVal = d[s.key];
+        activeSeries.forEach(function(s) {
+          if ((d[s.key]||0) > maxVal) maxVal = d[s.key];
         });
       });
 
@@ -2380,10 +2450,9 @@ class Component extends DCLogic {
       parts.push('<text x="'+(padL-5)+'" y="'+(padT+4)+'" font-size="8" fill="#c0c0be" text-anchor="end" font-family="sans-serif">'+fmtN(maxVal)+'</text>');
       parts.push('<text x="'+(padL-5)+'" y="'+(padT+cH)+'" font-size="8" fill="#c0c0be" text-anchor="end" font-family="sans-serif">0</text>');
 
-      // Lines + dots at every data point per visible series
-      var showAllDots = n <= 52; // dot at each point when data is not too dense
-      series.forEach(function(s) {
-        if (!state[s.key]) return;
+      // Lines + dots per active series
+      var showAllDots = n <= 52;
+      activeSeries.forEach(function(s) {
         var ys = pts.map(function(d) {
           return padT + cH - ((d[s.key]||0)/maxVal)*cH;
         });
@@ -2391,9 +2460,8 @@ class Component extends DCLogic {
         parts.push('<path d="'+lineD+'" stroke="'+s.color+'" stroke-width="1.2" fill="none" stroke-linejoin="round" stroke-linecap="round"/>');
         if (showAllDots) {
           ys.forEach(function(y, i) {
-            if ((pts[i][s.key]||0) === 0) return; // skip zero-value points
-            var isLast = i === n - 1;
-            parts.push('<circle cx="'+xs[i].toFixed(1)+'" cy="'+y.toFixed(1)+'" r="'+(isLast?'2.5':'2')+'" fill="'+s.color+'" stroke="#fff" stroke-width="1"/>');
+            if ((pts[i][s.key]||0) === 0) return;
+            parts.push('<circle cx="'+xs[i].toFixed(1)+'" cy="'+y.toFixed(1)+'" r="'+(i===n-1?'2.5':'2')+'" fill="'+s.color+'" stroke="#fff" stroke-width="1"/>');
           });
         } else {
           parts.push('<circle cx="'+xs[n-1].toFixed(1)+'" cy="'+ys[n-1].toFixed(1)+'" r="2.5" fill="'+s.color+'" stroke="#fff" stroke-width="1"/>');
@@ -2406,11 +2474,70 @@ class Component extends DCLogic {
       chartEl.innerHTML = '<svg width="100%" viewBox="0 0 '+W+' '+H+'" style="display:block;">'+parts.join('')+'</svg>';
     };
 
+    window.__phAggMonthly = function(daily) {
+      var map = {};
+      (daily || []).forEach(function(d) {
+        var key = (d.dayStart || '').slice(0, 7);
+        if (!key) return;
+        if (!map[key]) map[key] = { monthStart: key + '-01', events: 0, users: 0, investmentCases: 0, leaderboards: 0, benchmarks: 0, untagged: 0, investmentCasesUsers: 0, leaderboardsUsers: 0, benchmarksUsers: 0, untaggedUsers: 0 };
+        map[key].events               += (d.events               || 0);
+        map[key].users                += (d.users                || 0);
+        map[key].investmentCases      += (d.investmentCases      || 0);
+        map[key].leaderboards         += (d.leaderboards         || 0);
+        map[key].benchmarks           += (d.benchmarks           || 0);
+        map[key].untagged             += (d.untagged             || 0);
+        map[key].investmentCasesUsers += (d.investmentCasesUsers || 0);
+        map[key].leaderboardsUsers    += (d.leaderboardsUsers    || 0);
+        map[key].benchmarksUsers      += (d.benchmarksUsers      || 0);
+        map[key].untaggedUsers        += (d.untaggedUsers        || 0);
+      });
+      return Object.keys(map).sort().map(function(k) { return map[k]; });
+    };
+
     window.__phSetView = function(v) {
       if (!window.__phState) return;
       window.__phState.view = v;
+      // Update button styles
+      ['day','week','month'].forEach(function(name) {
+        var btn = document.getElementById('phView' + name.charAt(0).toUpperCase() + name.slice(1));
+        if (!btn) return;
+        var active = (v === name);
+        btn.style.border     = active ? '1px solid #F54E00' : '1px solid #e6e6e5';
+        btn.style.background = active ? '#fff4f0' : '#fff';
+        btn.style.color      = active ? '#F54E00' : '#6d6d6c';
+      });
       window.__phBuild();
     };
+
+    var viewDayBtn   = document.getElementById('phViewDay');
+    var viewWeekBtn  = document.getElementById('phViewWeek');
+    var viewMonthBtn = document.getElementById('phViewMonth');
+    if (viewDayBtn)   viewDayBtn.onclick   = function() { window.__phSetView('day'); };
+    if (viewWeekBtn)  viewWeekBtn.onclick  = function() { window.__phSetView('week'); };
+    if (viewMonthBtn) viewMonthBtn.onclick = function() { window.__phSetView('month'); };
+
+    window.__phSetMetric = function(m) {
+      if (!window.__phState) return;
+      window.__phState.metric = m;
+      ['features','events','users'].forEach(function(name) {
+        var btn = document.getElementById('phMetric' + name.charAt(0).toUpperCase() + name.slice(1));
+        if (!btn) return;
+        var active = (m === name);
+        btn.style.border     = active ? '1px solid #F54E00' : '1px solid #e6e6e5';
+        btn.style.background = active ? '#fff4f0' : '#fff';
+        btn.style.color      = active ? '#F54E00' : '#6d6d6c';
+      });
+      var legendEl = document.getElementById('phLegend');
+      if (legendEl) legendEl.style.display = (m === 'features') ? 'flex' : 'none';
+      window.__phBuild();
+    };
+
+    var metricFeaturesBtn = document.getElementById('phMetricFeatures');
+    var metricEventsBtn   = document.getElementById('phMetricEvents');
+    var metricUsersBtn    = document.getElementById('phMetricUsers');
+    if (metricFeaturesBtn) metricFeaturesBtn.onclick = function() { window.__phSetMetric('features'); };
+    if (metricEventsBtn)   metricEventsBtn.onclick   = function() { window.__phSetMetric('events'); };
+    if (metricUsersBtn)    metricUsersBtn.onclick    = function() { window.__phSetMetric('users'); };
 
     window.__phToggle = function(k) {
       if (!window.__phState) return;
@@ -2422,18 +2549,35 @@ class Component extends DCLogic {
       var tip = document.getElementById('phTooltip');
       if (!tip || !window.__phData || !window.__phState || !window.__phSeries) return;
       var state = window.__phState;
-      var pts = state.view === 'daily' ? window.__phData.daily : window.__phData.weekly;
+      var pts = state.view === 'day' ? window.__phData.daily
+              : state.view === 'month' ? window.__phAggMonthly(window.__phData.daily)
+              : window.__phData.weekly;
       if (!pts || pts.length === 0) return;
       var bounds = evt.target.getBoundingClientRect();
-      var relX   = bounds.width > 0 ? (evt.clientX - bounds.left) / bounds.width : 0;
-      var idx    = pts.length > 1 ? Math.max(0, Math.min(pts.length-1, Math.round(relX*(pts.length-1)))) : 0;
+      // SVG viewBox is 560 wide; data area runs from padL=30 to W-padR=556
+      var W = 560, padL = 30, padR = 4;
+      var svgX  = bounds.width > 0 ? (evt.clientX - bounds.left) / bounds.width * W : padL;
+      var dataX = Math.max(0, Math.min(1, (svgX - padL) / (W - padL - padR)));
+      var idx   = pts.length > 1 ? Math.round(dataX * (pts.length - 1)) : 0;
       var d      = pts[idx];
-      var lblKey = state.view === 'daily' ? 'dayStart' : 'weekStart';
+      var lblKey = state.view === 'day' ? 'dayStart' : state.view === 'month' ? 'monthStart' : 'weekStart';
       var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
       var fmtTip = function(iso) { if (!iso) return '—'; var p = iso.split('-'); return p.length === 3 ? p[2]+'-'+months[parseInt(p[1],10)-1]+'-'+p[0].slice(2) : iso; };
       var html   = '<div style="font-weight:700;color:#3c3c3b;margin-bottom:3px;">'+fmtTip(d[lblKey])+'</div>';
-      window.__phSeries.forEach(function(s) {
-        if (state[s.key]) html += '<div><span style="color:'+s.color+'">&#9632;</span> '+s.label+': <b>'+(d[s.key]||0)+'</b></div>';
+      var tipMetric = window.__phSelectedPid ? 'features' : (state.metric || 'features');
+      var tipUserSeries = [
+        { key: 'investmentCasesUsers', color: '#F54E00', label: 'Investment Cases' },
+        { key: 'leaderboardsUsers',    color: '#1D4AFF', label: 'Leaderboards' },
+        { key: 'benchmarksUsers',      color: '#c98f00', label: 'Benchmarks' },
+        { key: 'untaggedUsers',        color: '#9d9d9c', label: 'Untagged' },
+      ];
+      var tipSeries = tipMetric === 'events' ? [{ key: 'events', color: '#288184', label: 'All Events' }]
+                    : tipMetric === 'users'  ? tipUserSeries
+                    : window.__phSeries.filter(function(s) { return !!state[s.key]; });
+      // Sort by current value descending
+      tipSeries = tipSeries.slice().sort(function(a, b) { return (d[b.key]||0) - (d[a.key]||0); });
+      tipSeries.forEach(function(s) {
+        html += '<div><span style="color:'+s.color+'">&#9632;</span> '+s.label+': <b>'+(d[s.key]||0)+'</b></div>';
       });
       tip.innerHTML    = html;
       tip.style.display = 'block';
@@ -2447,15 +2591,17 @@ class Component extends DCLogic {
     };
 
     var months2 = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    var fmtD2 = function(iso) { if (!iso) return '—'; var p = String(iso).slice(0,10).split('-'); return p.length===3 ? p[2]+'-'+months2[parseInt(p[1],10)-1]+'-'+p[0].slice(2) : iso; };
+    var fmtD2 = function(iso) { if (!iso) return '—'; var p = String(iso).slice(0,10).split('-'); return p.length===3 ? p[2]+' '+months2[parseInt(p[1],10)-1]+' '+p[0] : iso; };
 
     window.__phResetUser = function() {
       window.__phSelectedPid = null;
       if (window.__phDataAll) window.__phData = window.__phDataAll;
       var ctx = document.getElementById('phChartContext');
       var rst = document.getElementById('phResetUserBtn');
+      var mtg = document.getElementById('phMetricToggle');
       if (ctx) ctx.style.display = 'none';
       if (rst) rst.style.display = 'none';
+      if (mtg) mtg.style.display = 'flex';
       document.querySelectorAll('#phUsersBody tr').forEach(function(tr) {
         tr.style.background = '';
         tr.style.outline = '';
@@ -2464,6 +2610,12 @@ class Component extends DCLogic {
     };
 
     window.__phSelectUser = function(personId, label) {
+      // Toggle off if same user clicked again
+      if (window.__phSelectedPid === personId) {
+        window.__phResetUser();
+        return;
+      }
+
       window.__phSelectedPid = personId;
       var ctx = document.getElementById('phChartContext');
       var rst = document.getElementById('phResetUserBtn');
@@ -2472,8 +2624,8 @@ class Component extends DCLogic {
 
       document.querySelectorAll('#phUsersBody tr').forEach(function(tr) {
         var isSelected = tr.getAttribute('data-pid') === personId;
-        tr.style.background   = isSelected ? '#fff8f3' : '';
-        tr.style.outline      = isSelected ? '1.5px solid #fcd9b8' : '';
+        tr.style.background    = isSelected ? '#fff8f3' : '';
+        tr.style.outline       = isSelected ? '1.5px solid #fcd9b8' : '';
         tr.style.outlineOffset = isSelected ? '-1px' : '';
       });
 
@@ -2630,7 +2782,11 @@ class Component extends DCLogic {
         window.__phData    = { weekly: data.weekly || [], daily: data.daily || [] };
         window.__phDataAll = window.__phData;
         window.__phSelectedPid = null;
-        window.__phState = { view: 'weekly', investmentCases: true, leaderboards: true, benchmarks: true, untagged: true };
+        var _prevView   = (window.__phState && window.__phState.view)   || 'day';
+        var _prevMetric = (window.__phState && window.__phState.metric) || 'features';
+        window.__phState = { view: _prevView, metric: _prevMetric, investmentCases: true, leaderboards: true, benchmarks: true, untagged: false };
+        window.__phSetView   && window.__phSetView(_prevView);
+        window.__phSetMetric && window.__phSetMetric(_prevMetric);
 
         // Engagement metrics + KPI cards
         (function() {
@@ -2778,7 +2934,7 @@ class Component extends DCLogic {
           try{ localStorage.setItem('argusHealthAccount', target); }catch(e){}
         }
         this.updateAccountTitles(target);
-        setTimeout(() => { this.fetchSalesforceSubscriptions(target); this.fetchZdTickets(target); this.fetchPbInsights(target); this.fetchPhTrends(target); }, 100);
+        setTimeout(() => this.loadAccountWithMatchCheck(target), 100);
       }
     }
   }
@@ -4608,7 +4764,7 @@ class Component extends DCLogic {
             +'</tr>';
           const toolbarRow = a.sfAccountName
             ? '<tr style="background:#fafafa;">'
-                +'<td colspan="5" style="padding:8px 14px 0;">'
+                +'<td colspan="5" style="padding:8px 14px;text-align:right;">'
                   +'<button onclick="(function(){var acct=\''+a.sfAccountName.replace(/'/g,"\\'")+'\';window.__argusTargetAccount=acct;try{localStorage.setItem(\'argusHealthAccount\',acct);}catch(e){}window.__argus&&window.__argus.setV({view:\'health\'});window.scrollTo(0,0);})()" style="font-size:12px;font-weight:700;color:#fff;cursor:pointer;display:inline-flex;align-items:center;gap:4px;padding:6px 14px;border:none;border-radius:6px;background:#288184;">→ View Client health card</button>'
                 +'</td>'
               +'</tr>'

@@ -51,22 +51,30 @@ const MDM_JOIN = `
 `;
 
 const mapWeekly = r => ({
-  weekStart:       r.week_start ? new Date(r.week_start).toISOString().slice(0, 10) : null,
-  events:          Number(r.events)           || 0,
-  users:           Number(r.users)            || 0,
-  investmentCases: Number(r.investment_cases) || 0,
-  leaderboards:    Number(r.leaderboards)     || 0,
-  benchmarks:      Number(r.benchmarks)       || 0,
-  untagged:        Number(r.untagged)         || 0,
+  weekStart:            r.week_start ? new Date(r.week_start).toISOString().slice(0, 10) : null,
+  events:               Number(r.events)            || 0,
+  users:                Number(r.users)             || 0,
+  investmentCases:      Number(r.investment_cases)  || 0,
+  leaderboards:         Number(r.leaderboards)      || 0,
+  benchmarks:           Number(r.benchmarks)        || 0,
+  untagged:             Number(r.untagged)          || 0,
+  investmentCasesUsers: Number(r.ic_users)          || 0,
+  leaderboardsUsers:    Number(r.lb_users)          || 0,
+  benchmarksUsers:      Number(r.bm_users)          || 0,
+  untaggedUsers:        Number(r.untagged_users)    || 0,
 });
 const mapDaily = r => ({
-  dayStart:        r.day_start ? new Date(r.day_start).toISOString().slice(0, 10) : null,
-  events:          Number(r.events)           || 0,
-  users:           Number(r.users)            || 0,
-  investmentCases: Number(r.investment_cases) || 0,
-  leaderboards:    Number(r.leaderboards)     || 0,
-  benchmarks:      Number(r.benchmarks)       || 0,
-  untagged:        Number(r.untagged)         || 0,
+  dayStart:             r.day_start ? new Date(r.day_start).toISOString().slice(0, 10) : null,
+  events:               Number(r.events)            || 0,
+  users:                Number(r.users)             || 0,
+  investmentCases:      Number(r.investment_cases)  || 0,
+  leaderboards:         Number(r.leaderboards)      || 0,
+  benchmarks:           Number(r.benchmarks)        || 0,
+  untagged:             Number(r.untagged)          || 0,
+  investmentCasesUsers: Number(r.ic_users)          || 0,
+  leaderboardsUsers:    Number(r.lb_users)          || 0,
+  benchmarksUsers:      Number(r.bm_users)          || 0,
+  untaggedUsers:        Number(r.untagged_users)    || 0,
 });
 
 async function phTrends(req, res) {
@@ -78,17 +86,21 @@ async function phTrends(req, res) {
   if (personId) {
     try {
       const escapedPid = personId.replace(/'/g, "''");
-      const personFilter = `WHERE e.person_id = '${escapedPid}' AND e.timestamp IS NOT NULL`;
+      const personFilter = `WHERE e.person_id = '${escapedPid}' AND e.timestamp IS NOT NULL AND e.event = '$pageview'`;
       const [weeklyRows, dailyRows] = await Promise.all([
         queryLakehouse(`
           SELECT
             CAST(DATEADD(DAY, DATEDIFF(DAY,'2000-01-03',e.timestamp)/7*7, '2000-01-03') AS DATE) AS week_start,
             COUNT(*)                                                                               AS events,
             COUNT(DISTINCT e.person_id)                                                            AS users,
-            SUM(CASE WHEN e.feature = 'investment-cases'                           THEN 1 ELSE 0 END) AS investment_cases,
-            SUM(CASE WHEN e.feature = 'leaderboards'                               THEN 1 ELSE 0 END) AS leaderboards,
-            SUM(CASE WHEN e.feature = 'benchmarks'                                 THEN 1 ELSE 0 END) AS benchmarks,
-            SUM(CASE WHEN e.feature IS NULL OR e.feature NOT IN ('investment-cases','leaderboards','benchmarks') THEN 1 ELSE 0 END) AS untagged
+            SUM(CASE WHEN e.pathname LIKE '%/investment-cases%' THEN 1 ELSE 0 END) AS investment_cases,
+            SUM(CASE WHEN e.pathname LIKE '%/leaderboards%'     THEN 1 ELSE 0 END) AS leaderboards,
+            SUM(CASE WHEN e.pathname LIKE '%/benchmarks%'       THEN 1 ELSE 0 END) AS benchmarks,
+            SUM(CASE WHEN e.pathname NOT LIKE '%/investment-cases%' AND e.pathname NOT LIKE '%/leaderboards%' AND e.pathname NOT LIKE '%/benchmarks%' THEN 1 ELSE 0 END) AS untagged,
+            COUNT(DISTINCT CASE WHEN e.pathname LIKE '%/investment-cases%' THEN e.person_id END) AS ic_users,
+            COUNT(DISTINCT CASE WHEN e.pathname LIKE '%/leaderboards%'     THEN e.person_id END) AS lb_users,
+            COUNT(DISTINCT CASE WHEN e.pathname LIKE '%/benchmarks%'       THEN e.person_id END) AS bm_users,
+            COUNT(DISTINCT CASE WHEN e.pathname NOT LIKE '%/investment-cases%' AND e.pathname NOT LIKE '%/leaderboards%' AND e.pathname NOT LIKE '%/benchmarks%' THEN e.person_id END) AS untagged_users
           FROM dbo.posthog_notebook_events e
           ${personFilter}
           GROUP BY CAST(DATEADD(DAY, DATEDIFF(DAY,'2000-01-03',e.timestamp)/7*7, '2000-01-03') AS DATE)
@@ -99,10 +111,14 @@ async function phTrends(req, res) {
             CAST(e.timestamp AS DATE)                                                              AS day_start,
             COUNT(*)                                                                               AS events,
             COUNT(DISTINCT e.person_id)                                                            AS users,
-            SUM(CASE WHEN e.feature = 'investment-cases'                           THEN 1 ELSE 0 END) AS investment_cases,
-            SUM(CASE WHEN e.feature = 'leaderboards'                               THEN 1 ELSE 0 END) AS leaderboards,
-            SUM(CASE WHEN e.feature = 'benchmarks'                                 THEN 1 ELSE 0 END) AS benchmarks,
-            SUM(CASE WHEN e.feature IS NULL OR e.feature NOT IN ('investment-cases','leaderboards','benchmarks') THEN 1 ELSE 0 END) AS untagged
+            SUM(CASE WHEN e.pathname LIKE '%/investment-cases%' THEN 1 ELSE 0 END) AS investment_cases,
+            SUM(CASE WHEN e.pathname LIKE '%/leaderboards%'     THEN 1 ELSE 0 END) AS leaderboards,
+            SUM(CASE WHEN e.pathname LIKE '%/benchmarks%'       THEN 1 ELSE 0 END) AS benchmarks,
+            SUM(CASE WHEN e.pathname NOT LIKE '%/investment-cases%' AND e.pathname NOT LIKE '%/leaderboards%' AND e.pathname NOT LIKE '%/benchmarks%' THEN 1 ELSE 0 END) AS untagged,
+            COUNT(DISTINCT CASE WHEN e.pathname LIKE '%/investment-cases%' THEN e.person_id END) AS ic_users,
+            COUNT(DISTINCT CASE WHEN e.pathname LIKE '%/leaderboards%'     THEN e.person_id END) AS lb_users,
+            COUNT(DISTINCT CASE WHEN e.pathname LIKE '%/benchmarks%'       THEN e.person_id END) AS bm_users,
+            COUNT(DISTINCT CASE WHEN e.pathname NOT LIKE '%/investment-cases%' AND e.pathname NOT LIKE '%/leaderboards%' AND e.pathname NOT LIKE '%/benchmarks%' THEN e.person_id END) AS untagged_users
           FROM dbo.posthog_notebook_events e
           ${personFilter}
           GROUP BY CAST(e.timestamp AS DATE)
@@ -159,13 +175,17 @@ async function phTrends(req, res) {
           CAST(DATEADD(DAY, DATEDIFF(DAY,'2000-01-03',e.timestamp)/7*7, '2000-01-03') AS DATE) AS week_start,
           COUNT(*)                                                                               AS events,
           COUNT(DISTINCT e.person_id)                                                            AS users,
-          SUM(CASE WHEN e.feature = 'investment-cases'                           THEN 1 ELSE 0 END) AS investment_cases,
-          SUM(CASE WHEN e.feature = 'leaderboards'                               THEN 1 ELSE 0 END) AS leaderboards,
-          SUM(CASE WHEN e.feature = 'benchmarks'                                 THEN 1 ELSE 0 END) AS benchmarks,
-          SUM(CASE WHEN e.feature IS NULL OR e.feature NOT IN ('investment-cases','leaderboards','benchmarks') THEN 1 ELSE 0 END) AS untagged
+          SUM(CASE WHEN e.pathname LIKE '%/investment-cases%' THEN 1 ELSE 0 END) AS investment_cases,
+          SUM(CASE WHEN e.pathname LIKE '%/leaderboards%'     THEN 1 ELSE 0 END) AS leaderboards,
+          SUM(CASE WHEN e.pathname LIKE '%/benchmarks%'       THEN 1 ELSE 0 END) AS benchmarks,
+          SUM(CASE WHEN e.pathname NOT LIKE '%/investment-cases%' AND e.pathname NOT LIKE '%/leaderboards%' AND e.pathname NOT LIKE '%/benchmarks%' THEN 1 ELSE 0 END) AS untagged,
+          COUNT(DISTINCT CASE WHEN e.pathname LIKE '%/investment-cases%' THEN e.person_id END) AS ic_users,
+          COUNT(DISTINCT CASE WHEN e.pathname LIKE '%/leaderboards%'     THEN e.person_id END) AS lb_users,
+          COUNT(DISTINCT CASE WHEN e.pathname LIKE '%/benchmarks%'       THEN e.person_id END) AS bm_users,
+          COUNT(DISTINCT CASE WHEN e.pathname NOT LIKE '%/investment-cases%' AND e.pathname NOT LIKE '%/leaderboards%' AND e.pathname NOT LIKE '%/benchmarks%' THEN e.person_id END) AS untagged_users
         FROM dbo.posthog_notebook_events e
         INNER JOIN tenants t ON LOWER(LTRIM(RTRIM(e.tenant))) = t.ph_tenant
-        WHERE e.timestamp IS NOT NULL
+        WHERE e.timestamp IS NOT NULL AND e.event = '$pageview'
         GROUP BY CAST(DATEADD(DAY, DATEDIFF(DAY,'2000-01-03',e.timestamp)/7*7, '2000-01-03') AS DATE)
         ORDER BY week_start
       `),
@@ -175,13 +195,17 @@ async function phTrends(req, res) {
           CAST(e.timestamp AS DATE)                                                              AS day_start,
           COUNT(*)                                                                               AS events,
           COUNT(DISTINCT e.person_id)                                                            AS users,
-          SUM(CASE WHEN e.feature = 'investment-cases'                           THEN 1 ELSE 0 END) AS investment_cases,
-          SUM(CASE WHEN e.feature = 'leaderboards'                               THEN 1 ELSE 0 END) AS leaderboards,
-          SUM(CASE WHEN e.feature = 'benchmarks'                                 THEN 1 ELSE 0 END) AS benchmarks,
-          SUM(CASE WHEN e.feature IS NULL OR e.feature NOT IN ('investment-cases','leaderboards','benchmarks') THEN 1 ELSE 0 END) AS untagged
+          SUM(CASE WHEN e.pathname LIKE '%/investment-cases%' THEN 1 ELSE 0 END) AS investment_cases,
+          SUM(CASE WHEN e.pathname LIKE '%/leaderboards%'     THEN 1 ELSE 0 END) AS leaderboards,
+          SUM(CASE WHEN e.pathname LIKE '%/benchmarks%'       THEN 1 ELSE 0 END) AS benchmarks,
+          SUM(CASE WHEN e.pathname NOT LIKE '%/investment-cases%' AND e.pathname NOT LIKE '%/leaderboards%' AND e.pathname NOT LIKE '%/benchmarks%' THEN 1 ELSE 0 END) AS untagged,
+          COUNT(DISTINCT CASE WHEN e.pathname LIKE '%/investment-cases%' THEN e.person_id END) AS ic_users,
+          COUNT(DISTINCT CASE WHEN e.pathname LIKE '%/leaderboards%'     THEN e.person_id END) AS lb_users,
+          COUNT(DISTINCT CASE WHEN e.pathname LIKE '%/benchmarks%'       THEN e.person_id END) AS bm_users,
+          COUNT(DISTINCT CASE WHEN e.pathname NOT LIKE '%/investment-cases%' AND e.pathname NOT LIKE '%/leaderboards%' AND e.pathname NOT LIKE '%/benchmarks%' THEN e.person_id END) AS untagged_users
         FROM dbo.posthog_notebook_events e
         INNER JOIN tenants t ON LOWER(LTRIM(RTRIM(e.tenant))) = t.ph_tenant
-        WHERE e.timestamp IS NOT NULL
+        WHERE e.timestamp IS NOT NULL AND e.event = '$pageview'
         GROUP BY CAST(e.timestamp AS DATE)
         ORDER BY day_start
       `)
