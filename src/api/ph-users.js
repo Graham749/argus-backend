@@ -42,12 +42,18 @@ async function queryLakehouse(query) {
   }
 }
 
-const MDM_JOIN = `
-  ph.ph_tenant = mdm.sf_website_domain
-  OR (mdm.sf_eos_access_domains IS NOT NULL AND ';'+mdm.sf_eos_access_domains+';' LIKE '%;'+ph.ph_tenant+';%')
-  OR (mdm.sf_eos_access_domains_2 IS NOT NULL AND ';'+mdm.sf_eos_access_domains_2+';' LIKE '%;'+ph.ph_tenant+';%')
-  OR (ph.ph_tenant_format = 'short_code' AND ph.ph_tenant = LOWER(mdm.sf_account_code))
-`;
+// Build lowercase domain set from MDM row, splitting semicolon-separated EOS lists in JS.
+// Avoids cross-view OR+LIKE joins that mssql npm evaluates incorrectly vs System.Data.SqlClient.
+function buildDomainSet(mdm) {
+  const domains = new Set();
+  const add = v => { if (v) domains.add(v.trim().toLowerCase()); };
+  add(mdm.sf_website_domain);
+  if (mdm.sf_eos_access_domains)   mdm.sf_eos_access_domains.split(';').forEach(add);
+  if (mdm.sf_eos_access_domains_2) mdm.sf_eos_access_domains_2.split(';').forEach(add);
+  if (mdm.sf_account_code) add(mdm.sf_account_code);
+  domains.delete('');
+  return domains;
+}
 
 async function phUsers(req, res) {
   const account = (req.query.account || '').trim();
@@ -59,13 +65,41 @@ async function phUsers(req, res) {
   try {
     const escaped = account.replace(/'/g, "''");
 
+    // Step 1: get MDM domain info
+    const mdmRows = await queryLakehouse(`
+      SELECT TOP 1
+        sf_website_domain, sf_eos_access_domains, sf_eos_access_domains_2, sf_account_code
+      FROM dbo.v_silver_mdm_account
+      WHERE sf_account_name = '${escaped}'
+    `);
+
+    if (!mdmRows.length) {
+      return res.json({ account, users: [] });
+    }
+
+    const mdm = mdmRows[0];
+    const domains = buildDomainSet(mdm);
+
+    if (domains.size === 0) {
+      return res.json({ account, users: [] });
+    }
+
+    const inList = [...domains].map(d => `'${d.replace(/'/g, "''")}'`).join(',');
+
+    // Step 2: get matching tenant list from PostHog view
+    const tenantRows = await queryLakehouse(`
+      SELECT ph_tenant FROM dbo.v_silver_posthog_account_activity
+      WHERE ph_tenant IN (${inList})
+    `);
+
+    if (!tenantRows.length) {
+      return res.json({ account, users: [] });
+    }
+
+    const tenantInList = tenantRows.map(r => `'${r.ph_tenant.replace(/'/g, "''")}'`).join(',');
+
+    // Step 3: get per-user breakdown
     const rows = await queryLakehouse(`
-      WITH tenants AS (
-        SELECT ph.ph_tenant
-        FROM dbo.v_silver_posthog_account_activity ph
-        INNER JOIN dbo.v_silver_mdm_account mdm ON (${MDM_JOIN})
-        WHERE mdm.sf_account_name = '${escaped}'
-      )
       SELECT TOP 200
         e.person_id,
         MAX(e.person_name)                                                              AS person_name,
@@ -76,8 +110,8 @@ async function phUsers(req, res) {
         SUM(CASE WHEN e.pathname LIKE '%/benchmarks%'       THEN 1 ELSE 0 END) AS benchmarks,
         SUM(CASE WHEN e.pathname NOT LIKE '%/investment-cases%' AND e.pathname NOT LIKE '%/leaderboards%' AND e.pathname NOT LIKE '%/benchmarks%' THEN 1 ELSE 0 END) AS untagged
       FROM dbo.posthog_notebook_events e
-      INNER JOIN tenants t ON LOWER(LTRIM(RTRIM(e.tenant))) = t.ph_tenant
-      WHERE e.person_id IS NOT NULL AND e.event = '$pageview'
+      WHERE LOWER(LTRIM(RTRIM(e.tenant))) IN (${tenantInList})
+        AND e.person_id IS NOT NULL AND e.event = '$pageview'
       GROUP BY e.person_id
       ORDER BY total_events DESC
     `);

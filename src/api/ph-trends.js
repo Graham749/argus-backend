@@ -42,13 +42,24 @@ async function queryLakehouse(query) {
   }
 }
 
-// MDM join condition shared between both queries
-const MDM_JOIN = `
-  ph.ph_tenant = mdm.sf_website_domain
-  OR (mdm.sf_eos_access_domains IS NOT NULL AND ';'+mdm.sf_eos_access_domains+';' LIKE '%;'+ph.ph_tenant+';%')
-  OR (mdm.sf_eos_access_domains_2 IS NOT NULL AND ';'+mdm.sf_eos_access_domains_2+';' LIKE '%;'+ph.ph_tenant+';%')
-  OR (ph.ph_tenant_format = 'short_code' AND ph.ph_tenant = LOWER(mdm.sf_account_code))
-`;
+// Build lowercase domain set from MDM row, splitting semicolon-separated EOS lists in JS.
+// Avoids cross-view OR+LIKE joins that mssql npm evaluates incorrectly vs System.Data.SqlClient.
+function buildDomainSet(mdm) {
+  const domains = new Set();
+  const add = v => { if (v) domains.add(v.trim().toLowerCase()); };
+  add(mdm.sf_website_domain);
+  if (mdm.sf_eos_access_domains)   mdm.sf_eos_access_domains.split(';').forEach(add);
+  if (mdm.sf_eos_access_domains_2) mdm.sf_eos_access_domains_2.split(';').forEach(add);
+  if (mdm.sf_account_code) add(mdm.sf_account_code);
+  domains.delete('');
+  return domains;
+}
+
+function matchMethod(mdm, tenant) {
+  if ((mdm.sf_website_domain || '').toLowerCase() === tenant) return 'Website Domain';
+  if ((mdm.sf_account_code   || '').toLowerCase() === tenant) return 'Account Code';
+  return 'EOS Domain';
+}
 
 const mapWeekly = r => ({
   weekStart:            r.week_start ? new Date(r.week_start).toISOString().slice(0, 10) : null,
@@ -138,38 +149,60 @@ async function phTrends(req, res) {
   try {
     const escaped = account.replace(/'/g, "''");
 
-    const tenantsCte = `
-      WITH tenants AS (
-        SELECT ph.ph_tenant
-        FROM dbo.v_silver_posthog_account_activity ph
-        INNER JOIN dbo.v_silver_mdm_account mdm ON (${MDM_JOIN})
-        WHERE mdm.sf_account_name = '${escaped}'
-      )`;
+    // Step 1: get MDM domain info
+    const mdmRows = await queryLakehouse(`
+      SELECT TOP 1
+        sf_website_domain, sf_eos_access_domains, sf_eos_access_domains_2, sf_account_code
+      FROM dbo.v_silver_mdm_account
+      WHERE sf_account_name = '${escaped}'
+    `);
 
-    const [summaryRows, weeklyRows, dailyRows] = await Promise.all([
-      // Summary — one row per matched tenant, aggregated in JS
-      queryLakehouse(`
-        SELECT
-          ph.ph_tenant,
-          ph.ph_total_events,
-          ph.ph_unique_users,
-          ph.ph_first_seen,
-          ph.ph_last_seen,
-          ph.ph_events_last_30d,
-          ph.ph_events_last_7d,
-          ph.ph_investment_cases,
-          ph.ph_leaderboards,
-          ph.ph_benchmarks,
-          CASE
-            WHEN ph.ph_tenant_format = 'short_code' THEN 'Account Code'
-            WHEN ph.ph_tenant = mdm.sf_website_domain THEN 'Website Domain'
-            ELSE 'EOS Domain'
-          END AS match_method
-        FROM dbo.v_silver_posthog_account_activity ph
-        INNER JOIN dbo.v_silver_mdm_account mdm ON (${MDM_JOIN})
-        WHERE mdm.sf_account_name = '${escaped}'
-      `),
-      // Weekly — ISO Monday buckets ('2000-01-03' is a known Monday)
+    if (!mdmRows.length) {
+      return res.json({ tenants: [], summary: null, weekly: [], daily: [] });
+    }
+
+    const mdm = mdmRows[0];
+    const domains = buildDomainSet(mdm);
+
+    if (domains.size === 0) {
+      return res.json({ tenants: [], summary: null, weekly: [], daily: [] });
+    }
+
+    const inList = [...domains].map(d => `'${d.replace(/'/g, "''")}'`).join(',');
+
+    // Step 2: get matching tenants from PostHog view
+    const summaryRows = await queryLakehouse(`
+      SELECT
+        ph_tenant,
+        ph_total_events,
+        ph_unique_users,
+        ph_first_seen,
+        ph_last_seen,
+        ph_events_last_30d,
+        ph_events_last_7d,
+        ph_investment_cases,
+        ph_leaderboards,
+        ph_benchmarks
+      FROM dbo.v_silver_posthog_account_activity
+      WHERE ph_tenant IN (${inList})
+    `);
+
+    if (!summaryRows || summaryRows.length === 0) {
+      return res.json({ tenants: [], summary: null, weekly: [], daily: [] });
+    }
+
+    const tenants     = summaryRows.map(r => r.ph_tenant);
+    const method      = matchMethod(mdm, tenants[0]);
+
+    const tenantInList = tenants.map(t => `'${t.replace(/'/g, "''")}'`).join(',');
+
+    const tenantsCte = `WITH tenants AS (
+      SELECT ph_tenant
+      FROM dbo.v_silver_posthog_account_activity
+      WHERE ph_tenant IN (${tenantInList})
+    )`;
+
+    const [weeklyRows, dailyRows] = await Promise.all([
       queryLakehouse(tenantsCte + `
         SELECT
           CAST(DATEADD(DAY, DATEDIFF(DAY,'2000-01-03',e.timestamp)/7*7, '2000-01-03') AS DATE) AS week_start,
@@ -189,7 +222,6 @@ async function phTrends(req, res) {
         GROUP BY CAST(DATEADD(DAY, DATEDIFF(DAY,'2000-01-03',e.timestamp)/7*7, '2000-01-03') AS DATE)
         ORDER BY week_start
       `),
-      // Daily — calendar day buckets
       queryLakehouse(tenantsCte + `
         SELECT
           CAST(e.timestamp AS DATE)                                                              AS day_start,
@@ -208,15 +240,8 @@ async function phTrends(req, res) {
         WHERE e.timestamp IS NOT NULL AND e.event = '$pageview'
         GROUP BY CAST(e.timestamp AS DATE)
         ORDER BY day_start
-      `)
+      `),
     ]);
-
-    if (!summaryRows || summaryRows.length === 0) {
-      return res.json({ tenants: [], summary: null, weekly: [], daily: [] });
-    }
-
-    const tenants     = summaryRows.map(r => r.ph_tenant);
-    const matchMethod = summaryRows[0].match_method;
 
     const totalEvents    = summaryRows.reduce((s, r) => s + (Number(r.ph_total_events)    || 0), 0);
     const uniqueUsers    = summaryRows.reduce((s, r) => s + (Number(r.ph_unique_users)    || 0), 0);
@@ -231,15 +256,12 @@ async function phTrends(req, res) {
     const firstSeen  = firstDates.length ? new Date(firstDates[0]).toISOString().slice(0, 10) : null;
     const lastSeen   = lastDates.length  ? new Date(lastDates[lastDates.length - 1]).toISOString().slice(0, 10) : null;
 
-    const weekly = (weeklyRows || []).map(mapWeekly);
-    const daily  = (dailyRows  || []).map(mapDaily);
-
     const payload = {
       tenants,
-      matchMethod,
+      matchMethod: method,
       summary: { totalEvents, uniqueUsers, events30d, events7d, firstSeen, lastSeen, investmentCases, leaderboards, benchmarks },
-      weekly,
-      daily,
+      weekly: (weeklyRows || []).map(mapWeekly),
+      daily:  (dailyRows  || []).map(mapDaily),
     };
 
     resultCache[account] = { ts: Date.now(), data: payload };

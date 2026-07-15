@@ -5,7 +5,7 @@ let cachedToken = null;
 let tokenExpiry = null;
 
 const resultCache = {};
-const CACHE_TTL = 60 * 60 * 1000; // 1 hour — match status changes infrequently
+const CACHE_TTL = 60 * 60 * 1000;
 
 async function getAccessToken() {
   const now = Date.now();
@@ -42,6 +42,19 @@ async function queryLakehouse(query) {
   }
 }
 
+// Build a SET of lowercase domains from an MDM row, splitting semicolon-separated lists in JS.
+// This avoids cross-view OR+LIKE joins that mssql npm evaluates incorrectly vs System.Data.SqlClient.
+function buildDomainSet(mdm) {
+  const domains = new Set();
+  const add = v => { if (v) domains.add(v.trim().toLowerCase()); };
+  add(mdm.sf_website_domain);
+  if (mdm.sf_eos_access_domains) mdm.sf_eos_access_domains.split(';').forEach(add);
+  if (mdm.sf_eos_access_domains_2) mdm.sf_eos_access_domains_2.split(';').forEach(add);
+  if (mdm.sf_account_code) add(mdm.sf_account_code); // for short_code tenants
+  domains.delete('');
+  return domains;
+}
+
 async function accountMatches(req, res) {
   const account = (req.query.account || '').trim();
   if (!account) return res.status(400).json({ error: 'account query param required' });
@@ -51,26 +64,38 @@ async function accountMatches(req, res) {
 
   try {
     const escaped = account.replace(/'/g, "''");
-    const rows = await queryLakehouse(`
+
+    // Step 1: get MDM record
+    const mdmRows = await queryLakehouse(`
       SELECT TOP 1
-        mdm.has_zd_org,
-        mdm.has_pb_company,
-        CASE WHEN EXISTS (
-          SELECT 1 FROM dbo.v_silver_posthog_account_activity ph
-          WHERE ph.ph_tenant = mdm.sf_website_domain
-             OR (mdm.sf_eos_access_domains   IS NOT NULL AND ';'+mdm.sf_eos_access_domains+';'   LIKE '%;'+ph.ph_tenant+';%')
-             OR (mdm.sf_eos_access_domains_2 IS NOT NULL AND ';'+mdm.sf_eos_access_domains_2+';' LIKE '%;'+ph.ph_tenant+';%')
-             OR (ph.ph_tenant_format = 'short_code' AND ph.ph_tenant = LOWER(mdm.sf_account_code))
-        ) THEN 1 ELSE 0 END AS has_ph
-      FROM dbo.v_silver_mdm_account mdm
-      WHERE mdm.sf_account_name = '${escaped}'
+        has_zd_org, has_pb_company,
+        sf_website_domain, sf_eos_access_domains, sf_eos_access_domains_2, sf_account_code
+      FROM dbo.v_silver_mdm_account
+      WHERE sf_account_name = '${escaped}'
     `);
 
-    const r = rows[0];
-    const payload = r
-      ? { hasZd: !!r.has_zd_org, hasPb: !!r.has_pb_company, hasPh: !!r.has_ph }
-      : { hasZd: false, hasPb: false, hasPh: false };
+    if (!mdmRows.length) {
+      const payload = { hasZd: false, hasPb: false, hasPh: false };
+      resultCache[account] = { ts: Date.now(), data: payload };
+      return res.json(payload);
+    }
 
+    const mdm = mdmRows[0];
+    const domains = buildDomainSet(mdm);
+
+    // Step 2: check PostHog view with simple IN — avoids the OR+LIKE cross-view join issue
+    let hasPh = false;
+    if (domains.size > 0) {
+      const inList = [...domains].map(d => `'${d.replace(/'/g, "''")}'`).join(',');
+      const phRows = await queryLakehouse(`
+        SELECT TOP 1 ph_tenant
+        FROM dbo.v_silver_posthog_account_activity
+        WHERE ph_tenant IN (${inList})
+      `);
+      hasPh = phRows.length > 0;
+    }
+
+    const payload = { hasZd: !!mdm.has_zd_org, hasPb: !!mdm.has_pb_company, hasPh };
     resultCache[account] = { ts: Date.now(), data: payload };
     res.json(payload);
   } catch (err) {
