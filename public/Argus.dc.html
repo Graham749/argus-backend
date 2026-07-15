@@ -5054,6 +5054,7 @@ class Component extends DCLogic {
                   +step(2,'<strong>EOS domain</strong> — PostHog tenant in SF <code style="font-size:10px;background:#f1f1f0;padding:1px 4px;border-radius:3px;">Domains_with_EOS_Access__c</code> semicolon list')
                   +step(3,'<strong>Account code</strong> — PostHog short-code tenant = SF <code style="font-size:10px;background:#f1f1f0;padding:1px 4px;border-radius:3px;">Account_Identifier_Code__c</code>')
                   +step(4,'<strong>ZD domain bridge</strong> — PostHog tenant = primary email domain of matched Zendesk org (SF→ZD→PostHog chain; adds '+(sm.phZdMatch||0)+' matches)')
+                  +step(5,'<strong>Wildcard</strong> — PostHog tenant is a subdomain of SF website domain (adds '+(sm.phWildcardMatch||0)+' matches; EOS subdomain excluded due to email addresses in EOS fields)')
                 +'</div>'
               +'</div>'
 
@@ -5194,8 +5195,9 @@ class Component extends DCLogic {
             const phWebPct     = phTotal ? (sm.phWebsiteMatch||0)    / phTotal : 0;
             const phEosPct     = phTotal ? (sm.phEosDomainMatch||0)  / phTotal : 0;
             const phAcctPct    = phTotal ? (sm.phAcctCodeMatch||0)   / phTotal : 0;
-            const phZdPct      = phTotal ? (sm.phZdMatch||0)         / phTotal : 0;
-            const phUnmatchPct = phTotal ? phUnmatch                 / phTotal : 0;
+            const phZdPct       = phTotal ? (sm.phZdMatch||0)        / phTotal : 0;
+            const phWildcardPct = phTotal ? (sm.phWildcardMatch||0)  / phTotal : 0;
+            const phUnmatchPct  = phTotal ? phUnmatch                / phTotal : 0;
             const phNonePct    = phTotal ? (sm.phNoMatch||0)         / phTotal : 0;
             return '<div style="background:#fff;border:1px solid #e6e6e5;border-radius:12px;margin-bottom:16px;box-shadow:0 1px 3px rgba(60,60,59,0.07);overflow:hidden;">'
               +'<div onclick="'+toggle+'" style="padding:14px 20px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;user-select:none;" onmouseenter="this.style.background=\'#fafafa\'" onmouseleave="this.style.background=\'\'">'
@@ -5212,10 +5214,11 @@ class Component extends DCLogic {
                   +'<div style="width:'+Math.round(phEosPct*100)+'%;background:#f5a623;" title="EOS domain: '+(sm.phEosDomainMatch||0)+'"></div>'
                   +'<div style="width:'+Math.round(phAcctPct*100)+'%;background:#f7c97a;" title="Account code: '+(sm.phAcctCodeMatch||0)+'"></div>'
                   +'<div style="width:'+Math.round(phZdPct*100)+'%;background:#288184;" title="ZD domain bridge: '+(sm.phZdMatch||0)+'"></div>'
+                  +'<div style="width:'+Math.round(phWildcardPct*100)+'%;background:#9d60c8;" title="Wildcard subdomain: '+(sm.phWildcardMatch||0)+'"></div>'
                   +'<div style="width:'+Math.round(phNonePct*100)+'%;background:#d4d4d4;" title="Domain but no SF match: '+(sm.phNoMatch||0)+'"></div>'
                   +'<div style="width:'+Math.round(phUnmatchPct*100)+'%;background:#f1e0cc;border-left:1px dashed #e36a00;" title="UUID (unmatchable): '+phUnmatch+'"></div>'
                 +'</div>'
-                +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr 1fr;gap:10px;margin-top:14px;">'
+                +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr 1fr 1fr;gap:10px;margin-top:14px;">'
                   +'<div style="display:flex;flex-direction:column;gap:3px;">'
                     +'<div style="display:flex;align-items:center;gap:6px;">'
                       +'<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#e36a00;flex-shrink:0;"></span>'
@@ -5250,6 +5253,14 @@ class Component extends DCLogic {
                   +'</div>'
                   +'<div style="display:flex;flex-direction:column;gap:3px;">'
                     +'<div style="display:flex;align-items:center;gap:6px;">'
+                      +'<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#9d60c8;flex-shrink:0;"></span>'
+                      +'<span style="font-size:11px;font-weight:700;color:#3c3c3b;">Wildcard</span>'
+                    +'</div>'
+                    +'<div style="font-size:20px;font-weight:900;color:#7030a0;padding-left:16px;">'+(sm.phWildcardMatch||0).toLocaleString()+'</div>'
+                    +'<div style="font-size:10px;color:#9d9d9d;padding-left:16px;">'+pct(sm.phWildcardMatch||0,phMatchable)+' · subdomain of sf_website_domain</div>'
+                  +'</div>'
+                  +'<div style="display:flex;flex-direction:column;gap:3px;">'
+                    +'<div style="display:flex;align-items:center;gap:6px;">'
                       +'<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#d4d4d4;flex-shrink:0;"></span>'
                       +'<span style="font-size:11px;font-weight:700;color:#3c3c3b;">No SF Match</span>'
                     +'</div>'
@@ -5272,7 +5283,8 @@ class Component extends DCLogic {
                   +step(2,'<strong>EOS domain</strong> — PostHog tenant in SF <code style="font-size:10px;background:#f1f1f0;padding:1px 4px;border-radius:3px;">sf_eos_access_domains</code> semicolon list')
                   +step(3,'<strong>Account code</strong> — PostHog short-code tenant = SF <code style="font-size:10px;background:#f1f1f0;padding:1px 4px;border-radius:3px;">Account_Identifier_Code__c</code>')
                   +step(4,'<strong>ZD domain bridge</strong> — PostHog tenant = primary email domain from matched Zendesk organisation (SF→ZD→PostHog chain)')
-                  +step(5,'<strong>UUID tenants</strong> — PostHog internal session IDs with no account identity; excluded from match % denominator')
+                  +step(5,'<strong>Wildcard</strong> — PostHog tenant is a subdomain of SF <code style="font-size:10px;background:#f1f1f0;padding:1px 4px;border-radius:3px;">sf_website_domain</code> (e.g. demo.auroraer.com → auroraer.com)')
+                  +step(6,'<strong>UUID tenants</strong> — PostHog internal session IDs with no account identity; excluded from match % denominator')
                   +'<div style="margin-left:28px;font-size:11px;color:#9d9d9d;margin-top:6px;">Match % uses '+(sm.phDomainTenants||0).toLocaleString()+' domain + '+(sm.phShortcodeTenants||0).toLocaleString()+' short-code tenants ('+(((sm.phDomainTenants||0)+(sm.phShortcodeTenants||0)).toLocaleString())+' matchable of '+(sm.phTotalTenants||0).toLocaleString()+' total).</div>'
                 +'</div>'
               +'</div>'

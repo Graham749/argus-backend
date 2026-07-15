@@ -164,6 +164,7 @@ async function mdmAccounts(req, res) {
             MAX(CASE WHEN g.match_method = 'EOS Domain'     THEN 1 ELSE 0 END) AS is_eos_match,
             MAX(CASE WHEN g.match_method = 'Account Code'   THEN 1 ELSE 0 END) AS is_acct_code_match,
             MAX(CASE WHEN g.match_method = 'ZD Domain'      THEN 1 ELSE 0 END) AS is_zd_match,
+            MAX(CASE WHEN g.match_method = 'Wildcard'       THEN 1 ELSE 0 END) AS is_wildcard_match,
             MAX(CASE WHEN g.ph_tenant IS NOT NULL           THEN 1 ELSE 0 END) AS is_any_match
           FROM dbo.v_silver_posthog_account_activity ph
           LEFT JOIN dbo.v_gold_mdm_posthog g ON g.ph_tenant = ph.ph_tenant
@@ -178,6 +179,7 @@ async function mdmAccounts(req, res) {
           SUM(CASE WHEN is_eos_match       = 1                                                   THEN 1 ELSE 0 END) AS ph_eos_match,
           SUM(CASE WHEN is_acct_code_match = 1                                                   THEN 1 ELSE 0 END) AS ph_acct_code_match,
           SUM(CASE WHEN is_zd_match        = 1                                                   THEN 1 ELSE 0 END) AS ph_zd_match,
+          SUM(CASE WHEN is_wildcard_match  = 1                                                   THEN 1 ELSE 0 END) AS ph_wildcard_match,
           SUM(CASE WHEN is_any_match = 1 AND ph_tenant_format IN ('domain','short_code')         THEN 1 ELSE 0 END) AS ph_any_match,
           SUM(CASE WHEN is_any_match = 0 AND ph_tenant_format = 'domain'                         THEN 1 ELSE 0 END) AS ph_no_sf_match
         FROM ph_classified
@@ -385,6 +387,7 @@ async function mdmAccounts(req, res) {
         phEosDomainMatch:  Number((phCovRows[0] || {}).ph_eos_match)        || 0,
         phAcctCodeMatch:   Number((phCovRows[0] || {}).ph_acct_code_match)  || 0,
         phZdMatch:         Number((phCovRows[0] || {}).ph_zd_match)         || 0,
+        phWildcardMatch:   Number((phCovRows[0] || {}).ph_wildcard_match)   || 0,
         phAnyMatch:        Number((phCovRows[0] || {}).ph_any_match)        || 0,
         phNoMatch:         Number((phCovRows[0] || {}).ph_no_sf_match)      || 0
       },
