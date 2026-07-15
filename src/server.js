@@ -15,8 +15,10 @@ const zdTickets = require('./api/zd-tickets');
 const pbInsights = require('./api/pb-insights');
 const featureInsights = require('./api/feature-insights');
 const companyFeatures = require('./api/company-features');
-const phTrends = require('./api/ph-trends');
-const phUsers  = require('./api/ph-users');
+const phTrends   = require('./api/ph-trends');
+const phUsers    = require('./api/ph-users');
+const phRegions      = require('./api/ph-regions');
+const phRegionDetail = require('./api/ph-region-detail');
 const accountMatches = require('./api/account-matches');
 
 const app = express();
@@ -67,9 +69,11 @@ app.get('/api/zd-tickets', zdTickets);
 app.get('/api/pb-insights', pbInsights);
 app.get('/api/feature-insights', featureInsights);
 app.get('/api/company-features', companyFeatures);
-app.get('/api/ph-trends', phTrends);
-app.get('/api/ph-users',  phUsers);
-app.get('/api/account-matches', accountMatches);
+app.get('/api/ph-trends',   phTrends);
+app.get('/api/ph-users',    phUsers);
+app.get('/api/ph-regions',        phRegions);
+app.get('/api/ph-region-detail',  phRegionDetail);
+app.get('/api/account-matches',   accountMatches);
 
 // Serve Argus dashboard at root
 app.get('/', (req, res) => {

@@ -42,7 +42,7 @@ async function queryLakehouse(query) {
 
 async function mdmAccounts(req, res) {
   try {
-    const [summaryRows, accountRows, hierarchyRows, dupRows, pbOnlyRows, zdUserRows, zdTicketRows, pbNoteRows, sfSubRows, phCovRows, phRows, phUnmatchedRows] = await Promise.all([
+    const [summaryRows, accountRows, hierarchyRows, dupRows, pbOnlyRows, zdUserRows, zdTicketRows, pbNoteRows, sfSubRows, phCovRows, phRows, phUnmatchedRows, mdmDomainRows] = await Promise.all([
       queryLakehouse(`
         SELECT
           COUNT(*)                                                              AS total,
@@ -202,7 +202,7 @@ async function mdmAccounts(req, res) {
         FROM dbo.v_gold_mdm_posthog
         GROUP BY sf_account_id
       `),
-      // PostHog domain tenants with no SF match — those absent from the gold view
+      // All domain-format PostHog tenants (unfiltered) — matched/unmatched split in JS
       queryLakehouse(`
         SELECT
           ph.ph_tenant,
@@ -213,8 +213,28 @@ async function mdmAccounts(req, res) {
           ph.ph_top_feature
         FROM dbo.v_silver_posthog_account_activity ph
         WHERE ph.ph_tenant_format = 'domain'
-          AND ph.ph_tenant NOT IN (SELECT ph_tenant FROM dbo.v_gold_mdm_posthog)
         ORDER BY ph.ph_total_events DESC
+      `),
+      // All MDM matched domains via STRING_SPLIT — avoids mssql npm LIKE mis-evaluation.
+      // Enumerates website domain, ZD domain, and all EOS entries as flat domain rows.
+      queryLakehouse(`
+        SELECT LOWER(sf_website_domain) AS domain
+        FROM dbo.v_silver_mdm_account
+        WHERE sf_website_domain IS NOT NULL AND sf_website_domain != ''
+        UNION
+        SELECT LOWER(zd_primary_email_domain)
+        FROM dbo.v_silver_mdm_account
+        WHERE zd_primary_email_domain IS NOT NULL AND zd_primary_email_domain != ''
+        UNION
+        SELECT LOWER(TRIM(s.value))
+        FROM dbo.v_silver_mdm_account
+        CROSS APPLY STRING_SPLIT(REPLACE(COALESCE(sf_eos_access_domains,''), '; ', ';'), ';') s
+        WHERE TRIM(s.value) != ''
+        UNION
+        SELECT LOWER(TRIM(s.value))
+        FROM dbo.v_silver_mdm_account
+        CROSS APPLY STRING_SPLIT(REPLACE(COALESCE(sf_eos_access_domains_2,''), '; ', ';'), ';') s
+        WHERE TRIM(s.value) != ''
       `)
     ]);
 
@@ -251,14 +271,20 @@ async function mdmAccounts(req, res) {
       };
     });
 
-    const phUnmatched = (phUnmatchedRows || []).map(r => ({
-      tenant:       r.ph_tenant,
-      totalEvents:  Number(r.ph_total_events)    || 0,
-      uniqueUsers:  Number(r.ph_unique_users)    || 0,
-      lastSeen:     r.ph_last_seen ? new Date(r.ph_last_seen).toISOString().slice(0, 10) : null,
-      events30d:    Number(r.ph_events_last_30d) || 0,
-      topFeature:   r.ph_top_feature || null,
-    }));
+    // Build matched domain set from STRING_SPLIT enumeration of all MDM domains.
+    // This avoids mssql npm mis-evaluating REPLACE+LIKE in the gold view subquery.
+    const matchedTenants = new Set((mdmDomainRows || []).map(r => (r.domain || '').trim().toLowerCase()).filter(Boolean));
+
+    const phUnmatched = (phUnmatchedRows || [])
+      .filter(r => !matchedTenants.has((r.ph_tenant || '').toLowerCase()))
+      .map(r => ({
+        tenant:       r.ph_tenant,
+        totalEvents:  Number(r.ph_total_events)    || 0,
+        uniqueUsers:  Number(r.ph_unique_users)    || 0,
+        lastSeen:     r.ph_last_seen ? new Date(r.ph_last_seen).toISOString().slice(0, 10) : null,
+        events30d:    Number(r.ph_events_last_30d) || 0,
+        topFeature:   r.ph_top_feature || null,
+      }));
 
     // Build hierarchy maps in JavaScript — O(1) lookup, no DB join needed
     const hierById = {};
@@ -384,12 +410,18 @@ async function mdmAccounts(req, res) {
         phUuidTenants:     Number((phCovRows[0] || {}).ph_uuid_tenants)    || 0,
         phShortcodeTenants:Number((phCovRows[0] || {}).ph_shortcode_tenants)|| 0,
         phWebsiteMatch:    Number((phCovRows[0] || {}).ph_website_match)    || 0,
-        phEosDomainMatch:  Number((phCovRows[0] || {}).ph_eos_match)        || 0,
         phAcctCodeMatch:   Number((phCovRows[0] || {}).ph_acct_code_match)  || 0,
         phZdMatch:         Number((phCovRows[0] || {}).ph_zd_match)         || 0,
         phWildcardMatch:   Number((phCovRows[0] || {}).ph_wildcard_match)   || 0,
-        phAnyMatch:        Number((phCovRows[0] || {}).ph_any_match)        || 0,
-        phNoMatch:         Number((phCovRows[0] || {}).ph_no_sf_match)      || 0
+        // EOS, AnyMatch, NoMatch all corrected using JS STRING_SPLIT approach:
+        // SQL ph_no_sf_match uses REPLACE+LIKE via v_gold_mdm_posthog which mssql npm
+        // evaluates incorrectly — recovered tenants are all EOS Domain matches, so the
+        // delta (sqlNoMatch - jsNoMatch) is added to phEosDomainMatch.
+        phEosDomainMatch:  (Number((phCovRows[0] || {}).ph_eos_match) || 0)
+                         + ((Number((phCovRows[0] || {}).ph_no_sf_match) || 0) - phUnmatched.length),
+        phNoMatch:         phUnmatched.length,
+        phAnyMatch:        (Number((phCovRows[0] || {}).ph_any_match) || 0)
+                         + ((Number((phCovRows[0] || {}).ph_no_sf_match) || 0) - phUnmatched.length)
       },
       accounts,
       duplicates,
