@@ -58,18 +58,16 @@ module.exports = async function phRegionDetail(req, res) {
         sensitivity: r.sensitivity || null,
         runs:        Number(r.runs),
       })),
-      icDetail: icDetail
-        .filter(r => r.feature === 'investment-cases')
-        .slice(0, 50)
-        .map(r => ({
-          tenant:      r.tenant      || null,
-          scenario:    r.scenario    || null,
-          region:      r.region      || null,
-          price_zone:  r.price_zone  || null,
-          currency:    r.currency    || null,
-          sensitivity: r.sensitivity || null,
-          runs:        Number(r.runs),
-        })),
+      richDetail: icDetail.slice(0, 100).map(r => ({
+        feature:     r.feature     || 'other',
+        tenant:      r.tenant      || null,
+        scenario:    r.scenario    || null,
+        region:      r.region      || null,
+        price_zone:  r.price_zone  || null,
+        currency:    r.currency    || null,
+        sensitivity: r.sensitivity || null,
+        runs:        Number(r.runs),
+      })),
     };
 
     resultCache[cacheKey] = { ts: Date.now(), data };

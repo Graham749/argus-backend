@@ -1682,7 +1682,7 @@ class Component extends DCLogic {
 
     select.innerHTML = '<option value="">-- Loading accounts... --</option>';
 
-    fetch(`http://localhost:3001/api/accounts-list?t=${Date.now()}`)
+    fetch(`/api/accounts-list?t=${Date.now()}`)
       .then(r => r.json())
       .then(data => {
         const accounts = (data.accounts || []).sort((a, b) => a.name.localeCompare(b.name));
@@ -3246,60 +3246,101 @@ class Component extends DCLogic {
             return '<th style="text-align:'+(align||'left')+';padding:3px 5px;border-bottom:2px solid #e6e6e5;font-size:8px;font-weight:700;color:#9d9d9d;white-space:nowrap;position:sticky;top:0;background:#fff;">'+label+'</th>';
           }
 
-          function _renderDrillIC(data) {
-            var rows = data.icDetail||[];
-            if (!rows.length) return '<div style="font-size:10px;color:#9d9d9d;padding:4px 0;">No Investment Case runs for this region.</div>';
-            var html = '<div style="overflow-x:auto;overflow-y:auto;max-height:220px;">'
-              +'<table style="width:100%;border-collapse:collapse;min-width:580px;">'
+          function _tdBase(extra) {
+            return 'padding:3px 6px;font-size:9px;border-bottom:1px solid #f0f0ef;' + (extra||'');
+          }
+
+          // Benchmark drill: Tenant | Price Zone | Region | Runs
+          function _renderDrillBM(data) {
+            var rows = (data.richDetail||[]).filter(function(r){ return r.feature === 'benchmarks'; });
+            if (!rows.length) return '<div style="font-size:10px;color:#9d9d9d;padding:4px 0;">No Benchmark runs for this region.</div>';
+            var total = rows.reduce(function(s,r){return s+r.runs;},0);
+            var html = '<div style="overflow-x:auto;overflow-y:auto;max-height:240px;">'
+              +'<table style="width:100%;border-collapse:collapse;">'
               +'<thead><tr>'
-              +_drillTh('Tenant')+_drillTh('Scenario')+_drillTh('Region')+_drillTh('Price Zone')+_drillTh('Currency')+_drillTh('Sensitivity')+_drillTh('Runs','right')
+              +_drillTh('Tenant')+_drillTh('Price Zone')+_drillTh('Region')+_drillTh('Runs','right')
               +'</tr></thead><tbody>';
             rows.forEach(function(r,i) {
-              var pz  = cleanZone(r.price_zone)||'—';
-              var sc  = r.scenario || '—';
-              var reg = r.region || '—';
-              var cur = r.currency || '—';
+              var pz  = cleanZone(r.price_zone) || '—';
               var bg  = i%2===0?'#fff':'#fafaf9';
               html += '<tr style="background:'+bg+';">'
-                +'<td style="padding:3px 5px;font-size:9px;color:#3c3c3b;white-space:nowrap;">'+(r.tenant||'—')+'</td>'
-                +'<td style="padding:3px 5px;font-size:9px;color:#3c3c3b;font-family:monospace;white-space:nowrap;user-select:all;">'+sc+'</td>'
-                +'<td style="padding:3px 5px;font-size:9px;color:#6d6d6c;white-space:nowrap;">'+reg+'</td>'
-                +'<td style="padding:3px 5px;font-size:9px;color:#3c3c3b;white-space:nowrap;">'+pz+'</td>'
-                +'<td style="padding:3px 5px;font-size:9px;color:#6d6d6c;font-weight:600;white-space:nowrap;">'+cur+'</td>'
-                +'<td style="padding:3px 5px;font-size:9px;color:#6d6d6c;white-space:nowrap;">'+(r.sensitivity||'—')+'</td>'
-                +'<td style="text-align:right;padding:3px 5px;font-size:9px;font-weight:600;color:#3c3c3b;">'+Number(r.runs).toLocaleString()+'</td>'
+                +'<td style="'+_tdBase('color:#3c3c3b;white-space:nowrap;')+'">'+(r.tenant||'—')+'</td>'
+                +'<td style="'+_tdBase('color:#6d6d6c;white-space:nowrap;')+'">'+pz+'</td>'
+                +'<td style="'+_tdBase('color:#6d6d6c;white-space:nowrap;')+'">'+(r.region||'—')+'</td>'
+                +'<td style="'+_tdBase('text-align:right;font-weight:600;color:#3c3c3b;')+'">'+r.runs.toLocaleString()+'</td>'
                 +'</tr>';
             });
+            html += '<tr style="border-top:2px solid #e6e6e5;">'
+              +'<td colspan="3" style="'+_tdBase('font-weight:700;color:#3c3c3b;')+'">Total</td>'
+              +'<td style="'+_tdBase('text-align:right;font-weight:700;color:#3c3c3b;')+'">'+total.toLocaleString()+'</td>'
+              +'</tr>';
             html += '</tbody></table></div>';
             return html;
           }
 
-          function _renderDrillFeature(data, feature, label) {
-            var rows = (data.detail||[]).filter(function(r){ return r.feature === feature; });
-            if (!rows.length) return '<div style="font-size:10px;color:#9d9d9d;padding:4px 0;">No '+label+' runs for this region.</div>';
-            var hasScenario    = rows.some(function(r){ return r.scenario; });
-            var hasPriceZone   = rows.some(function(r){ return cleanZone(r.price_zone); });
-            var hasSensitivity = rows.some(function(r){ return r.sensitivity; });
-            var html = '<div style="overflow-y:auto;max-height:220px;">'
-              +'<table style="width:100%;border-collapse:collapse;"><thead><tr>'
-              +(hasScenario    ? _drillTh('Scenario')   : '')
-              +(hasPriceZone   ? _drillTh('Price Zone') : '')
-              +(hasSensitivity ? _drillTh('Sensitivity'): '')
-              +_drillTh('Runs','right')
+          // Leaderboard drill: Tenant | Region | Zone | Runs
+          function _renderDrillLB(data) {
+            var rows = (data.richDetail||[]).filter(function(r){ return r.feature === 'leaderboards'; });
+            if (!rows.length) return '<div style="font-size:10px;color:#9d9d9d;padding:4px 0;">No Leaderboard runs for this region.</div>';
+            var total = rows.reduce(function(s,r){return s+r.runs;},0);
+            var html = '<div style="overflow-x:auto;overflow-y:auto;max-height:240px;">'
+              +'<table style="width:100%;border-collapse:collapse;">'
+              +'<thead><tr>'
+              +_drillTh('Tenant')+_drillTh('Region')+_drillTh('Zone')+_drillTh('Runs','right')
               +'</tr></thead><tbody>';
-            rows.forEach(function(r, i) {
-              var sc = r.scenario || '—';
-              var pz = cleanZone(r.price_zone) || '—';
-              var bg = i%2===0?'#fff':'#fafaf9';
+            rows.forEach(function(r,i) {
+              var zone = r.price_zone || '';
+              var bg   = i%2===0?'#fff':'#fafaf9';
               html += '<tr style="background:'+bg+';">'
-                +(hasScenario    ? '<td style="padding:3px 5px;font-size:9px;color:#3c3c3b;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="'+sc+'">'+sc+'</td>' : '')
-                +(hasPriceZone   ? '<td style="padding:3px 5px;font-size:9px;color:#6d6d6c;">'+pz+'</td>' : '')
-                +(hasSensitivity ? '<td style="padding:3px 5px;font-size:9px;color:#6d6d6c;">'+(r.sensitivity||'—')+'</td>' : '')
-                +'<td style="text-align:right;padding:3px 5px;font-size:9px;font-weight:600;color:#3c3c3b;">'+Number(r.runs).toLocaleString()+'</td>'
+                +'<td style="'+_tdBase('color:#3c3c3b;white-space:nowrap;')+'">'+(r.tenant||'—')+'</td>'
+                +'<td style="'+_tdBase('color:#6d6d6c;white-space:nowrap;')+'">'+(r.region||'—')+'</td>'
+                +'<td style="'+_tdBase('color:#6d6d6c;font-family:monospace;font-size:8px;')+'">'+zone+'</td>'
+                +'<td style="'+_tdBase('text-align:right;font-weight:600;color:#3c3c3b;')+'">'+r.runs.toLocaleString()+'</td>'
                 +'</tr>';
             });
+            html += '<tr style="border-top:2px solid #e6e6e5;">'
+              +'<td colspan="3" style="'+_tdBase('font-weight:700;color:#3c3c3b;')+'">Total</td>'
+              +'<td style="'+_tdBase('text-align:right;font-weight:700;color:#3c3c3b;')+'">'+total.toLocaleString()+'</td>'
+              +'</tr>';
             html += '</tbody></table></div>';
             return html;
+          }
+
+          // Investment Cases drill: Tenant | Scenario | Region | Price Zone | Currency | Sensitivity | Runs
+          function _renderDrillIC(data) {
+            var rows = (data.richDetail||[]).filter(function(r){ return r.feature === 'investment-cases'; });
+            if (!rows.length) return '<div style="font-size:10px;color:#9d9d9d;padding:4px 0;">No Investment Case runs for this region.</div>';
+            var total = rows.reduce(function(s,r){return s+r.runs;},0);
+            var html = '<div style="overflow-x:auto;overflow-y:auto;max-height:240px;">'
+              +'<table style="width:100%;border-collapse:collapse;min-width:520px;">'
+              +'<thead><tr>'
+              +_drillTh('Tenant')+_drillTh('Scenario')+_drillTh('Region')+_drillTh('Price Zone')+_drillTh('Currency')+_drillTh('Runs','right')
+              +'</tr></thead><tbody>';
+            rows.forEach(function(r,i) {
+              var pz  = cleanZone(r.price_zone) || '—';
+              var sc  = r.scenario || '—';
+              var bg  = i%2===0?'#fff':'#fafaf9';
+              html += '<tr style="background:'+bg+';">'
+                +'<td style="'+_tdBase('color:#3c3c3b;white-space:nowrap;')+'">'+(r.tenant||'—')+'</td>'
+                +'<td style="'+_tdBase('color:#3c3c3b;font-family:monospace;white-space:nowrap;user-select:all;max-width:140px;overflow:hidden;text-overflow:ellipsis;')+'" title="'+sc+'">'+sc+'</td>'
+                +'<td style="'+_tdBase('color:#6d6d6c;white-space:nowrap;')+'">'+(r.region||'—')+'</td>'
+                +'<td style="'+_tdBase('color:#3c3c3b;white-space:nowrap;')+'">'+pz+'</td>'
+                +'<td style="'+_tdBase('color:#6d6d6c;font-weight:600;white-space:nowrap;')+'">'+(r.currency||'—')+'</td>'
+                +'<td style="'+_tdBase('text-align:right;font-weight:600;color:#3c3c3b;')+'">'+r.runs.toLocaleString()+'</td>'
+                +'</tr>';
+            });
+            html += '<tr style="border-top:2px solid #e6e6e5;">'
+              +'<td colspan="5" style="'+_tdBase('font-weight:700;color:#3c3c3b;')+'">Total</td>'
+              +'<td style="'+_tdBase('text-align:right;font-weight:700;color:#3c3c3b;')+'">'+total.toLocaleString()+'</td>'
+              +'</tr>';
+            html += '</tbody></table></div>';
+            return html;
+          }
+
+          function _renderTab(data, tab) {
+            return tab==='lb' ? _renderDrillLB(data)
+              : tab==='ic'   ? _renderDrillIC(data)
+              : _renderDrillBM(data);
           }
 
           window.__phDrillTab = function(tab) {
@@ -3307,11 +3348,8 @@ class Component extends DCLogic {
             var tabs = document.getElementById('phPopupTabs');
             var body = document.getElementById('phPopupTabBody');
             if (tabs) tabs.innerHTML = _buildTabsHtml(tab);
-            if (!_drillData || !body) return; // data still loading — tab is remembered via _pendingTab
-            body.innerHTML = tab==='lb' ? _renderDrillFeature(_drillData,'leaderboards','Leaderboard')
-              : tab==='ic' ? _renderDrillIC(_drillData)
-              : tab==='lb' ? _renderDrillFeature(_drillData,'leaderboards','Leaderboard')
-              : _renderDrillFeature(_drillData,'benchmarks','Benchmark');
+            if (!_drillData || !body) return;
+            body.innerHTML = _renderTab(_drillData, tab);
           };
 
           function showRegionDrilldown(regionCode, localItems) {
@@ -3372,9 +3410,7 @@ class Component extends DCLogic {
               var body = document.getElementById('phPopupTabBody');
               if (tabs) tabs.innerHTML = _buildTabsHtml(tab);
               if (!body) return;
-              body.innerHTML = tab==='lb' ? _renderDrillFeature(data,'leaderboards','Leaderboard')
-                : tab==='ic' ? _renderDrillIC(data)
-                : _renderDrillFeature(data,'benchmarks','Benchmark');
+              body.innerHTML = _renderTab(data, tab);
             }).catch(function(){
               var body = document.getElementById('phPopupTabBody');
               if (body) body.innerHTML = '<div style="color:#c0392b;font-size:10px;">Could not load detail.</div>';
@@ -3722,7 +3758,7 @@ class Component extends DCLogic {
 
     console.log('[Argus] Updated UI to show loading...');
 
-    fetch(`http://localhost:3001/api/accounts/${encodeURIComponent(accountName)}?t=${Date.now()}`)
+    fetch(`/api/accounts/${encodeURIComponent(accountName)}?t=${Date.now()}`)
       .then(r=>{
         console.log('[Argus] Response status:', r.status);
         if(!r.ok) throw new Error('Account not found');
@@ -4130,7 +4166,7 @@ class Component extends DCLogic {
 
   fetchIntegrationStatus(){
     console.log('[Argus] Fetching integration status...');
-    fetch(`http://localhost:3001/api/integration-status?t=${Date.now()}`)
+    fetch(`/api/integration-status?t=${Date.now()}`)
       .then(r => r.json())
       .then(data => {
         console.log('[Argus] Got integration status:', data);
@@ -4145,7 +4181,7 @@ class Component extends DCLogic {
     const controller = new AbortController();
     const timeout = setTimeout(()=>controller.abort(), 5000);
 
-    fetch(`http://localhost:3001/api/current-user?t=${Date.now()}`, {signal: controller.signal})
+    fetch(`/api/current-user?t=${Date.now()}`, {signal: controller.signal})
       .then(r=>{
         console.log('[Argus] Current user response:', r.status);
         return r.json();
@@ -4171,7 +4207,7 @@ class Component extends DCLogic {
       this.setState({loadingSeconds:elapsed});
     }, 100);
 
-    fetch(`http://localhost:3001/api/lakehouse-status?t=${Date.now()}`)
+    fetch(`/api/lakehouse-status?t=${Date.now()}`)
       .then(r=>r.json())
       .then(data=>{
         clearInterval(loadingInterval);
@@ -4527,6 +4563,28 @@ class Component extends DCLogic {
       if(patch.range)        localStorage.setItem('argusRange',        patch.range);
     }
     this.setState(patch);
+    // Navigating to health — wait for health card DOM to be ready, then trigger account load.
+    // setV only calls setState (no remount), so the constructor's loadAccountsList never re-fires.
+    // fetchSalesforceSubscriptions guards on sfSummaryView existing — poll until it's in the DOM.
+    if(patch.view === 'health'){
+      const target = window.__argusTargetAccount || localStorage.getItem('argusHealthAccount');
+      if(target){
+        const waitForHealthDOM = () => {
+          const select  = document.getElementById('sfAccountSelector');
+          const summary = document.getElementById('sfSummaryView');
+          if(select && summary){
+            window.__argusTargetAccount = null;
+            select.value = target;
+            try{ localStorage.setItem('argusHealthAccount', target); }catch(e){}
+            this.updateAccountTitles(target);
+            this.loadAccountWithMatchCheck(target);
+          } else {
+            setTimeout(waitForHealthDOM, 50);
+          }
+        };
+        setTimeout(waitForHealthDOM, 30);
+      }
+    }
   }
   toggleDrill(id){ this.setState(s=>({drills:{...s.drills,[id]:!s.drills[id]}})); }
   toggleInsights(featureId){
