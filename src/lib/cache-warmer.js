@@ -36,12 +36,14 @@ async function getTopAccounts() {
 
 async function warmAccount(port, account, idx, total) {
   const enc = encodeURIComponent(account);
-  const [t, r] = await Promise.all([
+  const [t, r, z, p] = await Promise.all([
     fetchLocal(port, `/api/ph-trends?account=${enc}`),
     fetchLocal(port, `/api/ph-regions?account=${enc}`),
+    fetchLocal(port, `/api/zd-tickets?account=${enc}`),
+    fetchLocal(port, `/api/pb-insights?account=${enc}`),
   ]);
   const ok = t === 200 && r === 200;
-  console.log(`[cache-warmer] (${idx}/${total}) ${account} — trends:${t} regions:${r} ${ok ? '✓' : '✗'}`);
+  console.log(`[cache-warmer] (${idx}/${total}) ${account} — trends:${t} regions:${r} zd:${z} pb:${p} ${ok ? '✓' : '✗'}`);
 }
 
 async function run(port) {

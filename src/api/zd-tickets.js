@@ -1,47 +1,8 @@
-const { execSync } = require('child_process');
-const sql = require('mssql');
-
-let cachedToken = null;
-let tokenExpiry = null;
+const { query: queryLakehouse } = require('../lib/db');
 
 // Per-account result cache — avoids repeated Fabric round-trips
 const resultCache = {};
 const CACHE_TTL = 10 * 60 * 1000; // 10 minutes
-
-async function getAccessToken() {
-  const now = Date.now();
-  if (cachedToken && tokenExpiry && tokenExpiry > now + 60000) return cachedToken;
-  const token = execSync(
-    'az account get-access-token --resource https://database.windows.net/ --query accessToken -o tsv',
-    { encoding: 'utf-8' }
-  ).trim();
-  cachedToken = token;
-  tokenExpiry = now + 55 * 60 * 1000;
-  return token;
-}
-
-async function queryLakehouse(query) {
-  const token = await getAccessToken();
-  const conn = new sql.ConnectionPool({
-    server: process.env.FABRIC_SERVER || 'pv6dzlli723u5jswg27zhty5be-qhcpisfudclelcjaerq6yrhgee.datawarehouse.fabric.microsoft.com',
-    authentication: { type: 'azure-active-directory-access-token', options: { token } },
-    requestTimeout: 120000,
-    connectionTimeout: 30000,
-    options: { encrypt: true, trustServerCertificate: false }
-  });
-  try {
-    await conn.connect();
-    const result = await conn.request().query(query);
-    return result.recordset;
-  } catch (err) {
-    if (err.message && (err.message.includes('Could not login') || err.message.includes('token'))) {
-      cachedToken = null; tokenExpiry = null;
-    }
-    throw err;
-  } finally {
-    await conn.close();
-  }
-}
 
 async function zdTickets(req, res) {
   const account = (req.query.account || '').trim();

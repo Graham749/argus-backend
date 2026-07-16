@@ -1,47 +1,10 @@
-const { execSync } = require('child_process');
-const sql = require('mssql');
-
-let cachedToken = null;
-let tokenExpiry = null;
+const { query: queryLakehouse } = require('../lib/db');
 
 const resultCache = {};
 const CACHE_TTL = 10 * 60 * 1000;
 
 const DELIVERED = ['Released', 'Internally released'];
 const PIPELINE  = ['In progress', 'Planned', 'Shaping', 'Active priorities', 'Quick win'];
-
-async function getAccessToken() {
-  const now = Date.now();
-  if (cachedToken && tokenExpiry && tokenExpiry > now + 60000) return cachedToken;
-  const token = execSync(
-    'az account get-access-token --resource https://database.windows.net/ --query accessToken -o tsv',
-    { encoding: 'utf-8' }
-  ).trim();
-  cachedToken = token;
-  tokenExpiry = now + 55 * 60 * 1000;
-  return token;
-}
-
-async function queryLakehouse(query) {
-  const token = await getAccessToken();
-  const conn = new sql.ConnectionPool({
-    server: process.env.FABRIC_SERVER || 'pv6dzlli723u5jswg27zhty5be-qhcpisfudclelcjaerq6yrhgee.datawarehouse.fabric.microsoft.com',
-    authentication: { type: 'azure-active-directory-access-token', options: { token } },
-    requestTimeout: 120000,
-    options: { encrypt: true, trustServerCertificate: false }
-  });
-  try {
-    await conn.connect();
-    return (await conn.request().query(query)).recordset;
-  } catch (err) {
-    if (err.message && (err.message.includes('Could not login') || err.message.includes('token'))) {
-      cachedToken = null; tokenExpiry = null;
-    }
-    throw err;
-  } finally {
-    await conn.close();
-  }
-}
 
 function bucket(status) {
   if (DELIVERED.includes(status)) return 'delivered';
