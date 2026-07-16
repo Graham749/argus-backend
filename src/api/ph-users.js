@@ -1,49 +1,10 @@
-const { execSync } = require('child_process');
-const sql = require('mssql');
-
-let cachedToken = null;
-let tokenExpiry = null;
+const { query, cacheGet, cacheSet } = require('../lib/db');
 
 const resultCache = {};
-const CACHE_TTL = 10 * 60 * 1000;
-
-async function getAccessToken() {
-  const now = Date.now();
-  if (cachedToken && tokenExpiry && tokenExpiry > now + 60000) return cachedToken;
-  const token = execSync(
-    'az account get-access-token --resource https://database.windows.net/ --query accessToken -o tsv',
-    { encoding: 'utf-8' }
-  ).trim();
-  cachedToken = token;
-  tokenExpiry = now + 55 * 60 * 1000;
-  return token;
-}
-
-async function queryLakehouse(query) {
-  const token = await getAccessToken();
-  const conn = new sql.ConnectionPool({
-    server: process.env.FABRIC_SERVER || 'pv6dzlli723u5jswg27zhty5be-qhcpisfudclelcjaerq6yrhgee.datawarehouse.fabric.microsoft.com',
-    authentication: { type: 'azure-active-directory-access-token', options: { token } },
-    requestTimeout: 120000,
-    connectionTimeout: 30000,
-    options: { encrypt: true, trustServerCertificate: false }
-  });
-  try {
-    await conn.connect();
-    const result = await conn.request().query(query);
-    return result.recordset;
-  } catch (err) {
-    if (err.message && (err.message.includes('Could not login') || err.message.includes('token'))) {
-      cachedToken = null; tokenExpiry = null;
-    }
-    throw err;
-  } finally {
-    await conn.close();
-  }
-}
+const CACHE_TTL   = 10 * 60 * 1000;
+const MDM_TTL     = 10 * 60 * 1000;
 
 // Build lowercase domain set from MDM row, splitting semicolon-separated EOS lists in JS.
-// Avoids cross-view OR+LIKE joins that mssql npm evaluates incorrectly vs System.Data.SqlClient.
 function buildDomainSet(mdm) {
   const domains = new Set();
   const add = v => { if (v) domains.add(v.trim().toLowerCase()); };
@@ -56,6 +17,38 @@ function buildDomainSet(mdm) {
   return domains;
 }
 
+// Resolve MDM domains → tenant IN-list string. Cached across modules via shared db cache.
+async function resolveTenantInList(account) {
+  const cacheKey = 'tenantInList:' + account;
+  const cached = cacheGet(cacheKey);
+  if (cached) return cached;
+
+  const escaped = account.replace(/'/g, "''");
+  const mdmRows = await query(`
+    SELECT TOP 1
+      sf_website_domain, sf_eos_access_domains, sf_eos_access_domains_2,
+      zd_primary_email_domain, sf_account_code
+    FROM dbo.v_silver_mdm_account
+    WHERE sf_account_name = '${escaped}'
+  `);
+  if (!mdmRows.length) return null;
+
+  const mdm = mdmRows[0];
+  const domains = buildDomainSet(mdm);
+  if (!domains.size) return null;
+
+  const inList = [...domains].map(d => `'${d.replace(/'/g, "''")}'`).join(',');
+  const tenantRows = await query(`
+    SELECT ph_tenant FROM dbo.v_silver_posthog_account_activity
+    WHERE ph_tenant IN (${inList})
+  `);
+  if (!tenantRows.length) return null;
+
+  const tenantInList = tenantRows.map(r => `'${r.ph_tenant.replace(/'/g, "''")}'`).join(',');
+  cacheSet(cacheKey, tenantInList, MDM_TTL);
+  return tenantInList;
+}
+
 async function phUsers(req, res) {
   const account = (req.query.account || '').trim();
   const region  = (req.query.region  || '').trim();
@@ -66,43 +59,11 @@ async function phUsers(req, res) {
   if (cached && Date.now() - cached.ts < CACHE_TTL) return res.json(cached.data);
 
   try {
-    const escaped = account.replace(/'/g, "''");
+    const tenantInList = await resolveTenantInList(account);
+    if (!tenantInList) return res.json({ account, users: [] });
 
-    // Step 1: get MDM domain info
-    const mdmRows = await queryLakehouse(`
-      SELECT TOP 1
-        sf_website_domain, sf_eos_access_domains, sf_eos_access_domains_2,
-        zd_primary_email_domain, sf_account_code
-      FROM dbo.v_silver_mdm_account
-      WHERE sf_account_name = '${escaped}'
-    `);
-
-    if (!mdmRows.length) {
-      return res.json({ account, users: [] });
-    }
-
-    const mdm = mdmRows[0];
-    const domains = buildDomainSet(mdm);
-
-    if (domains.size === 0) {
-      return res.json({ account, users: [] });
-    }
-
-    const inList = [...domains].map(d => `'${d.replace(/'/g, "''")}'`).join(',');
-
-    // Step 2: get matching tenant list from PostHog view
-    const tenantRows = await queryLakehouse(`
-      SELECT ph_tenant FROM dbo.v_silver_posthog_account_activity
-      WHERE ph_tenant IN (${inList})
-    `);
-
-    if (!tenantRows.length) {
-      return res.json({ account, users: [] });
-    }
-
-    const tenantInList = tenantRows.map(r => `'${r.ph_tenant.replace(/'/g, "''")}'`).join(',');
-    // Region data lives on non-pageview events, so filter by person_id subquery rather than
-    // adding e.region directly to the pageview query (which would return 0 rows).
+    // Region data lives on non-pageview events, so filter by person_id subquery
+    // rather than adding e.region to the pageview query (which would return 0 rows).
     const regionFilter = region
       ? `AND e.person_id IN (
           SELECT DISTINCT person_id FROM dbo.posthog_notebook_events
@@ -111,10 +72,8 @@ async function phUsers(req, res) {
         )`
       : '';
 
-    // Steps 3 + 3b run in parallel: per-user feature breakdown (optionally region-filtered)
-    // and per-user region distribution (always account-wide so we see all their markets)
     const [rows, regionRows] = await Promise.all([
-      queryLakehouse(`
+      query(`
         SELECT TOP 200
           e.person_id,
           MAX(e.person_name)                                                              AS person_name,
@@ -131,7 +90,7 @@ async function phUsers(req, res) {
         GROUP BY e.person_id
         ORDER BY total_events DESC
       `),
-      queryLakehouse(`
+      query(`
         SELECT e.person_id, e.region, COUNT(*) AS runs
         FROM dbo.posthog_notebook_events e
         WHERE LOWER(LTRIM(RTRIM(e.tenant))) IN (${tenantInList})
@@ -142,7 +101,6 @@ async function phUsers(req, res) {
       `),
     ]);
 
-    // Build per-person region map from account-wide distribution query
     const regionByPerson = {};
     (regionRows || []).forEach(r => {
       if (!regionByPerson[r.person_id]) regionByPerson[r.person_id] = [];

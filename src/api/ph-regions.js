@@ -1,40 +1,16 @@
-const { execSync } = require('child_process');
-const sql = require('mssql');
+const { query } = require('../lib/db');
 
-let cachedToken = null;
-let tokenExpiry  = null;
-
-async function getAccessToken() {
-  const now = Date.now();
-  if (cachedToken && tokenExpiry && tokenExpiry > now + 60000) return cachedToken;
-  const token = execSync(
-    'az account get-access-token --resource https://database.windows.net/ --query accessToken -o tsv',
-    { encoding: 'utf-8' }
-  ).trim();
-  cachedToken = token;
-  tokenExpiry  = now + 55 * 60 * 1000;
-  return token;
-}
-
-async function queryLakehouse(query) {
-  const token = await getAccessToken();
-  const conn  = new sql.ConnectionPool({
-    server: process.env.FABRIC_SERVER || 'pv6dzlli723u5jswg27zhty5be-qhcpisfudclelcjaerq6yrhgee.datawarehouse.fabric.microsoft.com',
-    authentication: { type: 'azure-active-directory-access-token', options: { token } },
-    requestTimeout: 120000,
-    connectionTimeout: 30000,
-    options: { encrypt: true, trustServerCertificate: false }
-  });
-  await conn.connect();
-  const result = await conn.request().query(query);
-  await conn.close();
-  return result.recordset;
-}
+const resultCache = {};
+const CACHE_TTL   = 10 * 60 * 1000;
 
 module.exports = async function phRegions(req, res) {
   const account  = req.query.account;
   const personId = req.query.personId || null;
   if (!account) return res.status(400).json({ error: 'account param required' });
+
+  const cacheKey = account + (personId ? ':' + personId : '');
+  const cached = resultCache[cacheKey];
+  if (cached && Date.now() - cached.ts < CACHE_TTL) return res.json(cached.data);
 
   try {
     const personFilter = personId
@@ -49,12 +25,12 @@ module.exports = async function phRegions(req, res) {
         ${personFilter}`;
 
     const [rows, userRows] = await Promise.all([
-      queryLakehouse(`
+      query(`
         SELECT e.region, COALESCE(e.feature, 'other') AS feature, COUNT(*) AS runs
         ${base}
         GROUP BY e.region, e.feature ORDER BY runs DESC
       `),
-      queryLakehouse(`
+      query(`
         SELECT e.region, COUNT(DISTINCT e.person_id) AS unique_users
         ${base}
         GROUP BY e.region
@@ -64,12 +40,15 @@ module.exports = async function phRegions(req, res) {
     const usersByRegion = {};
     (userRows || []).forEach(r => { usersByRegion[r.region] = Number(r.unique_users) || 0; });
 
-    res.json(rows.map(r => ({
+    const data = rows.map(r => ({
       region:       r.region,
       feature:      r.feature,
       runs:         Number(r.runs) || 0,
       unique_users: usersByRegion[r.region] || 0,
-    })));
+    }));
+
+    resultCache[cacheKey] = { ts: Date.now(), data };
+    res.json(data);
   } catch (err) {
     console.error('[ph-regions]', err.message);
     res.status(500).json({ error: err.message });
