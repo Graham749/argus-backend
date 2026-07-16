@@ -2683,7 +2683,10 @@ class Component extends DCLogic {
       var resetBtn = document.getElementById('phResetUserBtn');
       if (resetBtn) resetBtn.onclick = function() { window.__phResetUser && window.__phResetUser(); };
 
-      var activeReg = window.__phActiveRegion || null;
+      // Getter reads IIFE closure directly; fallback to backup global for edge cases
+      var activeReg = (typeof window.__phGetActiveRegion === 'function'
+        ? window.__phGetActiveRegion()
+        : window.__phActiveRegion) || null;
       var badge = document.getElementById('phUsersRegionBadge');
       if (badge) {
         badge.textContent = activeReg ? 'Filtered: ' + activeReg : '';
@@ -3166,18 +3169,20 @@ class Component extends DCLogic {
             var total = data.totalUsers||0;
             if (!rows.length) return '<div style="font-size:10px;color:#9d9d9d;padding:4px 0;">No Investment Case runs for this region.</div>';
             var html = '<div style="overflow-x:auto;overflow-y:auto;max-height:220px;">'
-              +'<table style="width:100%;border-collapse:collapse;min-width:520px;">'
+              +'<table style="width:100%;border-collapse:collapse;min-width:560px;">'
               +'<thead><tr>'
-              +_drillTh('Tenant')+_drillTh('Scenario ID')+_drillTh('Price Zone')+_drillTh('Sensitivity')+_drillTh('Runs','right')+_drillTh('Users %','right')
+              +_drillTh('Tenant')+_drillTh('Scenario')+_drillTh('IC UUID')+_drillTh('Price Zone')+_drillTh('Sensitivity')+_drillTh('Runs','right')+_drillTh('Users %','right')
               +'</tr></thead><tbody>';
             rows.forEach(function(r,i) {
               var pz  = cleanZone(r.price_zone)||'—';
               var icId = r.ic_id || '—';
+              var sc = r.scenario || '—';
               var userPct = (total>0 && r.unique_users>0) ? (r.unique_users/total*100).toFixed(1)+'%' : '—';
               var bg = i%2===0?'#fff':'#fafaf9';
               html += '<tr style="background:'+bg+';">'
-                +'<td style="padding:3px 5px;font-size:9px;color:#3c3c3b;white-space:nowrap;">'+( r.tenant||'—')+'</td>'
-                +'<td style="padding:3px 5px;font-size:9px;color:#6d6d6c;font-family:monospace;white-space:nowrap;user-select:all;">'+icId+'</td>'
+                +'<td style="padding:3px 5px;font-size:9px;color:#3c3c3b;white-space:nowrap;">'+(r.tenant||'—')+'</td>'
+                +'<td style="padding:3px 5px;font-size:9px;color:#3c3c3b;font-family:monospace;white-space:nowrap;user-select:all;" title="scenario column">'+sc+'</td>'
+                +'<td style="padding:3px 5px;font-size:9px;color:#9d9d9d;font-family:monospace;white-space:nowrap;user-select:all;" title="ic column — PostHog UUID">'+icId+'</td>'
                 +'<td style="padding:3px 5px;font-size:9px;color:#3c3c3b;white-space:nowrap;">'+pz+'</td>'
                 +'<td style="padding:3px 5px;font-size:9px;color:#6d6d6c;white-space:nowrap;">'+(r.sensitivity||'—')+'</td>'
                 +'<td style="text-align:right;padding:3px 5px;font-size:9px;font-weight:600;color:#3c3c3b;">'+Number(r.runs).toLocaleString()+'</td>'
@@ -3186,7 +3191,7 @@ class Component extends DCLogic {
                 +'</tr>';
             });
             html += '</tbody></table></div>';
-            html += '<div style="font-size:8px;color:#b0b0af;margin-top:4px;">'+total+' distinct users across account</div>';
+            html += '<div style="font-size:8px;color:#b0b0af;margin-top:4px;">'+total+' distinct users · Scenario = <em>scenario</em> col · IC UUID = <em>ic</em> col (PostHog page UUID)</div>';
             return html;
           }
 
@@ -3231,7 +3236,8 @@ class Component extends DCLogic {
             var el = document.getElementById('phGlobePopup');
             if (!el) return;
             _drillData = null;
-            window.__phActiveRegion = regionCode; // sync for Users table cross-filter
+            activeRegion = regionCode;            // update IIFE closure var — getter reads this
+            window.__phActiveRegion = regionCode; // backup global for __phShowUsers
 
             var sorted = (localItems||[]).slice().sort(function(a,b){return b.runs-a.runs;});
             var total  = sorted.reduce(function(s,r){return s+r.runs;},0);
@@ -3462,6 +3468,8 @@ class Component extends DCLogic {
             var lg=document.getElementById('phGlobeLegend'); if (lg) lg.innerHTML='';
             var tb=document.getElementById('phGlobeTable'); if (tb) tb.innerHTML='';
           };
+          // Primary source of truth for region filter — reads IIFE closure directly
+          window.__phGetActiveRegion = function() { return activeRegion; };
 
           var globeLoaded=false;
           function showRegionsView() {

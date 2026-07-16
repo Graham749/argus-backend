@@ -70,17 +70,19 @@ module.exports = async function phRegionDetail(req, res) {
 
       // Note: mssql npm mis-evaluates string equality on feature in cross-view JOINs.
       // Workaround: fetch all features unfiltered, filter to 'investment-cases' in JS.
-      // Region is excluded from GROUP BY (already fixed in WHERE clause — all rows same region).
+      // Region is excluded from GROUP BY (already in WHERE clause — all rows same region).
+      // ic = PostHog UUID from IC page URL; scenario = scenario ID within that IC.
       queryLakehouse(`SELECT TOP 100
         e.feature,
         e.tenant,
+        e.scenario,
         COALESCE(NULLIF(e.price_zone,''), NULLIF(e.zone,'')) AS price_zone,
         e.ic AS ic_id,
         e.sensitivity,
         COUNT(*) AS runs,
         COUNT(DISTINCT e.person_id) AS unique_users
         ${join}
-        GROUP BY e.feature, e.tenant,
+        GROUP BY e.feature, e.tenant, e.scenario,
           COALESCE(NULLIF(e.price_zone,''), NULLIF(e.zone,'')),
           e.ic, e.sensitivity
         ORDER BY runs DESC`),
@@ -109,6 +111,7 @@ module.exports = async function phRegionDetail(req, res) {
         .slice(0, 50)
         .map(r => ({
           tenant:       r.tenant || null,
+          scenario:     r.scenario || null,
           price_zone:   r.price_zone || null,
           ic_id:        r.ic_id || null,
           sensitivity:  r.sensitivity || null,
