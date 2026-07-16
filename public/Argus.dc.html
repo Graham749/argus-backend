@@ -465,16 +465,16 @@ input{font-family:inherit;}
               </div>
             </div>
 
-            <!-- Runs tiles: IC / LB / BM -->
-            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px;">
-              <div style="background:#fff4f0;border-radius:8px;padding:12px;border:1px solid #fcd9b8;">
-                <div style="font-size:10px;font-weight:700;color:#F54E00;text-transform:uppercase;margin-bottom:4px;">Investment Cases</div>
-                <div style="font-size:22px;font-weight:700;color:#F54E00;" id="phIcRuns">—</div>
-                <div style="font-size:10px;color:#9d9d9d;margin-top:2px;">total runs</div>
-              </div>
+            <!-- Runs tiles (IC/LB/BM) + KPI cards — single 5-column row -->
+            <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:14px;">
               <div style="background:#f0f3ff;border-radius:8px;padding:12px;border:1px solid #c7d2fe;">
                 <div style="font-size:10px;font-weight:700;color:#1D4AFF;text-transform:uppercase;margin-bottom:4px;">Leaderboards</div>
                 <div style="font-size:22px;font-weight:700;color:#1D4AFF;" id="phLbRuns">—</div>
+                <div style="font-size:10px;color:#9d9d9d;margin-top:2px;">total runs</div>
+              </div>
+              <div style="background:#fff4f0;border-radius:8px;padding:12px;border:1px solid #fcd9b8;">
+                <div style="font-size:10px;font-weight:700;color:#F54E00;text-transform:uppercase;margin-bottom:4px;">Inv. Cases</div>
+                <div style="font-size:22px;font-weight:700;color:#F54E00;" id="phIcRuns">—</div>
                 <div style="font-size:10px;color:#9d9d9d;margin-top:2px;">total runs</div>
               </div>
               <div style="background:#fffbf0;border-radius:8px;padding:12px;border:1px solid #f5e0a0;">
@@ -482,35 +482,19 @@ input{font-family:inherit;}
                 <div style="font-size:22px;font-weight:700;color:#c98f00;" id="phBmRuns">—</div>
                 <div style="font-size:10px;color:#9d9d9d;margin-top:2px;">total runs</div>
               </div>
-            </div>
-
-            <!-- KPI comparison cards -->
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
               <div style="background:#f7f7f6;border-radius:8px;padding:12px;border:1px solid #e6e6e5;">
-                <div style="font-size:10px;font-weight:700;color:#6d6d6c;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;">Last Week</div>
-                <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
-                  <div>
-                    <div style="font-size:22px;font-weight:700;color:#3c3c3b;line-height:1;" id="phKpiWkVal">—</div>
-                    <div style="font-size:10px;color:#9d9d9d;margin-top:4px;" id="phKpiWkDates">—</div>
-                  </div>
-                  <div style="text-align:right;flex-shrink:0;">
-                    <div style="font-size:12px;font-weight:700;" id="phKpiWkDelta">—</div>
-                    <div style="font-size:10px;color:#9d9d9d;margin-top:4px;" id="phKpiWkPrev">—</div>
-                  </div>
-                </div>
+                <div style="font-size:10px;font-weight:700;color:#6d6d6c;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:6px;">Last Week</div>
+                <div style="font-size:20px;font-weight:700;color:#3c3c3b;line-height:1;" id="phKpiWkVal">—</div>
+                <div style="font-size:9px;color:#9d9d9d;margin-top:3px;" id="phKpiWkDates">—</div>
+                <div style="font-size:11px;font-weight:700;margin-top:4px;" id="phKpiWkDelta">—</div>
+                <div style="font-size:9px;color:#9d9d9d;" id="phKpiWkPrev">—</div>
               </div>
               <div style="background:#f7f7f6;border-radius:8px;padding:12px;border:1px solid #e6e6e5;">
-                <div style="font-size:10px;font-weight:700;color:#6d6d6c;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;">Last Month</div>
-                <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
-                  <div>
-                    <div style="font-size:22px;font-weight:700;color:#3c3c3b;line-height:1;" id="phKpiMoVal">—</div>
-                    <div style="font-size:10px;color:#9d9d9d;margin-top:4px;" id="phKpiMoDates">—</div>
-                  </div>
-                  <div style="text-align:right;flex-shrink:0;">
-                    <div style="font-size:12px;font-weight:700;" id="phKpiMoDelta">—</div>
-                    <div style="font-size:10px;color:#9d9d9d;margin-top:4px;" id="phKpiMoPrev">—</div>
-                  </div>
-                </div>
+                <div style="font-size:10px;font-weight:700;color:#6d6d6c;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:6px;">Last Month</div>
+                <div style="font-size:20px;font-weight:700;color:#3c3c3b;line-height:1;" id="phKpiMoVal">—</div>
+                <div style="font-size:9px;color:#9d9d9d;margin-top:3px;" id="phKpiMoDates">—</div>
+                <div style="font-size:11px;font-weight:700;margin-top:4px;" id="phKpiMoDelta">—</div>
+                <div style="font-size:9px;color:#9d9d9d;" id="phKpiMoPrev">—</div>
               </div>
             </div>
 
@@ -2741,8 +2725,13 @@ class Component extends DCLogic {
         : window.__phActiveRegion) || null;
       var badge = document.getElementById('phUsersRegionBadge');
       if (badge) {
-        badge.textContent = activeReg ? 'Filtered: ' + activeReg : '';
-        badge.style.display = activeReg ? 'inline-block' : 'none';
+        badge.innerHTML = activeReg
+          ? 'Filtered: <strong>' + activeReg + '</strong>'
+            + ' <span onclick="window.__phClearRegionFilter&&window.__phClearRegionFilter()" '
+            + 'style="cursor:pointer;margin-left:4px;font-size:13px;font-weight:700;opacity:0.7;vertical-align:middle;">×</span>'
+          : '';
+        badge.style.display = activeReg ? 'inline-flex' : 'none';
+        badge.style.alignItems = 'center';
       }
 
       bodyEl.innerHTML = '<tr><td colspan="7" style="padding:24px;text-align:center;color:#9d9d9d;font-size:12px;">Loading users' + (activeReg ? ' in ' + activeReg : '') + '…</td></tr>';
@@ -2974,13 +2963,14 @@ class Component extends DCLogic {
         var tile = document.getElementById('phUsersTile');
         if (tile) tile.onclick = function() {
           var usersEl = document.getElementById('phUsersView');
+          var arr = tile.querySelector('.drill-arrow');
           if (usersEl && usersEl.style.display !== 'none') {
             usersEl.style.display = 'none';
             window.__phResetUser && window.__phResetUser();
-            var arr = tile.querySelector('.drill-arrow');
-            if (arr) arr.style.opacity = '0.4';
+            if (arr) { arr.textContent = '▼'; arr.style.opacity = '0.35'; }
           } else {
             window.__phShowUsers && window.__phShowUsers();
+            if (arr) { arr.textContent = '▲'; arr.style.opacity = '1'; }
           }
         };
 
@@ -3564,6 +3554,15 @@ class Component extends DCLogic {
           };
           // Primary source of truth for region filter — reads IIFE closure directly
           window.__phGetActiveRegion = function() { return activeRegion; };
+          window.__phClearRegionFilter = function() {
+            activeRegion = null;
+            window.__phActiveRegion = null;
+            _syncUsersFilter();
+            buildCountryFilters();
+            renderBubbles();
+            var pop = document.getElementById('phGlobePopup');
+            if (pop) pop.style.display = 'none';
+          };
 
           var globeLoaded=false;
           function showRegionsView() {
