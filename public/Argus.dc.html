@@ -500,10 +500,8 @@ input{font-family:inherit;}
 
             <!-- Compare to base -->
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
-              <button id="phCompareBtn" onclick="window.__phToggleCompare && window.__phToggleCompare()"
-                style="font-size:10px;font-weight:700;padding:5px 12px;border-radius:6px;border:1.5px solid #288184;background:#fff;color:#288184;cursor:pointer;display:flex;align-items:center;gap:5px;transition:background 0.15s,color 0.15s;"
-                onmouseenter="this.style.background='#288184';this.style.color='#fff';"
-                onmouseleave="if(!this.dataset.active){this.style.background='#fff';this.style.color='#288184';}">
+              <button id="phCompareBtn"
+                style="font-size:10px;font-weight:700;padding:5px 12px;border-radius:6px;border:1.5px solid #288184;background:#fff;color:#288184;cursor:pointer;display:flex;align-items:center;gap:5px;transition:background 0.15s,color 0.15s;">
                 <span id="phCompareChev">▼</span> Compare to base
               </button>
               <span id="phCompareCaption" style="font-size:9px;color:#9d9d9d;"></span>
@@ -1372,6 +1370,8 @@ aside > div:nth-child(2) { transition: opacity 0.2s ease; }
 .sidebar-collapsed main { margin-left: 56px !important; }
 [data-toggle-sidebar] { transition: transform 0.3s ease; }
 .sidebar-collapsed [data-toggle-sidebar] { transform: scaleX(-1); }
+#phCompareBtn:hover:not([data-active]) { background:#288184 !important; color:#fff !important; }
+#phCompareBtn[data-active] { background:#288184 !important; color:#fff !important; }
 </style>
 
 <script>
@@ -1403,6 +1403,12 @@ document.addEventListener('click', function(e) {
   if (e.target.closest('#zdBackButton')) {
     var zdDv = document.getElementById('zdDetailView');
     if (zdDv) zdDv.style.display = 'none';
+    return;
+  }
+
+  // PostHog compare-to-base button
+  if (e.target.closest('#phCompareBtn')) {
+    window.__phToggleCompare && window.__phToggleCompare();
     return;
   }
 
