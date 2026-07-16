@@ -2408,6 +2408,11 @@ class Component extends DCLogic {
       { key: 'benchmarks',      color: '#c98f00', label: 'Benchmarks' },
       { key: 'untagged',        color: '#9d9d9c', label: 'Untagged' },
     ];
+    window.__phRunsSeries = [
+      { key: 'lbRuns', color: '#1D4AFF', label: 'Leaderboards' },
+      { key: 'icRuns', color: '#F54E00', label: 'Investment Cases' },
+      { key: 'bmRuns', color: '#c98f00', label: 'Benchmarks' },
+    ];
 
     window.__phBuild = function() {
       var chartEl  = document.getElementById('phChart');
@@ -2419,9 +2424,9 @@ class Component extends DCLogic {
 
       var metric = window.__phSelectedPid ? 'features' : (state.metric || 'features');
 
-      var runsSeries = [
-        { key: 'icRuns', color: '#F54E00', label: 'Investment Cases' },
+      var runsSeries = window.__phRunsSeries || [
         { key: 'lbRuns', color: '#1D4AFF', label: 'Leaderboards' },
+        { key: 'icRuns', color: '#F54E00', label: 'Investment Cases' },
         { key: 'bmRuns', color: '#c98f00', label: 'Benchmarks' },
       ];
 
@@ -2612,9 +2617,12 @@ class Component extends DCLogic {
       var tip = document.getElementById('phTooltip');
       if (!tip || !window.__phData || !window.__phState || !window.__phSeries) return;
       var state = window.__phState;
-      var pts = state.view === 'day' ? window.__phData.daily
-              : state.view === 'month' ? window.__phAggMonthly(window.__phData.daily)
-              : window.__phData.weekly;
+      var tipMetricEarly = window.__phSelectedPid ? 'features' : (state.metric || 'features');
+      var rawTipDaily  = (tipMetricEarly === 'runs') ? (window.__phData.dailyRuns  || []) : window.__phData.daily;
+      var rawTipWeekly = (tipMetricEarly === 'runs') ? (window.__phData.weeklyRuns || []) : window.__phData.weekly;
+      var pts = state.view === 'day' ? rawTipDaily
+              : state.view === 'month' ? window.__phAggMonthly(rawTipDaily)
+              : rawTipWeekly;
       if (!pts || pts.length === 0) return;
       var bounds = evt.target.getBoundingClientRect();
       // SVG viewBox is 560 wide; data area runs from padL=30 to W-padR=556
@@ -2627,7 +2635,7 @@ class Component extends DCLogic {
       var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
       var fmtTip = function(iso) { if (!iso) return '—'; var p = iso.split('-'); return p.length === 3 ? p[2]+'-'+months[parseInt(p[1],10)-1]+'-'+p[0].slice(2) : iso; };
       var html   = '<div style="font-weight:700;color:#3c3c3b;margin-bottom:3px;">'+fmtTip(d[lblKey])+'</div>';
-      var tipMetric = window.__phSelectedPid ? 'features' : (state.metric || 'features');
+      var tipMetric = tipMetricEarly;
       var tipUserSeries = [
         { key: 'investmentCasesUsers', color: '#F54E00', label: 'Investment Cases' },
         { key: 'leaderboardsUsers',    color: '#1D4AFF', label: 'Leaderboards' },
@@ -2636,6 +2644,7 @@ class Component extends DCLogic {
       ];
       var tipSeries = tipMetric === 'events' ? [{ key: 'events', color: '#288184', label: 'All Events' }]
                     : tipMetric === 'users'  ? tipUserSeries
+                    : tipMetric === 'runs'   ? (window.__phRunsSeries || [])
                     : window.__phSeries.filter(function(s) { return !!state[s.key]; });
       // Sort by current value descending
       tipSeries = tipSeries.slice().sort(function(a, b) { return (d[b.key]||0) - (d[a.key]||0); });
