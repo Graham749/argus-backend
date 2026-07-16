@@ -1553,26 +1553,24 @@ class Component extends DCLogic {
   }
 
   loadAccountWithMatchCheck(accountName) {
+    // Start all fetches immediately — don't wait for match check
     this.fetchSalesforceSubscriptions(accountName);
+    this.fetchZdTickets(accountName);
+    this.fetchPbInsights(accountName);
+    this.fetchPhTrends(accountName);
 
+    // account-matches runs in parallel — only used to hide cards with no data
     fetch('/api/account-matches?account=' + encodeURIComponent(accountName))
       .then(r => r.json())
       .then(matches => {
         var zdCard = document.getElementById('zdTicketsCard');
         var pbCard = document.getElementById('pbInsightsCard');
         var phCard = document.getElementById('phInsightsCard');
-        if (zdCard) zdCard.style.display = matches.hasZd ? '' : 'none';
-        if (pbCard) pbCard.style.display = matches.hasPb ? '' : 'none';
-        if (phCard) phCard.style.display = matches.hasPh ? '' : 'none';
-        if (matches.hasZd) this.fetchZdTickets(accountName);
-        if (matches.hasPb) this.fetchPbInsights(accountName);
-        if (matches.hasPh) this.fetchPhTrends(accountName);
+        if (zdCard && !matches.hasZd) zdCard.style.display = 'none';
+        if (pbCard && !matches.hasPb) pbCard.style.display = 'none';
+        if (phCard && !matches.hasPh) phCard.style.display = 'none';
       })
-      .catch(() => {
-        this.fetchZdTickets(accountName);
-        this.fetchPbInsights(accountName);
-        this.fetchPhTrends(accountName);
-      });
+      .catch(() => {});
   }
 
   setupSalesforceSubscriptions(){
