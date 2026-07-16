@@ -12,44 +12,47 @@ module.exports = async function phBenchmark(req, res) {
       WITH per_account AS (
         SELECT
           g.sf_account_name,
-          SUM(a.ph_total_events)     AS total_events,
-          SUM(a.ph_unique_users)     AS unique_users,
-          SUM(a.ph_events_last_30d)  AS events_30d,
-          SUM(a.ph_investment_cases) AS investment_cases,
-          SUM(a.ph_leaderboards)     AS leaderboards,
-          SUM(a.ph_benchmarks)       AS benchmarks
-        FROM dbo.v_silver_posthog_account_activity a
-        INNER JOIN dbo.v_gold_mdm_posthog g ON g.ph_tenant = a.ph_tenant
-        WHERE g.sf_account_name IS NOT NULL AND g.sf_account_name != ''
+          COUNT(*)                                                                          AS total_events,
+          COUNT(DISTINCT e.person_id)                                                       AS unique_users,
+          SUM(CASE WHEN e.timestamp >= DATEADD(day,-30,GETDATE()) THEN 1 ELSE 0 END)        AS events_30d,
+          SUM(CASE WHEN e.pathname LIKE '%/investment-cases%' THEN 1 ELSE 0 END)            AS investment_cases,
+          SUM(CASE WHEN e.pathname LIKE '%/leaderboards%'     THEN 1 ELSE 0 END)            AS leaderboards,
+          SUM(CASE WHEN e.pathname LIKE '%/benchmarks%'       THEN 1 ELSE 0 END)            AS benchmarks
+        FROM dbo.posthog_notebook_events e
+        INNER JOIN dbo.v_gold_mdm_posthog g
+          ON LOWER(LTRIM(RTRIM(e.tenant))) = g.ph_tenant
+        WHERE e.event = '$pageview'
+          AND g.sf_account_name IS NOT NULL
+          AND g.sf_account_name != ''
         GROUP BY g.sf_account_name
-        HAVING SUM(a.ph_total_events) >= 50
+        HAVING COUNT(*) >= 50
       )
       SELECT TOP 1
         (SELECT COUNT(*) FROM per_account)                                               AS account_count,
-        ROUND(PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY total_events)    OVER(), 0)  AS p25_events,
-        ROUND(PERCENTILE_CONT(0.50) WITHIN GROUP (ORDER BY total_events)    OVER(), 0)  AS p50_events,
-        ROUND(PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY total_events)    OVER(), 0)  AS p75_events,
-        ROUND(PERCENTILE_CONT(0.90) WITHIN GROUP (ORDER BY total_events)    OVER(), 0)  AS p90_events,
-        ROUND(PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY unique_users)    OVER(), 0)  AS p25_users,
-        ROUND(PERCENTILE_CONT(0.50) WITHIN GROUP (ORDER BY unique_users)    OVER(), 0)  AS p50_users,
-        ROUND(PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY unique_users)    OVER(), 0)  AS p75_users,
-        ROUND(PERCENTILE_CONT(0.90) WITHIN GROUP (ORDER BY unique_users)    OVER(), 0)  AS p90_users,
-        ROUND(PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY events_30d)      OVER(), 0)  AS p25_30d,
-        ROUND(PERCENTILE_CONT(0.50) WITHIN GROUP (ORDER BY events_30d)      OVER(), 0)  AS p50_30d,
-        ROUND(PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY events_30d)      OVER(), 0)  AS p75_30d,
-        ROUND(PERCENTILE_CONT(0.90) WITHIN GROUP (ORDER BY events_30d)      OVER(), 0)  AS p90_30d,
-        ROUND(PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY investment_cases) OVER(), 0) AS p25_ic,
-        ROUND(PERCENTILE_CONT(0.50) WITHIN GROUP (ORDER BY investment_cases) OVER(), 0) AS p50_ic,
-        ROUND(PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY investment_cases) OVER(), 0) AS p75_ic,
-        ROUND(PERCENTILE_CONT(0.90) WITHIN GROUP (ORDER BY investment_cases) OVER(), 0) AS p90_ic,
-        ROUND(PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY leaderboards)    OVER(), 0)  AS p25_lb,
-        ROUND(PERCENTILE_CONT(0.50) WITHIN GROUP (ORDER BY leaderboards)    OVER(), 0)  AS p50_lb,
-        ROUND(PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY leaderboards)    OVER(), 0)  AS p75_lb,
-        ROUND(PERCENTILE_CONT(0.90) WITHIN GROUP (ORDER BY leaderboards)    OVER(), 0)  AS p90_lb,
-        ROUND(PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY benchmarks)      OVER(), 0)  AS p25_bm,
-        ROUND(PERCENTILE_CONT(0.50) WITHIN GROUP (ORDER BY benchmarks)      OVER(), 0)  AS p50_bm,
-        ROUND(PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY benchmarks)      OVER(), 0)  AS p75_bm,
-        ROUND(PERCENTILE_CONT(0.90) WITHIN GROUP (ORDER BY benchmarks)      OVER(), 0)  AS p90_bm
+        ROUND(PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY total_events)      OVER(), 0) AS p25_events,
+        ROUND(PERCENTILE_CONT(0.50) WITHIN GROUP (ORDER BY total_events)      OVER(), 0) AS p50_events,
+        ROUND(PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY total_events)      OVER(), 0) AS p75_events,
+        ROUND(PERCENTILE_CONT(0.90) WITHIN GROUP (ORDER BY total_events)      OVER(), 0) AS p90_events,
+        ROUND(PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY unique_users)      OVER(), 0) AS p25_users,
+        ROUND(PERCENTILE_CONT(0.50) WITHIN GROUP (ORDER BY unique_users)      OVER(), 0) AS p50_users,
+        ROUND(PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY unique_users)      OVER(), 0) AS p75_users,
+        ROUND(PERCENTILE_CONT(0.90) WITHIN GROUP (ORDER BY unique_users)      OVER(), 0) AS p90_users,
+        ROUND(PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY events_30d)        OVER(), 0) AS p25_30d,
+        ROUND(PERCENTILE_CONT(0.50) WITHIN GROUP (ORDER BY events_30d)        OVER(), 0) AS p50_30d,
+        ROUND(PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY events_30d)        OVER(), 0) AS p75_30d,
+        ROUND(PERCENTILE_CONT(0.90) WITHIN GROUP (ORDER BY events_30d)        OVER(), 0) AS p90_30d,
+        ROUND(PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY investment_cases)  OVER(), 0) AS p25_ic,
+        ROUND(PERCENTILE_CONT(0.50) WITHIN GROUP (ORDER BY investment_cases)  OVER(), 0) AS p50_ic,
+        ROUND(PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY investment_cases)  OVER(), 0) AS p75_ic,
+        ROUND(PERCENTILE_CONT(0.90) WITHIN GROUP (ORDER BY investment_cases)  OVER(), 0) AS p90_ic,
+        ROUND(PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY leaderboards)      OVER(), 0) AS p25_lb,
+        ROUND(PERCENTILE_CONT(0.50) WITHIN GROUP (ORDER BY leaderboards)      OVER(), 0) AS p50_lb,
+        ROUND(PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY leaderboards)      OVER(), 0) AS p75_lb,
+        ROUND(PERCENTILE_CONT(0.90) WITHIN GROUP (ORDER BY leaderboards)      OVER(), 0) AS p90_lb,
+        ROUND(PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY benchmarks)        OVER(), 0) AS p25_bm,
+        ROUND(PERCENTILE_CONT(0.50) WITHIN GROUP (ORDER BY benchmarks)        OVER(), 0) AS p50_bm,
+        ROUND(PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY benchmarks)        OVER(), 0) AS p75_bm,
+        ROUND(PERCENTILE_CONT(0.90) WITHIN GROUP (ORDER BY benchmarks)        OVER(), 0) AS p90_bm
       FROM per_account
     `);
 
@@ -57,7 +60,7 @@ module.exports = async function phBenchmark(req, res) {
     const r = rows[0];
 
     const data = {
-      accountCount: Number(r.account_count),
+      accountCount:     Number(r.account_count),
       totalEvents:      { p25: Number(r.p25_events), p50: Number(r.p50_events), p75: Number(r.p75_events), p90: Number(r.p90_events) },
       uniqueUsers:      { p25: Number(r.p25_users),  p50: Number(r.p50_users),  p75: Number(r.p75_users),  p90: Number(r.p90_users)  },
       events30d:        { p25: Number(r.p25_30d),    p50: Number(r.p50_30d),    p75: Number(r.p75_30d),    p90: Number(r.p90_30d)    },

@@ -2964,14 +2964,16 @@ class Component extends DCLogic {
         setText('phIcRuns', totalIc.toLocaleString());
         setText('phBmRuns', totalBm.toLocaleString());
 
-        // Store account summary for benchmark comparison; reset panel on each new account load
+        // Store account summary for benchmark comparison; reset panel on each new account load.
+        // IC/LB/BM use tile values (totalIc/Lb/Bm) — same pathname-based count as the tiles,
+        // not the silver view aggregates which use a different methodology.
         window.__phCurrentSummary = {
           totalEvents:     s.totalEvents,
           uniqueUsers:     s.uniqueUsers,
           events30d:       s.events30d,
-          investmentCases: s.investmentCases || 0,
-          leaderboards:    s.leaderboards    || 0,
-          benchmarks:      s.benchmarks      || 0,
+          investmentCases: totalIc,
+          leaderboards:    totalLb,
+          benchmarks:      totalBm,
         };
         (function(){
           var panel = document.getElementById('phBenchmarkPanel');
