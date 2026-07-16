@@ -3051,14 +3051,18 @@ class Component extends DCLogic {
               btn.style.cssText = 'padding:3px 8px;border-radius:10px;border:1px solid '
                 +(isActive?'#3c3c3b':'#e6e6e5')+';background:'+(isActive?'#3c3c3b':'#fff')
                 +';color:'+(isActive?'#fff':'#6d6d6c')+';font-size:9px;cursor:pointer;transition:all 0.15s;';
-              btn.onclick = function() {
-                if (activeRegion===code) {
+              btn.onclick = (function(c) { return function() {
+                if (activeRegion===c) {
                   activeRegion=null; buildCountryFilters(); renderBubbles();
+                  var pop=document.getElementById('phGlobePopup'); if(pop) pop.style.display='none';
                   if (activeZone) zoomToZone(activeZone);
                 } else {
-                  activeRegion=code; buildCountryFilters(); renderBubbles(); zoomToRegionCode(code);
+                  activeRegion=c; buildCountryFilters(); renderBubbles(); zoomToRegionCode(c);
+                  // Show drilldown for selected country
+                  var items=currentRows.filter(function(r){return r.region===c;});
+                  showRegionDrilldown(c, items);
                 }
-              };
+              }; })(code);
               el.appendChild(btn);
             });
           }
@@ -3137,48 +3141,115 @@ class Component extends DCLogic {
             el.innerHTML = html;
           }
 
-          // ── Circle-click popup — simple local-data table, no fetch ──────
-          function showCirclePopup(regionCode, items) {
+          // ── Clean price zone values (strips ["NSW"] JSON notation) ──────
+          function cleanZone(val) {
+            if (!val) return null;
+            var m = val.match(/^\["(.+)"\]$/);
+            if (m) return m[1];
+            if (val === '[]') return null;
+            return val;
+          }
+
+          // ── Region drilldown popup — instant local summary + async detail ─
+          function showRegionDrilldown(regionCode, localItems) {
             var el = document.getElementById('phGlobePopup');
             if (!el) return;
-            var sorted = items.slice().sort(function(a,b){return b.runs-a.runs;});
-            var total  = items.reduce(function(s,r){return s+r.runs;},0);
+            var sorted = (localItems||[]).slice().sort(function(a,b){return b.runs-a.runs;});
+            var total  = sorted.reduce(function(s,r){return s+r.runs;},0);
 
-            var html =
-              '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">'
-              +'<strong style="font-size:12px;color:#3c3c3b;">'+regionName(regionCode)+'</strong>'
-              +'<button onclick="document.getElementById(\'phGlobePopup\').style.display=\'none\'" '
-              +'style="border:none;background:none;font-size:16px;color:#c8c8c7;cursor:pointer;line-height:1;padding:0 0 0 8px;">×</button>'
-              +'</div>'
-              +'<table style="width:100%;border-collapse:collapse;">'
-              +'<thead><tr>'
-              +'<th style="text-align:left;padding:3px 4px;border-bottom:1px solid #e6e6e5;color:#9d9d9d;font-size:9px;font-weight:600;">Feature</th>'
-              +'<th style="text-align:right;padding:3px 4px;border-bottom:1px solid #e6e6e5;color:#9d9d9d;font-size:9px;font-weight:600;">Runs</th>'
-              +'<th style="padding:3px 4px;border-bottom:1px solid #e6e6e5;color:#9d9d9d;font-size:9px;font-weight:600;">Share</th>'
-              +'</tr></thead><tbody>';
+            function featureDot(f) {
+              return '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'
+                +(FEATURE_COLORS[f]||'#9d9d9d')+';margin-right:4px;vertical-align:middle;"></span>';
+            }
+            function featureChips() {
+              return sorted.map(function(r){
+                var pct=total>0?Math.round(r.runs/total*100):0;
+                return featureDot(r.feature)
+                  +'<span style="font-size:10px;color:#3c3c3b;">'+(FEATURE_LABELS[r.feature]||r.feature)+'</span>'
+                  +' <span style="font-size:10px;color:#6d6d6c;font-weight:600;">'+r.runs.toLocaleString()+'</span>'
+                  +' <span style="font-size:9px;color:#b0b0af;">('+pct+'%)</span>';
+              }).join('<span style="margin:0 8px;color:#e6e6e5;">|</span>');
+            }
 
-            sorted.forEach(function(r) {
-              var pct = total>0 ? Math.round(r.runs/total*100) : 0;
-              html += '<tr style="border-bottom:1px solid #f8f8f7;">'
-                +'<td style="padding:5px 4px;font-size:10px;color:#3c3c3b;">'
-                +'<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+(FEATURE_COLORS[r.feature]||'#9d9d9d')+';margin-right:5px;vertical-align:middle;"></span>'
-                +(FEATURE_LABELS[r.feature]||r.feature)+'</td>'
-                +'<td style="text-align:right;padding:5px 4px;font-size:10px;color:#6d6d6c;">'+r.runs.toLocaleString()+'</td>'
-                +'<td style="padding:5px 4px;min-width:90px;">'
-                +'<div style="height:5px;background:#f0f0ef;border-radius:3px;margin-bottom:2px;">'
-                +'<div style="height:5px;border-radius:3px;background:'+(FEATURE_COLORS[r.feature]||'#9d9d9d')+';width:'+pct+'%;"></div></div>'
-                +'<span style="font-size:9px;color:#9d9d9d;">'+pct+'%</span>'
-                +'</td></tr>';
-            });
+            function baseHtml(bodyHtml) {
+              return '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">'
+                +'<div><strong style="font-size:12px;color:#3c3c3b;">'+regionName(regionCode)+'</strong>'
+                +' <span style="font-size:10px;color:#9d9d9d;margin-left:4px;">'+total.toLocaleString()+' runs</span></div>'
+                +'<button onclick="document.getElementById(\'phGlobePopup\').style.display=\'none\'" '
+                +'style="border:none;background:none;font-size:16px;color:#c8c8c7;cursor:pointer;line-height:1;padding:0 0 0 8px;">×</button>'
+                +'</div>'
+                +'<div style="margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid #f0f0ef;">'
+                +featureChips()+'</div>'
+                +bodyHtml;
+            }
 
-            html += '<tr style="border-top:1px solid #e6e6e5;">'
-              +'<td style="padding:5px 4px;font-size:10px;font-weight:700;color:#3c3c3b;">Total</td>'
-              +'<td style="text-align:right;padding:5px 4px;font-size:10px;font-weight:700;color:#3c3c3b;">'+total.toLocaleString()+'</td>'
-              +'<td></td></tr>'
-              +'</tbody></table>';
-
-            el.innerHTML = html;
+            el.innerHTML = baseHtml('<div id="phPopupDetail" style="color:#9d9d9d;font-size:10px;padding:6px 0;">Loading detail…</div>');
             el.style.display = 'block';
+
+            var url = '/api/ph-region-detail?account='+encodeURIComponent(accountName)
+              +'&region='+encodeURIComponent(regionCode)
+              +(currentPersonId?'&personId='+encodeURIComponent(currentPersonId):'');
+
+            fetch(url).then(function(r){return r.json();}).then(function(data){
+              var detEl = document.getElementById('phPopupDetail');
+              if (!detEl) return;
+
+              // Mini summaries (scenarios + price zones + sensitivity)
+              function miniList(items, label, isZone) {
+                if (!items||!items.length) return '';
+                var rows = items.slice(0,5).map(function(r){
+                  var v = isZone ? (cleanZone(r.val)||r.val) : r.val;
+                  return '<div style="display:flex;justify-content:space-between;gap:8px;padding:1px 0;">'
+                    +'<span style="color:#3c3c3b;font-size:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100px;" title="'+v+'">'+v+'</span>'
+                    +'<span style="color:#6d6d6c;font-size:9px;font-weight:600;white-space:nowrap;">'+Number(r.runs).toLocaleString()+'</span>'
+                    +'</div>';
+                }).join('');
+                return '<div style="flex:1 1 0;">'
+                  +'<div style="font-size:9px;font-weight:700;color:#9d9d9d;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:3px;">'+label+'</div>'
+                  +rows+'</div>';
+              }
+
+              var miniRow = '<div style="display:flex;gap:12px;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid #f0f0ef;">'
+                +miniList(data.scenarios,'Scenarios',false)
+                +miniList(data.priceZones,'Price Zones',true)
+                +miniList(data.sensitivities,'Sensitivity',false)
+                +'</div>';
+
+              // Detail table: Feature | Scenario | Price Zone | Runs
+              var rows = (data.detail||[]).slice(0,25);
+              var tableHtml = '<div style="font-size:9px;font-weight:700;color:#9d9d9d;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:4px;">Run Detail</div>'
+                +'<div style="overflow-y:auto;max-height:200px;">'
+                +'<table style="width:100%;border-collapse:collapse;">'
+                +'<thead><tr>'
+                +'<th style="text-align:left;padding:2px 4px;border-bottom:1px solid #e6e6e5;font-size:8px;font-weight:700;color:#9d9d9d;white-space:nowrap;">Feature</th>'
+                +'<th style="text-align:left;padding:2px 4px;border-bottom:1px solid #e6e6e5;font-size:8px;font-weight:700;color:#9d9d9d;">Scenario</th>'
+                +'<th style="text-align:left;padding:2px 4px;border-bottom:1px solid #e6e6e5;font-size:8px;font-weight:700;color:#9d9d9d;">Price Zone</th>'
+                +'<th style="text-align:left;padding:2px 4px;border-bottom:1px solid #e6e6e5;font-size:8px;font-weight:700;color:#9d9d9d;">Sensitivity</th>'
+                +'<th style="text-align:right;padding:2px 4px;border-bottom:1px solid #e6e6e5;font-size:8px;font-weight:700;color:#9d9d9d;">Runs</th>'
+                +'</tr></thead><tbody>';
+
+              rows.forEach(function(r, i) {
+                var pz = cleanZone(r.price_zone) || '—';
+                var bg = i%2===0 ? '#fff' : '#fafaf9';
+                tableHtml += '<tr style="background:'+bg+';">'
+                  +'<td style="padding:3px 4px;font-size:9px;white-space:nowrap;">'
+                  +'<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:'+(FEATURE_COLORS[r.feature]||'#9d9d9d')+';margin-right:3px;vertical-align:middle;"></span>'
+                  +(FEATURE_SHORT[r.feature]||r.feature)+'</td>'
+                  +'<td style="padding:3px 4px;font-size:9px;color:#3c3c3b;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="'+r.scenario+'">'+r.scenario+'</td>'
+                  +'<td style="padding:3px 4px;font-size:9px;color:#3c3c3b;">'+pz+'</td>'
+                  +'<td style="padding:3px 4px;font-size:9px;color:#6d6d6c;">'+(r.sensitivity||'—')+'</td>'
+                  +'<td style="text-align:right;padding:3px 4px;font-size:9px;font-weight:600;color:#3c3c3b;">'+Number(r.runs).toLocaleString()+'</td>'
+                  +'</tr>';
+              });
+
+              tableHtml += '</tbody></table></div>';
+              if (rows.length===0) tableHtml = '<div style="font-size:10px;color:#9d9d9d;padding:6px 0;">No scenario data available.</div>';
+
+              detEl.innerHTML = miniRow + tableHtml;
+            }).catch(function(err){
+              var detEl = document.getElementById('phPopupDetail');
+              if (detEl) detEl.innerHTML = '<div style="color:#c0392b;font-size:10px;">Could not load detail.</div>';
+            });
           }
 
           // ── Auto-zoom helpers ─────────────────────────────────────────
@@ -3247,7 +3318,7 @@ class Component extends DCLogic {
                 .style('cursor','pointer')
                 .on('click',function(event){
                   event.stopPropagation();
-                  showCirclePopup(reg,byRegion[reg]);
+                  showRegionDrilldown(reg,byRegion[reg]);
                 })
                 .append('title').text(c[2]+' — '+total.toLocaleString()+' runs');
             });
@@ -3326,9 +3397,12 @@ class Component extends DCLogic {
           window.__phGlobeSelectRegion=function(code){
             if (activeRegion===code) {
               activeRegion=null;
+              var pop=document.getElementById('phGlobePopup'); if(pop) pop.style.display='none';
             } else {
               activeRegion=code;
               zoomToRegionCode(code);
+              var items=currentRows.filter(function(r){return r.region===code;});
+              showRegionDrilldown(code, items);
             }
             renderBubbles(); buildTable(currentRows); buildCountryFilters();
           };

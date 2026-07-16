@@ -45,7 +45,7 @@ module.exports = async function phRegionDetail(req, res) {
     WHERE g.sf_account_name = '${sa}' AND e.region = '${sr}' ${pf}`;
 
   try {
-    const [scenarios, priceZones, sensitivities] = await Promise.all([
+    const [scenarios, priceZones, sensitivities, detail] = await Promise.all([
       queryLakehouse(`SELECT TOP 8 e.scenario AS val, COUNT(*) AS runs ${join}
         AND e.scenario IS NOT NULL AND e.scenario != ''
         GROUP BY e.scenario ORDER BY runs DESC`),
@@ -57,13 +57,30 @@ module.exports = async function phRegionDetail(req, res) {
       queryLakehouse(`SELECT TOP 6 e.sensitivity AS val, COUNT(*) AS runs ${join}
         AND e.sensitivity IS NOT NULL AND e.sensitivity != ''
         GROUP BY e.sensitivity ORDER BY runs DESC`),
+
+      queryLakehouse(`SELECT TOP 30
+        ISNULL(e.feature, 'other') AS feature,
+        e.scenario AS scenario,
+        COALESCE(NULLIF(e.price_zone,''), NULLIF(e.zone,'')) AS price_zone,
+        e.sensitivity AS sensitivity,
+        COUNT(*) AS runs
+        ${join}
+        AND e.scenario IS NOT NULL AND e.scenario != ''
+        GROUP BY e.feature, e.scenario, COALESCE(NULLIF(e.price_zone,''), NULLIF(e.zone,'')), e.sensitivity
+        ORDER BY runs DESC`),
     ]);
 
     res.json({
       scenarios:     scenarios.map(r => ({ val: r.val, runs: Number(r.runs) })),
-      ics:           ics.map(r => ({ val: r.val, runs: Number(r.runs) })),
       priceZones:    priceZones.filter(r => r.val).map(r => ({ val: r.val, runs: Number(r.runs) })),
       sensitivities: sensitivities.map(r => ({ val: r.val, runs: Number(r.runs) })),
+      detail:        detail.map(r => ({
+        feature:     r.feature || 'other',
+        scenario:    r.scenario,
+        price_zone:  r.price_zone || null,
+        sensitivity: r.sensitivity || null,
+        runs:        Number(r.runs),
+      })),
     });
   } catch (err) {
     console.error('[ph-region-detail]', err.message);
