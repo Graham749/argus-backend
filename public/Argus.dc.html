@@ -3142,40 +3142,111 @@ class Component extends DCLogic {
             return val;
           }
 
-          // ── Region drilldown popup — instant local summary + async detail ─
+          // ── Region drilldown popup — tabbed: Overview / Investment Cases ─
+          var _drillData = null; // cached for tab switching
+
+          function _drillTabBtn(label, key, active) {
+            var isActive = key === active;
+            return '<button onclick="window.__phDrillTab(\''+key+'\')" style="padding:4px 10px;border-radius:10px;border:1px solid '
+              +(isActive?'#3c3c3b':'#e6e6e5')+';background:'+(isActive?'#3c3c3b':'#fff')
+              +';color:'+(isActive?'#fff':'#6d6d6c')+';font-size:9px;font-weight:600;cursor:pointer;transition:all 0.15s;">'+label+'</button>';
+          }
+
+          function _renderDrillOverview(data) {
+            function miniList(items, label, isZone) {
+              if (!items||!items.length) return '';
+              var rows = items.slice(0,5).map(function(r){
+                var v = isZone ? (cleanZone(r.val)||r.val) : r.val;
+                return '<div style="display:flex;justify-content:space-between;gap:8px;padding:1px 0;">'
+                  +'<span style="color:#3c3c3b;font-size:9px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100px;" title="'+v+'">'+v+'</span>'
+                  +'<span style="color:#6d6d6c;font-size:9px;font-weight:600;white-space:nowrap;">'+Number(r.runs).toLocaleString()+'</span>'
+                  +'</div>';
+              }).join('');
+              return '<div style="flex:1 1 0;min-width:0;">'
+                +'<div style="font-size:9px;font-weight:700;color:#9d9d9d;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:3px;">'+label+'</div>'
+                +rows+'</div>';
+            }
+            var hasAny = (data.scenarios&&data.scenarios.length)||(data.priceZones&&data.priceZones.length)||(data.sensitivities&&data.sensitivities.length);
+            if (!hasAny) return '<div style="font-size:10px;color:#9d9d9d;padding:4px 0;">No scenario breakdown available for this region.</div>';
+            return '<div style="display:flex;gap:12px;">'
+              +miniList(data.scenarios,'Scenarios',false)
+              +miniList(data.priceZones,'Price Zones',true)
+              +miniList(data.sensitivities,'Sensitivity',false)
+              +'</div>';
+          }
+
+          function _renderDrillIC(data) {
+            var rows = data.icDetail||[];
+            var total = data.totalUsers||0;
+            if (!rows.length) return '<div style="font-size:10px;color:#9d9d9d;padding:4px 0;">No Investment Case runs for this region.</div>';
+            var th = function(label, align) {
+              return '<th style="text-align:'+(align||'left')+';padding:3px 5px;border-bottom:2px solid #e6e6e5;font-size:8px;font-weight:700;color:#9d9d9d;white-space:nowrap;position:sticky;top:0;background:#fff;">'+label+'</th>';
+            };
+            var html = '<div style="overflow-y:auto;max-height:220px;">'
+              +'<table style="width:100%;border-collapse:collapse;">'
+              +'<thead><tr>'
+              +th('Tenant')+th('Region')+th('Price Zone')+th('IC ID')+th('Sensitivity')+th('Runs','right')+th('Users %','right')
+              +'</tr></thead><tbody>';
+            rows.forEach(function(r,i) {
+              var pz  = cleanZone(r.price_zone)||'—';
+              var icShort = r.ic_id ? r.ic_id.substring(0,8)+'…' : '—';
+              var userPct = (total>0 && r.unique_users>0) ? (r.unique_users/total*100).toFixed(1)+'%' : '—';
+              var bg = i%2===0?'#fff':'#fafaf9';
+              html += '<tr style="background:'+bg+';">'
+                +'<td style="padding:3px 5px;font-size:9px;color:#3c3c3b;white-space:nowrap;">'+r.tenant+'</td>'
+                +'<td style="padding:3px 5px;font-size:9px;color:#6d6d6c;white-space:nowrap;">'+r.region+'</td>'
+                +'<td style="padding:3px 5px;font-size:9px;color:#3c3c3b;">'+pz+'</td>'
+                +'<td style="padding:3px 5px;font-size:9px;color:#6d6d6c;font-family:monospace;" title="'+(r.ic_id||'')+'">'+icShort+'</td>'
+                +'<td style="padding:3px 5px;font-size:9px;color:#6d6d6c;">'+( r.sensitivity||'—')+'</td>'
+                +'<td style="text-align:right;padding:3px 5px;font-size:9px;font-weight:600;color:#3c3c3b;">'+Number(r.runs).toLocaleString()+'</td>'
+                +'<td style="text-align:right;padding:3px 5px;font-size:9px;color:#e36a00;font-weight:600;" title="'+r.unique_users+' of '+total+' users">'
+                +userPct+'<span style="font-size:8px;color:#b0b0af;margin-left:2px;">('+r.unique_users+')</span></td>'
+                +'</tr>';
+            });
+            html += '</tbody></table></div>';
+            html += '<div style="font-size:8px;color:#b0b0af;margin-top:4px;">'+total+' distinct users in region · IC ID truncated — hover for full UUID</div>';
+            return html;
+          }
+
+          window.__phDrillTab = function(tab) {
+            if (!_drillData) return;
+            var tabs = document.getElementById('phPopupTabs');
+            var body = document.getElementById('phPopupTabBody');
+            if (!tabs||!body) return;
+            tabs.innerHTML = _drillTabBtn('Overview','overview',tab)+' '+_drillTabBtn('Investment Cases','ic',tab);
+            body.innerHTML = tab==='ic' ? _renderDrillIC(_drillData) : _renderDrillOverview(_drillData);
+          };
+
           function showRegionDrilldown(regionCode, localItems) {
             var el = document.getElementById('phGlobePopup');
             if (!el) return;
+            _drillData = null;
             var sorted = (localItems||[]).slice().sort(function(a,b){return b.runs-a.runs;});
             var total  = sorted.reduce(function(s,r){return s+r.runs;},0);
 
-            function featureDot(f) {
-              return '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'
-                +(FEATURE_COLORS[f]||'#9d9d9d')+';margin-right:4px;vertical-align:middle;"></span>';
-            }
-            function featureChips() {
-              return sorted.map(function(r){
-                var pct=total>0?Math.round(r.runs/total*100):0;
-                return featureDot(r.feature)
-                  +'<span style="font-size:10px;color:#3c3c3b;">'+(FEATURE_LABELS[r.feature]||r.feature)+'</span>'
-                  +' <span style="font-size:10px;color:#6d6d6c;font-weight:600;">'+r.runs.toLocaleString()+'</span>'
-                  +' <span style="font-size:9px;color:#b0b0af;">('+pct+'%)</span>';
-              }).join('<span style="margin:0 8px;color:#e6e6e5;">|</span>');
-            }
+            var chips = sorted.map(function(r){
+              var pct = total>0?Math.round(r.runs/total*100):0;
+              return '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+(FEATURE_COLORS[r.feature]||'#9d9d9d')+';margin-right:4px;vertical-align:middle;"></span>'
+                +'<span style="font-size:10px;color:#3c3c3b;">'+(FEATURE_LABELS[r.feature]||r.feature)+'</span>'
+                +' <span style="font-size:10px;color:#6d6d6c;font-weight:600;">'+r.runs.toLocaleString()+'</span>'
+                +' <span style="font-size:9px;color:#b0b0af;">('+pct+'%)</span>';
+            }).join('<span style="margin:0 8px;color:#e6e6e5;">|</span>');
 
-            function baseHtml(bodyHtml) {
-              return '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">'
-                +'<div><strong style="font-size:12px;color:#3c3c3b;">'+regionName(regionCode)+'</strong>'
-                +' <span style="font-size:10px;color:#9d9d9d;margin-left:4px;">'+total.toLocaleString()+' runs</span></div>'
-                +'<button onclick="document.getElementById(\'phGlobePopup\').style.display=\'none\'" '
-                +'style="border:none;background:none;font-size:16px;color:#c8c8c7;cursor:pointer;line-height:1;padding:0 0 0 8px;">×</button>'
-                +'</div>'
-                +'<div style="margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid #f0f0ef;">'
-                +featureChips()+'</div>'
-                +bodyHtml;
-            }
+            var hasIC = sorted.some(function(r){return r.feature==='investment-cases';});
 
-            el.innerHTML = baseHtml('<div id="phPopupDetail" style="color:#9d9d9d;font-size:10px;padding:6px 0;">Loading detail…</div>');
+            el.innerHTML =
+              '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">'
+              +'<div><strong style="font-size:12px;color:#3c3c3b;">'+regionName(regionCode)+'</strong>'
+              +' <span style="font-size:10px;color:#9d9d9d;margin-left:4px;">'+total.toLocaleString()+' runs</span></div>'
+              +'<button onclick="document.getElementById(\'phGlobePopup\').style.display=\'none\'" '
+              +'style="border:none;background:none;font-size:16px;color:#c8c8c7;cursor:pointer;line-height:1;padding:0 0 0 8px;">×</button>'
+              +'</div>'
+              +'<div style="margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid #f0f0ef;">'+chips+'</div>'
+              +'<div id="phPopupTabs" style="display:flex;gap:6px;margin-bottom:10px;">'
+              +_drillTabBtn('Overview','overview','overview')
+              +(hasIC ? ' '+_drillTabBtn('Investment Cases','ic','overview') : '')
+              +'</div>'
+              +'<div id="phPopupTabBody" style="color:#9d9d9d;font-size:10px;">Loading…</div>';
             el.style.display = 'block';
 
             var url = '/api/ph-region-detail?account='+encodeURIComponent(accountName)
@@ -3183,64 +3254,12 @@ class Component extends DCLogic {
               +(currentPersonId?'&personId='+encodeURIComponent(currentPersonId):'');
 
             fetch(url).then(function(r){return r.json();}).then(function(data){
-              var detEl = document.getElementById('phPopupDetail');
-              if (!detEl) return;
-
-              // Mini summaries (scenarios + price zones + sensitivity)
-              function miniList(items, label, isZone) {
-                if (!items||!items.length) return '';
-                var rows = items.slice(0,5).map(function(r){
-                  var v = isZone ? (cleanZone(r.val)||r.val) : r.val;
-                  return '<div style="display:flex;justify-content:space-between;gap:8px;padding:1px 0;">'
-                    +'<span style="color:#3c3c3b;font-size:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100px;" title="'+v+'">'+v+'</span>'
-                    +'<span style="color:#6d6d6c;font-size:9px;font-weight:600;white-space:nowrap;">'+Number(r.runs).toLocaleString()+'</span>'
-                    +'</div>';
-                }).join('');
-                return '<div style="flex:1 1 0;">'
-                  +'<div style="font-size:9px;font-weight:700;color:#9d9d9d;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:3px;">'+label+'</div>'
-                  +rows+'</div>';
-              }
-
-              var miniRow = '<div style="display:flex;gap:12px;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid #f0f0ef;">'
-                +miniList(data.scenarios,'Scenarios',false)
-                +miniList(data.priceZones,'Price Zones',true)
-                +miniList(data.sensitivities,'Sensitivity',false)
-                +'</div>';
-
-              // Detail table: Feature | Scenario | Price Zone | Runs
-              var rows = (data.detail||[]).slice(0,25);
-              var tableHtml = '<div style="font-size:9px;font-weight:700;color:#9d9d9d;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:4px;">Run Detail</div>'
-                +'<div style="overflow-y:auto;max-height:200px;">'
-                +'<table style="width:100%;border-collapse:collapse;">'
-                +'<thead><tr>'
-                +'<th style="text-align:left;padding:2px 4px;border-bottom:1px solid #e6e6e5;font-size:8px;font-weight:700;color:#9d9d9d;white-space:nowrap;">Feature</th>'
-                +'<th style="text-align:left;padding:2px 4px;border-bottom:1px solid #e6e6e5;font-size:8px;font-weight:700;color:#9d9d9d;">Scenario</th>'
-                +'<th style="text-align:left;padding:2px 4px;border-bottom:1px solid #e6e6e5;font-size:8px;font-weight:700;color:#9d9d9d;">Price Zone</th>'
-                +'<th style="text-align:left;padding:2px 4px;border-bottom:1px solid #e6e6e5;font-size:8px;font-weight:700;color:#9d9d9d;">Sensitivity</th>'
-                +'<th style="text-align:right;padding:2px 4px;border-bottom:1px solid #e6e6e5;font-size:8px;font-weight:700;color:#9d9d9d;">Runs</th>'
-                +'</tr></thead><tbody>';
-
-              rows.forEach(function(r, i) {
-                var pz = cleanZone(r.price_zone) || '—';
-                var bg = i%2===0 ? '#fff' : '#fafaf9';
-                tableHtml += '<tr style="background:'+bg+';">'
-                  +'<td style="padding:3px 4px;font-size:9px;white-space:nowrap;">'
-                  +'<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:'+(FEATURE_COLORS[r.feature]||'#9d9d9d')+';margin-right:3px;vertical-align:middle;"></span>'
-                  +(FEATURE_SHORT[r.feature]||r.feature)+'</td>'
-                  +'<td style="padding:3px 4px;font-size:9px;color:#3c3c3b;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="'+r.scenario+'">'+r.scenario+'</td>'
-                  +'<td style="padding:3px 4px;font-size:9px;color:#3c3c3b;">'+pz+'</td>'
-                  +'<td style="padding:3px 4px;font-size:9px;color:#6d6d6c;">'+(r.sensitivity||'—')+'</td>'
-                  +'<td style="text-align:right;padding:3px 4px;font-size:9px;font-weight:600;color:#3c3c3b;">'+Number(r.runs).toLocaleString()+'</td>'
-                  +'</tr>';
-              });
-
-              tableHtml += '</tbody></table></div>';
-              if (rows.length===0) tableHtml = '<div style="font-size:10px;color:#9d9d9d;padding:6px 0;">No run detail available.</div>';
-
-              detEl.innerHTML = miniRow + tableHtml;
-            }).catch(function(err){
-              var detEl = document.getElementById('phPopupDetail');
-              if (detEl) detEl.innerHTML = '<div style="color:#c0392b;font-size:10px;">Could not load detail.</div>';
+              _drillData = data;
+              var body = document.getElementById('phPopupTabBody');
+              if (body) body.innerHTML = _renderDrillOverview(data);
+            }).catch(function(){
+              var body = document.getElementById('phPopupTabBody');
+              if (body) body.innerHTML = '<div style="color:#c0392b;font-size:10px;">Could not load detail.</div>';
             });
           }
 

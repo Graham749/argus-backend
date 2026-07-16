@@ -45,7 +45,7 @@ module.exports = async function phRegionDetail(req, res) {
     WHERE g.sf_account_name = '${sa}' AND e.region = '${sr}' ${pf}`;
 
   try {
-    const [scenarios, priceZones, sensitivities, detail] = await Promise.all([
+    const [scenarios, priceZones, sensitivities, detail, icDetail, totalUsers] = await Promise.all([
       queryLakehouse(`SELECT TOP 8 e.scenario AS val, COUNT(*) AS runs ${join}
         AND e.scenario IS NOT NULL AND e.scenario != ''
         GROUP BY e.scenario ORDER BY runs DESC`),
@@ -67,6 +67,23 @@ module.exports = async function phRegionDetail(req, res) {
         ${join}
         GROUP BY e.feature, e.scenario, COALESCE(NULLIF(e.price_zone,''), NULLIF(e.zone,'')), e.sensitivity
         ORDER BY runs DESC`),
+
+      queryLakehouse(`SELECT TOP 50
+        e.tenant,
+        e.region,
+        COALESCE(NULLIF(e.price_zone,''), NULLIF(e.zone,'')) AS price_zone,
+        e.ic AS ic_id,
+        e.sensitivity,
+        COUNT(*) AS runs,
+        COUNT(DISTINCT e.person_id) AS unique_users
+        ${join}
+        AND e.feature = 'investment-cases'
+        GROUP BY e.tenant, e.region,
+          COALESCE(NULLIF(e.price_zone,''), NULLIF(e.zone,'')),
+          e.ic, e.sensitivity
+        ORDER BY runs DESC`),
+
+      queryLakehouse(`SELECT COUNT(DISTINCT e.person_id) AS total_users ${join}`),
     ]);
 
     res.json({
@@ -79,6 +96,16 @@ module.exports = async function phRegionDetail(req, res) {
         price_zone:  r.price_zone || null,
         sensitivity: r.sensitivity || null,
         runs:        Number(r.runs),
+      })),
+      totalUsers: Number(totalUsers[0]?.total_users || 0),
+      icDetail:   icDetail.map(r => ({
+        tenant:       r.tenant,
+        region:       r.region,
+        price_zone:   r.price_zone || null,
+        ic_id:        r.ic_id || null,
+        sensitivity:  r.sensitivity || null,
+        runs:         Number(r.runs),
+        unique_users: Number(r.unique_users),
       })),
     });
   } catch (err) {
