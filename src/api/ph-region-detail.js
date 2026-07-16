@@ -85,7 +85,11 @@ module.exports = async function phRegionDetail(req, res) {
           e.ic, e.sensitivity
         ORDER BY runs DESC`),
 
-      queryLakehouse(`SELECT COUNT(DISTINCT e.person_id) AS total_users ${join}`),
+      // Total users = account-wide (all regions), not region-filtered — gives correct % denominator
+      queryLakehouse(`SELECT COUNT(DISTINCT e.person_id) AS total_users
+        FROM dbo.posthog_notebook_events e
+        INNER JOIN dbo.v_gold_mdm_posthog g ON g.ph_tenant = e.tenant
+        WHERE g.sf_account_name = '${sa}' ${pf}`),
     ]);
 
     res.json({

@@ -3175,11 +3175,11 @@ class Component extends DCLogic {
             var html = '<div style="overflow-y:auto;max-height:220px;">'
               +'<table style="width:100%;border-collapse:collapse;">'
               +'<thead><tr>'
-              +th('Tenant')+th('Region')+th('Price Zone')+th('IC ID')+th('Sensitivity')+th('Runs','right')+th('Users %','right')
+              +th('Tenant')+th('Region')+th('Price Zone')+th('Scenario ID')+th('Sensitivity')+th('Runs','right')+th('Users %','right')
               +'</tr></thead><tbody>';
             rows.forEach(function(r,i) {
               var pz  = cleanZone(r.price_zone)||'—';
-              var icShort = r.ic_id ? r.ic_id.substring(0,8)+'…' : '—';
+              var icShort = r.ic_id ? r.ic_id.substring(0,13)+'…' : '—';
               var userPct = (total>0 && r.unique_users>0) ? (r.unique_users/total*100).toFixed(1)+'%' : '—';
               var bg = i%2===0?'#fff':'#fafaf9';
               html += '<tr style="background:'+bg+';">'
@@ -3194,7 +3194,7 @@ class Component extends DCLogic {
                 +'</tr>';
             });
             html += '</tbody></table></div>';
-            html += '<div style="font-size:8px;color:#b0b0af;margin-top:4px;">'+total+' distinct users in region · IC ID truncated — hover for full UUID</div>';
+            html += '<div style="font-size:8px;color:#b0b0af;margin-top:4px;">'+total+' distinct users across account · Scenario ID truncated — hover for full UUID</div>';
             return html;
           }
 
