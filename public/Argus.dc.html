@@ -536,7 +536,6 @@ input{font-family:inherit;}
                     <th data-sort="benchmarks"  style="padding:10px 12px;text-align:left;font-weight:700;color:#c98f00;cursor:pointer;user-select:none;white-space:nowrap;">Benchmarks <span class="ph-chev">▾</span></th>
                     <th data-sort="untagged"    style="padding:10px 12px;text-align:left;font-weight:700;color:#3c3c3b;cursor:pointer;user-select:none;white-space:nowrap;">Untagged <span class="ph-chev">▾</span></th>
                     <th data-sort="lastSeen"    style="padding:10px 12px;text-align:left;font-weight:700;color:#3c3c3b;cursor:pointer;user-select:none;white-space:nowrap;">Last Seen <span class="ph-chev" style="opacity:1;">▼</span></th>
-                    <th style="padding:10px 12px;text-align:left;font-weight:700;color:#3c3c3b;white-space:nowrap;">Markets</th>
                   </tr>
                 </thead>
                 <tbody id="phUsersBody"></tbody>
@@ -2691,7 +2690,7 @@ class Component extends DCLogic {
         badge.style.display = activeReg ? 'inline-block' : 'none';
       }
 
-      bodyEl.innerHTML = '<tr><td colspan="8" style="padding:24px;text-align:center;color:#9d9d9d;font-size:12px;">Loading users' + (activeReg ? ' in ' + activeReg : '') + '…</td></tr>';
+      bodyEl.innerHTML = '<tr><td colspan="7" style="padding:24px;text-align:center;color:#9d9d9d;font-size:12px;">Loading users' + (activeReg ? ' in ' + activeReg : '') + '…</td></tr>';
 
       var usersUrl = '/api/ph-users?account=' + encodeURIComponent(accountName) + '&t=' + Date.now()
         + (activeReg ? '&region=' + encodeURIComponent(activeReg) : '');
@@ -2699,7 +2698,7 @@ class Component extends DCLogic {
         .then(function(r) { return r.json(); })
         .then(function(data) {
           if (!data.users || !data.users.length) {
-            bodyEl.innerHTML = '<tr><td colspan="8" style="padding:24px;text-align:center;color:#9d9d9d;font-size:12px;">No user data found' + (activeReg ? ' for region: ' + activeReg : '') + '</td></tr>';
+            bodyEl.innerHTML = '<tr><td colspan="7" style="padding:24px;text-align:center;color:#9d9d9d;font-size:12px;">No user data found' + (activeReg ? ' for region: ' + activeReg : '') + '</td></tr>';
             return;
           }
 
@@ -2730,19 +2729,9 @@ class Component extends DCLogic {
             +'</div>';
           };
 
-          // Zone color by region code for Markets dots
-          var EMEA_CODES = ['gbr','deu','bel','ita','nod','pol','erc','fra','ibe','cas','nld','irx','grc','fin','rou','dnk','bal','swe','bgr','hun','ger','aut','che','tur','ukr'];
-          var APAC_CODES = ['aus','ind','jap','jpn','chn','kor','sgp','mal'];
-          function zoneCol(rc) {
-            var r = (rc||'').toLowerCase();
-            if (EMEA_CODES.indexOf(r) >= 0) return '#e36a00';
-            if (APAC_CODES.indexOf(r) >= 0) return '#288184';
-            return '#7c4dff';
-          }
-
           // Inject totals into thead
           var ths = document.querySelectorAll('#phUsersHeaderRow th');
-          var totals = [null, sumEv, sumIC, sumLB, sumBM, sumUT, null, null];
+          var totals = [null, sumEv, sumIC, sumLB, sumBM, sumUT, null];
           totals.forEach(function(t, i) {
             if (t === null || !ths[i]) return;
             var sp = ths[i].querySelector('.ph-total') || document.createElement('span');
@@ -2783,14 +2772,6 @@ class Component extends DCLogic {
                 +'<td style="padding:10px 12px;">'+bar(u.benchmarks, maxBM, '#c98f00')+'</td>'
                 +'<td style="padding:10px 12px;">'+bar(u.untagged||0, maxUT, '#b0b0b0')+'</td>'
                 +'<td style="padding:10px 12px;font-size:12px;color:#6d6d6c;white-space:nowrap;">'+fmtD2(u.lastSeen)+'</td>'
-                +'<td style="padding:8px 12px;max-width:160px;">'
-                  +(u.regions||[]).slice(0,7).map(function(r) {
-                    var active = activeReg && r.region === activeReg;
-                    return '<span title="'+r.region+': '+r.runs+' runs" style="display:inline-block;background:'+zoneCol(r.region)+';'
-                      +(active?'outline:1.5px solid #3c3c3b;outline-offset:1px;':'')
-                      +'color:#fff;border-radius:3px;padding:1px 4px;font-size:8px;line-height:1.5;margin:1px;font-family:monospace;white-space:nowrap;">'+r.region+'</span>';
-                  }).join('')
-                +'</td>'
                 +'</tr>';
             }).join('');
           };
@@ -2810,7 +2791,7 @@ class Component extends DCLogic {
           renderRows();
         })
         .catch(function(err) {
-          bodyEl.innerHTML = '<tr><td colspan="8" style="padding:16px 12px;color:#c2600f;font-size:11px;">Error: '+err.message+'</td></tr>';
+          bodyEl.innerHTML = '<tr><td colspan="7" style="padding:16px 12px;color:#c2600f;font-size:11px;">Error: '+err.message+'</td></tr>';
         });
     };
 
@@ -3117,9 +3098,10 @@ class Component extends DCLogic {
 
             var byRegion = {};
             filtered.forEach(function(r) {
-              if (!byRegion[r.region]) byRegion[r.region]={runs:0,feats:{}};
+              if (!byRegion[r.region]) byRegion[r.region]={runs:0,feats:{},unique_users:r.unique_users||0};
               byRegion[r.region].runs+=r.runs;
               byRegion[r.region].feats[r.feature]=(byRegion[r.region].feats[r.feature]||0)+r.runs;
+              if ((r.unique_users||0) > byRegion[r.region].unique_users) byRegion[r.region].unique_users=r.unique_users;
             });
             var sorted = Object.keys(byRegion).sort(function(a,b){return byRegion[b].runs-byRegion[a].runs;});
 
@@ -3127,6 +3109,7 @@ class Component extends DCLogic {
               +'<thead><tr>'
               +'<th style="text-align:left;padding:3px 4px;border-bottom:1px solid #e6e6e5;color:#9d9d9d;font-size:9px;font-weight:600;">Region</th>'
               +'<th style="text-align:right;padding:3px 4px;border-bottom:1px solid #e6e6e5;color:#9d9d9d;font-size:9px;font-weight:600;">Runs</th>'
+              +'<th style="text-align:right;padding:3px 4px;border-bottom:1px solid #e6e6e5;color:#9d9d9d;font-size:9px;font-weight:600;">Users</th>'
               +'<th style="padding:3px 4px;border-bottom:1px solid #e6e6e5;color:#9d9d9d;font-size:9px;font-weight:600;"></th>'
               +'</tr></thead><tbody>';
 
@@ -3146,6 +3129,7 @@ class Component extends DCLogic {
                 +'<td style="padding:5px 4px;color:'+(isSelected?'#e36a00':'#3c3c3b')+';font-size:9px;font-weight:'+(isSelected?'700':'400')+';">'
                 +(isSelected?'▸ ':'')+regionName(code)+'</td>'
                 +'<td style="text-align:right;padding:5px 4px;color:#6d6d6c;font-size:9px;">'+d.runs.toLocaleString()+'</td>'
+                +'<td style="text-align:right;padding:5px 4px;color:#6d6d6c;font-size:9px;">'+(d.unique_users||'—')+'</td>'
                 +'<td style="padding:5px 4px;white-space:nowrap;">'+dots+'</td></tr>';
             });
 
@@ -3162,8 +3146,9 @@ class Component extends DCLogic {
             return val;
           }
 
-          // ── Region drilldown popup — tabbed: Overview / Investment Cases ─
+          // ── Region drilldown popup — tabs: Investment Cases / Leaderboards / Benchmarks ─
           var _drillData = null; // cached for tab switching
+          var _drillTabs = { hasIC: false, hasLB: false, hasBM: false, firstTab: '' };
 
           function _drillTabBtn(label, key, active) {
             var isActive = key === active;
@@ -3172,40 +3157,18 @@ class Component extends DCLogic {
               +';color:'+(isActive?'#fff':'#6d6d6c')+';font-size:9px;font-weight:600;cursor:pointer;transition:all 0.15s;">'+label+'</button>';
           }
 
-          function _renderDrillOverview(data) {
-            function miniList(items, label, isZone) {
-              if (!items||!items.length) return '';
-              var rows = items.slice(0,5).map(function(r){
-                var v = isZone ? (cleanZone(r.val)||r.val) : r.val;
-                return '<div style="display:flex;justify-content:space-between;gap:8px;padding:1px 0;">'
-                  +'<span style="color:#3c3c3b;font-size:9px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100px;" title="'+v+'">'+v+'</span>'
-                  +'<span style="color:#6d6d6c;font-size:9px;font-weight:600;white-space:nowrap;">'+Number(r.runs).toLocaleString()+'</span>'
-                  +'</div>';
-              }).join('');
-              return '<div style="flex:1 1 0;min-width:0;">'
-                +'<div style="font-size:9px;font-weight:700;color:#9d9d9d;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:3px;">'+label+'</div>'
-                +rows+'</div>';
-            }
-            var hasAny = (data.scenarios&&data.scenarios.length)||(data.priceZones&&data.priceZones.length)||(data.sensitivities&&data.sensitivities.length);
-            if (!hasAny) return '<div style="font-size:10px;color:#9d9d9d;padding:4px 0;">No scenario breakdown available for this region.</div>';
-            return '<div style="display:flex;gap:12px;">'
-              +miniList(data.scenarios,'Scenarios',false)
-              +miniList(data.priceZones,'Price Zones',true)
-              +miniList(data.sensitivities,'Sensitivity',false)
-              +'</div>';
+          function _drillTh(label, align) {
+            return '<th style="text-align:'+(align||'left')+';padding:3px 5px;border-bottom:2px solid #e6e6e5;font-size:8px;font-weight:700;color:#9d9d9d;white-space:nowrap;position:sticky;top:0;background:#fff;">'+label+'</th>';
           }
 
           function _renderDrillIC(data) {
             var rows = data.icDetail||[];
             var total = data.totalUsers||0;
             if (!rows.length) return '<div style="font-size:10px;color:#9d9d9d;padding:4px 0;">No Investment Case runs for this region.</div>';
-            var th = function(label, align) {
-              return '<th style="text-align:'+(align||'left')+';padding:3px 5px;border-bottom:2px solid #e6e6e5;font-size:8px;font-weight:700;color:#9d9d9d;white-space:nowrap;position:sticky;top:0;background:#fff;">'+label+'</th>';
-            };
             var html = '<div style="overflow-y:auto;max-height:220px;">'
               +'<table style="width:100%;border-collapse:collapse;">'
               +'<thead><tr>'
-              +th('Tenant')+th('Region')+th('Price Zone')+th('Scenario ID')+th('Sensitivity')+th('Runs','right')+th('Users %','right')
+              +_drillTh('Scenario ID')+_drillTh('Price Zone')+_drillTh('Sensitivity')+_drillTh('Runs','right')+_drillTh('Users %','right')
               +'</tr></thead><tbody>';
             rows.forEach(function(r,i) {
               var pz  = cleanZone(r.price_zone)||'—';
@@ -3213,18 +3176,39 @@ class Component extends DCLogic {
               var userPct = (total>0 && r.unique_users>0) ? (r.unique_users/total*100).toFixed(1)+'%' : '—';
               var bg = i%2===0?'#fff':'#fafaf9';
               html += '<tr style="background:'+bg+';">'
-                +'<td style="padding:3px 5px;font-size:9px;color:#3c3c3b;white-space:nowrap;">'+r.tenant+'</td>'
-                +'<td style="padding:3px 5px;font-size:9px;color:#6d6d6c;white-space:nowrap;">'+r.region+'</td>'
-                +'<td style="padding:3px 5px;font-size:9px;color:#3c3c3b;">'+pz+'</td>'
                 +'<td style="padding:3px 5px;font-size:9px;color:#6d6d6c;font-family:monospace;" title="'+(r.ic_id||'')+'">'+icShort+'</td>'
-                +'<td style="padding:3px 5px;font-size:9px;color:#6d6d6c;">'+( r.sensitivity||'—')+'</td>'
+                +'<td style="padding:3px 5px;font-size:9px;color:#3c3c3b;">'+pz+'</td>'
+                +'<td style="padding:3px 5px;font-size:9px;color:#6d6d6c;">'+(r.sensitivity||'—')+'</td>'
                 +'<td style="text-align:right;padding:3px 5px;font-size:9px;font-weight:600;color:#3c3c3b;">'+Number(r.runs).toLocaleString()+'</td>'
                 +'<td style="text-align:right;padding:3px 5px;font-size:9px;color:#e36a00;font-weight:600;" title="'+r.unique_users+' of '+total+' users">'
                 +userPct+'<span style="font-size:8px;color:#b0b0af;margin-left:2px;">('+r.unique_users+')</span></td>'
                 +'</tr>';
             });
             html += '</tbody></table></div>';
-            html += '<div style="font-size:8px;color:#b0b0af;margin-top:4px;">'+total+' distinct users across account · Scenario ID truncated — hover for full UUID</div>';
+            html += '<div style="font-size:8px;color:#b0b0af;margin-top:4px;">'+total+' distinct users across account · Scenario ID: hover for full UUID</div>';
+            return html;
+          }
+
+          function _renderDrillFeature(data, feature, label) {
+            var rows = (data.detail||[]).filter(function(r){ return r.feature === feature; });
+            if (!rows.length) return '<div style="font-size:10px;color:#9d9d9d;padding:4px 0;">No '+label+' runs for this region.</div>';
+            var html = '<div style="overflow-y:auto;max-height:220px;">'
+              +'<table style="width:100%;border-collapse:collapse;">'
+              +'<thead><tr>'
+              +_drillTh('Scenario')+_drillTh('Price Zone')+_drillTh('Sensitivity')+_drillTh('Runs','right')
+              +'</tr></thead><tbody>';
+            rows.forEach(function(r, i) {
+              var sc = r.scenario || '—';
+              var pz = cleanZone(r.price_zone) || '—';
+              var bg = i%2===0?'#fff':'#fafaf9';
+              html += '<tr style="background:'+bg+';">'
+                +'<td style="padding:3px 5px;font-size:9px;color:#3c3c3b;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="'+sc+'">'+sc+'</td>'
+                +'<td style="padding:3px 5px;font-size:9px;color:#6d6d6c;">'+pz+'</td>'
+                +'<td style="padding:3px 5px;font-size:9px;color:#6d6d6c;">'+(r.sensitivity||'—')+'</td>'
+                +'<td style="text-align:right;padding:3px 5px;font-size:9px;font-weight:600;color:#3c3c3b;">'+Number(r.runs).toLocaleString()+'</td>'
+                +'</tr>';
+            });
+            html += '</tbody></table></div>';
             return html;
           }
 
@@ -3233,14 +3217,21 @@ class Component extends DCLogic {
             var tabs = document.getElementById('phPopupTabs');
             var body = document.getElementById('phPopupTabBody');
             if (!tabs||!body) return;
-            tabs.innerHTML = _drillTabBtn('Overview','overview',tab)+' '+_drillTabBtn('Investment Cases','ic',tab);
-            body.innerHTML = tab==='ic' ? _renderDrillIC(_drillData) : _renderDrillOverview(_drillData);
+            var t = _drillTabs;
+            tabs.innerHTML = (t.hasIC?_drillTabBtn('Investment Cases','ic',tab)+' ':'')
+              +(t.hasLB?_drillTabBtn('Leaderboards','lb',tab)+' ':'')
+              +(t.hasBM?_drillTabBtn('Benchmarks','bm',tab):'');
+            body.innerHTML = tab==='ic' ? _renderDrillIC(_drillData)
+              : tab==='lb' ? _renderDrillFeature(_drillData,'leaderboards','Leaderboard')
+              : _renderDrillFeature(_drillData,'benchmarks','Benchmark');
           };
 
           function showRegionDrilldown(regionCode, localItems) {
             var el = document.getElementById('phGlobePopup');
             if (!el) return;
             _drillData = null;
+            window.__phActiveRegion = regionCode; // sync for Users table cross-filter
+
             var sorted = (localItems||[]).slice().sort(function(a,b){return b.runs-a.runs;});
             var total  = sorted.reduce(function(s,r){return s+r.runs;},0);
 
@@ -3253,21 +3244,28 @@ class Component extends DCLogic {
             }).join('<span style="margin:0 8px;color:#e6e6e5;">|</span>');
 
             var hasIC = sorted.some(function(r){return r.feature==='investment-cases';});
+            var hasLB = sorted.some(function(r){return r.feature==='leaderboards';});
+            var hasBM = sorted.some(function(r){return r.feature==='benchmarks';});
+            var firstTab = hasIC ? 'ic' : (hasLB ? 'lb' : (hasBM ? 'bm' : ''));
+            _drillTabs = { hasIC: hasIC, hasLB: hasLB, hasBM: hasBM, firstTab: firstTab };
+
+            var tabsHtml = (hasIC?_drillTabBtn('Investment Cases','ic',firstTab)+' ':'')
+              +(hasLB?_drillTabBtn('Leaderboards','lb',firstTab)+' ':'')
+              +(hasBM?_drillTabBtn('Benchmarks','bm',firstTab):'');
 
             el.innerHTML =
               '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">'
               +'<div><strong style="font-size:12px;color:#3c3c3b;">'+regionName(regionCode)+'</strong>'
               +' <span style="font-size:10px;color:#9d9d9d;margin-left:4px;">'+total.toLocaleString()+' runs</span></div>'
-              +'<button onclick="document.getElementById(\'phGlobePopup\').style.display=\'none\'" '
+              +'<button onclick="document.getElementById(\'phGlobePopup\').style.display=\'none\';window.__phActiveRegion=null;" '
               +'style="border:none;background:none;font-size:16px;color:#c8c8c7;cursor:pointer;line-height:1;padding:0 0 0 8px;">×</button>'
               +'</div>'
               +'<div style="margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid #f0f0ef;">'+chips+'</div>'
-              +'<div id="phPopupTabs" style="display:flex;gap:6px;margin-bottom:10px;">'
-              +_drillTabBtn('Overview','overview','overview')
-              +(hasIC ? ' '+_drillTabBtn('Investment Cases','ic','overview') : '')
-              +'</div>'
-              +'<div id="phPopupTabBody" style="color:#9d9d9d;font-size:10px;">Loading…</div>';
+              +(tabsHtml ? '<div id="phPopupTabs" style="display:flex;gap:6px;margin-bottom:10px;">'+tabsHtml+'</div>' : '')
+              +'<div id="phPopupTabBody" style="color:#9d9d9d;font-size:10px;">'+(firstTab?'Loading…':'No run detail available.')+'</div>';
             el.style.display = 'block';
+
+            if (!firstTab) return; // no recognised feature types
 
             var url = '/api/ph-region-detail?account='+encodeURIComponent(accountName)
               +'&region='+encodeURIComponent(regionCode)
@@ -3276,7 +3274,10 @@ class Component extends DCLogic {
             fetch(url).then(function(r){return r.json();}).then(function(data){
               _drillData = data;
               var body = document.getElementById('phPopupTabBody');
-              if (body) body.innerHTML = _renderDrillOverview(data);
+              if (!body) return;
+              body.innerHTML = firstTab==='ic' ? _renderDrillIC(data)
+                : firstTab==='lb' ? _renderDrillFeature(data,'leaderboards','Leaderboard')
+                : _renderDrillFeature(data,'benchmarks','Benchmark');
             }).catch(function(){
               var body = document.getElementById('phPopupTabBody');
               if (body) body.innerHTML = '<div style="color:#c0392b;font-size:10px;">Could not load detail.</div>';

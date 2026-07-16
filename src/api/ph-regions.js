@@ -41,24 +41,34 @@ module.exports = async function phRegions(req, res) {
       ? `AND e.person_id = '${personId.replace(/'/g, "''")}'`
       : '';
 
-    const rows = await queryLakehouse(`
-      SELECT
-        e.region,
-        COALESCE(e.feature, 'other') AS feature,
-        COUNT(*)                     AS runs
-      FROM dbo.posthog_notebook_events e
+    const sa = account.replace(/'/g, "''");
+    const base = `FROM dbo.posthog_notebook_events e
       INNER JOIN dbo.v_gold_mdm_posthog g ON g.ph_tenant = e.tenant
-      WHERE g.sf_account_name = '${account.replace(/'/g, "''")}'
+      WHERE g.sf_account_name = '${sa}'
         AND e.region IS NOT NULL AND e.region != ''
-        ${personFilter}
-      GROUP BY e.region, e.feature
-      ORDER BY runs DESC
-    `);
+        ${personFilter}`;
+
+    const [rows, userRows] = await Promise.all([
+      queryLakehouse(`
+        SELECT e.region, COALESCE(e.feature, 'other') AS feature, COUNT(*) AS runs
+        ${base}
+        GROUP BY e.region, e.feature ORDER BY runs DESC
+      `),
+      queryLakehouse(`
+        SELECT e.region, COUNT(DISTINCT e.person_id) AS unique_users
+        ${base}
+        GROUP BY e.region
+      `),
+    ]);
+
+    const usersByRegion = {};
+    (userRows || []).forEach(r => { usersByRegion[r.region] = Number(r.unique_users) || 0; });
 
     res.json(rows.map(r => ({
-      region:  r.region,
-      feature: r.feature,
-      runs:    Number(r.runs) || 0,
+      region:       r.region,
+      feature:      r.feature,
+      runs:         Number(r.runs) || 0,
+      unique_users: usersByRegion[r.region] || 0,
     })));
   } catch (err) {
     console.error('[ph-regions]', err.message);
