@@ -3165,27 +3165,28 @@ class Component extends DCLogic {
             var rows = data.icDetail||[];
             var total = data.totalUsers||0;
             if (!rows.length) return '<div style="font-size:10px;color:#9d9d9d;padding:4px 0;">No Investment Case runs for this region.</div>';
-            var html = '<div style="overflow-y:auto;max-height:220px;">'
-              +'<table style="width:100%;border-collapse:collapse;">'
+            var html = '<div style="overflow-x:auto;overflow-y:auto;max-height:220px;">'
+              +'<table style="width:100%;border-collapse:collapse;min-width:520px;">'
               +'<thead><tr>'
-              +_drillTh('Scenario ID')+_drillTh('Price Zone')+_drillTh('Sensitivity')+_drillTh('Runs','right')+_drillTh('Users %','right')
+              +_drillTh('Tenant')+_drillTh('Scenario ID')+_drillTh('Price Zone')+_drillTh('Sensitivity')+_drillTh('Runs','right')+_drillTh('Users %','right')
               +'</tr></thead><tbody>';
             rows.forEach(function(r,i) {
               var pz  = cleanZone(r.price_zone)||'—';
-              var icShort = r.ic_id ? r.ic_id.substring(0,13)+'…' : '—';
+              var icId = r.ic_id || '—';
               var userPct = (total>0 && r.unique_users>0) ? (r.unique_users/total*100).toFixed(1)+'%' : '—';
               var bg = i%2===0?'#fff':'#fafaf9';
               html += '<tr style="background:'+bg+';">'
-                +'<td style="padding:3px 5px;font-size:9px;color:#6d6d6c;font-family:monospace;" title="'+(r.ic_id||'')+'">'+icShort+'</td>'
-                +'<td style="padding:3px 5px;font-size:9px;color:#3c3c3b;">'+pz+'</td>'
-                +'<td style="padding:3px 5px;font-size:9px;color:#6d6d6c;">'+(r.sensitivity||'—')+'</td>'
+                +'<td style="padding:3px 5px;font-size:9px;color:#3c3c3b;white-space:nowrap;">'+( r.tenant||'—')+'</td>'
+                +'<td style="padding:3px 5px;font-size:9px;color:#6d6d6c;font-family:monospace;white-space:nowrap;user-select:all;">'+icId+'</td>'
+                +'<td style="padding:3px 5px;font-size:9px;color:#3c3c3b;white-space:nowrap;">'+pz+'</td>'
+                +'<td style="padding:3px 5px;font-size:9px;color:#6d6d6c;white-space:nowrap;">'+(r.sensitivity||'—')+'</td>'
                 +'<td style="text-align:right;padding:3px 5px;font-size:9px;font-weight:600;color:#3c3c3b;">'+Number(r.runs).toLocaleString()+'</td>'
                 +'<td style="text-align:right;padding:3px 5px;font-size:9px;color:#e36a00;font-weight:600;" title="'+r.unique_users+' of '+total+' users">'
                 +userPct+'<span style="font-size:8px;color:#b0b0af;margin-left:2px;">('+r.unique_users+')</span></td>'
                 +'</tr>';
             });
             html += '</tbody></table></div>';
-            html += '<div style="font-size:8px;color:#b0b0af;margin-top:4px;">'+total+' distinct users across account · Scenario ID: hover for full UUID</div>';
+            html += '<div style="font-size:8px;color:#b0b0af;margin-top:4px;">'+total+' distinct users across account</div>';
             return html;
           }
 
@@ -3257,7 +3258,7 @@ class Component extends DCLogic {
               '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">'
               +'<div><strong style="font-size:12px;color:#3c3c3b;">'+regionName(regionCode)+'</strong>'
               +' <span style="font-size:10px;color:#9d9d9d;margin-left:4px;">'+total.toLocaleString()+' runs</span></div>'
-              +'<button onclick="document.getElementById(\'phGlobePopup\').style.display=\'none\';window.__phActiveRegion=null;" '
+              +'<button onclick="document.getElementById(\'phGlobePopup\').style.display=\'none\';" '
               +'style="border:none;background:none;font-size:16px;color:#c8c8c7;cursor:pointer;line-height:1;padding:0 0 0 8px;">×</button>'
               +'</div>'
               +'<div style="margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid #f0f0ef;">'+chips+'</div>'
