@@ -473,7 +473,7 @@ input{font-family:inherit;}
                 <div style="font-size:10px;color:#9d9d9d;margin-top:2px;">total runs</div>
               </div>
               <div style="background:#fff4f0;border-radius:8px;padding:12px;border:1px solid #fcd9b8;">
-                <div style="font-size:10px;font-weight:700;color:#F54E00;text-transform:uppercase;margin-bottom:4px;">Inv. Cases</div>
+                <div style="font-size:10px;font-weight:700;color:#F54E00;text-transform:uppercase;margin-bottom:4px;">Investment Cases</div>
                 <div style="font-size:22px;font-weight:700;color:#F54E00;" id="phIcRuns">—</div>
                 <div style="font-size:10px;color:#9d9d9d;margin-top:2px;">total runs</div>
               </div>
@@ -1673,8 +1673,20 @@ class Component extends DCLogic {
       return;
     }
 
-    // If already has accounts (not loading), don't reload
-    if(select.options.length > 1) return;
+    // If already has accounts (not loading), don't reload — but on remount apply any MDM deep-link target
+    if(select.options.length > 1) {
+      const t = window.__argusTargetAccount;
+      if (t) {
+        select.value = t;
+        if (select.value === t) {
+          window.__argusTargetAccount = null;
+          try { localStorage.setItem('argusHealthAccount', t); } catch(e) {}
+          this.updateAccountTitles(t);
+          setTimeout(() => this.loadAccountWithMatchCheck(t), 50);
+        }
+      }
+      return;
+    }
 
     // Use cache if available
     if(this.cachedAccounts && this.cachedAccounts.length > 0){
@@ -2434,11 +2446,18 @@ class Component extends DCLogic {
           };
         } else if (metric === 'runs') {
           legendEl.innerHTML = runsSeries.map(function(s) {
-            return '<span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;color:#4d4d4c;">'
-              +'<span style="display:inline-block;width:8px;height:8px;border-radius:1px;background:'+s.color+';flex-shrink:0;"></span>'
+            var on = !!state[s.key];
+            return '<span data-phkey="'+s.key+'" style="cursor:pointer;display:inline-flex;align-items:center;gap:4px;font-size:10px;color:'+(on?'#4d4d4c':'#b0b0b0')+';text-decoration:'+(on?'none':'line-through')+';">'
+              +'<span style="display:inline-block;width:8px;height:8px;border-radius:1px;background:'+(on?s.color:'#d4d4d4')+';flex-shrink:0;"></span>'
               + s.label+'</span>';
           }).join('');
-          legendEl.onclick = null;
+          legendEl.onclick = function(e) {
+            var span = e.target.closest('[data-phkey]');
+            if (!span || !window.__phState) return;
+            var k = span.getAttribute('data-phkey');
+            window.__phState[k] = !window.__phState[k];
+            window.__phBuild();
+          };
         }
       }
 
@@ -2477,7 +2496,7 @@ class Component extends DCLogic {
       ];
       var activeSeries = metric === 'events' ? [{ key: 'events', color: '#288184', label: 'All Events' }]
                        : metric === 'users'  ? userSeries
-                       : metric === 'runs'   ? runsSeries
+                       : metric === 'runs'   ? runsSeries.filter(function(s) { return !!state[s.key]; })
                        : series.filter(function(s) { return !!state[s.key]; });
 
       var maxVal = 1;
@@ -2850,9 +2869,12 @@ class Component extends DCLogic {
         setText('phUsers',       s.uniqueUsers.toLocaleString());
         setText('phEvents30d',   s.events30d.toLocaleString());
         setText('phEvents7d',    (s.events7d||0).toLocaleString()+' last 7 days');
-        setText('phIcRuns', (s.investmentCases||0).toLocaleString());
-        setText('phLbRuns', (s.leaderboards||0).toLocaleString());
-        setText('phBmRuns', (s.benchmarks||0).toLocaleString());
+        var totalLb = (data.weeklyRuns||[]).reduce(function(a,r){return a+(r.lbRuns||0);},0);
+        var totalIc = (data.weeklyRuns||[]).reduce(function(a,r){return a+(r.icRuns||0);},0);
+        var totalBm = (data.weeklyRuns||[]).reduce(function(a,r){return a+(r.bmRuns||0);},0);
+        setText('phLbRuns', totalLb.toLocaleString());
+        setText('phIcRuns', totalIc.toLocaleString());
+        setText('phBmRuns', totalBm.toLocaleString());
         // Persistent info bar — First/Last Active always visible
         setText('phInfoFirst', fmtDate(s.firstSeen));
         setText('phInfoLast',  fmtDate(s.lastSeen));
@@ -2866,7 +2888,7 @@ class Component extends DCLogic {
         window.__phSelectedPid = null;
         var _prevView   = (window.__phState && window.__phState.view)   || 'day';
         var _prevMetric = (window.__phState && window.__phState.metric) || 'features';
-        window.__phState = { view: _prevView, metric: _prevMetric, investmentCases: true, leaderboards: true, benchmarks: true, untagged: false };
+        window.__phState = { view: _prevView, metric: _prevMetric, investmentCases: true, leaderboards: true, benchmarks: true, untagged: false, lbRuns: true, icRuns: true, bmRuns: true };
         window.__phSetView   && window.__phSetView(_prevView);
         window.__phSetMetric && window.__phSetMetric(_prevMetric);
 
@@ -3496,7 +3518,14 @@ class Component extends DCLogic {
             buildZoneTabs(); buildCountryFilters(); buildLegend(); buildTable(rows);
 
             var lbl=document.getElementById('phGlobePersonLabel');
-            if (lbl) { lbl.textContent=personLabel?'Filtered: '+personLabel:''; lbl.style.display=personLabel?'':'none'; }
+            if (lbl) {
+              if (personLabel) {
+                lbl.style.display='inline-flex'; lbl.style.alignItems='center';
+                lbl.innerHTML='Filtered: <strong style="margin-left:2px;">'+personLabel+'</strong>'
+                  +'<span onclick="window.__phResetUser&&window.__phResetUser()" '
+                  +'style="cursor:pointer;margin-left:5px;font-size:13px;font-weight:700;opacity:0.7;">×</span>';
+              } else { lbl.innerHTML=''; lbl.style.display='none'; }
+            }
           }
 
           // ── Fetch + draw ──────────────────────────────────────────────
