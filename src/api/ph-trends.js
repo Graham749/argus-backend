@@ -204,7 +204,7 @@ async function phTrends(req, res) {
       WHERE ph_tenant IN (${tenantInList})
     )`;
 
-    const [weeklyRows, dailyRows] = await Promise.all([
+    const [weeklyRows, dailyRows, weeklyRunRows, dailyRunRows] = await Promise.all([
       queryLakehouse(tenantsCte + `
         SELECT
           CAST(DATEADD(DAY, DATEDIFF(DAY,'2000-01-03',e.timestamp)/7*7, '2000-01-03') AS DATE) AS week_start,
@@ -243,6 +243,29 @@ async function phTrends(req, res) {
         GROUP BY CAST(e.timestamp AS DATE)
         ORDER BY day_start
       `),
+
+      // Runs: non-pageview events grouped by feature + date (no event='$pageview' filter).
+      // Fetch all features unfiltered, pivot in JS to avoid mssql cross-view string equality bug.
+      queryLakehouse(tenantsCte + `
+        SELECT
+          CAST(DATEADD(DAY, DATEDIFF(DAY,'2000-01-03',e.timestamp)/7*7, '2000-01-03') AS DATE) AS week_start,
+          e.feature, COUNT(*) AS runs
+        FROM dbo.posthog_notebook_events e
+        INNER JOIN tenants t ON LOWER(LTRIM(RTRIM(e.tenant))) = t.ph_tenant
+        WHERE e.timestamp IS NOT NULL AND e.feature IS NOT NULL AND e.feature != ''
+        GROUP BY CAST(DATEADD(DAY, DATEDIFF(DAY,'2000-01-03',e.timestamp)/7*7, '2000-01-03') AS DATE), e.feature
+        ORDER BY week_start
+      `),
+      queryLakehouse(tenantsCte + `
+        SELECT
+          CAST(e.timestamp AS DATE) AS day_start,
+          e.feature, COUNT(*) AS runs
+        FROM dbo.posthog_notebook_events e
+        INNER JOIN tenants t ON LOWER(LTRIM(RTRIM(e.tenant))) = t.ph_tenant
+        WHERE e.timestamp IS NOT NULL AND e.feature IS NOT NULL AND e.feature != ''
+        GROUP BY CAST(e.timestamp AS DATE), e.feature
+        ORDER BY day_start
+      `),
     ]);
 
     const totalEvents    = summaryRows.reduce((s, r) => s + (Number(r.ph_total_events)    || 0), 0);
@@ -258,12 +281,29 @@ async function phTrends(req, res) {
     const firstSeen  = firstDates.length ? new Date(firstDates[0]).toISOString().slice(0, 10) : null;
     const lastSeen   = lastDates.length  ? new Date(lastDates[lastDates.length - 1]).toISOString().slice(0, 10) : null;
 
+    // Pivot feature×date rows into per-date IC/LB/BM run counts
+    function pivotRuns(rows, dateField, dateOutKey) {
+      const map = {};
+      (rows || []).forEach(r => {
+        const k = r[dateField] ? new Date(r[dateField]).toISOString().slice(0, 10) : null;
+        if (!k) return;
+        if (!map[k]) map[k] = { [dateOutKey]: k, icRuns: 0, lbRuns: 0, bmRuns: 0 };
+        const n = Number(r.runs) || 0;
+        if      (r.feature === 'investment-cases') map[k].icRuns += n;
+        else if (r.feature === 'leaderboards')     map[k].lbRuns += n;
+        else if (r.feature === 'benchmarks')       map[k].bmRuns += n;
+      });
+      return Object.values(map).sort((a, b) => a[dateOutKey].localeCompare(b[dateOutKey]));
+    }
+
     const payload = {
       tenants,
       matchMethod: method,
       summary: { totalEvents, uniqueUsers, events30d, events7d, firstSeen, lastSeen, investmentCases, leaderboards, benchmarks },
-      weekly: (weeklyRows || []).map(mapWeekly),
-      daily:  (dailyRows  || []).map(mapDaily),
+      weekly:      (weeklyRows || []).map(mapWeekly),
+      daily:       (dailyRows  || []).map(mapDaily),
+      weeklyRuns:  pivotRuns(weeklyRunRows, 'week_start', 'weekStart'),
+      dailyRuns:   pivotRuns(dailyRunRows,  'day_start',  'dayStart'),
     };
 
     resultCache[account] = { ts: Date.now(), data: payload };

@@ -465,6 +465,25 @@ input{font-family:inherit;}
               </div>
             </div>
 
+            <!-- Runs tiles: IC / LB / BM -->
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px;">
+              <div style="background:#fff4f0;border-radius:8px;padding:12px;border:1px solid #fcd9b8;">
+                <div style="font-size:10px;font-weight:700;color:#F54E00;text-transform:uppercase;margin-bottom:4px;">Investment Cases</div>
+                <div style="font-size:22px;font-weight:700;color:#F54E00;" id="phIcRuns">—</div>
+                <div style="font-size:10px;color:#9d9d9d;margin-top:2px;">total runs</div>
+              </div>
+              <div style="background:#f0f3ff;border-radius:8px;padding:12px;border:1px solid #c7d2fe;">
+                <div style="font-size:10px;font-weight:700;color:#1D4AFF;text-transform:uppercase;margin-bottom:4px;">Leaderboards</div>
+                <div style="font-size:22px;font-weight:700;color:#1D4AFF;" id="phLbRuns">—</div>
+                <div style="font-size:10px;color:#9d9d9d;margin-top:2px;">total runs</div>
+              </div>
+              <div style="background:#fffbf0;border-radius:8px;padding:12px;border:1px solid #f5e0a0;">
+                <div style="font-size:10px;font-weight:700;color:#c98f00;text-transform:uppercase;margin-bottom:4px;">Benchmarks</div>
+                <div style="font-size:22px;font-weight:700;color:#c98f00;" id="phBmRuns">—</div>
+                <div style="font-size:10px;color:#9d9d9d;margin-top:2px;">total runs</div>
+              </div>
+            </div>
+
             <!-- KPI comparison cards -->
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
               <div style="background:#f7f7f6;border-radius:8px;padding:12px;border:1px solid #e6e6e5;">
@@ -509,6 +528,7 @@ input{font-family:inherit;}
                   <button id="phMetricFeatures" style="font-size:9px;padding:2px 7px;border-radius:4px;border:1px solid #F54E00;background:#fff4f0;color:#F54E00;cursor:pointer;font-weight:600;">Features</button>
                   <button id="phMetricEvents"   style="font-size:9px;padding:2px 7px;border-radius:4px;border:1px solid #e6e6e5;background:#fff;color:#6d6d6c;cursor:pointer;font-weight:600;">All Events</button>
                   <button id="phMetricUsers"    style="font-size:9px;padding:2px 7px;border-radius:4px;border:1px solid #e6e6e5;background:#fff;color:#6d6d6c;cursor:pointer;font-weight:600;">Distinct Users</button>
+                  <button id="phMetricRuns"     style="font-size:9px;padding:2px 7px;border-radius:4px;border:1px solid #e6e6e5;background:#fff;color:#6d6d6c;cursor:pointer;font-weight:600;">Runs</button>
                 </div>
                 <div id="phChartContext" style="display:none;font-size:10px;color:#e36a00;font-weight:600;"></div>
                 <button id="phResetUserBtn" style="display:none;font-size:9px;padding:2px 8px;border-radius:10px;border:1px solid #e6e6e5;background:#fff;color:#6d6d6c;cursor:pointer;font-weight:600;">✕ All users</button>
@@ -2399,9 +2419,15 @@ class Component extends DCLogic {
 
       var metric = window.__phSelectedPid ? 'features' : (state.metric || 'features');
 
-      // Legend — only visible in features mode
+      var runsSeries = [
+        { key: 'icRuns', color: '#F54E00', label: 'Investment Cases' },
+        { key: 'lbRuns', color: '#1D4AFF', label: 'Leaderboards' },
+        { key: 'bmRuns', color: '#c98f00', label: 'Benchmarks' },
+      ];
+
+      // Legend — visible in features and runs mode
       if (legendEl) {
-        legendEl.style.display = (metric === 'features') ? 'flex' : 'none';
+        legendEl.style.display = (metric === 'features' || metric === 'runs') ? 'flex' : 'none';
         if (metric === 'features') {
           legendEl.innerHTML = series.map(function(s) {
             var on = !!state[s.key];
@@ -2415,6 +2441,13 @@ class Component extends DCLogic {
             window.__phState[span.getAttribute('data-phkey')] = !window.__phState[span.getAttribute('data-phkey')];
             window.__phBuild();
           };
+        } else if (metric === 'runs') {
+          legendEl.innerHTML = runsSeries.map(function(s) {
+            return '<span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;color:#4d4d4c;">'
+              +'<span style="display:inline-block;width:8px;height:8px;border-radius:1px;background:'+s.color+';flex-shrink:0;"></span>'
+              + s.label+'</span>';
+          }).join('');
+          legendEl.onclick = null;
         }
       }
 
@@ -2422,9 +2455,11 @@ class Component extends DCLogic {
       var metricToggleEl = document.getElementById('phMetricToggle');
       if (metricToggleEl) metricToggleEl.style.display = window.__phSelectedPid ? 'none' : 'flex';
 
-      var pts = state.view === 'day' ? window.__phData.daily
-              : state.view === 'month' ? window.__phAggMonthly(window.__phData.daily)
-              : window.__phData.weekly;
+      var rawDaily  = (metric === 'runs') ? (window.__phData.dailyRuns  || []) : window.__phData.daily;
+      var rawWeekly = (metric === 'runs') ? (window.__phData.weeklyRuns || []) : window.__phData.weekly;
+      var pts = state.view === 'day'   ? rawDaily
+              : state.view === 'month' ? window.__phAggMonthly(rawDaily)
+              : rawWeekly;
       if (!pts || pts.length === 0) {
         chartEl.innerHTML = '<div style="color:#9d9d9d;font-size:11px;padding:28px 0;text-align:center;">No data for this view</div>';
         return;
@@ -2451,6 +2486,7 @@ class Component extends DCLogic {
       ];
       var activeSeries = metric === 'events' ? [{ key: 'events', color: '#288184', label: 'All Events' }]
                        : metric === 'users'  ? userSeries
+                       : metric === 'runs'   ? runsSeries
                        : series.filter(function(s) { return !!state[s.key]; });
 
       var maxVal = 1;
@@ -2501,7 +2537,7 @@ class Component extends DCLogic {
       (daily || []).forEach(function(d) {
         var key = (d.dayStart || '').slice(0, 7);
         if (!key) return;
-        if (!map[key]) map[key] = { monthStart: key + '-01', events: 0, users: 0, investmentCases: 0, leaderboards: 0, benchmarks: 0, untagged: 0, investmentCasesUsers: 0, leaderboardsUsers: 0, benchmarksUsers: 0, untaggedUsers: 0 };
+        if (!map[key]) map[key] = { monthStart: key + '-01', events: 0, users: 0, investmentCases: 0, leaderboards: 0, benchmarks: 0, untagged: 0, investmentCasesUsers: 0, leaderboardsUsers: 0, benchmarksUsers: 0, untaggedUsers: 0, icRuns: 0, lbRuns: 0, bmRuns: 0 };
         map[key].events               += (d.events               || 0);
         map[key].users                += (d.users                || 0);
         map[key].investmentCases      += (d.investmentCases      || 0);
@@ -2512,6 +2548,9 @@ class Component extends DCLogic {
         map[key].leaderboardsUsers    += (d.leaderboardsUsers    || 0);
         map[key].benchmarksUsers      += (d.benchmarksUsers      || 0);
         map[key].untaggedUsers        += (d.untaggedUsers        || 0);
+        map[key].icRuns               += (d.icRuns               || 0);
+        map[key].lbRuns               += (d.lbRuns               || 0);
+        map[key].bmRuns               += (d.bmRuns               || 0);
       });
       return Object.keys(map).sort().map(function(k) { return map[k]; });
     };
@@ -2541,7 +2580,7 @@ class Component extends DCLogic {
     window.__phSetMetric = function(m) {
       if (!window.__phState) return;
       window.__phState.metric = m;
-      ['features','events','users'].forEach(function(name) {
+      ['features','events','users','runs'].forEach(function(name) {
         var btn = document.getElementById('phMetric' + name.charAt(0).toUpperCase() + name.slice(1));
         if (!btn) return;
         var active = (m === name);
@@ -2550,16 +2589,18 @@ class Component extends DCLogic {
         btn.style.color      = active ? '#F54E00' : '#6d6d6c';
       });
       var legendEl = document.getElementById('phLegend');
-      if (legendEl) legendEl.style.display = (m === 'features') ? 'flex' : 'none';
+      if (legendEl) legendEl.style.display = (m === 'features' || m === 'runs') ? 'flex' : 'none';
       window.__phBuild();
     };
 
     var metricFeaturesBtn = document.getElementById('phMetricFeatures');
     var metricEventsBtn   = document.getElementById('phMetricEvents');
     var metricUsersBtn    = document.getElementById('phMetricUsers');
+    var metricRunsBtn     = document.getElementById('phMetricRuns');
     if (metricFeaturesBtn) metricFeaturesBtn.onclick = function() { window.__phSetMetric('features'); };
     if (metricEventsBtn)   metricEventsBtn.onclick   = function() { window.__phSetMetric('events'); };
     if (metricUsersBtn)    metricUsersBtn.onclick    = function() { window.__phSetMetric('users'); };
+    if (metricRunsBtn)     metricRunsBtn.onclick     = function() { window.__phSetMetric('runs'); };
 
     window.__phToggle = function(k) {
       if (!window.__phState) return;
@@ -2658,7 +2699,7 @@ class Component extends DCLogic {
       fetch('/api/ph-trends?account=' + encodeURIComponent(accountName) + '&personId=' + encodeURIComponent(personId) + '&t=' + Date.now())
         .then(function(r) { return r.json(); })
         .then(function(data) {
-          window.__phData = { weekly: data.weekly || [], daily: data.daily || [] };
+          window.__phData = { weekly: data.weekly || [], daily: data.daily || [], weeklyRuns: data.weeklyRuns || [], dailyRuns: data.dailyRuns || [] };
           window.__phBuild && window.__phBuild();
         })
         .catch(function() {});
@@ -2809,6 +2850,9 @@ class Component extends DCLogic {
         setText('phUsers',       s.uniqueUsers.toLocaleString());
         setText('phEvents30d',   s.events30d.toLocaleString());
         setText('phEvents7d',    (s.events7d||0).toLocaleString()+' last 7 days');
+        setText('phIcRuns', (s.investmentCases||0).toLocaleString());
+        setText('phLbRuns', (s.leaderboards||0).toLocaleString());
+        setText('phBmRuns', (s.benchmarks||0).toLocaleString());
         // Persistent info bar — First/Last Active always visible
         setText('phInfoFirst', fmtDate(s.firstSeen));
         setText('phInfoLast',  fmtDate(s.lastSeen));
@@ -2817,7 +2861,7 @@ class Component extends DCLogic {
         var infoBar = document.getElementById('phInfoBar');
         if (infoBar) infoBar.style.display = 'flex';
 
-        window.__phData    = { weekly: data.weekly || [], daily: data.daily || [] };
+        window.__phData    = { weekly: data.weekly || [], daily: data.daily || [], weeklyRuns: data.weeklyRuns || [], dailyRuns: data.dailyRuns || [] };
         window.__phDataAll = window.__phData;
         window.__phSelectedPid = null;
         var _prevView   = (window.__phState && window.__phState.view)   || 'day';
