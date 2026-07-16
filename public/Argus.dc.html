@@ -520,9 +520,10 @@ input{font-family:inherit;}
 
           <!-- Users drilldown — appears below chart, cross-filters it -->
           <div id="phUsersView" style="display:none;margin-top:14px;">
-            <div style="margin-bottom:12px;display:flex;align-items:center;gap:12px;">
+            <div style="margin-bottom:12px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
               <button id="phUsersBackBtn" style="padding:6px 12px;border-radius:6px;border:1px solid #e6e6e5;background:#fff;color:#e36a00;font-size:11px;font-weight:700;cursor:pointer;">← Back to Summary</button>
               <span style="font-size:12px;color:#6d6d6c;">Click a row to filter the chart to that user</span>
+              <span id="phUsersRegionBadge" style="display:none;font-size:11px;background:#fff4f0;color:#e36a00;border-radius:10px;padding:3px 8px;border:1px solid #fcd9b8;"></span>
             </div>
             <div style="overflow-x:auto;border:1px solid #e6e6e5;border-radius:8px;max-height:420px;overflow-y:auto;">
               <table style="width:100%;border-collapse:collapse;font-size:12px;">
@@ -535,6 +536,7 @@ input{font-family:inherit;}
                     <th data-sort="benchmarks"  style="padding:10px 12px;text-align:left;font-weight:700;color:#c98f00;cursor:pointer;user-select:none;white-space:nowrap;">Benchmarks <span class="ph-chev">▾</span></th>
                     <th data-sort="untagged"    style="padding:10px 12px;text-align:left;font-weight:700;color:#3c3c3b;cursor:pointer;user-select:none;white-space:nowrap;">Untagged <span class="ph-chev">▾</span></th>
                     <th data-sort="lastSeen"    style="padding:10px 12px;text-align:left;font-weight:700;color:#3c3c3b;cursor:pointer;user-select:none;white-space:nowrap;">Last Seen <span class="ph-chev" style="opacity:1;">▼</span></th>
+                    <th style="padding:10px 12px;text-align:left;font-weight:700;color:#3c3c3b;white-space:nowrap;">Markets</th>
                   </tr>
                 </thead>
                 <tbody id="phUsersBody"></tbody>
@@ -2682,13 +2684,22 @@ class Component extends DCLogic {
       var resetBtn = document.getElementById('phResetUserBtn');
       if (resetBtn) resetBtn.onclick = function() { window.__phResetUser && window.__phResetUser(); };
 
-      bodyEl.innerHTML = '<tr><td colspan="7" style="padding:24px;text-align:center;color:#9d9d9d;font-size:12px;">Loading users…</td></tr>';
+      var activeReg = window.__phActiveRegion || null;
+      var badge = document.getElementById('phUsersRegionBadge');
+      if (badge) {
+        badge.textContent = activeReg ? 'Filtered: ' + activeReg : '';
+        badge.style.display = activeReg ? 'inline-block' : 'none';
+      }
 
-      fetch('/api/ph-users?account=' + encodeURIComponent(accountName) + '&t=' + Date.now())
+      bodyEl.innerHTML = '<tr><td colspan="8" style="padding:24px;text-align:center;color:#9d9d9d;font-size:12px;">Loading users' + (activeReg ? ' in ' + activeReg : '') + '…</td></tr>';
+
+      var usersUrl = '/api/ph-users?account=' + encodeURIComponent(accountName) + '&t=' + Date.now()
+        + (activeReg ? '&region=' + encodeURIComponent(activeReg) : '');
+      fetch(usersUrl)
         .then(function(r) { return r.json(); })
         .then(function(data) {
           if (!data.users || !data.users.length) {
-            bodyEl.innerHTML = '<tr><td colspan="7" style="padding:24px;text-align:center;color:#9d9d9d;font-size:12px;">No user data found</td></tr>';
+            bodyEl.innerHTML = '<tr><td colspan="8" style="padding:24px;text-align:center;color:#9d9d9d;font-size:12px;">No user data found' + (activeReg ? ' for region: ' + activeReg : '') + '</td></tr>';
             return;
           }
 
@@ -2719,9 +2730,19 @@ class Component extends DCLogic {
             +'</div>';
           };
 
+          // Zone color by region code for Markets dots
+          var EMEA_CODES = ['gbr','deu','bel','ita','nod','pol','erc','fra','ibe','cas','nld','irx','grc','fin','rou','dnk','bal','swe','bgr','hun','ger','aut','che','tur','ukr'];
+          var APAC_CODES = ['aus','ind','jap','jpn','chn','kor','sgp','mal'];
+          function zoneCol(rc) {
+            var r = (rc||'').toLowerCase();
+            if (EMEA_CODES.indexOf(r) >= 0) return '#e36a00';
+            if (APAC_CODES.indexOf(r) >= 0) return '#288184';
+            return '#7c4dff';
+          }
+
           // Inject totals into thead
           var ths = document.querySelectorAll('#phUsersHeaderRow th');
-          var totals = [null, sumEv, sumIC, sumLB, sumBM, sumUT, null];
+          var totals = [null, sumEv, sumIC, sumLB, sumBM, sumUT, null, null];
           totals.forEach(function(t, i) {
             if (t === null || !ths[i]) return;
             var sp = ths[i].querySelector('.ph-total') || document.createElement('span');
@@ -2762,6 +2783,14 @@ class Component extends DCLogic {
                 +'<td style="padding:10px 12px;">'+bar(u.benchmarks, maxBM, '#c98f00')+'</td>'
                 +'<td style="padding:10px 12px;">'+bar(u.untagged||0, maxUT, '#b0b0b0')+'</td>'
                 +'<td style="padding:10px 12px;font-size:12px;color:#6d6d6c;white-space:nowrap;">'+fmtD2(u.lastSeen)+'</td>'
+                +'<td style="padding:8px 12px;max-width:160px;">'
+                  +(u.regions||[]).slice(0,7).map(function(r) {
+                    var active = activeReg && r.region === activeReg;
+                    return '<span title="'+r.region+': '+r.runs+' runs" style="display:inline-block;background:'+zoneCol(r.region)+';'
+                      +(active?'outline:1.5px solid #3c3c3b;outline-offset:1px;':'')
+                      +'color:#fff;border-radius:3px;padding:1px 4px;font-size:8px;line-height:1.5;margin:1px;font-family:monospace;white-space:nowrap;">'+r.region+'</span>';
+                  }).join('')
+                +'</td>'
                 +'</tr>';
             }).join('');
           };
@@ -2781,7 +2810,7 @@ class Component extends DCLogic {
           renderRows();
         })
         .catch(function(err) {
-          bodyEl.innerHTML = '<tr><td colspan="7" style="padding:16px 12px;color:#c2600f;font-size:11px;">Error: '+err.message+'</td></tr>';
+          bodyEl.innerHTML = '<tr><td colspan="8" style="padding:16px 12px;color:#c2600f;font-size:11px;">Error: '+err.message+'</td></tr>';
         });
     };
 
@@ -3019,6 +3048,7 @@ class Component extends DCLogic {
 
           // ── Country sub-filters within active zone ────────────────────
           function buildCountryFilters() {
+            window.__phActiveRegion = activeRegion; // sync for Users table filtering
             var el = document.getElementById('phGlobeCountryFilters');
             if (!el) return;
             el.innerHTML = '';
@@ -3422,6 +3452,7 @@ class Component extends DCLogic {
             globeLoaded=false; currentRows=[]; currentPersonId=null;
             pendingPersonId=null; pendingPersonLbl=null;
             activeFeatures={}; activeZone=null; activeRegion=null;
+            window.__phActiveRegion = null;
             globeSvg=null; globeG=null; globeZoom=null; globeProjection=null;
             var pop=document.getElementById('phGlobePopup'); if (pop) pop.style.display='none';
             var zt=document.getElementById('phGlobeZoneTabs'); if (zt) zt.innerHTML='';

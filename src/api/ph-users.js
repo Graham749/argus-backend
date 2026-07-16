@@ -58,9 +58,11 @@ function buildDomainSet(mdm) {
 
 async function phUsers(req, res) {
   const account = (req.query.account || '').trim();
+  const region  = (req.query.region  || '').trim();
   if (!account) return res.status(400).json({ error: 'account query param required' });
 
-  const cached = resultCache[account];
+  const cacheKey = account + (region ? ':' + region : '');
+  const cached = resultCache[cacheKey];
   if (cached && Date.now() - cached.ts < CACHE_TTL) return res.json(cached.data);
 
   try {
@@ -99,24 +101,45 @@ async function phUsers(req, res) {
     }
 
     const tenantInList = tenantRows.map(r => `'${r.ph_tenant.replace(/'/g, "''")}'`).join(',');
+    const regionFilter = region ? `AND e.region = '${region.replace(/'/g, "''")}'` : '';
 
-    // Step 3: get per-user breakdown
-    const rows = await queryLakehouse(`
-      SELECT TOP 200
-        e.person_id,
-        MAX(e.person_name)                                                              AS person_name,
-        COUNT(*)                                                                        AS total_events,
-        CAST(MAX(e.timestamp) AS DATE)                                                  AS last_seen,
-        SUM(CASE WHEN e.pathname LIKE '%/investment-cases%' THEN 1 ELSE 0 END) AS investment_cases,
-        SUM(CASE WHEN e.pathname LIKE '%/leaderboards%'     THEN 1 ELSE 0 END) AS leaderboards,
-        SUM(CASE WHEN e.pathname LIKE '%/benchmarks%'       THEN 1 ELSE 0 END) AS benchmarks,
-        SUM(CASE WHEN e.pathname NOT LIKE '%/investment-cases%' AND e.pathname NOT LIKE '%/leaderboards%' AND e.pathname NOT LIKE '%/benchmarks%' THEN 1 ELSE 0 END) AS untagged
-      FROM dbo.posthog_notebook_events e
-      WHERE LOWER(LTRIM(RTRIM(e.tenant))) IN (${tenantInList})
-        AND e.person_id IS NOT NULL AND e.event = '$pageview'
-      GROUP BY e.person_id
-      ORDER BY total_events DESC
-    `);
+    // Steps 3 + 3b run in parallel: per-user feature breakdown (optionally region-filtered)
+    // and per-user region distribution (always account-wide so we see all their markets)
+    const [rows, regionRows] = await Promise.all([
+      queryLakehouse(`
+        SELECT TOP 200
+          e.person_id,
+          MAX(e.person_name)                                                              AS person_name,
+          COUNT(*)                                                                        AS total_events,
+          CAST(MAX(e.timestamp) AS DATE)                                                  AS last_seen,
+          SUM(CASE WHEN e.pathname LIKE '%/investment-cases%' THEN 1 ELSE 0 END) AS investment_cases,
+          SUM(CASE WHEN e.pathname LIKE '%/leaderboards%'     THEN 1 ELSE 0 END) AS leaderboards,
+          SUM(CASE WHEN e.pathname LIKE '%/benchmarks%'       THEN 1 ELSE 0 END) AS benchmarks,
+          SUM(CASE WHEN e.pathname NOT LIKE '%/investment-cases%' AND e.pathname NOT LIKE '%/leaderboards%' AND e.pathname NOT LIKE '%/benchmarks%' THEN 1 ELSE 0 END) AS untagged
+        FROM dbo.posthog_notebook_events e
+        WHERE LOWER(LTRIM(RTRIM(e.tenant))) IN (${tenantInList})
+          AND e.person_id IS NOT NULL AND e.event = '$pageview'
+          ${regionFilter}
+        GROUP BY e.person_id
+        ORDER BY total_events DESC
+      `),
+      queryLakehouse(`
+        SELECT e.person_id, e.region, COUNT(*) AS runs
+        FROM dbo.posthog_notebook_events e
+        WHERE LOWER(LTRIM(RTRIM(e.tenant))) IN (${tenantInList})
+          AND e.person_id IS NOT NULL
+          AND e.region IS NOT NULL AND e.region != ''
+        GROUP BY e.person_id, e.region
+        ORDER BY e.person_id, runs DESC
+      `),
+    ]);
+
+    // Build per-person region map from account-wide distribution query
+    const regionByPerson = {};
+    (regionRows || []).forEach(r => {
+      if (!regionByPerson[r.person_id]) regionByPerson[r.person_id] = [];
+      regionByPerson[r.person_id].push({ region: r.region, runs: Number(r.runs) });
+    });
 
     const users = (rows || []).map(r => ({
       personId:        r.person_id || '',
@@ -127,10 +150,11 @@ async function phUsers(req, res) {
       leaderboards:    Number(r.leaderboards)     || 0,
       benchmarks:      Number(r.benchmarks)       || 0,
       untagged:        Number(r.untagged)         || 0,
+      regions:         regionByPerson[r.person_id] || [],
     }));
 
-    const payload = { account, users };
-    resultCache[account] = { ts: Date.now(), data: payload };
+    const payload = { account, users, regionFilter: region || null };
+    resultCache[cacheKey] = { ts: Date.now(), data: payload };
     res.json(payload);
   } catch (err) {
     console.error('[ph-users]', err);
