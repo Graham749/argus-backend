@@ -22,6 +22,7 @@ module.exports = async function phBenchmark(req, res) {
         INNER JOIN dbo.v_gold_mdm_posthog g ON g.ph_tenant = a.ph_tenant
         WHERE g.sf_account_name IS NOT NULL AND g.sf_account_name != ''
         GROUP BY g.sf_account_name
+        HAVING SUM(a.ph_total_events) >= 50
       )
       SELECT TOP 1
         (SELECT COUNT(*) FROM per_account)                                               AS account_count,

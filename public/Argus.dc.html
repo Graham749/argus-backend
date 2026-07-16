@@ -1517,7 +1517,7 @@ window.__phToggleCompare = function() {
   function fmtN(v) { return (Number(v)||0).toLocaleString(); }
 
   function renderBenchmark(bm) {
-    if (cap) cap.textContent = 'vs ' + (bm.accountCount||0).toLocaleString() + ' accounts';
+    if (cap) cap.textContent = 'vs ' + (bm.accountCount||0).toLocaleString() + ' active accounts (≥50 events)';
     var metrics = [
       { label:'Total Events',     val:acct.totalEvents,     b:bm.totalEvents     },
       { label:'Unique Users',     val:acct.uniqueUsers,     b:bm.uniqueUsers     },
