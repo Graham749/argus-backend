@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const path = require('path');
+const cacheWarmer = require('./lib/cache-warmer');
 const lakehouseStatus = require('./api/lakehouse-status');
 const features = require('./api/features');
 const currentUser = require('./api/current-user');
@@ -98,4 +99,5 @@ app.listen(PORT, () => {
   console.log(`Lakehouse status: http://localhost:${PORT}/api/lakehouse-status`);
   console.log(`Build status: http://localhost:${PORT}/api/build-status`);
   console.log(`Features: http://localhost:${PORT}/api/features`);
+  cacheWarmer.run(PORT).catch(err => console.error('[cache-warmer] Fatal:', err.message));
 });
