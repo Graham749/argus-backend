@@ -498,6 +498,20 @@ input{font-family:inherit;}
               </div>
             </div>
 
+            <!-- Compare to base -->
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+              <button id="phCompareBtn" onclick="window.__phToggleCompare && window.__phToggleCompare()"
+                style="font-size:10px;font-weight:700;padding:5px 12px;border-radius:6px;border:1.5px solid #288184;background:#fff;color:#288184;cursor:pointer;display:flex;align-items:center;gap:5px;transition:background 0.15s,color 0.15s;"
+                onmouseenter="this.style.background='#288184';this.style.color='#fff';"
+                onmouseleave="if(!this.dataset.active){this.style.background='#fff';this.style.color='#288184';}">
+                <span id="phCompareChev">▼</span> Compare to base
+              </button>
+              <span id="phCompareCaption" style="font-size:9px;color:#9d9d9d;"></span>
+            </div>
+            <div id="phBenchmarkPanel" style="display:none;background:#f7f7f6;border:1px solid #e6e6e5;border-radius:10px;padding:14px 16px;margin-bottom:14px;">
+              <div id="phBenchmarkContent" style="color:#9d9d9d;font-size:11px;">Loading comparison…</div>
+            </div>
+
             <!-- Chart panel -->
             <div style="background:#fff;border:1px solid #f0f0ee;border-radius:10px;padding:12px 14px 10px;">
               <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
@@ -1451,6 +1465,88 @@ document.addEventListener('click', function(e) {
     }
   }, 100);
 });
+
+window.__phToggleCompare = function() {
+  var panel = document.getElementById('phBenchmarkPanel');
+  var btn   = document.getElementById('phCompareBtn');
+  var chev  = document.getElementById('phCompareChev');
+  var cap   = document.getElementById('phCompareCaption');
+  if (!panel) return;
+  var isOpen = panel.style.display !== 'none';
+  if (isOpen) {
+    panel.style.display = 'none';
+    if (btn)  { delete btn.dataset.active; btn.style.background='#fff'; btn.style.color='#288184'; }
+    if (chev) chev.textContent = '▼';
+    return;
+  }
+  panel.style.display = 'block';
+  if (btn)  { btn.dataset.active='1'; btn.style.background='#288184'; btn.style.color='#fff'; }
+  if (chev) chev.textContent = '▲';
+
+  var content = document.getElementById('phBenchmarkContent');
+  var acct    = window.__phCurrentSummary;
+  if (!content || !acct) return;
+
+  function pctBand(val, b) {
+    if (!b) return { label:'—', bg:'#e0e0e0', fg:'#6d6d6c', seg:0 };
+    var n = Number(val) || 0;
+    if (n >= b.p90) return { label:'Top 10%',      bg:'#ffcc00', fg:'#5a4a00', seg:4 };
+    if (n >= b.p75) return { label:'Top 25%',      bg:'#00966b', fg:'#fff',    seg:3 };
+    if (n >= b.p50) return { label:'Above median', bg:'#288184', fg:'#fff',    seg:2 };
+    if (n >= b.p25) return { label:'25th–50th', bg:'#b0b0af', fg:'#fff',  seg:1 };
+    return                 { label:'Bottom 25%',   bg:'#e0e0e0', fg:'#6d6d6c', seg:0 };
+  }
+
+  function buildBar(val, b) {
+    var band = pctBand(val, b);
+    var segBase = ['#ebebea','#d4d4d4','#b0b0af','#7d7d7c','#5a5a59'];
+    var h = '<div style="display:flex;gap:2px;height:7px;border-radius:4px;overflow:hidden;margin:5px 0 3px;">';
+    for (var i = 0; i < 5; i++) {
+      var r0 = i===0 ? '4px 0 0 4px' : ''; var r1 = i===4 ? '0 4px 4px 0' : '';
+      h += '<div style="flex:1;background:' + (i===band.seg ? band.bg : segBase[i]) + ';border-radius:' + r0 + r1 + ';"></div>';
+    }
+    return h + '</div>';
+  }
+
+  function fmtN(v) { return (Number(v)||0).toLocaleString(); }
+
+  function renderBenchmark(bm) {
+    if (cap) cap.textContent = 'vs ' + (bm.accountCount||0).toLocaleString() + ' accounts';
+    var metrics = [
+      { label:'Total Events',     val:acct.totalEvents,     b:bm.totalEvents     },
+      { label:'Unique Users',     val:acct.uniqueUsers,     b:bm.uniqueUsers     },
+      { label:'Events (30d)',     val:acct.events30d,       b:bm.events30d       },
+      { label:'Investment Cases', val:acct.investmentCases, b:bm.investmentCases },
+      { label:'Leaderboards',     val:acct.leaderboards,    b:bm.leaderboards    },
+      { label:'Benchmarks',       val:acct.benchmarks,      b:bm.benchmarks      },
+    ];
+    var html = '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">';
+    metrics.forEach(function(m) {
+      var band = pctBand(m.val, m.b);
+      html += '<div style="background:#fff;border-radius:8px;padding:10px 12px;border:1px solid #e6e6e5;">'
+        + '<div style="font-size:9px;font-weight:700;color:#9d9d9d;text-transform:uppercase;margin-bottom:3px;">' + m.label + '</div>'
+        + '<div style="display:flex;align-items:baseline;gap:6px;">'
+          + '<span style="font-size:18px;font-weight:700;color:#3c3c3b;line-height:1;">' + fmtN(m.val) + '</span>'
+          + '<span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;background:' + band.bg + ';color:' + band.fg + ';">' + band.label + '</span>'
+        + '</div>'
+        + buildBar(m.val, m.b)
+        + '<div style="display:flex;justify-content:space-between;font-size:8px;color:#c0c0bf;">'
+          + '<span>P25: ' + (m.b ? fmtN(m.b.p25) : '—') + '</span>'
+          + '<span>P50: ' + (m.b ? fmtN(m.b.p50) : '—') + '</span>'
+          + '<span>P90: ' + (m.b ? fmtN(m.b.p90) : '—') + '</span>'
+        + '</div>'
+        + '</div>';
+    });
+    content.innerHTML = html + '</div>';
+  }
+
+  if (window.__phBenchmarkCache) { renderBenchmark(window.__phBenchmarkCache); return; }
+  content.innerHTML = '<div style="font-size:11px;color:#9d9d9d;padding:2px 0;">Loading comparison data…</div>';
+  fetch('/api/ph-benchmark')
+    .then(function(r){ return r.json(); })
+    .then(function(bm){ window.__phBenchmarkCache = bm; renderBenchmark(bm); })
+    .catch(function(e){ content.innerHTML = '<div style="color:#c0392b;font-size:11px;">Could not load benchmark data: ' + (e && e.message || '') + '</div>'; });
+};
 </script>
 
 <script type="text/x-dc" data-dc-script>
@@ -2861,6 +2957,27 @@ class Component extends DCLogic {
         setText('phLbRuns', totalLb.toLocaleString());
         setText('phIcRuns', totalIc.toLocaleString());
         setText('phBmRuns', totalBm.toLocaleString());
+
+        // Store account summary for benchmark comparison; reset panel on each new account load
+        window.__phCurrentSummary = {
+          totalEvents:     s.totalEvents,
+          uniqueUsers:     s.uniqueUsers,
+          events30d:       s.events30d,
+          investmentCases: s.investmentCases || 0,
+          leaderboards:    s.leaderboards    || 0,
+          benchmarks:      s.benchmarks      || 0,
+        };
+        (function(){
+          var panel = document.getElementById('phBenchmarkPanel');
+          var btn   = document.getElementById('phCompareBtn');
+          var chev  = document.getElementById('phCompareChev');
+          var cap   = document.getElementById('phCompareCaption');
+          if (panel) panel.style.display = 'none';
+          if (btn)   { delete btn.dataset.active; btn.style.background='#fff'; btn.style.color='#288184'; }
+          if (chev)  chev.textContent = '▼';
+          if (cap)   cap.textContent  = '';
+        })();
+
         // Persistent info bar — First/Last Active always visible
         setText('phInfoFirst', fmtDate(s.firstSeen));
         setText('phInfoLast',  fmtDate(s.lastSeen));
