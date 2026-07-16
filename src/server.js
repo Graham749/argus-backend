@@ -21,6 +21,7 @@ const phRegions      = require('./api/ph-regions');
 const phRegionDetail = require('./api/ph-region-detail');
 const phBenchmark    = require('./api/ph-benchmark');
 const accountMatches = require('./api/account-matches');
+const { query: dbQuery } = require('./lib/db');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -97,7 +98,11 @@ app.use((err, req, res, next) => {
 app.listen(PORT, () => {
   console.log(`Argus backend running on http://localhost:${PORT}`);
   console.log(`Health check: http://localhost:${PORT}/health`);
-  console.log(`Lakehouse status: http://localhost:${PORT}/api/lakehouse-status`);
-  console.log(`Build status: http://localhost:${PORT}/api/build-status`);
-  console.log(`Features: http://localhost:${PORT}/api/features`);
+  // Eagerly connect pool + fetch token so first user request isn't cold.
+  // Uses a trivial query to force TCP/TLS handshake and token acquisition now.
+  dbQuery('SELECT 1 AS ping').then(() => {
+    console.log('[db] Pool warm — ready for requests');
+  }).catch(err => {
+    console.warn('[db] Warm-up failed (will retry on first request):', err.message);
+  });
 });
