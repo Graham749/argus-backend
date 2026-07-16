@@ -68,7 +68,10 @@ module.exports = async function phRegionDetail(req, res) {
         GROUP BY e.feature, e.scenario, COALESCE(NULLIF(e.price_zone,''), NULLIF(e.zone,'')), e.sensitivity
         ORDER BY runs DESC`),
 
-      queryLakehouse(`SELECT TOP 50
+      // Note: mssql npm mis-evaluates string equality on feature in cross-view JOINs.
+      // Workaround: fetch all features, filter to 'investment-cases' in JS.
+      queryLakehouse(`SELECT TOP 100
+        e.feature,
         e.tenant,
         e.region,
         COALESCE(NULLIF(e.price_zone,''), NULLIF(e.zone,'')) AS price_zone,
@@ -77,8 +80,7 @@ module.exports = async function phRegionDetail(req, res) {
         COUNT(*) AS runs,
         COUNT(DISTINCT e.person_id) AS unique_users
         ${join}
-        AND e.feature = 'investment-cases'
-        GROUP BY e.tenant, e.region,
+        GROUP BY e.feature, e.tenant, e.region,
           COALESCE(NULLIF(e.price_zone,''), NULLIF(e.zone,'')),
           e.ic, e.sensitivity
         ORDER BY runs DESC`),
@@ -98,15 +100,18 @@ module.exports = async function phRegionDetail(req, res) {
         runs:        Number(r.runs),
       })),
       totalUsers: Number(totalUsers[0]?.total_users || 0),
-      icDetail:   icDetail.map(r => ({
-        tenant:       r.tenant,
-        region:       r.region,
-        price_zone:   r.price_zone || null,
-        ic_id:        r.ic_id || null,
-        sensitivity:  r.sensitivity || null,
-        runs:         Number(r.runs),
-        unique_users: Number(r.unique_users),
-      })),
+      icDetail:   icDetail
+        .filter(r => r.feature === 'investment-cases')
+        .slice(0, 50)
+        .map(r => ({
+          tenant:       r.tenant,
+          region:       r.region,
+          price_zone:   r.price_zone || null,
+          ic_id:        r.ic_id || null,
+          sensitivity:  r.sensitivity || null,
+          runs:         Number(r.runs),
+          unique_users: Number(r.unique_users),
+        })),
     });
   } catch (err) {
     console.error('[ph-region-detail]', err.message);
