@@ -3462,6 +3462,16 @@ class Component extends DCLogic {
         })();
 
         show('phSummaryView', true);
+
+        // Pre-populate the Market Regions tile count without waiting for the globe to open
+        fetch('/api/ph-regions?account=' + encodeURIComponent(accountName))
+          .then(function(r){ return r.json(); })
+          .then(function(rows) {
+            var distinct = new Set(rows.map(function(r){ return r.region; })).size;
+            var el = document.getElementById('phRegionCount');
+            if (el) el.textContent = distinct || '—';
+          })
+          .catch(function(){});
       })
       .catch(function(err) {
         clearInterval(window.__phMsgInterval);
