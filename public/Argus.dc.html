@@ -3022,6 +3022,7 @@ class Component extends DCLogic {
               btn.onclick = function() {
                 activeZone = z==='All' ? null : z;
                 activeRegion = null;
+                _syncUsersFilter();
                 buildZoneTabs(); buildCountryFilters(); renderBubbles(); buildTable(currentRows);
                 if (activeZone) zoomToZone(activeZone);
                 else globeSvg && globeSvg.transition().duration(750).call(globeZoom.transform, d3.zoomIdentity);
@@ -3045,11 +3046,11 @@ class Component extends DCLogic {
               var btn = document.createElement('button');
               btn.textContent = regionName(code);
               btn.style.cssText = 'padding:3px 8px;border-radius:10px;border:1px solid '
-                +(isActive?'#3c3c3b':'#e6e6e5')+';background:'+(isActive?'#3c3c3b':'#fff')
+                +(isActive?'#e36a00':'#e6e6e5')+';background:'+(isActive?'#e36a00':'#fff')
                 +';color:'+(isActive?'#fff':'#6d6d6c')+';font-size:9px;cursor:pointer;transition:all 0.15s;';
               btn.onclick = (function(c) { return function() {
                 if (activeRegion===c) {
-                  activeRegion=null; buildCountryFilters(); renderBubbles();
+                  activeRegion=null; _syncUsersFilter(); buildCountryFilters(); renderBubbles();
                   var pop=document.getElementById('phGlobePopup'); if(pop) pop.style.display='none';
                   if (activeZone) zoomToZone(activeZone);
                 } else {
@@ -3089,6 +3090,18 @@ class Component extends DCLogic {
             'benchmarks':       'BM',
             'other':            '—',
           };
+          var REGION_CURRENCY = {
+            gbr:'GBP', aus:'AUD', mis:'USD', ny:'USD', pjm:'USD', ind:'INR'
+          };
+          function regionCurrency(code) { return REGION_CURRENCY[code||''] || 'EUR'; }
+
+          // If Users table is currently visible, refresh it to pick up the new region filter.
+          function _syncUsersFilter() {
+            var uv = document.getElementById('phUsersView');
+            if (uv && uv.style.display !== 'none') {
+              window.__phShowUsers && window.__phShowUsers();
+            }
+          }
 
           function buildTable(rows) {
             var el = document.getElementById('phGlobeTable');
@@ -3153,11 +3166,12 @@ class Component extends DCLogic {
           var _drillData = null; // cached for tab switching
           var _drillTabs = { hasIC: false, hasLB: false, hasBM: false, firstTab: '' };
 
-          function _drillTabBtn(label, key, active) {
+          function _drillTabBtn(label, key, active, color) {
             var isActive = key === active;
-            return '<button onclick="window.__phDrillTab(\''+key+'\')" style="padding:4px 10px;border-radius:10px;border:1px solid '
-              +(isActive?'#3c3c3b':'#e6e6e5')+';background:'+(isActive?'#3c3c3b':'#fff')
-              +';color:'+(isActive?'#fff':'#6d6d6c')+';font-size:9px;font-weight:600;cursor:pointer;transition:all 0.15s;">'+label+'</button>';
+            var c = color || '#3c3c3b';
+            return '<button onclick="window.__phDrillTab(\''+key+'\')" style="padding:4px 10px;border-radius:10px;border:1.5px solid '
+              +c+';background:'+(isActive?c:'#fff')
+              +';color:'+(isActive?'#fff':c)+';font-size:9px;font-weight:700;cursor:pointer;transition:all 0.15s;">'+label+'</button>';
           }
 
           function _drillTh(label, align) {
@@ -3166,51 +3180,53 @@ class Component extends DCLogic {
 
           function _renderDrillIC(data) {
             var rows = data.icDetail||[];
-            var total = data.totalUsers||0;
             if (!rows.length) return '<div style="font-size:10px;color:#9d9d9d;padding:4px 0;">No Investment Case runs for this region.</div>';
             var html = '<div style="overflow-x:auto;overflow-y:auto;max-height:220px;">'
-              +'<table style="width:100%;border-collapse:collapse;min-width:560px;">'
+              +'<table style="width:100%;border-collapse:collapse;min-width:580px;">'
               +'<thead><tr>'
-              +_drillTh('Tenant')+_drillTh('Scenario')+_drillTh('IC UUID')+_drillTh('Price Zone')+_drillTh('Sensitivity')+_drillTh('Runs','right')+_drillTh('Users %','right')
+              +_drillTh('Tenant')+_drillTh('Scenario')+_drillTh('Region')+_drillTh('Price Zone')+_drillTh('Currency')+_drillTh('Sensitivity')+_drillTh('Runs','right')
               +'</tr></thead><tbody>';
             rows.forEach(function(r,i) {
               var pz  = cleanZone(r.price_zone)||'—';
-              var icId = r.ic_id || '—';
-              var sc = r.scenario || '—';
-              var userPct = (total>0 && r.unique_users>0) ? (r.unique_users/total*100).toFixed(1)+'%' : '—';
-              var bg = i%2===0?'#fff':'#fafaf9';
+              var sc  = r.scenario || '—';
+              var reg = r.region || '—';
+              var cur = r.currency || '—';
+              var bg  = i%2===0?'#fff':'#fafaf9';
               html += '<tr style="background:'+bg+';">'
                 +'<td style="padding:3px 5px;font-size:9px;color:#3c3c3b;white-space:nowrap;">'+(r.tenant||'—')+'</td>'
-                +'<td style="padding:3px 5px;font-size:9px;color:#3c3c3b;font-family:monospace;white-space:nowrap;user-select:all;" title="scenario column">'+sc+'</td>'
-                +'<td style="padding:3px 5px;font-size:9px;color:#9d9d9d;font-family:monospace;white-space:nowrap;user-select:all;" title="ic column — PostHog UUID">'+icId+'</td>'
+                +'<td style="padding:3px 5px;font-size:9px;color:#3c3c3b;font-family:monospace;white-space:nowrap;user-select:all;">'+sc+'</td>'
+                +'<td style="padding:3px 5px;font-size:9px;color:#6d6d6c;white-space:nowrap;">'+reg+'</td>'
                 +'<td style="padding:3px 5px;font-size:9px;color:#3c3c3b;white-space:nowrap;">'+pz+'</td>'
+                +'<td style="padding:3px 5px;font-size:9px;color:#6d6d6c;font-weight:600;white-space:nowrap;">'+cur+'</td>'
                 +'<td style="padding:3px 5px;font-size:9px;color:#6d6d6c;white-space:nowrap;">'+(r.sensitivity||'—')+'</td>'
                 +'<td style="text-align:right;padding:3px 5px;font-size:9px;font-weight:600;color:#3c3c3b;">'+Number(r.runs).toLocaleString()+'</td>'
-                +'<td style="text-align:right;padding:3px 5px;font-size:9px;color:#e36a00;font-weight:600;" title="'+r.unique_users+' of '+total+' users">'
-                +userPct+'<span style="font-size:8px;color:#b0b0af;margin-left:2px;">('+r.unique_users+')</span></td>'
                 +'</tr>';
             });
             html += '</tbody></table></div>';
-            html += '<div style="font-size:8px;color:#b0b0af;margin-top:4px;">'+total+' distinct users · Scenario = <em>scenario</em> col · IC UUID = <em>ic</em> col (PostHog page UUID)</div>';
             return html;
           }
 
           function _renderDrillFeature(data, feature, label) {
             var rows = (data.detail||[]).filter(function(r){ return r.feature === feature; });
             if (!rows.length) return '<div style="font-size:10px;color:#9d9d9d;padding:4px 0;">No '+label+' runs for this region.</div>';
+            var hasScenario    = rows.some(function(r){ return r.scenario; });
+            var hasPriceZone   = rows.some(function(r){ return cleanZone(r.price_zone); });
+            var hasSensitivity = rows.some(function(r){ return r.sensitivity; });
             var html = '<div style="overflow-y:auto;max-height:220px;">'
-              +'<table style="width:100%;border-collapse:collapse;">'
-              +'<thead><tr>'
-              +_drillTh('Scenario')+_drillTh('Price Zone')+_drillTh('Sensitivity')+_drillTh('Runs','right')
+              +'<table style="width:100%;border-collapse:collapse;"><thead><tr>'
+              +(hasScenario    ? _drillTh('Scenario')   : '')
+              +(hasPriceZone   ? _drillTh('Price Zone') : '')
+              +(hasSensitivity ? _drillTh('Sensitivity'): '')
+              +_drillTh('Runs','right')
               +'</tr></thead><tbody>';
             rows.forEach(function(r, i) {
               var sc = r.scenario || '—';
               var pz = cleanZone(r.price_zone) || '—';
               var bg = i%2===0?'#fff':'#fafaf9';
               html += '<tr style="background:'+bg+';">'
-                +'<td style="padding:3px 5px;font-size:9px;color:#3c3c3b;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="'+sc+'">'+sc+'</td>'
-                +'<td style="padding:3px 5px;font-size:9px;color:#6d6d6c;">'+pz+'</td>'
-                +'<td style="padding:3px 5px;font-size:9px;color:#6d6d6c;">'+(r.sensitivity||'—')+'</td>'
+                +(hasScenario    ? '<td style="padding:3px 5px;font-size:9px;color:#3c3c3b;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="'+sc+'">'+sc+'</td>' : '')
+                +(hasPriceZone   ? '<td style="padding:3px 5px;font-size:9px;color:#6d6d6c;">'+pz+'</td>' : '')
+                +(hasSensitivity ? '<td style="padding:3px 5px;font-size:9px;color:#6d6d6c;">'+(r.sensitivity||'—')+'</td>' : '')
                 +'<td style="text-align:right;padding:3px 5px;font-size:9px;font-weight:600;color:#3c3c3b;">'+Number(r.runs).toLocaleString()+'</td>'
                 +'</tr>';
             });
@@ -3224,9 +3240,9 @@ class Component extends DCLogic {
             var body = document.getElementById('phPopupTabBody');
             if (!tabs||!body) return;
             var t = _drillTabs;
-            tabs.innerHTML = (t.hasIC?_drillTabBtn('Investment Cases','ic',tab)+' ':'')
-              +(t.hasLB?_drillTabBtn('Leaderboards','lb',tab)+' ':'')
-              +(t.hasBM?_drillTabBtn('Benchmarks','bm',tab):'');
+            tabs.innerHTML = (t.hasIC?_drillTabBtn('Investment Cases','ic',tab,FEATURE_COLORS['investment-cases'])+' ':'')
+              +(t.hasLB?_drillTabBtn('Leaderboards','lb',tab,FEATURE_COLORS['leaderboards'])+' ':'')
+              +(t.hasBM?_drillTabBtn('Benchmarks','bm',tab,FEATURE_COLORS['benchmarks']):'');
             body.innerHTML = tab==='ic' ? _renderDrillIC(_drillData)
               : tab==='lb' ? _renderDrillFeature(_drillData,'leaderboards','Leaderboard')
               : _renderDrillFeature(_drillData,'benchmarks','Benchmark');
@@ -3236,8 +3252,9 @@ class Component extends DCLogic {
             var el = document.getElementById('phGlobePopup');
             if (!el) return;
             _drillData = null;
-            activeRegion = regionCode;            // update IIFE closure var — getter reads this
-            window.__phActiveRegion = regionCode; // backup global for __phShowUsers
+            activeRegion = regionCode;
+            window.__phActiveRegion = regionCode;
+            _syncUsersFilter(); // refresh Users table if it's already open
 
             var sorted = (localItems||[]).slice().sort(function(a,b){return b.runs-a.runs;});
             var total  = sorted.reduce(function(s,r){return s+r.runs;},0);
@@ -3256,9 +3273,9 @@ class Component extends DCLogic {
             var firstTab = hasIC ? 'ic' : (hasLB ? 'lb' : (hasBM ? 'bm' : ''));
             _drillTabs = { hasIC: hasIC, hasLB: hasLB, hasBM: hasBM, firstTab: firstTab };
 
-            var tabsHtml = (hasIC?_drillTabBtn('Investment Cases','ic',firstTab)+' ':'')
-              +(hasLB?_drillTabBtn('Leaderboards','lb',firstTab)+' ':'')
-              +(hasBM?_drillTabBtn('Benchmarks','bm',firstTab):'');
+            var tabsHtml = (hasIC?_drillTabBtn('Investment Cases','ic',firstTab,FEATURE_COLORS['investment-cases'])+' ':'')
+              +(hasLB?_drillTabBtn('Leaderboards','lb',firstTab,FEATURE_COLORS['leaderboards'])+' ':'')
+              +(hasBM?_drillTabBtn('Benchmarks','bm',firstTab,FEATURE_COLORS['benchmarks']):'');
 
             el.innerHTML =
               '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">'
@@ -3436,6 +3453,7 @@ class Component extends DCLogic {
           window.__phGlobeSelectRegion=function(code){
             if (activeRegion===code) {
               activeRegion=null;
+              _syncUsersFilter();
               var pop=document.getElementById('phGlobePopup'); if(pop) pop.style.display='none';
             } else {
               activeRegion=code;
@@ -3461,6 +3479,7 @@ class Component extends DCLogic {
             pendingPersonId=null; pendingPersonLbl=null;
             activeFeatures={}; activeZone=null; activeRegion=null;
             window.__phActiveRegion = null;
+            _syncUsersFilter();
             globeSvg=null; globeG=null; globeZoom=null; globeProjection=null;
             var pop=document.getElementById('phGlobePopup'); if (pop) pop.style.display='none';
             var zt=document.getElementById('phGlobeZoneTabs'); if (zt) zt.innerHTML='';

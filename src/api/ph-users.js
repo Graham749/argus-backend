@@ -101,7 +101,15 @@ async function phUsers(req, res) {
     }
 
     const tenantInList = tenantRows.map(r => `'${r.ph_tenant.replace(/'/g, "''")}'`).join(',');
-    const regionFilter = region ? `AND e.region = '${region.replace(/'/g, "''")}'` : '';
+    // Region data lives on non-pageview events, so filter by person_id subquery rather than
+    // adding e.region directly to the pageview query (which would return 0 rows).
+    const regionFilter = region
+      ? `AND e.person_id IN (
+          SELECT DISTINCT person_id FROM dbo.posthog_notebook_events
+          WHERE LOWER(LTRIM(RTRIM(tenant))) IN (${tenantInList})
+          AND region = '${region.replace(/'/g, "''")}'
+        )`
+      : '';
 
     // Steps 3 + 3b run in parallel: per-user feature breakdown (optionally region-filtered)
     // and per-user region distribution (always account-wide so we see all their markets)
