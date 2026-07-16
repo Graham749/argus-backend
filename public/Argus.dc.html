@@ -1476,14 +1476,6 @@ class Component extends DCLogic {
 
     // Wire card collapse/expand headers (runs after x-dc renders the DOM)
     setTimeout(() => this.setupCardCollapses(), 300);
-
-    // Poll to detect navigation remount and reload accounts
-    this.pollTimer = setInterval(() => {
-      const select = document.getElementById('sfAccountSelector');
-      if(select && select.options.length === 1) {
-        this.loadAccountsList();
-      }
-    }, 500);
   }
 
   componentDidMount(){
