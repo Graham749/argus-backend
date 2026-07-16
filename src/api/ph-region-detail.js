@@ -65,7 +65,6 @@ module.exports = async function phRegionDetail(req, res) {
         e.sensitivity AS sensitivity,
         COUNT(*) AS runs
         ${join}
-        AND e.scenario IS NOT NULL AND e.scenario != ''
         GROUP BY e.feature, e.scenario, COALESCE(NULLIF(e.price_zone,''), NULLIF(e.zone,'')), e.sensitivity
         ORDER BY runs DESC`),
     ]);

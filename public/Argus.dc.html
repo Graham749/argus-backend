@@ -457,7 +457,7 @@ input{font-family:inherit;}
                 <div style="font-size:22px;font-weight:700;color:#3c3c3b;" id="phActiveWeeks">—</div>
                 <div style="font-size:10px;color:#9d9d9d;margin-top:2px;" id="phActiveWeeksLabel">of — weeks tracked</div>
               </div>
-              <div id="phRegionsTile" style="background:#fff8f3;border-radius:8px;padding:12px;border:1px solid #fcd9b8;cursor:pointer;position:relative;">
+              <div id="phRegionsTile" style="background:#fff8f3;border-radius:8px;padding:12px;border:1px solid #fcd9b8;cursor:pointer;position:relative;transition:background 0.15s,border-color 0.15s;" onmouseenter="this.style.background='#ffe9d6';this.style.borderColor='#e36a00';" onmouseleave="this.style.background='#fff8f3';this.style.borderColor='#fcd9b8';">
                 <div style="font-size:10px;font-weight:700;color:#a84000;text-transform:uppercase;margin-bottom:4px;">Market Regions</div>
                 <div style="font-size:22px;font-weight:700;color:#e36a00;" id="phRegionCount">—</div>
                 <div style="font-size:10px;color:#9d9d9d;margin-top:2px;">active markets</div>
@@ -3243,7 +3243,7 @@ class Component extends DCLogic {
               });
 
               tableHtml += '</tbody></table></div>';
-              if (rows.length===0) tableHtml = '<div style="font-size:10px;color:#9d9d9d;padding:6px 0;">No scenario data available.</div>';
+              if (rows.length===0) tableHtml = '<div style="font-size:10px;color:#9d9d9d;padding:6px 0;">No run detail available.</div>';
 
               detEl.innerHTML = miniRow + tableHtml;
             }).catch(function(err){
