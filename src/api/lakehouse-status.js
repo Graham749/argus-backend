@@ -1,68 +1,8 @@
-﻿const { execSync } = require('child_process');
-const sql = require('mssql');
-
-let cachedToken = null;
-let tokenExpiry = null;
+const { query } = require('../lib/db');
 
 let cachedResult = null;
 let cacheTs = null;
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
-
-async function getAccessToken() {
-  const now = Date.now();
-
-  if (cachedToken && tokenExpiry && tokenExpiry > now + 60000) {
-    console.log('[token] Using cached token');
-    return cachedToken;
-  }
-
-  try {
-    console.log('[token] Fetching fresh token via az CLI...');
-    const token = execSync(
-      'az account get-access-token --resource https://database.windows.net/ --query accessToken -o tsv',
-      { encoding: 'utf-8' }
-    ).trim();
-
-    cachedToken = token;
-    tokenExpiry = now + 55 * 60 * 1000;
-    console.log('[token] Got fresh token, expires in ~55min');
-    return token;
-  } catch (err) {
-    console.error('[token] Failed to get token:', err.message);
-    throw new Error(`Failed to authenticate: ${err.message}. Make sure 'az login' has been run.`);
-  }
-}
-
-async function queryLakehouse(query) {
-  const token = await getAccessToken();
-  const conn = new sql.ConnectionPool({
-    server: process.env.FABRIC_SERVER || 'pv6dzlli723u5jswg27zhty5be-qhcpisfudclelcjaerq6yrhgee.datawarehouse.fabric.microsoft.com',
-    authentication: {
-      type: 'azure-active-directory-access-token',
-      options: { token }
-    },
-    options: {
-      encrypt: true,
-      trustServerCertificate: false,
-      connectionTimeout: 30000
-    }
-  });
-
-  try {
-    await conn.connect();
-    const result = await conn.request().query(query);
-    return result.recordset;
-  } catch (err) {
-    // If auth failed at the SQL level, invalidate the cached token so next call re-fetches
-    if (err.message && (err.message.includes('Could not login') || err.message.includes('authentication failed') || err.message.includes('token'))) {
-      cachedToken = null;
-      tokenExpiry = null;
-    }
-    throw err;
-  } finally {
-    await conn.close();
-  }
-}
 
 function getSourceFromName(name) {
   if (name.includes('_lookup')) return 'Product Operations';
@@ -79,14 +19,13 @@ async function lakelzouseStatus(req, res) {
 
     // All 5 schema queries are independent — run in parallel
     const [bronzeCount, silverViews, goldViews, goldTables, bronzeDetails] = await Promise.all([
-      queryLakehouse(`SELECT COUNT(*) as count FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'dbo' AND TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME NOT LIKE 'gold_%'`),
-      queryLakehouse(`SELECT TABLE_NAME FROM INFORMATION_SCHEMA.VIEWS WHERE TABLE_SCHEMA = 'dbo' AND TABLE_NAME LIKE 'v_silver_%' ORDER BY TABLE_NAME`),
-      queryLakehouse(`SELECT TABLE_NAME FROM INFORMATION_SCHEMA.VIEWS WHERE TABLE_SCHEMA = 'dbo' AND TABLE_NAME LIKE 'v_gold_%' ORDER BY TABLE_NAME`),
-      queryLakehouse(`SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'dbo' AND TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME LIKE 'gold_%' ORDER BY TABLE_NAME`),
-      queryLakehouse(`SELECT TABLE_NAME as name FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'dbo' AND TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME NOT LIKE 'gold_%' ORDER BY TABLE_NAME`),
+      query(`SELECT COUNT(*) as count FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'dbo' AND TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME NOT LIKE 'gold_%'`),
+      query(`SELECT TABLE_NAME FROM INFORMATION_SCHEMA.VIEWS WHERE TABLE_SCHEMA = 'dbo' AND TABLE_NAME LIKE 'v_silver_%' ORDER BY TABLE_NAME`),
+      query(`SELECT TABLE_NAME FROM INFORMATION_SCHEMA.VIEWS WHERE TABLE_SCHEMA = 'dbo' AND TABLE_NAME LIKE 'v_gold_%' ORDER BY TABLE_NAME`),
+      query(`SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'dbo' AND TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME LIKE 'gold_%' ORDER BY TABLE_NAME`),
+      query(`SELECT TABLE_NAME as name FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'dbo' AND TABLE_TYPE = 'BASE TABLE' AND TABLE_NAME NOT LIKE 'gold_%' ORDER BY TABLE_NAME`),
     ]);
 
-    // Build views with source from naming convention
     const silverViewsWithSource = silverViews.map(v => ({
       name: v.TABLE_NAME,
       source: getSourceFromName(v.TABLE_NAME),
@@ -109,26 +48,14 @@ async function lakelzouseStatus(req, res) {
       source: getSourceFromName(b.name)
     }));
 
-    // Calculate counts by source
     const silverBySource = {};
     const goldBySource = {};
     const bronzeBySource = {};
 
-    silverViewsWithSource.forEach(v => {
-      silverBySource[v.source] = (silverBySource[v.source] || 0) + 1;
-    });
-
-    goldViewsWithSource.forEach(v => {
-      goldBySource[v.source] = (goldBySource[v.source] || 0) + 1;
-    });
-
-    goldTablesWithSource.forEach(t => {
-      goldBySource[t.source] = (goldBySource[t.source] || 0) + 1;
-    });
-
-    bronzeTablesWithSource.forEach(b => {
-      bronzeBySource[b.source] = (bronzeBySource[b.source] || 0) + 1;
-    });
+    silverViewsWithSource.forEach(v => { silverBySource[v.source] = (silverBySource[v.source] || 0) + 1; });
+    goldViewsWithSource.forEach(v => { goldBySource[v.source] = (goldBySource[v.source] || 0) + 1; });
+    goldTablesWithSource.forEach(t => { goldBySource[t.source] = (goldBySource[t.source] || 0) + 1; });
+    bronzeTablesWithSource.forEach(b => { bronzeBySource[b.source] = (bronzeBySource[b.source] || 0) + 1; });
 
     const status = {
       bronze: {

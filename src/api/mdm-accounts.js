@@ -1,49 +1,27 @@
-const { execSync } = require('child_process');
-const sql = require('mssql');
+const { query } = require('../lib/db');
 
-let cachedToken = null;
-let tokenExpiry = null;
-
-async function getAccessToken() {
-  const now = Date.now();
-  if (cachedToken && tokenExpiry && tokenExpiry > now + 60000) return cachedToken;
-  const token = execSync(
-    'az account get-access-token --resource https://database.windows.net/ --query accessToken -o tsv',
-    { encoding: 'utf-8' }
-  ).trim();
-  cachedToken = token;
-  tokenExpiry = now + 55 * 60 * 1000;
-  return token;
-}
-
-async function queryLakehouse(query) {
-  const token = await getAccessToken();
-  const conn = new sql.ConnectionPool({
-    server: process.env.FABRIC_SERVER || 'pv6dzlli723u5jswg27zhty5be-qhcpisfudclelcjaerq6yrhgee.datawarehouse.fabric.microsoft.com',
-    authentication: { type: 'azure-active-directory-access-token', options: { token } },
-    requestTimeout: 180000,
-    connectionTimeout: 30000,
-    options: { encrypt: true, trustServerCertificate: false }
-  });
-  try {
-    await conn.connect();
-    const result = await conn.request().query(query);
-    return result.recordset;
-  } catch (err) {
-    if (err.message && (err.message.includes('Could not login') || err.message.includes('authentication failed') || err.message.includes('token'))) {
-      cachedToken = null;
-      tokenExpiry = null;
-    }
-    throw err;
-  } finally {
-    await conn.close();
-  }
-}
+// Cache + in-flight coalescing: concurrent requests share one Fabric round-trip.
+// MDM data changes infrequently so 5-min TTL is safe.
+const CACHE_TTL = 5 * 60 * 1000;
+let _cache    = null;
+let _inflight = null;
 
 async function mdmAccounts(req, res) {
+  // Serve from cache
+  if (_cache && Date.now() - _cache.ts < CACHE_TTL) return res.json(_cache.data);
+
+  // In-flight coalescing: a concurrent request is already querying Fabric — await the same promise
+  if (_inflight) {
+    try { return res.json(await _inflight); }
+    catch (err) { return res.status(500).json({ error: err.message }); }
+  }
+
+  let resolveFlight, rejectFlight;
+  _inflight = new Promise((rs, rj) => { resolveFlight = rs; rejectFlight = rj; });
+
   try {
     const [summaryRows, accountRows, hierarchyRows, dupRows, pbOnlyRows, zdUserRows, zdTicketRows, pbNoteRows, sfSubRows, phCovRows, phRows, phUnmatchedRows, mdmDomainRows] = await Promise.all([
-      queryLakehouse(`
+      query(`
         SELECT
           COUNT(*)                                                              AS total,
           SUM(CASE WHEN zd_match_confidence = 'HIGH'         THEN 1 ELSE 0 END) AS highCount,
@@ -62,7 +40,7 @@ async function mdmAccounts(req, res) {
         FROM v_silver_mdm_account
       `),
       // Simple flat query — no JOINs, returns all 12k accounts reliably
-      queryLakehouse(`
+      query(`
         SELECT
           sf_account_id, sf_account_name, sf_account_status, sf_account_arr,
           sf_active_subscriptions, sf_website_domain,
@@ -75,12 +53,12 @@ async function mdmAccounts(req, res) {
         ORDER BY COALESCE(TRY_CAST(sf_account_arr AS FLOAT), 0) DESC
       `),
       // Hierarchy lookup — small table, fast
-      queryLakehouse(`
+      query(`
         SELECT account_id, parent_account_id, account_name
         FROM v_silver_sf_customer_accounts
         WHERE account_id IS NOT NULL AND LEN(TRIM(account_id)) > 0
       `),
-      queryLakehouse(`
+      query(`
         SELECT
           sf_account_id, sf_account_name, sf_account_status, sf_website_domain,
           zd_match_confidence, zd_domain_confirmed, pb_company_name, pb_match_method
@@ -91,7 +69,7 @@ async function mdmAccounts(req, res) {
                  CASE zd_match_confidence WHEN 'HIGH' THEN 0 WHEN 'MEDIUM' THEN 1 ELSE 2 END
       `),
       // PB companies with no SF match — 96 rows
-      queryLakehouse(`
+      query(`
         SELECT pb_company_id, company_name AS pb_company_name, normalised_domain AS pb_company_domain
         FROM v_silver_pb_companies
         WHERE silver_entity_classification = 'External'
@@ -101,7 +79,7 @@ async function mdmAccounts(req, res) {
         ORDER BY company_name
       `),
       // ZD users per org
-      queryLakehouse(`
+      query(`
         SELECT CAST(TRY_CAST(organization_id AS BIGINT) AS VARCHAR(20)) AS zd_org_id,
                COUNT(DISTINCT id) AS user_count
         FROM zd_notebook_users
@@ -109,7 +87,7 @@ async function mdmAccounts(req, res) {
         GROUP BY CAST(TRY_CAST(organization_id AS BIGINT) AS VARCHAR(20))
       `),
       // ZD tickets per org (open = open/new/pending)
-      queryLakehouse(`
+      query(`
         SELECT CAST(TRY_CAST(organization_id AS BIGINT) AS VARCHAR(20)) AS zd_org_id,
                COUNT(*) AS ticket_count,
                SUM(CASE WHEN status IN ('open','new','pending') THEN 1 ELSE 0 END) AS open_count
@@ -119,7 +97,7 @@ async function mdmAccounts(req, res) {
       `),
       // PB notes per company: direct company links + notes linked to contacts at that company
       // pb_notebook_relationships maps user→parent→company cleanly (no JSON parsing needed)
-      queryLakehouse(`
+      query(`
         WITH user_company_map AS (
           SELECT [source.id] AS user_id, [target.id] AS company_id
           FROM pb_notebook_relationships
@@ -148,14 +126,14 @@ async function mdmAccounts(req, res) {
         GROUP BY company_id
       `),
       // SF subscription counts per account (matches subscription widget: Active + Termination in Progress)
-      queryLakehouse(`
+      query(`
         SELECT account_id, COUNT(*) AS sub_count
         FROM v_silver_sf_subscriptions
         GROUP BY account_id
       `),
       // PostHog tenant → SF match coverage — uses v_gold_mdm_posthog which has the
       // correct REPLACE+LIKE EOS domain logic baked in as native SQL
-      queryLakehouse(`
+      query(`
         WITH ph_classified AS (
           SELECT
             ph.ph_tenant,
@@ -185,7 +163,7 @@ async function mdmAccounts(req, res) {
         FROM ph_classified
       `),
       // PostHog usage per SF account — via gold view (correct EOS domain matching baked in)
-      queryLakehouse(`
+      query(`
         SELECT
           sf_account_id,
           SUM(ph_total_events)     AS ph_total_events,
@@ -203,7 +181,7 @@ async function mdmAccounts(req, res) {
         GROUP BY sf_account_id
       `),
       // All domain-format PostHog tenants (unfiltered) — matched/unmatched split in JS
-      queryLakehouse(`
+      query(`
         SELECT
           ph.ph_tenant,
           ph.ph_total_events,
@@ -217,7 +195,7 @@ async function mdmAccounts(req, res) {
       `),
       // All MDM matched domains via STRING_SPLIT — avoids mssql npm LIKE mis-evaluation.
       // Enumerates website domain, ZD domain, and all EOS entries as flat domain rows.
-      queryLakehouse(`
+      query(`
         SELECT LOWER(sf_website_domain) AS domain
         FROM dbo.v_silver_mdm_account
         WHERE sf_website_domain IS NOT NULL AND sf_website_domain != ''
@@ -388,7 +366,7 @@ async function mdmAccounts(req, res) {
       return order[a.resolution] - order[b.resolution] || a.name.localeCompare(b.name);
     });
 
-    res.json({
+    const payload = {
       summary: {
         total:             Number(summary.total)             || 0,
         highCount:         Number(summary.highCount)         || 0,
@@ -432,10 +410,16 @@ async function mdmAccounts(req, res) {
       phMetrics,
       phUnmatched,
       syncedAt: new Date().toISOString()
-    });
+    };
+    _cache = { ts: Date.now(), data: payload };
+    resolveFlight(payload);
+    res.json(payload);
   } catch (err) {
     console.error('[mdm-accounts]', err);
+    rejectFlight(err);
     res.status(500).json({ error: err.message });
+  } finally {
+    _inflight = null;
   }
 }
 

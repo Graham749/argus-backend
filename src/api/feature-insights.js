@@ -1,44 +1,7 @@
-const { execSync } = require('child_process');
-const sql = require('mssql');
-
-let cachedToken = null;
-let tokenExpiry = null;
+const { query } = require('../lib/db');
 
 const resultCache = {};
 const CACHE_TTL = 10 * 60 * 1000;
-
-async function getAccessToken() {
-  const now = Date.now();
-  if (cachedToken && tokenExpiry && tokenExpiry > now + 60000) return cachedToken;
-  const token = execSync(
-    'az account get-access-token --resource https://database.windows.net/ --query accessToken -o tsv',
-    { encoding: 'utf-8' }
-  ).trim();
-  cachedToken = token;
-  tokenExpiry = now + 55 * 60 * 1000;
-  return token;
-}
-
-async function queryLakehouse(query) {
-  const token = await getAccessToken();
-  const conn = new sql.ConnectionPool({
-    server: process.env.FABRIC_SERVER || 'pv6dzlli723u5jswg27zhty5be-qhcpisfudclelcjaerq6yrhgee.datawarehouse.fabric.microsoft.com',
-    authentication: { type: 'azure-active-directory-access-token', options: { token } },
-    requestTimeout: 120000,
-    options: { encrypt: true, trustServerCertificate: false }
-  });
-  try {
-    await conn.connect();
-    return (await conn.request().query(query)).recordset;
-  } catch (err) {
-    if (err.message && (err.message.includes('Could not login') || err.message.includes('token'))) {
-      cachedToken = null; tokenExpiry = null;
-    }
-    throw err;
-  } finally {
-    await conn.close();
-  }
-}
 
 const stripHtml = (s) => {
   if (!s) return null;
@@ -61,14 +24,12 @@ const stripHtml = (s) => {
   const fromIdx = lines.findIndex(l => FROM_RE.test(l));
   if (fromIdx >= 0) {
     const subjectIdx = lines.findIndex(l => SUBJECT_RE.test(l));
-    if (subjectIdx < 0) return null; // headers fill entire excerpt; no body visible
+    if (subjectIdx < 0) return null;
     const subjectLine = lines[subjectIdx];
     let relevant;
     if (SUBJECT_RE.test(subjectLine) && lines.indexOf(subjectLine) === subjectIdx && /^(Subject|Betreff):\s/i.test(subjectLine)) {
-      // Subject on its own line — body starts on next line
       relevant = lines.slice(subjectIdx + 1);
     } else {
-      // Subject embedded in a combined header line — extract content after the subject value
       const afterSubject = subjectLine
         .replace(/^.*?(Subject|Betreff):\s*/i, '')
         .replace(/https?:\/\/\S+/g, '')
@@ -90,7 +51,7 @@ async function featureInsights(req, res) {
 
   try {
     const esc = featureId.replace(/'/g, "''");
-    const rows = await queryLakehouse(`
+    const rows = await query(`
       WITH feature_notes AS (
         SELECT n.note_id, n.note_name, n.note_html_url, n.note_created_at,
                NULLIF(n.pb_company_id, '')  AS pb_company_id,
@@ -132,7 +93,6 @@ async function featureInsights(req, res) {
       ORDER BY r.pb_company_id, r.note_created_at DESC
     `);
 
-    // Group by company, dedupe notes within each company
     const companyMap = {};
     const seenPerCompany = {};
     for (const r of rows) {

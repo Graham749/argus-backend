@@ -17,25 +17,20 @@ async function zdTickets(req, res) {
   try {
     const escaped = account.replace(/'/g, "''");
 
-    // Resolve ZD org ID from MDM view
-    const orgRows = await queryLakehouse(`
-      SELECT TOP 1 zd_org_id, zd_org_name
-      FROM v_silver_mdm_account
-      WHERE sf_account_name = '${escaped}'
-        AND has_zd_org = 1
-        AND zd_org_id IS NOT NULL
-    `);
-
-    if (!orgRows || orgRows.length === 0) {
-      return res.json({ zdOrgId: null, zdOrgName: null, summary: null, tickets: [], closed: null });
-    }
-
-    const zdOrgId = orgRows[0].zd_org_id;
-    const zdOrgName = orgRows[0].zd_org_name;
-
-    // Tickets + metrics for this org
+    // Single query: resolve org from MDM and fetch tickets in one round-trip
     const ticketRows = await queryLakehouse(`
+      WITH org AS (
+        SELECT TOP 1
+          CAST(TRY_CAST(zd_org_id AS BIGINT) AS VARCHAR(20)) AS zd_org_id,
+          zd_org_name
+        FROM v_silver_mdm_account
+        WHERE sf_account_name = '${escaped}'
+          AND has_zd_org = 1
+          AND zd_org_id IS NOT NULL
+      )
       SELECT
+        o.zd_org_id,
+        o.zd_org_name,
         t.id,
         t.subject,
         t.status,
@@ -52,7 +47,9 @@ async function zdTickets(req, res) {
         m.solved_at,
         TRY_CAST(ts.time_spent_value AS INT) AS time_spent_minutes,
         TRY_CAST(cr.num_credits_value AS INT) AS num_credits
-      FROM zd_notebook_tickets t
+      FROM org o
+      JOIN zd_notebook_tickets t
+        ON CAST(TRY_CAST(t.organization_id AS BIGINT) AS VARCHAR(20)) = o.zd_org_id
       LEFT JOIN zd_notebook_ticket_metrics m ON CAST(m.ticket_id AS BIGINT) = t.id
       OUTER APPLY (
         SELECT TOP 1 cf.[value] AS time_spent_value
@@ -68,10 +65,16 @@ async function zdTickets(req, res) {
         ) WITH (id BIGINT '$.id', [value] NVARCHAR(100) '$.value') cf
         WHERE cf.id = 5220732777631
       ) cr
-      WHERE CAST(TRY_CAST(t.organization_id AS BIGINT) AS VARCHAR(20)) = '${zdOrgId}'
-        AND t.status != 'deleted'
+      WHERE t.status != 'deleted'
       ORDER BY t.created_at DESC
     `);
+
+    if (!ticketRows || ticketRows.length === 0) {
+      return res.json({ zdOrgId: null, zdOrgName: null, summary: null, tickets: [], closed: null });
+    }
+
+    const zdOrgId   = ticketRows[0].zd_org_id;
+    const zdOrgName = ticketRows[0].zd_org_name;
 
     const open    = ticketRows.filter(t => t.status === 'open' || t.status === 'new');
     const pending = ticketRows.filter(t => t.status === 'pending');

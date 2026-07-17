@@ -1,66 +1,8 @@
-const { execSync } = require('child_process');
-const sql = require('mssql');
-
-let cachedToken = null;
-let tokenExpiry = null;
+const { query } = require('../lib/db');
 
 let cachedResult = null;
 let cacheTs = null;
 const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
-
-async function getAccessToken() {
-  const now = Date.now();
-
-  if (cachedToken && tokenExpiry && tokenExpiry > now + 60000) {
-    console.log('[token] Using cached token');
-    return cachedToken;
-  }
-
-  try {
-    console.log('[token] Fetching fresh token via az CLI...');
-    const token = execSync(
-      'az account get-access-token --resource https://database.windows.net/ --query accessToken -o tsv',
-      { encoding: 'utf-8' }
-    ).trim();
-
-    cachedToken = token;
-    tokenExpiry = now + 55 * 60 * 1000; // 55 minutes
-    console.log('[token] Got fresh token, expires in ~55min');
-    return token;
-  } catch (err) {
-    console.error('[token] Failed to get token:', err.message);
-    throw new Error(`Failed to authenticate: ${err.message}. Make sure 'az login' has been run.`);
-  }
-}
-
-async function queryLakehouse(query) {
-  const token = await getAccessToken();
-  const conn = new sql.ConnectionPool({
-    server: process.env.FABRIC_SERVER || 'pv6dzlli723u5jswg27zhty5be-qhcpisfudclelcjaerq6yrhgee.datawarehouse.fabric.microsoft.com',
-    authentication: {
-      type: 'azure-active-directory-access-token',
-      options: {
-        token: token
-      }
-    },
-    requestTimeout: 120000,
-    options: { encrypt: true, trustServerCertificate: false, connectionTimeout: 30000 }
-  });
-
-  try {
-    await conn.connect();
-    const result = await conn.request().query(query);
-    return result.recordset;
-  } catch (err) {
-    if (err.message && (err.message.includes('Could not login') || err.message.includes('authentication failed') || err.message.includes('token'))) {
-      cachedToken = null;
-      tokenExpiry = null;
-    }
-    throw err;
-  } finally {
-    await conn.close();
-  }
-}
 
 async function features(req, res) {
   try {
@@ -68,7 +10,7 @@ async function features(req, res) {
       return res.json(cachedResult);
     }
 
-    const query = `
+    const featuresSql = `
 SELECT
     g.feature_id            AS featureId,
     g.feature_name          AS featureName,
@@ -117,8 +59,8 @@ ORDER BY prioritization_score DESC
     `;
 
     const [rows, noteCounts] = await Promise.all([
-      queryLakehouse(query),
-      queryLakehouse(`
+      query(featuresSql),
+      query(`
         SELECT
           n.feature_id,
           COUNT(DISTINCT n.note_id) AS note_count,

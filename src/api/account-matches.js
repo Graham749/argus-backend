@@ -1,46 +1,7 @@
-const { execSync } = require('child_process');
-const sql = require('mssql');
-
-let cachedToken = null;
-let tokenExpiry = null;
+const { query } = require('../lib/db');
 
 const resultCache = {};
 const CACHE_TTL = 60 * 60 * 1000;
-
-async function getAccessToken() {
-  const now = Date.now();
-  if (cachedToken && tokenExpiry && tokenExpiry > now + 60000) return cachedToken;
-  const token = execSync(
-    'az account get-access-token --resource https://database.windows.net/ --query accessToken -o tsv',
-    { encoding: 'utf-8' }
-  ).trim();
-  cachedToken = token;
-  tokenExpiry = now + 55 * 60 * 1000;
-  return token;
-}
-
-async function queryLakehouse(query) {
-  const token = await getAccessToken();
-  const conn = new sql.ConnectionPool({
-    server: process.env.FABRIC_SERVER || 'pv6dzlli723u5jswg27zhty5be-qhcpisfudclelcjaerq6yrhgee.datawarehouse.fabric.microsoft.com',
-    authentication: { type: 'azure-active-directory-access-token', options: { token } },
-    requestTimeout: 60000,
-    connectionTimeout: 30000,
-    options: { encrypt: true, trustServerCertificate: false }
-  });
-  try {
-    await conn.connect();
-    const result = await conn.request().query(query);
-    return result.recordset;
-  } catch (err) {
-    if (err.message && (err.message.includes('Could not login') || err.message.includes('token'))) {
-      cachedToken = null; tokenExpiry = null;
-    }
-    throw err;
-  } finally {
-    await conn.close();
-  }
-}
 
 // Build a SET of lowercase domains from an MDM row, splitting semicolon-separated lists in JS.
 // This avoids cross-view OR+LIKE joins that mssql npm evaluates incorrectly vs System.Data.SqlClient.
@@ -66,8 +27,7 @@ async function accountMatches(req, res) {
   try {
     const escaped = account.replace(/'/g, "''");
 
-    // Step 1: get MDM record
-    const mdmRows = await queryLakehouse(`
+    const mdmRows = await query(`
       SELECT TOP 1
         has_zd_org, has_pb_company,
         sf_website_domain, sf_eos_access_domains, sf_eos_access_domains_2,
@@ -85,11 +45,10 @@ async function accountMatches(req, res) {
     const mdm = mdmRows[0];
     const domains = buildDomainSet(mdm);
 
-    // Step 2: check PostHog view with simple IN — avoids the OR+LIKE cross-view join issue
     let hasPh = false;
     if (domains.size > 0) {
       const inList = [...domains].map(d => `'${d.replace(/'/g, "''")}'`).join(',');
-      const phRows = await queryLakehouse(`
+      const phRows = await query(`
         SELECT TOP 1 ph_tenant
         FROM dbo.v_silver_posthog_account_activity
         WHERE ph_tenant IN (${inList})
