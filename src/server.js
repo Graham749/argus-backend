@@ -20,6 +20,7 @@ const phUsers        = require('./api/ph-users');
 const phRegions      = require('./api/ph-regions');
 const phRegionDetail = require('./api/ph-region-detail');
 const phBenchmark    = require('./api/ph-benchmark');
+const phSankey       = require('./api/ph-sankey');
 const accountMatches = require('./api/account-matches');
 const { query: dbQuery } = require('./lib/db');
 
@@ -76,6 +77,7 @@ app.get('/api/ph-users',    phUsers);
 app.get('/api/ph-regions',        phRegions);
 app.get('/api/ph-region-detail',  phRegionDetail);
 app.get('/api/ph-benchmark',      phBenchmark);
+app.get('/api/ph-sankey',         phSankey);
 app.get('/api/account-matches',   accountMatches);
 
 // Serve Argus dashboard at root

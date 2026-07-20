@@ -6,6 +6,7 @@
 <script src="./support.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/d3-sankey@0.12.3/dist/d3-sankey.min.js"></script>
 </head>
 <body>
 <x-dc>
@@ -561,9 +562,13 @@ input{font-family:inherit;}
 
           <!-- Market Regions drilldown -->
           <div id="phRegionsView" style="display:none;margin-top:14px;">
-            <div style="margin-bottom:8px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+            <div style="margin-bottom:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
               <button id="phRegionsBackBtn" style="padding:6px 12px;border-radius:6px;border:1px solid #e6e6e5;background:#fff;color:#e36a00;font-size:11px;font-weight:700;cursor:pointer;">← Back to Summary</button>
               <span id="phGlobePersonLabel" style="display:none;font-size:10px;font-weight:700;color:#e36a00;background:#fff4f0;padding:2px 8px;border-radius:10px;border:1px solid #fcd9b8;"></span>
+              <div style="margin-left:auto;display:flex;gap:4px;">
+                <button id="phViewGlobeBtn" style="padding:5px 10px;border-radius:6px;border:1px solid #288184;background:#288184;color:#fff;font-size:10px;font-weight:700;cursor:pointer;">⊙ Globe</button>
+                <button id="phViewSankeyBtn" style="padding:5px 10px;border-radius:6px;border:1px solid #e6e6e5;background:#fff;color:#6d6d6c;font-size:10px;font-weight:700;cursor:pointer;">⟐ Flow</button>
+              </div>
             </div>
             <div style="display:flex;gap:14px;align-items:flex-start;">
               <!-- Left: map (75%) -->
@@ -583,6 +588,21 @@ input{font-family:inherit;}
                 <div style="font-size:10px;font-weight:700;color:#3c3c3b;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:6px;">Market Summary</div>
                 <div id="phGlobeTable" style="font-size:10px;"></div>
               </div>
+            </div>
+
+            <!-- Sankey flow panel (hidden until Flow button clicked) -->
+            <div id="phSankeyPanel" style="display:none;margin-top:4px;">
+              <div id="phSankeyBreadcrumb" style="display:none;margin-bottom:6px;display:flex;align-items:center;gap:6px;">
+                <span style="font-size:10px;color:#6d6d6c;">Drilling into:</span>
+                <span id="phSankeyRegionLabel" style="font-size:10px;font-weight:700;color:#fff;background:#288184;padding:2px 8px;border-radius:10px;"></span>
+                <button id="phSankeyAllRegionsBtn" style="font-size:10px;color:#e36a00;background:none;border:none;cursor:pointer;padding:0;text-decoration:underline;">× All regions</button>
+              </div>
+              <div style="border:1px solid #e6e6e5;border-radius:8px;overflow:hidden;background:#fafafa;position:relative;">
+                <div id="phSankeyLoading" style="display:none;position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(250,250,250,0.85);font-size:11px;color:#9d9d9d;z-index:2;">Loading flow…</div>
+                <svg id="phSankeySvg" style="width:100%;display:block;"></svg>
+              </div>
+              <div id="phSankeyLegend" style="margin-top:6px;display:flex;gap:12px;flex-wrap:wrap;font-size:10px;color:#6d6d6c;"></div>
+              <div id="phSankeyTooltip" style="display:none;position:fixed;background:#1a1a1a;color:#fff;font-size:10px;padding:6px 10px;border-radius:6px;pointer-events:none;z-index:9999;line-height:1.5;"></div>
             </div>
           </div>
 
@@ -3767,6 +3787,187 @@ class Component extends DCLogic {
             var tileArr=document.querySelector('#phRegionsTile .drill-arrow');
             if (tileArr) tileArr.style.opacity='0.4';
           };
+        })();
+
+        // ── Sankey flow view ──────────────────────────────────────────────────
+        (function(){
+          var sankeyLoaded = false;
+          var sankeyRegion = null;
+
+          var FEAT_COLORS = { 'investment-cases':'#e36a00', 'leaderboards':'#8b5cf6', 'benchmarks':'#0d9488', 'other':'#9d9d9d' };
+          var NODE_COLORS  = { user:'#288184', region:'#e36a00', zone:'#3b82f6' };
+
+          function setViewMode(mode) {
+            var globeWrap = document.querySelector('#phRegionsView > div:nth-child(2)');
+            var sankeyPanel = document.getElementById('phSankeyPanel');
+            var globeBtn  = document.getElementById('phViewGlobeBtn');
+            var sankeyBtn = document.getElementById('phViewSankeyBtn');
+            if (!globeWrap || !sankeyPanel) return;
+            var showSankey = mode === 'sankey';
+            globeWrap.style.display   = showSankey ? 'none' : 'flex';
+            sankeyPanel.style.display = showSankey ? 'block' : 'none';
+            if (globeBtn) {
+              globeBtn.style.background  = showSankey ? '#fff' : '#288184';
+              globeBtn.style.color       = showSankey ? '#6d6d6c' : '#fff';
+              globeBtn.style.borderColor = showSankey ? '#e6e6e5' : '#288184';
+            }
+            if (sankeyBtn) {
+              sankeyBtn.style.background  = showSankey ? '#288184' : '#fff';
+              sankeyBtn.style.color       = showSankey ? '#fff' : '#6d6d6c';
+              sankeyBtn.style.borderColor = showSankey ? '#288184' : '#e6e6e5';
+            }
+            if (showSankey && !sankeyLoaded) { sankeyLoaded=true; loadSankey(null); }
+          }
+
+          var globeBtn  = document.getElementById('phViewGlobeBtn');
+          var sankeyBtn = document.getElementById('phViewSankeyBtn');
+          if (globeBtn)  globeBtn.onclick  = function(){ setViewMode('globe'); };
+          if (sankeyBtn) sankeyBtn.onclick = function(){ setViewMode('sankey'); };
+
+          var allRegionsBtn = document.getElementById('phSankeyAllRegionsBtn');
+          if (allRegionsBtn) allRegionsBtn.onclick = function(){ loadSankey(null); };
+
+          function loadSankey(region) {
+            sankeyRegion = region;
+            var loading = document.getElementById('phSankeyLoading');
+            var bc      = document.getElementById('phSankeyBreadcrumb');
+            var rl      = document.getElementById('phSankeyRegionLabel');
+            if (loading) loading.style.display = 'flex';
+            if (bc) bc.style.display = region ? 'flex' : 'none';
+            if (rl) rl.textContent = region ? region.toUpperCase() : '';
+
+            var url = '/api/ph-sankey?account=' + encodeURIComponent(accountName);
+            if (region) url += '&region=' + encodeURIComponent(region);
+            if (window.__phCurrentPersonId) url += '&personId=' + encodeURIComponent(window.__phCurrentPersonId);
+
+            fetch(url).then(function(r){ return r.json(); }).then(function(data){
+              if (loading) loading.style.display = 'none';
+              drawSankey(data);
+            }).catch(function(e){
+              if (loading) loading.style.display = 'none';
+              var svg = document.getElementById('phSankeySvg');
+              if (svg) svg.innerHTML = '<text x="50%" y="50%" text-anchor="middle" fill="#c2600f" font-size="11">Error loading flow data</text>';
+            });
+          }
+
+          function drawSankey(data) {
+            var svg   = document.getElementById('phSankeySvg');
+            var tip   = document.getElementById('phSankeyTooltip');
+            var leg   = document.getElementById('phSankeyLegend');
+            if (!svg || !data || !data.nodes || !data.nodes.length) {
+              if (svg) svg.innerHTML = '<text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="#9d9d9d" font-size="11">No flow data for this selection</text>';
+              return;
+            }
+            svg.innerHTML = '';
+
+            var W = svg.getBoundingClientRect().width || svg.parentElement.clientWidth || 700;
+            var nodeCount = Math.max(
+              data.nodes.filter(n=>n.type==='user').length,
+              data.nodes.filter(n=>n.type!=='user').length
+            );
+            var H = Math.max(260, Math.min(520, nodeCount * 28 + 40));
+            svg.setAttribute('height', H);
+            svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+
+            var PAD = { top:10, right:160, bottom:10, left:10 };
+
+            if (typeof d3.sankey !== 'function') {
+              svg.innerHTML = '<text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="#9d9d9d" font-size="11">d3-sankey not loaded</text>';
+              return;
+            }
+
+            var sankeyLayout = d3.sankey()
+              .nodeId(function(d){ return d.id; })
+              .nodeAlign(d3.sankeyLeft)
+              .nodeWidth(12)
+              .nodePadding(6)
+              .extent([[PAD.left, PAD.top], [W - PAD.right, H - PAD.bottom]]);
+
+            var graph = sankeyLayout({
+              nodes: data.nodes.map(function(d){ return Object.assign({}, d); }),
+              links: data.links.map(function(d){ return Object.assign({}, d); }),
+            });
+
+            var s = d3.select(svg);
+
+            // Links
+            s.append('g').attr('fill','none')
+              .selectAll('path')
+              .data(graph.links)
+              .join('path')
+                .attr('d', d3.sankeyLinkHorizontal())
+                .attr('stroke', function(d){ return NODE_COLORS[d.source.type] || '#288184'; })
+                .attr('stroke-opacity', 0.25)
+                .attr('stroke-width', function(d){ return Math.max(1, d.width); })
+                .style('cursor','default')
+                .on('mousemove', function(event, d){
+                  if (!tip) return;
+                  tip.style.display='block';
+                  tip.style.left=(event.clientX+12)+'px';
+                  tip.style.top=(event.clientY-8)+'px';
+                  tip.innerHTML = '<b>' + d.source.name + '</b> → <b>' + d.target.name + '</b><br>' + d.value + ' runs';
+                })
+                .on('mouseleave', function(){ if (tip) tip.style.display='none'; });
+
+            // Nodes
+            var nodeG = s.append('g')
+              .selectAll('g')
+              .data(graph.nodes)
+              .join('g')
+              .style('cursor', function(d){ return d.type==='region' ? 'pointer' : 'default'; })
+              .on('click', function(event, d){
+                if (d.type === 'region' && d.region) loadSankey(d.region);
+              })
+              .on('mousemove', function(event, d){
+                if (!tip) return;
+                var total = d.value || 0;
+                tip.style.display='block';
+                tip.style.left=(event.clientX+12)+'px';
+                tip.style.top=(event.clientY-8)+'px';
+                tip.innerHTML = '<b>' + d.name + '</b><br>' + total + ' runs' + (d.type==='region' ? '<br><span style="color:#aaa">Click to drill in</span>' : '');
+              })
+              .on('mouseleave', function(){ if (tip) tip.style.display='none'; });
+
+            nodeG.append('rect')
+              .attr('x', function(d){ return d.x0; })
+              .attr('y', function(d){ return d.y0; })
+              .attr('height', function(d){ return Math.max(1, d.y1-d.y0); })
+              .attr('width', function(d){ return d.x1-d.x0; })
+              .attr('fill', function(d){ return NODE_COLORS[d.type] || '#9d9d9d'; })
+              .attr('rx', 2);
+
+            // Labels — right of right nodes, left of left nodes
+            nodeG.append('text')
+              .attr('x', function(d){ return d.x0 < W/2 ? d.x1+5 : d.x0-5; })
+              .attr('y', function(d){ return (d.y0+d.y1)/2; })
+              .attr('dy', '0.35em')
+              .attr('text-anchor', function(d){ return d.x0 < W/2 ? 'start' : 'end'; })
+              .attr('font-size', 10)
+              .attr('fill', '#3c3c3b')
+              .text(function(d){
+                var maxLen = d.x0 < W/2 ? 22 : 18;
+                return d.name.length > maxLen ? d.name.slice(0, maxLen) + '…' : d.name;
+              });
+
+            // Legend
+            if (leg) {
+              var modeLabel = data.mode === 'user-region' ? 'Click a market node to drill into price zones' : 'Showing price zones for ' + (data.region||'').toUpperCase();
+              leg.innerHTML = '<span style="color:#288184;font-weight:700;">■</span> User &nbsp;&nbsp;'
+                + '<span style="color:#e36a00;font-weight:700;">■</span> ' + (data.mode==='user-zone' ? 'Price Zone' : 'Market Region')
+                + ' &nbsp;&nbsp;<span style="color:#9d9d9d;">' + modeLabel + '</span>';
+            }
+          }
+
+          // Re-draw on window resize (debounced)
+          var _resizeTimer;
+          window.addEventListener('resize', function(){
+            clearTimeout(_resizeTimer);
+            _resizeTimer = setTimeout(function(){
+              if (document.getElementById('phSankeyPanel').style.display !== 'none' && sankeyLoaded) {
+                loadSankey(sankeyRegion);
+              }
+            }, 250);
+          });
         })();
 
         show('phSummaryView', true);
