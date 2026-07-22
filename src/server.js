@@ -100,10 +100,13 @@ app.use((err, req, res, next) => {
 app.listen(PORT, () => {
   console.log(`Argus backend running on http://localhost:${PORT}`);
   console.log(`Health check: http://localhost:${PORT}/health`);
-  // Eagerly connect pool + fetch token so first user request isn't cold.
-  // Uses a trivial query to force TCP/TLS handshake and token acquisition now.
+  // Eagerly connect pool + prime the accounts-list cache so health card loads instantly.
   dbQuery('SELECT 1 AS ping').then(() => {
-    console.log('[db] Pool warm — ready for requests');
+    console.log('[db] Pool warm — priming accounts-list cache');
+    return accountsList({ query: {} }, {
+      json: (data) => { console.log(`[db] Accounts-list primed (${(data.accounts||[]).length} accounts)`); },
+      status: () => ({ json: () => {} }),
+    });
   }).catch(err => {
     console.warn('[db] Warm-up failed (will retry on first request):', err.message);
   });

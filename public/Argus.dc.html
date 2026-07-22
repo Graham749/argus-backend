@@ -499,17 +499,6 @@ input{font-family:inherit;}
               </div>
             </div>
 
-            <!-- Compare to base -->
-            <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
-              <button id="phCompareBtn"
-                style="font-size:10px;font-weight:700;padding:5px 12px;border-radius:6px;border:1.5px solid #288184;background:#fff;color:#288184;cursor:pointer;display:flex;align-items:center;gap:5px;transition:background 0.15s,color 0.15s;">
-                <span id="phCompareChev">▼</span> Compare to base
-              </button>
-              <span id="phCompareCaption" style="font-size:9px;color:#9d9d9d;"></span>
-            </div>
-            <div id="phBenchmarkPanel" style="display:none;background:#f7f7f6;border:1px solid #e6e6e5;border-radius:10px;padding:14px 16px;margin-bottom:14px;">
-              <div id="phBenchmarkContent" style="color:#9d9d9d;font-size:11px;">Loading comparison…</div>
-            </div>
 
             <!-- Chart panel -->
             <div style="background:#fff;border:1px solid #f0f0ee;border-radius:10px;padding:12px 14px 10px;">
@@ -565,10 +554,6 @@ input{font-family:inherit;}
             <div style="margin-bottom:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
               <button id="phRegionsBackBtn" style="padding:6px 12px;border-radius:6px;border:1px solid #e6e6e5;background:#fff;color:#e36a00;font-size:11px;font-weight:700;cursor:pointer;">← Back to Summary</button>
               <span id="phGlobePersonLabel" style="display:none;font-size:10px;font-weight:700;color:#e36a00;background:#fff4f0;padding:2px 8px;border-radius:10px;border:1px solid #fcd9b8;"></span>
-              <div style="margin-left:auto;display:flex;gap:4px;">
-                <button id="phViewGlobeBtn" style="padding:5px 10px;border-radius:6px;border:1px solid #288184;background:#288184;color:#fff;font-size:10px;font-weight:700;cursor:pointer;">⊙ Globe</button>
-                <button id="phViewSankeyBtn" style="padding:5px 10px;border-radius:6px;border:1px solid #e6e6e5;background:#fff;color:#6d6d6c;font-size:10px;font-weight:700;cursor:pointer;">⟐ Flow</button>
-              </div>
             </div>
             <div style="display:flex;gap:14px;align-items:flex-start;">
               <!-- Left: map (75%) -->
@@ -590,15 +575,18 @@ input{font-family:inherit;}
               </div>
             </div>
 
-            <!-- Sankey flow panel (hidden until Flow button clicked) -->
-            <div id="phSankeyPanel" style="display:none;margin-top:4px;">
-              <div id="phSankeyBreadcrumb" style="display:none;margin-bottom:6px;display:flex;align-items:center;gap:6px;">
-                <span style="font-size:10px;color:#6d6d6c;">Drilling into:</span>
-                <span id="phSankeyRegionLabel" style="font-size:10px;font-weight:700;color:#fff;background:#288184;padding:2px 8px;border-radius:10px;"></span>
-                <button id="phSankeyAllRegionsBtn" style="font-size:10px;color:#e36a00;background:none;border:none;cursor:pointer;padding:0;text-decoration:underline;">× All regions</button>
+            <!-- Sankey flow panel — always visible below globe -->
+            <div id="phSankeyPanel" style="margin-top:12px;">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;">
+                <span style="font-size:10px;font-weight:700;color:#3c3c3b;text-transform:uppercase;letter-spacing:0.04em;">User IP Location → Market Region</span>
+                <div id="phSankeyBreadcrumb" style="display:none;align-items:center;gap:6px;">
+                  <span style="font-size:10px;color:#6d6d6c;">Drilling into</span>
+                  <span id="phSankeyRegionLabel" style="font-size:10px;font-weight:700;color:#fff;background:#e36a00;padding:2px 8px;border-radius:10px;"></span>
+                  <button id="phSankeyAllRegionsBtn" style="font-size:10px;color:#6d6d6c;background:none;border:none;cursor:pointer;padding:0;text-decoration:underline;">× all regions</button>
+                </div>
               </div>
               <div style="border:1px solid #e6e6e5;border-radius:8px;overflow:hidden;background:#fafafa;position:relative;">
-                <div id="phSankeyLoading" style="display:none;position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(250,250,250,0.85);font-size:11px;color:#9d9d9d;z-index:2;">Loading flow…</div>
+                <div id="phSankeyLoading" style="display:none;position:absolute;inset:0;align-items:center;justify-content:center;background:rgba(250,250,250,0.85);font-size:11px;color:#9d9d9d;z-index:2;">Loading flow…</div>
                 <svg id="phSankeySvg" style="width:100%;display:block;"></svg>
               </div>
               <div id="phSankeyLegend" style="margin-top:6px;display:flex;gap:12px;flex-wrap:wrap;font-size:10px;color:#6d6d6c;"></div>
@@ -1390,8 +1378,6 @@ aside > div:nth-child(2) { transition: opacity 0.2s ease; }
 .sidebar-collapsed main { margin-left: 56px !important; }
 [data-toggle-sidebar] { transition: transform 0.3s ease; }
 .sidebar-collapsed [data-toggle-sidebar] { transform: scaleX(-1); }
-#phCompareBtn:hover:not([data-active]) { background:#288184 !important; color:#fff !important; }
-#phCompareBtn[data-active] { background:#288184 !important; color:#fff !important; }
 </style>
 
 <script>
@@ -1423,12 +1409,6 @@ document.addEventListener('click', function(e) {
   if (e.target.closest('#zdBackButton')) {
     var zdDv = document.getElementById('zdDetailView');
     if (zdDv) zdDv.style.display = 'none';
-    return;
-  }
-
-  // PostHog compare-to-base button
-  if (e.target.closest('#phCompareBtn')) {
-    window.__phToggleCompare && window.__phToggleCompare();
     return;
   }
 
@@ -1492,87 +1472,6 @@ document.addEventListener('click', function(e) {
   }, 100);
 });
 
-window.__phToggleCompare = function() {
-  var panel = document.getElementById('phBenchmarkPanel');
-  var btn   = document.getElementById('phCompareBtn');
-  var chev  = document.getElementById('phCompareChev');
-  var cap   = document.getElementById('phCompareCaption');
-  if (!panel) return;
-  var isOpen = panel.style.display !== 'none';
-  if (isOpen) {
-    panel.style.display = 'none';
-    if (btn)  { delete btn.dataset.active; btn.style.background='#fff'; btn.style.color='#288184'; }
-    if (chev) chev.textContent = '▼';
-    return;
-  }
-  panel.style.display = 'block';
-  if (btn)  { btn.dataset.active='1'; btn.style.background='#288184'; btn.style.color='#fff'; }
-  if (chev) chev.textContent = '▲';
-
-  var content = document.getElementById('phBenchmarkContent');
-  var acct    = window.__phCurrentSummary;
-  if (!content || !acct) return;
-
-  function pctBand(val, b) {
-    if (!b) return { label:'—', bg:'#e0e0e0', fg:'#6d6d6c', seg:0 };
-    var n = Number(val) || 0;
-    if (n >= b.p90) return { label:'Top 10%',      bg:'#ffcc00', fg:'#5a4a00', seg:4 };
-    if (n >= b.p75) return { label:'Top 25%',      bg:'#00966b', fg:'#fff',    seg:3 };
-    if (n >= b.p50) return { label:'Above median', bg:'#288184', fg:'#fff',    seg:2 };
-    if (n >= b.p25) return { label:'25th–50th', bg:'#b0b0af', fg:'#fff',  seg:1 };
-    return                 { label:'Bottom 25%',   bg:'#e0e0e0', fg:'#6d6d6c', seg:0 };
-  }
-
-  function buildBar(val, b) {
-    var band = pctBand(val, b);
-    var segBase = ['#ebebea','#d4d4d4','#b0b0af','#7d7d7c','#5a5a59'];
-    var h = '<div style="display:flex;gap:2px;height:7px;border-radius:4px;overflow:hidden;margin:5px 0 3px;">';
-    for (var i = 0; i < 5; i++) {
-      var r0 = i===0 ? '4px 0 0 4px' : ''; var r1 = i===4 ? '0 4px 4px 0' : '';
-      h += '<div style="flex:1;background:' + (i===band.seg ? band.bg : segBase[i]) + ';border-radius:' + r0 + r1 + ';"></div>';
-    }
-    return h + '</div>';
-  }
-
-  function fmtN(v) { return (Number(v)||0).toLocaleString(); }
-
-  function renderBenchmark(bm) {
-    if (cap) cap.textContent = 'vs ' + (bm.accountCount||0).toLocaleString() + ' active accounts (≥50 events)';
-    var metrics = [
-      { label:'Total Events',     val:acct.totalEvents,     b:bm.totalEvents     },
-      { label:'Unique Users',     val:acct.uniqueUsers,     b:bm.uniqueUsers     },
-      { label:'Events (30d)',     val:acct.events30d,       b:bm.events30d       },
-      { label:'Investment Cases', val:acct.investmentCases, b:bm.investmentCases },
-      { label:'Leaderboards',     val:acct.leaderboards,    b:bm.leaderboards    },
-      { label:'Benchmarks',       val:acct.benchmarks,      b:bm.benchmarks      },
-    ];
-    var html = '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">';
-    metrics.forEach(function(m) {
-      var band = pctBand(m.val, m.b);
-      html += '<div style="background:#fff;border-radius:8px;padding:10px 12px;border:1px solid #e6e6e5;">'
-        + '<div style="font-size:9px;font-weight:700;color:#9d9d9d;text-transform:uppercase;margin-bottom:3px;">' + m.label + '</div>'
-        + '<div style="display:flex;align-items:baseline;gap:6px;">'
-          + '<span style="font-size:18px;font-weight:700;color:#3c3c3b;line-height:1;">' + fmtN(m.val) + '</span>'
-          + '<span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;background:' + band.bg + ';color:' + band.fg + ';">' + band.label + '</span>'
-        + '</div>'
-        + buildBar(m.val, m.b)
-        + '<div style="display:flex;justify-content:space-between;font-size:8px;color:#c0c0bf;">'
-          + '<span>P25: ' + (m.b ? fmtN(m.b.p25) : '—') + '</span>'
-          + '<span>P50: ' + (m.b ? fmtN(m.b.p50) : '—') + '</span>'
-          + '<span>P90: ' + (m.b ? fmtN(m.b.p90) : '—') + '</span>'
-        + '</div>'
-        + '</div>';
-    });
-    content.innerHTML = html + '</div>';
-  }
-
-  if (window.__phBenchmarkCache) { renderBenchmark(window.__phBenchmarkCache); return; }
-  content.innerHTML = '<div style="font-size:11px;color:#9d9d9d;padding:2px 0;">Loading comparison data…</div>';
-  fetch('/api/ph-benchmark')
-    .then(function(r){ return r.json(); })
-    .then(function(bm){ window.__phBenchmarkCache = bm; renderBenchmark(bm); })
-    .catch(function(e){ content.innerHTML = '<div style="color:#c0392b;font-size:11px;">Could not load benchmark data: ' + (e && e.message || '') + '</div>'; });
-};
 </script>
 
 <script type="text/x-dc" data-dc-script>
@@ -1603,6 +1502,23 @@ class Component extends DCLogic {
     // Load accounts immediately on construction (survives navigation remount)
     setTimeout(() => this.loadAccountsList(), 10);
 
+    // x-dc rebuilds <sc-if> content on every setState call — including refreshBuildStatus which
+    // fires setState({loadingSeconds}) every 100ms for 15-20s, continuously wiping the dropdown.
+    // This interval runs at the same 100ms rate using direct DOM writes (no fetch, no side effects).
+    clearInterval(window.__healthRepairInterval);
+    window.__healthRepairInterval = setInterval(() => {
+      if(!this.state || this.state.view !== 'health') return;
+      const s = document.getElementById('sfAccountSelector');
+      if(!s || s.options.length > 1) return;
+      const accounts = window.__argusAccountsList || this.cachedAccounts;
+      if(!accounts || !accounts.length) return;
+      s.innerHTML = '';
+      const ph = document.createElement('option'); ph.value = ''; ph.textContent = '-- Select Account --'; s.appendChild(ph);
+      accounts.forEach(a => { const o = document.createElement('option'); o.value = a.name; o.textContent = a.name; s.appendChild(o); });
+      const saved = localStorage.getItem('argusHealthAccount');
+      if(saved) s.value = saved;
+    }, 100);
+
     // Wire card collapse/expand headers (runs after x-dc renders the DOM)
     setTimeout(() => this.setupCardCollapses(), 300);
   }
@@ -1620,6 +1536,42 @@ class Component extends DCLogic {
     this.loadMdm();
     // Setup Salesforce subscriptions immediately (don't wait)
     this.setupSalesforceSubscriptions();
+    // On direct health page load (F5 refresh), setV never fires so waitForHealthDOM never runs.
+    // _initHealthView is a safety net: waits for accounts to populate, then auto-loads.
+    if(this.state.view === 'health'){
+      this._initHealthView();
+    }
+  }
+
+  _triggerHealthLoad(target){
+    // Single-fire gate: once load is started for this account, no other path can double-fire.
+    // Cleared by setV when navigating away from health (so next visit gets a fresh load).
+    if(!target || window.__healthLoadStarted === target) return;
+    window.__healthLoadStarted = target;
+    this.updateAccountTitles(target);
+    this.loadAccountWithMatchCheck(target);
+  }
+
+  _initHealthView(){
+    // Safety net for direct health page refresh: setV never fires, so waitForHealthDOM never runs.
+    // Poll until accounts are loaded, then trigger — unless populateAccountsDropdown already did it.
+    const target = window.__argusTargetAccount || localStorage.getItem('argusHealthAccount');
+    if(!target) return;
+    let retries = 0;
+    const poll = () => {
+      if(window.__healthLoadStarted === target) return; // already handled by populateAccountsDropdown or setV
+      retries++;
+      if(retries > 20) return; // give up after ~4s (accounts may have failed to load)
+      const select  = document.getElementById('sfAccountSelector');
+      const summary = document.getElementById('sfSummaryView');
+      if(!select || !summary || select.options.length <= 1){
+        setTimeout(poll, 200);
+        return;
+      }
+      select.value = target;
+      this._triggerHealthLoad(target);
+    };
+    setTimeout(poll, 300);
   }
 
   setupCardCollapses(){
@@ -1724,6 +1676,7 @@ class Component extends DCLogic {
               b.style.border = '1px solid #e6e6e5';
             }
           });
+          window.__healthLoadStarted = null; // allow _triggerHealthLoad for new account selection
           this.loadAccountWithMatchCheck(accountName);
         }
       });
@@ -1796,11 +1749,22 @@ class Component extends DCLogic {
       return;
     }
 
-    // Use cache if available
+    // Use in-memory cache if available (fastest)
     if(this.cachedAccounts && this.cachedAccounts.length > 0){
       this.populateAccountsDropdown(select, this.cachedAccounts);
       return;
     }
+
+    // Check localStorage cache (12h TTL) — instant even after server restart
+    try {
+      const lsRaw = JSON.parse(localStorage.getItem('argusAccountsCache') || 'null');
+      if(lsRaw && lsRaw.accounts && lsRaw.accounts.length > 0 && Date.now() - lsRaw.ts < 43200000){
+        this.cachedAccounts = lsRaw.accounts;
+        window.__argusAccountsList = lsRaw.accounts;
+        this.populateAccountsDropdown(select, lsRaw.accounts);
+        return;
+      }
+    } catch(e){}
 
     select.innerHTML = '<option value="">-- Loading accounts... --</option>';
 
@@ -2995,16 +2959,6 @@ class Component extends DCLogic {
           leaderboards:    totalLb,
           benchmarks:      totalBm,
         };
-        (function(){
-          var panel = document.getElementById('phBenchmarkPanel');
-          var btn   = document.getElementById('phCompareBtn');
-          var chev  = document.getElementById('phCompareChev');
-          var cap   = document.getElementById('phCompareCaption');
-          if (panel) panel.style.display = 'none';
-          if (btn)   { delete btn.dataset.active; btn.style.background='#fff'; btn.style.color='#288184'; }
-          if (chev)  chev.textContent = '▼';
-          if (cap)   cap.textContent  = '';
-        })();
 
         // Persistent info bar — First/Last Active always visible
         setText('phInfoFirst', fmtDate(s.firstSeen));
@@ -3224,6 +3178,7 @@ class Component extends DCLogic {
                 buildZoneTabs(); buildCountryFilters(); renderBubbles(); buildTable(currentRows);
                 if (activeZone) zoomToZone(activeZone);
                 else globeSvg && globeSvg.transition().duration(750).call(globeZoom.transform, d3.zoomIdentity);
+                _syncSankeyFilters();
               };
               el.appendChild(btn);
             });
@@ -3258,11 +3213,12 @@ class Component extends DCLogic {
                   activeRegion=null; _syncUsersFilter(); buildCountryFilters(); renderBubbles();
                   var pop=document.getElementById('phGlobePopup'); if(pop) pop.style.display='none';
                   if (activeZone) zoomToZone(activeZone);
+                  window.__phLoadSankey && window.__phLoadSankey(null);
                 } else {
                   activeRegion=c; buildCountryFilters(); renderBubbles(); zoomToRegionCode(c);
-                  // Show drilldown for selected country
                   var items=currentRows.filter(function(r){return r.region===c;});
                   showRegionDrilldown(c, items);
+                  window.__phLoadSankey && window.__phLoadSankey(c);
                 }
               }; })(code);
               el.appendChild(btn);
@@ -3283,7 +3239,7 @@ class Component extends DCLogic {
                 +FEATURE_COLORS[f]+';background:'+(on?FEATURE_COLORS[f]:'#fff')
                 +';color:'+(on?'#fff':FEATURE_COLORS[f])+';font-size:10px;font-weight:700;cursor:pointer;transition:all 0.15s;';
               btn.textContent = FEATURE_LABELS[f]||f;
-              btn.onclick = function() { activeFeatures[f]=!on; buildLegend(); renderBubbles(); };
+              btn.onclick = function() { activeFeatures[f]=!on; buildLegend(); renderBubbles(); _syncSankeyFilters(); };
               el.appendChild(btn);
             });
           }
@@ -3628,7 +3584,19 @@ class Component extends DCLogic {
                 .style('cursor','pointer')
                 .on('click',function(event){
                   event.stopPropagation();
-                  showRegionDrilldown(reg,byRegion[reg]);
+                  if (activeRegion === reg) {
+                    activeRegion = null;
+                    window.__phActiveRegion = null;
+                    _syncUsersFilter();
+                    var pop = document.getElementById('phGlobePopup');
+                    if (pop) pop.style.display = 'none';
+                    renderBubbles(); buildTable(currentRows); buildCountryFilters();
+                    window.__phLoadSankey && window.__phLoadSankey(null);
+                  } else {
+                    showRegionDrilldown(reg, byRegion[reg]);
+                    renderBubbles(); buildTable(currentRows); buildCountryFilters();
+                    window.__phLoadSankey && window.__phLoadSankey(reg);
+                  }
                 })
                 .append('title').text(c[2]+' — '+total.toLocaleString()+' runs');
             });
@@ -3651,6 +3619,7 @@ class Component extends DCLogic {
             if (countEl) countEl.textContent=distinctRegions.size;
 
             rows.forEach(function(r){ if (activeFeatures[r.feature]===undefined) activeFeatures[r.feature]=true; });
+            window.__phGlobeFilters = { zone: activeZone, zoneRegions: null, activeFeatures: activeFeatures };
 
             globeWidth=container.clientWidth||700;
             globeHeight=320;
@@ -3716,11 +3685,13 @@ class Component extends DCLogic {
               activeRegion=null;
               _syncUsersFilter();
               var pop=document.getElementById('phGlobePopup'); if(pop) pop.style.display='none';
+              window.__phLoadSankey && window.__phLoadSankey(null);
             } else {
               activeRegion=code;
               zoomToRegionCode(code);
               var items=currentRows.filter(function(r){return r.region===code;});
               showRegionDrilldown(code, items);
+              window.__phLoadSankey && window.__phLoadSankey(code);
             }
             renderBubbles(); buildTable(currentRows); buildCountryFilters();
           };
@@ -3774,6 +3745,7 @@ class Component extends DCLogic {
               var tileArr=document.querySelector('#phRegionsTile .drill-arrow');
               if (tileArr) tileArr.style.opacity=isOpen?'0.4':'1';
               if (!isOpen&&!globeLoaded){globeLoaded=true;loadAndDraw(pendingPersonId,pendingPersonLbl);}
+              if (!isOpen){ window.__phLoadSankey && window.__phLoadSankey(null); }
             }
           }
 
@@ -3787,45 +3759,33 @@ class Component extends DCLogic {
             var tileArr=document.querySelector('#phRegionsTile .drill-arrow');
             if (tileArr) tileArr.style.opacity='0.4';
           };
+
+          // Syncs globe filter state to Sankey on zone / feature changes
+          function _syncSankeyFilters() {
+            window.__phGlobeFilters = {
+              zone:       activeZone,
+              zoneRegions: activeZone ? (REGION_GROUPS[activeZone] || []) : null,
+              activeFeatures: activeFeatures,
+            };
+            window.__phLoadSankey && window.__phLoadSankey(activeRegion || null);
+          }
+
+          // Initialise so loadSankey on open can read it
+          window.__phGlobeFilters = { zone: null, zoneRegions: null, activeFeatures: {} };
+
         })();
 
         // ── Sankey flow view ──────────────────────────────────────────────────
         (function(){
-          var sankeyLoaded = false;
           var sankeyRegion = null;
 
-          var FEAT_COLORS = { 'investment-cases':'#e36a00', 'leaderboards':'#8b5cf6', 'benchmarks':'#0d9488', 'other':'#9d9d9d' };
-          var NODE_COLORS  = { user:'#288184', region:'#e36a00', zone:'#3b82f6' };
-
-          function setViewMode(mode) {
-            var globeWrap = document.querySelector('#phRegionsView > div:nth-child(2)');
-            var sankeyPanel = document.getElementById('phSankeyPanel');
-            var globeBtn  = document.getElementById('phViewGlobeBtn');
-            var sankeyBtn = document.getElementById('phViewSankeyBtn');
-            if (!globeWrap || !sankeyPanel) return;
-            var showSankey = mode === 'sankey';
-            globeWrap.style.display   = showSankey ? 'none' : 'flex';
-            sankeyPanel.style.display = showSankey ? 'block' : 'none';
-            if (globeBtn) {
-              globeBtn.style.background  = showSankey ? '#fff' : '#288184';
-              globeBtn.style.color       = showSankey ? '#6d6d6c' : '#fff';
-              globeBtn.style.borderColor = showSankey ? '#e6e6e5' : '#288184';
-            }
-            if (sankeyBtn) {
-              sankeyBtn.style.background  = showSankey ? '#288184' : '#fff';
-              sankeyBtn.style.color       = showSankey ? '#fff' : '#6d6d6c';
-              sankeyBtn.style.borderColor = showSankey ? '#288184' : '#e6e6e5';
-            }
-            if (showSankey && !sankeyLoaded) { sankeyLoaded=true; loadSankey(null); }
-          }
-
-          var globeBtn  = document.getElementById('phViewGlobeBtn');
-          var sankeyBtn = document.getElementById('phViewSankeyBtn');
-          if (globeBtn)  globeBtn.onclick  = function(){ setViewMode('globe'); };
-          if (sankeyBtn) sankeyBtn.onclick = function(){ setViewMode('sankey'); };
+          var NODE_COLORS = { country:'#288184', region:'#e36a00', zone:'#3b82f6' };
 
           var allRegionsBtn = document.getElementById('phSankeyAllRegionsBtn');
           if (allRegionsBtn) allRegionsBtn.onclick = function(){ loadSankey(null); };
+
+          // Exposed so globe IIFE can trigger region drill-down
+          window.__phLoadSankey = loadSankey;
 
           function loadSankey(region) {
             sankeyRegion = region;
@@ -3840,6 +3800,20 @@ class Component extends DCLogic {
             if (region) url += '&region=' + encodeURIComponent(region);
             if (window.__phCurrentPersonId) url += '&personId=' + encodeURIComponent(window.__phCurrentPersonId);
 
+            // Apply globe filter state
+            var gf = window.__phGlobeFilters || {};
+            // Zone filter: in overview mode only (region drill-down is already scoped to a single region)
+            if (!region && gf.zoneRegions && gf.zoneRegions.length > 0) {
+              url += '&zoneRegions=' + encodeURIComponent(gf.zoneRegions.join(','));
+            }
+            // Feature filter: always pass the active feature list when not all features are on
+            var af = gf.activeFeatures || {};
+            var activeList = Object.keys(af).filter(function(k){ return af[k] !== false; });
+            var allOn = Object.keys(af).every(function(k){ return af[k] !== false; });
+            if (!allOn && activeList.length > 0) {
+              url += '&features=' + encodeURIComponent(activeList.join(','));
+            }
+
             fetch(url).then(function(r){ return r.json(); }).then(function(data){
               if (loading) loading.style.display = 'none';
               drawSankey(data);
@@ -3851,9 +3825,10 @@ class Component extends DCLogic {
           }
 
           function drawSankey(data) {
-            var svg   = document.getElementById('phSankeySvg');
-            var tip   = document.getElementById('phSankeyTooltip');
-            var leg   = document.getElementById('phSankeyLegend');
+            var svg        = document.getElementById('phSankeySvg');
+            var tip        = document.getElementById('phSankeyTooltip');
+            var leg        = document.getElementById('phSankeyLegend');
+            var isFiltered = data && data.mode === 'country-region-filtered';
             if (!svg || !data || !data.nodes || !data.nodes.length) {
               if (svg) svg.innerHTML = '<text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="#9d9d9d" font-size="11">No flow data for this selection</text>';
               return;
@@ -3862,8 +3837,8 @@ class Component extends DCLogic {
 
             var W = svg.getBoundingClientRect().width || svg.parentElement.clientWidth || 700;
             var nodeCount = Math.max(
-              data.nodes.filter(n=>n.type==='user').length,
-              data.nodes.filter(n=>n.type!=='user').length
+              data.nodes.filter(n=>n.type==='country').length,
+              data.nodes.filter(n=>n.type!=='country').length
             );
             var H = Math.max(260, Math.min(520, nodeCount * 28 + 40));
             svg.setAttribute('height', H);
@@ -3877,7 +3852,6 @@ class Component extends DCLogic {
             }
 
             var sankeyLayout = d3.sankey()
-              .nodeId(function(d){ return d.id; })
               .nodeAlign(d3.sankeyLeft)
               .nodeWidth(12)
               .nodePadding(6)
@@ -3924,7 +3898,7 @@ class Component extends DCLogic {
                 tip.style.display='block';
                 tip.style.left=(event.clientX+12)+'px';
                 tip.style.top=(event.clientY-8)+'px';
-                tip.innerHTML = '<b>' + d.name + '</b><br>' + total + ' runs' + (d.type==='region' ? '<br><span style="color:#aaa">Click to drill in</span>' : '');
+                tip.innerHTML = '<b>' + d.name + '</b><br>' + total + ' runs' + (d.type==='region' && !isFiltered ? '<br><span style="color:#aaa">Click to filter</span>' : '');
               })
               .on('mouseleave', function(){ if (tip) tip.style.display='none'; });
 
@@ -3951,10 +3925,13 @@ class Component extends DCLogic {
 
             // Legend
             if (leg) {
-              var modeLabel = data.mode === 'user-region' ? 'Click a market node to drill into price zones' : 'Showing price zones for ' + (data.region||'').toUpperCase();
-              leg.innerHTML = '<span style="color:#288184;font-weight:700;">■</span> User &nbsp;&nbsp;'
-                + '<span style="color:#e36a00;font-weight:700;">■</span> ' + (data.mode==='user-zone' ? 'Price Zone' : 'Market Region')
-                + ' &nbsp;&nbsp;<span style="color:#9d9d9d;">' + modeLabel + '</span>';
+              var isFiltered = data.mode === 'country-region-filtered';
+              var hint = isFiltered
+                ? 'Showing IP locations for ' + (data.region||'').toUpperCase() + ' market region'
+                : 'Click a market region to filter';
+              leg.innerHTML = '<span style="color:#288184;font-weight:700;">■</span> Country &nbsp;&nbsp;'
+                + '<span style="color:#e36a00;font-weight:700;">■</span> Market Region'
+                + ' &nbsp;&nbsp;<span style="color:#9d9d9d;">' + hint + '</span>';
             }
           }
 
@@ -3963,7 +3940,8 @@ class Component extends DCLogic {
           window.addEventListener('resize', function(){
             clearTimeout(_resizeTimer);
             _resizeTimer = setTimeout(function(){
-              if (document.getElementById('phSankeyPanel').style.display !== 'none' && sankeyLoaded) {
+              if (document.getElementById('phRegionsView') &&
+                  document.getElementById('phRegionsView').style.display !== 'none') {
                 loadSankey(sankeyRegion);
               }
             }, 250);
@@ -3992,6 +3970,11 @@ class Component extends DCLogic {
 
   populateAccountsDropdown(select, accounts){
     if(!select || !accounts) return;
+    // Persist to window (repair interval) and localStorage (survives server restart, 12h TTL)
+    if(accounts.length > 0){
+      window.__argusAccountsList = accounts;
+      try { localStorage.setItem('argusAccountsCache', JSON.stringify({ accounts, ts: Date.now() })); } catch(e){}
+    }
 
     if(accounts.length === 0){
       select.innerHTML = '<option value="">-- No accounts found --</option>';
@@ -4015,15 +3998,13 @@ class Component extends DCLogic {
     const target = window.__argusTargetAccount || localStorage.getItem('argusHealthAccount');
     if(target){
       select.dataset.restored = '1';
-      select.value = target;
-      if(select.value === target){
-        if(window.__argusTargetAccount){
-          window.__argusTargetAccount = null;
-          try{ localStorage.setItem('argusHealthAccount', target); }catch(e){}
-        }
-        this.updateAccountTitles(target);
-        setTimeout(() => this.loadAccountWithMatchCheck(target), 100);
+      select.value = target; // may silently fail if account not in parent-only list — _triggerHealthLoad still fires
+      if(window.__argusTargetAccount){
+        window.__argusTargetAccount = null;
+        try{ localStorage.setItem('argusHealthAccount', target); }catch(e){}
       }
+      // _triggerHealthLoad is idempotent — safe to call even if setV / _initHealthView already fired
+      setTimeout(() => this._triggerHealthLoad(target), 100);
     }
   }
 
@@ -4889,10 +4870,15 @@ class Component extends DCLogic {
       if(patch.range)        localStorage.setItem('argusRange',        patch.range);
     }
     this.setState(patch);
+    // Navigating AWAY from health: reset load gate so the next health visit triggers a fresh load.
+    if(patch.view && patch.view !== 'health'){
+      window.__healthLoadStarted = null;
+    }
     // Navigating to health — wait for health card DOM to be ready, then trigger account load.
     // setV only calls setState (no remount), so the constructor's loadAccountsList never re-fires.
     // fetchSalesforceSubscriptions guards on sfSummaryView existing — poll until it's in the DOM.
     if(patch.view === 'health'){
+      window.__healthLoadStarted = null; // reset for fresh load on this navigation
       const target = window.__argusTargetAccount || localStorage.getItem('argusHealthAccount');
       if(target){
         const waitForHealthDOM = () => {
@@ -4902,8 +4888,7 @@ class Component extends DCLogic {
             window.__argusTargetAccount = null;
             select.value = target;
             try{ localStorage.setItem('argusHealthAccount', target); }catch(e){}
-            this.updateAccountTitles(target);
-            this.loadAccountWithMatchCheck(target);
+            this._triggerHealthLoad(target);
           } else {
             setTimeout(waitForHealthDOM, 50);
           }

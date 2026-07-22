@@ -24,29 +24,58 @@ async function getAccessToken() {
   return token;
 }
 
-async function getPool() {
+let _poolCreating = null; // in-flight promise guard against concurrent recreation
+
+async function getPool(forceNew = false) {
   const token = await getAccessToken();
-  if (_pool && _poolToken === token) return _pool;
-  // Token rotated — drain old pool and recreate.
-  if (_pool) { try { await _pool.close(); } catch (_) {} }
-  _pool = new sql.ConnectionPool({
-    server: SERVER,
-    authentication: { type: 'azure-active-directory-access-token', options: { token } },
-    pool: { max: 6, min: 1, idleTimeoutMillis: 60000 },
-    requestTimeout: 120000,
-    connectionTimeout: 30000,
-    options: { encrypt: true, trustServerCertificate: false },
-  });
-  await _pool.connect();
-  _poolToken = token;
-  console.log('[db] ConnectionPool (re)created');
-  return _pool;
+  if (!forceNew && _pool && _poolToken === token) return _pool;
+
+  // Serialise pool creation — if already rebuilding, wait for that instead.
+  if (_poolCreating) return _poolCreating;
+
+  _poolCreating = (async () => {
+    if (_pool) { try { await _pool.close(); } catch (_) {} }
+    const p = new sql.ConnectionPool({
+      server: SERVER,
+      authentication: { type: 'azure-active-directory-access-token', options: { token } },
+      pool: { max: 6, min: 0, idleTimeoutMillis: 60000 },
+      requestTimeout: 120000,
+      connectionTimeout: 30000,
+      options: { encrypt: true, trustServerCertificate: false },
+    });
+    // Prevent pool errors from crashing the process.
+    p.on('error', err => {
+      console.error('[db] pool error (will reconnect on next query):', err.message);
+      _pool = null;
+      _poolToken = null;
+    });
+    await p.connect();
+    _pool = p;
+    _poolToken = token;
+    console.log('[db] ConnectionPool (re)created');
+    return _pool;
+  })().finally(() => { _poolCreating = null; });
+
+  return _poolCreating;
 }
 
 async function query(sqlText) {
-  const pool = await getPool();
-  const result = await pool.request().query(sqlText);
-  return result.recordset;
+  try {
+    const pool = await getPool();
+    const result = await pool.request().query(sqlText);
+    return result.recordset;
+  } catch (err) {
+    if (err.code === 'ECONNCLOSED' || err.code === 'ENOTOPEN') {
+      // Pool went stale — force rebuild and retry once.
+      console.warn('[db] stale pool detected, reconnecting…');
+      _pool = null;
+      _poolToken = null;
+      const pool = await getPool(true);
+      const result = await pool.request().query(sqlText);
+      return result.recordset;
+    }
+    throw err;
+  }
 }
 
 // Simple TTL cache for expensive repeated lookups (MDM domain/tenant resolution).
