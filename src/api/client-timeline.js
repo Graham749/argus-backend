@@ -223,9 +223,14 @@ module.exports = async function clientTimeline(req, res) {
       const pct       = total > 0 ? Math.max(0, Math.min(100, Math.round(elapsed / total * 100))) : 0;
       const daysToRenewal = Math.round((endDate - now) / 86400000);
 
+      const fmtDate = d => {
+        if (!d) return null;
+        const dt = (d instanceof Date) ? d : new Date(d);
+        return dt.getFullYear() + '-' + String(dt.getMonth()+1).padStart(2,'0') + '-' + String(dt.getDate()).padStart(2,'0');
+      };
       subscription = {
-        startDate:      startDate ? String(startDate).substring(0, 10) : null,
-        endDate:        String(sub.latest_end).substring(0, 10),
+        startDate:      fmtDate(startDate),
+        endDate:        fmtDate(sub.latest_end),
         arr:            sub.arr ? Math.round(Number(sub.arr)) : null,
         count:          Number(sub.sub_count) || 0,
         daysToRenewal,

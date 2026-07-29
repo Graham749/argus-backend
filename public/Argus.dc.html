@@ -149,16 +149,16 @@ input{font-family:inherit;}
         </div>
 
         <!-- Engagement Pulse Card -->
-        <div id="epCard" style="display:none;background:#fff;border:1px solid #e6e6e5;border-radius:12px;padding:14px 16px 10px;box-shadow:0 1px 3px rgba(60,60,59,0.07);margin-bottom:10px;">
+        <div id="epCard" style="display:none;background:#fff;border:1px solid #e6e6e5;border-radius:12px;padding:14px 16px 12px;box-shadow:0 1px 3px rgba(60,60,59,0.07);margin-bottom:10px;">
           <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
             <span style="font-size:12px;font-weight:700;color:#3c3c3b;letter-spacing:0.04em;text-transform:uppercase;">Engagement Pulse</span>
             <span id="epSubtitle" style="font-size:10px;color:#9d9d9d;flex:1;">Loading...</span>
             <span id="epBenchNote" style="font-size:10px;color:#9d9d9d;text-align:right;white-space:nowrap;"></span>
           </div>
-          <div id="epLoading" style="height:120px;display:flex;align-items:center;justify-content:center;color:#9d9d9d;font-size:12px;">
+          <div id="epLoading" style="height:130px;display:flex;align-items:center;justify-content:center;color:#9d9d9d;font-size:12px;">
             <span style="font-style:italic;">Building timeline…</span>
           </div>
-          <div id="epWrap" style="display:none;width:100%;"></div>
+          <div id="epWrap" style="display:none;width:100%;min-height:140px;"></div>
         </div>
 
         <!-- Salesforce Subscriptions Card (Live Data) -->
@@ -1396,18 +1396,18 @@ window.__argusStartLoad = function() {
 
 // ── Engagement Pulse SVG renderer ─────────────────────────────────────────────
 window.__epRender = function(container, data) {
-  const W      = container.offsetWidth || 600;
   const MNTHS  = data.months.length;
   const LBL_W  = 60;
   const RHS_W  = 72;
-  const CW     = W - LBL_W - RHS_W;
-  const CELL   = CW / MNTHS;
-  const ROW_H  = 28;
+  const CELL   = 56;                      // fixed cell width — wider bars, horizontally scrollable
+  const CW     = MNTHS * CELL;
+  const W      = LBL_W + CW + RHS_W;
+  const ROW_H  = 30;
   const GAP    = 5;
   const PAD_T  = 6;
   const SUB_H  = 22;
-  const AX_H   = 16;
-  const TOTAL  = PAD_T + 3*(ROW_H+GAP) - GAP + 10 + SUB_H + AX_H + 2;
+  const AX_H   = 18;
+  const TOTAL  = PAD_T + 3*(ROW_H+GAP) - GAP + 12 + SUB_H + AX_H + 2;
 
   const PH_START = '2026-04';
   const MABBR    = ['J','F','M','A','M','J','J','A','S','O','N','D'];
@@ -1561,22 +1561,50 @@ window.__epRender = function(container, data) {
     }
   }
 
-  // Month axis
-  var axY = PAD_T + 3*(ROW_H+GAP) - GAP + 10 + SUB_H + 4;
+  // Month axis — show all months (cells are wide enough)
+  var axY = PAD_T + 3*(ROW_H+GAP) - GAP + 12 + SUB_H + 5;
   data.months.forEach(function(m, mi) {
-    if (mi % 2 !== 0) return;
     var mo = parseInt(m.split('-')[1]);
     var yr = m.substring(2,4);
-    var lbl = mo === 1 ? "'"+yr : MABBR[mo-1];
+    var isJan = mo === 1;
+    // Main label: abbreviated month
     svg.appendChild(s('text', {
-      x:LBL_W + mi*CELL + CELL/2, y:axY, 'text-anchor':'middle', 'font-size':9,
+      x:LBL_W + mi*CELL + CELL/2, y:axY, 'text-anchor':'middle', 'font-size':10,
       'font-family':'Lato,Helvetica Neue,Arial,sans-serif',
-      fill:mo===1 ? '#455a64' : '#c0c0c0',
-      'font-weight':mo===1 ? 700 : 400
-    }, lbl));
+      fill: isJan ? '#3c3c3b' : '#b0b0b0',
+      'font-weight': isJan ? 700 : 400
+    }, MABBR[mo-1]));
+    // Year label below January
+    if (isJan) {
+      svg.appendChild(s('text', {
+        x:LBL_W + mi*CELL + CELL/2, y:axY+11, 'text-anchor':'middle', 'font-size':9,
+        'font-family':'Lato,Helvetica Neue,Arial,sans-serif', fill:'#455a64', 'font-weight':700
+      }, "'"+yr));
+    }
   });
 
-  container.appendChild(svg);
+  // Wrap in scrollable container and auto-scroll to peak activity region
+  var scroller = document.createElement('div');
+  scroller.style.cssText = 'overflow-x:auto;overflow-y:hidden;padding-bottom:4px;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:#d0d0d0 transparent;';
+  scroller.appendChild(svg);
+  container.appendChild(scroller);
+
+  // Find weighted center of activity (recent months weighted 2×) and scroll to centre it
+  var visW = container.offsetWidth || 600;
+  var weights = data.months.map(function(m, mi) {
+    var su = data.support[mi] || 0;
+    var us = data.usage[mi] !== null ? (data.usage[mi] || 0) : 0;
+    var pr = data.product[mi] || 0;
+    var recencyBoost = 1 + (mi / (MNTHS - 1));   // 1× for oldest, 2× for newest
+    return (su + us + pr) * recencyBoost;
+  });
+  var totalW = weights.reduce(function(a,b){return a+b;},0);
+  var comIdx = totalW > 0
+    ? weights.reduce(function(a,w,i){return a + w*i;},0) / totalW
+    : MNTHS - 1;
+  var comX = LBL_W + comIdx * CELL + CELL/2;
+  // Scroll so the center-of-mass column is in the middle of the visible area
+  scroller.scrollLeft = Math.max(0, comX - visW/2);
 };
 
 // Single shared loading phrase queue — all 4 health card widgets draw from this
