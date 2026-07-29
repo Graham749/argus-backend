@@ -22,6 +22,8 @@ const phRegionDetail = require('./api/ph-region-detail');
 const phBenchmark    = require('./api/ph-benchmark');
 const phSankey       = require('./api/ph-sankey');
 const accountMatches = require('./api/account-matches');
+const swIntelligence = require('./api/sw-intelligence');
+const clientTimeline = require('./api/client-timeline');
 const { query: dbQuery } = require('./lib/db');
 
 const app = express();
@@ -79,6 +81,9 @@ app.get('/api/ph-region-detail',  phRegionDetail);
 app.get('/api/ph-benchmark',      phBenchmark);
 app.get('/api/ph-sankey',         phSankey);
 app.get('/api/account-matches',   accountMatches);
+app.get('/api/sw-intelligence',   swIntelligence);
+app.get('/api/client-timeline',   clientTimeline);
+app.get('/sw-intelligence', (req, res) => res.sendFile(path.join(argusPath, 'sw-intelligence.html')));
 
 // Serve Argus dashboard at root
 app.get('/', (req, res) => {
