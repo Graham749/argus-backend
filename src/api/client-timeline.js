@@ -1,13 +1,12 @@
 const { query, cacheGet, cacheSet } = require('../lib/db');
 
-const BENCH_TTL = 4 * 60 * 60 * 1000; // benchmark refreshes every 4 hours
+const BENCH_TTL = 4 * 60 * 60 * 1000;
 
-// Benchmark across all active accounts: P25/P50/P75/P90 for each dimension
 async function getBenchmark() {
   const cached = cacheGet('timeline_benchmark');
   if (cached) return cached;
 
-  const [zdB, phB, pbB] = await Promise.all([
+  const [zdB, phB, pbB, caseB, oppB] = await Promise.all([
     query(`
       WITH org_monthly AS (
         SELECT
@@ -88,13 +87,60 @@ async function getBenchmark() {
         FROM co_avg
       )
       SELECT TOP 1 p25, p50, p75, p90 FROM pcts
+    `),
+    query(`
+      WITH mo AS (
+        SELECT
+          account_id,
+          FORMAT(TRY_CAST(created_date AS datetime2), 'yyyy-MM') AS mo,
+          COUNT(*) AS cnt
+        FROM v_silver_sf_cases
+        WHERE TRY_CAST(created_date AS datetime2) >= DATEADD(month, -3, GETDATE())
+          AND account_id IS NOT NULL
+        GROUP BY account_id, FORMAT(TRY_CAST(created_date AS datetime2), 'yyyy-MM')
+      ),
+      avg_mo AS (SELECT account_id, AVG(CAST(cnt AS float)) AS avg_mo FROM mo GROUP BY account_id),
+      pcts AS (
+        SELECT
+          PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY avg_mo) OVER () AS p25,
+          PERCENTILE_CONT(0.50) WITHIN GROUP (ORDER BY avg_mo) OVER () AS p50,
+          PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY avg_mo) OVER () AS p75,
+          PERCENTILE_CONT(0.90) WITHIN GROUP (ORDER BY avg_mo) OVER () AS p90
+        FROM avg_mo
+      )
+      SELECT TOP 1 p25, p50, p75, p90 FROM pcts
+    `),
+    query(`
+      WITH mo AS (
+        SELECT
+          AccountId,
+          FORMAT(TRY_CAST(CreatedDate AS datetime2), 'yyyy-MM') AS mo,
+          COUNT(*) AS cnt
+        FROM bronze_sfapi_opportunity
+        WHERE TRY_CAST(CreatedDate AS datetime2) >= DATEADD(month, -3, GETDATE())
+          AND IsDeleted = 'false'
+          AND AccountId IS NOT NULL
+        GROUP BY AccountId, FORMAT(TRY_CAST(CreatedDate AS datetime2), 'yyyy-MM')
+      ),
+      avg_mo AS (SELECT AccountId, AVG(CAST(cnt AS float)) AS avg_mo FROM mo GROUP BY AccountId),
+      pcts AS (
+        SELECT
+          PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY avg_mo) OVER () AS p25,
+          PERCENTILE_CONT(0.50) WITHIN GROUP (ORDER BY avg_mo) OVER () AS p50,
+          PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY avg_mo) OVER () AS p75,
+          PERCENTILE_CONT(0.90) WITHIN GROUP (ORDER BY avg_mo) OVER () AS p90
+        FROM avg_mo
+      )
+      SELECT TOP 1 p25, p50, p75, p90 FROM pcts
     `)
   ]);
 
   const bench = {
-    support: { p25: Number(zdB[0]?.p25||0), p50: Number(zdB[0]?.p50||1),   p75: Number(zdB[0]?.p75||3),    p90: Number(zdB[0]?.p90||8)  },
-    usage:   { p25: Number(phB[0]?.p25||2), p50: Number(phB[0]?.p50||8),   p75: Number(phB[0]?.p75||22),   p90: Number(phB[0]?.p90||55) },
-    product: { p25: Number(pbB[0]?.p25||0), p50: Number(pbB[0]?.p50||0.3), p75: Number(pbB[0]?.p75||1.2),  p90: Number(pbB[0]?.p90||4)  }
+    support: { p25: Number(zdB[0]?.p25||0),   p50: Number(zdB[0]?.p50||1),   p75: Number(zdB[0]?.p75||3),   p90: Number(zdB[0]?.p90||8)  },
+    usage:   { p25: Number(phB[0]?.p25||2),   p50: Number(phB[0]?.p50||8),   p75: Number(phB[0]?.p75||22),  p90: Number(phB[0]?.p90||55) },
+    product: { p25: Number(pbB[0]?.p25||0),   p50: Number(pbB[0]?.p50||0.3), p75: Number(pbB[0]?.p75||1.2), p90: Number(pbB[0]?.p90||4)  },
+    cases:   { p25: Number(caseB[0]?.p25||0), p50: Number(caseB[0]?.p50||0.5),p75: Number(caseB[0]?.p75||1.5),p90: Number(caseB[0]?.p90||4)},
+    opps:    { p25: Number(oppB[0]?.p25||0),  p50: Number(oppB[0]?.p50||0.3), p75: Number(oppB[0]?.p75||1),  p90: Number(oppB[0]?.p90||3) }
   };
 
   cacheSet('timeline_benchmark', bench, BENCH_TTL);
@@ -118,7 +164,7 @@ module.exports = async function clientTimeline(req, res) {
   const esc = accountName.replace(/'/g, "''");
 
   try {
-    // Step 1: MDM lookup — get the joining keys we need
+    // Step 1: MDM lookup
     const mdmRows = await query(`
       SELECT TOP 1
         sf_account_id, zd_org_id, pb_company_id,
@@ -133,7 +179,7 @@ module.exports = async function clientTimeline(req, res) {
     const { sf_account_id, zd_org_id, pb_company_id } = mdm;
     const sfEsc = (sf_account_id || '').replace(/'/g, "''");
     const zdEsc = (zd_org_id    || '').replace(/'/g, "''");
-    const pbEsc = (pb_company_id|| '').replace(/'/g, "''");
+    const pbEsc = (pb_company_id|| '').toLowerCase().replace(/'/g, "''");
 
     // Step 2: PH tenant lookup
     const phRows = await query(`
@@ -143,7 +189,7 @@ module.exports = async function clientTimeline(req, res) {
     const phEsc = (phTenant || '').replace(/'/g, "''");
 
     // Step 3: parallel per-account queries + benchmark
-    const [zdMonthly, phMonthly, pbMonthly, subRows, bench] = await Promise.all([
+    const [zdMonthly, phMonthly, pbMonthly, caseMonthly, oppMonthly, subRows, subTypeRows, bench] = await Promise.all([
 
       zd_org_id ? query(`
         SELECT
@@ -181,6 +227,29 @@ module.exports = async function clientTimeline(req, res) {
         ORDER BY mo
       `) : Promise.resolve([]),
 
+      sf_account_id ? query(`
+        SELECT
+          FORMAT(TRY_CAST(created_date AS datetime2), 'yyyy-MM') AS mo,
+          COUNT(*) AS cases
+        FROM v_silver_sf_cases
+        WHERE account_id = '${sfEsc}'
+          AND created_date IS NOT NULL
+        GROUP BY FORMAT(TRY_CAST(created_date AS datetime2), 'yyyy-MM')
+        ORDER BY mo
+      `) : Promise.resolve([]),
+
+      sf_account_id ? query(`
+        SELECT
+          FORMAT(TRY_CAST(CreatedDate AS datetime2), 'yyyy-MM') AS mo,
+          COUNT(*) AS opps
+        FROM bronze_sfapi_opportunity
+        WHERE AccountId = '${sfEsc}'
+          AND IsDeleted = 'false'
+          AND CreatedDate IS NOT NULL
+        GROUP BY FORMAT(TRY_CAST(CreatedDate AS datetime2), 'yyyy-MM')
+        ORDER BY mo
+      `) : Promise.resolve([]),
+
       query(`
         SELECT
           MIN(TRY_CAST(NULLIF(TRIM(Original_Start_Date__c), '') AS date)) AS original_start,
@@ -195,20 +264,35 @@ module.exports = async function clientTimeline(req, res) {
           AND TRY_CAST(NULLIF(TRIM(End_Date__c), '') AS date) >= CAST(GETDATE() AS date)
       `),
 
+      sf_account_id ? query(`
+        SELECT
+          COALESCE(NULLIF(TRIM(Service_Type__c), ''), 'Other') AS service_type,
+          COUNT(*) AS cnt,
+          SUM(CAST(arr_gbp AS float)) AS arr_gbp
+        FROM v_silver_sf_subscriptions
+        WHERE account_id = '${sfEsc}'
+        GROUP BY Service_Type__c
+        ORDER BY SUM(CAST(arr_gbp AS float)) DESC
+      `) : Promise.resolve([]),
+
       getBenchmark()
     ]);
 
     // Build 13-month grid
     const months = buildMonths(13);
-    const PH_DATA_START = '2026-04'; // PostHog only has data from April 2026
+    const PH_DATA_START = '2026-04';
 
-    const zdMap = {}; zdMonthly.forEach(r => { zdMap[r.mo] = Number(r.tickets); });
-    const phMap = {}; phMonthly.forEach(r => { phMap[r.mo] = Number(r.users);   });
-    const pbMap = {}; pbMonthly.forEach(r => { pbMap[r.mo] = Number(r.notes);   });
+    const zdMap   = {}; zdMonthly.forEach(r   => { zdMap[r.mo]   = Number(r.tickets); });
+    const phMap   = {}; phMonthly.forEach(r   => { phMap[r.mo]   = Number(r.users);   });
+    const pbMap   = {}; pbMonthly.forEach(r   => { pbMap[r.mo]   = Number(r.notes);   });
+    const caseMap = {}; caseMonthly.forEach(r  => { caseMap[r.mo] = Number(r.cases);   });
+    const oppMap  = {}; oppMonthly.forEach(r   => { oppMap[r.mo]  = Number(r.opps);    });
 
-    const support = months.map(m => zdMap[m] !== undefined ? zdMap[m] : 0);
-    const usage   = months.map(m => m < PH_DATA_START ? null : (phMap[m] !== undefined ? phMap[m] : 0));
-    const product = months.map(m => pbMap[m] !== undefined ? pbMap[m] : 0);
+    const support      = months.map(m => zdMap[m]   !== undefined ? zdMap[m]   : 0);
+    const usage        = months.map(m => m < PH_DATA_START ? null : (phMap[m] !== undefined ? phMap[m] : 0));
+    const product      = months.map(m => pbMap[m]   !== undefined ? pbMap[m]   : 0);
+    const cases        = months.map(m => caseMap[m]  !== undefined ? caseMap[m]  : 0);
+    const opportunities = months.map(m => oppMap[m]  !== undefined ? oppMap[m]  : 0);
 
     // Subscription details
     const sub = subRows?.[0];
@@ -238,16 +322,26 @@ module.exports = async function clientTimeline(req, res) {
       };
     }
 
+    const subscriptionTypes = (subTypeRows || []).map(r => ({
+      service_type: r.service_type || 'Other',
+      cnt:          Number(r.cnt) || 0,
+      arr_gbp:      r.arr_gbp ? Math.round(Number(r.arr_gbp)) : 0
+    }));
+
     res.json({
       months,
       support,
       usage,
       product,
+      cases,
+      opportunities,
       subscription,
+      subscriptionTypes,
       benchmark: bench,
       hasZd: !!zd_org_id,
       hasPh: !!phTenant,
-      hasPb: !!pb_company_id
+      hasPb: !!pb_company_id,
+      hasSf: !!sf_account_id
     });
 
   } catch (err) {

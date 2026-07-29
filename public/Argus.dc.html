@@ -1396,26 +1396,33 @@ window.__argusStartLoad = function() {
 
 // ── Engagement Pulse SVG renderer ─────────────────────────────────────────────
 window.__epRender = function(container, data) {
-  const MNTHS  = data.months.length;
-  const LBL_W  = 60;
-  const RHS_W  = 72;
-  const CELL   = 56;                      // fixed cell width — wider bars, horizontally scrollable
-  const CW     = MNTHS * CELL;
-  const W      = LBL_W + CW + RHS_W;
-  const ROW_H  = 30;
-  const GAP    = 5;
-  const PAD_T  = 6;
-  const SUB_H  = 22;
-  const AX_H   = 18;
-  const TOTAL  = PAD_T + 3*(ROW_H+GAP) - GAP + 12 + SUB_H + AX_H + 2;
+  const MNTHS   = data.months.length;
+  const LBL_W   = 76;   // wider: fits two-line source labels
+  const RHS_W   = 76;
+  const CELL    = 56;
+  const CW      = MNTHS * CELL;
+  const W       = LBL_W + CW + RHS_W;
+  const ROW_H   = 26;
+  const GAP     = 5;
+  const PAD_T   = 6;
+  const SUB_H   = 28;   // subscription blocks (14px bar + 14px date labels)
+  const SEP_H   = 10;   // gap between sub track and first data row
+  const ROWS_Y  = PAD_T + SUB_H + SEP_H;   // y where data rows start
+  const N_ROWS  = 5;
+  const AX_H    = 18;
+  const TOTAL   = ROWS_Y + N_ROWS*(ROW_H+GAP) - GAP + 6 + AX_H + 4;
 
-  const PH_START = '2026-04';
-  const MABBR    = ['J','F','M','A','M','J','J','A','S','O','N','D'];
+  const PH_START  = '2026-04';
+  const MABBR     = ['J','F','M','A','M','J','J','A','S','O','N','D'];
+  const TYPE_COLS = ['#1565c0','#388e3c','#f57c00','#6a1b9a','#00838f','#c62828','#546e7a','#ad1457'];
 
+  // Row order matches widget order: SF Cases → SF Opps → ZD Support → PH Usage → PB Product
   const ROWS = [
-    { key:'usage',   label:'Usage',   color:'#1565c0', nullBg:'#dce8f7', positive:true,  bench:data.benchmark.usage   },
-    { key:'support', label:'Support', color:'#d84315', nullBg:'#f5f5f5', positive:false, bench:data.benchmark.support },
-    { key:'product', label:'Product', color:'#6a1b9a', nullBg:'#f5f5f5', positive:true,  bench:data.benchmark.product },
+    { key:'cases',        label:'Cases',    source:'Salesforce',   color:'#c62828', nullBg:'#f5f5f5', positive:false, bench:(data.benchmark||{}).cases   || {p25:0,p50:0.5,p75:1.5,p90:4}  },
+    { key:'opportunities',label:'Opps',     source:'Salesforce',   color:'#e65100', nullBg:'#f5f5f5', positive:true,  bench:(data.benchmark||{}).opps    || {p25:0,p50:0.3,p75:1,p90:3}    },
+    { key:'support',      label:'Tickets',  source:'Zendesk',      color:'#d84315', nullBg:'#f5f5f5', positive:false, bench:(data.benchmark||{}).support || {p25:0,p50:1,p75:3,p90:8}      },
+    { key:'usage',        label:'Usage',    source:'PostHog',      color:'#1565c0', nullBg:'#dce8f7', positive:true,  bench:(data.benchmark||{}).usage   || {p25:2,p50:8,p75:22,p90:55}    },
+    { key:'product',      label:'Notes',    source:'ProductBoard', color:'#6a1b9a', nullBg:'#f5f5f5', positive:true,  bench:(data.benchmark||{}).product || {p25:0,p50:0.3,p75:1.2,p90:4}  },
   ];
 
   function s(tag, a, txt) {
@@ -1442,16 +1449,96 @@ window.__epRender = function(container, data) {
 
   var svg = s('svg', { width:W, height:TOTAL });
 
+  // ── Subscription track at TOP (Salesforce Subscriptions) ────────────────────
+  var subY = PAD_T;
+  // Label: two lines
+  svg.appendChild(s('text', {
+    x:LBL_W-6, y:subY+7, 'text-anchor':'end', 'dominant-baseline':'middle',
+    'font-size':11, 'font-weight':700, 'font-family':'Lato,Helvetica Neue,Arial,sans-serif', fill:'#6d6d6c'
+  }, 'Subscriptions'));
+  svg.appendChild(s('text', {
+    x:LBL_W-6, y:subY+18, 'text-anchor':'end', 'dominant-baseline':'middle',
+    'font-size':8, 'font-family':'Lato,Helvetica Neue,Arial,sans-serif', fill:'#b0b0b0'
+  }, 'Salesforce'));
+
+  if (data.subscription) {
+    var sub = data.subscription;
+    var types = data.subscriptionTypes || [];
+    var totalCnt = types.reduce(function(a,t){return a+t.cnt;},0) || sub.count || 1;
+    var TRACK_H = 14;
+
+    // Background track
+    svg.appendChild(s('rect', { x:LBL_W, y:subY+2, width:CW, height:TRACK_H, fill:'#e6e6e5', rx:3 }));
+
+    // Segmented blocks by service type (proportional to count)
+    var x0 = LBL_W;
+    types.forEach(function(t, ti) {
+      var tw = Math.max(2, Math.round(CW * t.cnt / totalCnt));
+      if (ti === types.length - 1) tw = LBL_W + CW - x0; // fill remainder
+      var seg = s('rect', { x:x0, y:subY+2, width:tw, height:TRACK_H, fill:TYPE_COLS[ti%TYPE_COLS.length], rx:0, opacity:0.82 });
+      var tip = document.createElementNS('http://www.w3.org/2000/svg','title');
+      tip.textContent = (t.service_type||'Other') + ': ' + t.cnt + ' subscription' + (t.cnt!==1?'s':'');
+      if (t.arr_gbp) tip.textContent += ' · £'+(t.arr_gbp/1000).toFixed(0)+'k ARR';
+      seg.appendChild(tip);
+      svg.appendChild(seg);
+      x0 += tw;
+    });
+    if (!types.length) {
+      svg.appendChild(s('rect', { x:LBL_W, y:subY+2, width:Math.round(CW*(sub.percentThrough||50)/100), height:TRACK_H, fill:'#288184', rx:3, opacity:0.8 }));
+    }
+
+    // "Now" marker — where we are in the contract
+    if (sub.percentThrough > 0 && sub.percentThrough < 100) {
+      var nowX = LBL_W + Math.round(CW * sub.percentThrough / 100);
+      svg.appendChild(s('line', { x1:nowX, y1:subY, x2:nowX, y2:subY+TRACK_H+4, stroke:'#3c3c3b', 'stroke-width':1.5, opacity:0.7 }));
+    }
+
+    // Start / end date labels below track
+    if (sub.startDate) {
+      svg.appendChild(s('text', { x:LBL_W, y:subY+TRACK_H+10, 'font-size':8, 'font-family':'Lato,Helvetica Neue,Arial,sans-serif', fill:'#b0b0b0' }, sub.startDate.substring(0,7)));
+    }
+    svg.appendChild(s('text', {
+      x:LBL_W+CW, y:subY+TRACK_H+10, 'text-anchor':'end', 'font-size':8,
+      'font-family':'Lato,Helvetica Neue,Arial,sans-serif',
+      fill:sub.daysToRenewal < 90 ? '#c62828' : '#b0b0b0'
+    }, sub.endDate ? sub.endDate.substring(0,7) : ''));
+
+    // RHS: days remaining (top) + ARR (bottom)
+    var dColor = sub.daysToRenewal < 60 ? '#c62828' : sub.daysToRenewal < 180 ? '#e65100' : '#3c3c3b';
+    svg.appendChild(s('text', {
+      x:LBL_W+CW+6, y:subY+9, 'dominant-baseline':'middle',
+      'font-size':9, 'font-weight':700, 'font-family':'Lato,Helvetica Neue,Arial,sans-serif', fill:dColor
+    }, sub.daysToRenewal + 'd'));
+    if (sub.arr) {
+      var arrFmt = sub.arr >= 1000000 ? '£'+(sub.arr/1000000).toFixed(1)+'M' : '£'+(sub.arr/1000).toFixed(0)+'k';
+      svg.appendChild(s('text', {
+        x:LBL_W+CW+6, y:subY+20, 'dominant-baseline':'middle',
+        'font-size':8, 'font-family':'Lato,Helvetica Neue,Arial,sans-serif', fill:'#b0b0b0'
+      }, arrFmt));
+    }
+  }
+
+  // Separator line between subscription track and data rows
+  svg.appendChild(s('line', {
+    x1:LBL_W, y1:ROWS_Y-3, x2:LBL_W+CW, y2:ROWS_Y-3,
+    stroke:'#e0e0de', 'stroke-width':0.5
+  }));
+
+  // ── Data rows ────────────────────────────────────────────────────────────────
   ROWS.forEach(function(row, ri) {
-    var vals = data[row.key];
-    var rowY = PAD_T + ri*(ROW_H+GAP);
+    var vals = data[row.key] || [];
+    var rowY = ROWS_Y + ri*(ROW_H+GAP);
     var maxV = Math.max(row.bench.p90||0.01, Math.max.apply(null, vals.filter(function(v){return v!==null;})||[0]));
 
-    // Row label
+    // Two-line label: name + source
     svg.appendChild(s('text', {
-      x:LBL_W-6, y:rowY+ROW_H/2, 'text-anchor':'end', 'dominant-baseline':'middle',
-      'font-size':11, 'font-weight':700, 'font-family':'Lato,Helvetica Neue,Arial,sans-serif', fill:'#6d6d6c'
+      x:LBL_W-6, y:rowY+ROW_H/2-4, 'text-anchor':'end', 'dominant-baseline':'middle',
+      'font-size':10, 'font-weight':700, 'font-family':'Lato,Helvetica Neue,Arial,sans-serif', fill:'#6d6d6c'
     }, row.label));
+    svg.appendChild(s('text', {
+      x:LBL_W-6, y:rowY+ROW_H/2+6, 'text-anchor':'end', 'dominant-baseline':'middle',
+      'font-size':7.5, 'font-family':'Lato,Helvetica Neue,Arial,sans-serif', fill:'#b8b8b8'
+    }, row.source));
 
     // P25–P75 background band
     if (row.bench.p75 > row.bench.p25 && maxV > 0) {
@@ -1473,9 +1560,10 @@ window.__epRender = function(container, data) {
         var barH = Math.max(3, (v/maxV)*(ROW_H-3));
         var barY = rowY + ROW_H - barH;
         var opac = 0.5 + 0.5*(mi/(MNTHS-1));
+        var unitLabel = row.key==='usage'?' users':row.key==='support'?' tickets':row.key==='cases'?' cases':row.key==='opportunities'?' opps':' notes';
         var bar = s('rect', { x:x+2, y:barY, width:CELL-4, height:barH, fill:row.color, rx:2, opacity:opac });
         var t = s('title');
-        t.textContent = data.months[mi] + ': ' + v + (row.key==='usage'?' users':row.key==='support'?' tickets':' notes') + ' · median ' + (row.bench.p50||0).toFixed(1);
+        t.textContent = data.months[mi] + ': ' + v + unitLabel + ' · median ' + (row.bench.p50||0).toFixed(1);
         bar.appendChild(t);
         svg.appendChild(bar);
       }
@@ -1490,91 +1578,57 @@ window.__epRender = function(container, data) {
       }));
     }
 
-    // Percentile badge: raw rank shown, color adjusted for signal direction
+    // RHS: percentile badge (X/100) + last-value hint — stacked
     var recent = vals.slice(-3).filter(function(v){return v!==null;});
-    var avg3   = recent.length ? recent.reduce(function(s,v){return s+v;},0)/recent.length : 0;
+    var avg3   = recent.length ? recent.reduce(function(a,v){return a+v;},0)/recent.length : 0;
     var rawP   = bPct(avg3, row.bench);
-    var adjP   = row.positive ? rawP : 100 - rawP; // health direction: low support = good
+    var adjP   = row.positive ? rawP : 100 - rawP;
     var hasData = vals.some(function(v){return v!==null;});
 
-    svg.appendChild(s('text', {
-      x:LBL_W+CW+10, y:rowY+ROW_H/2, 'dominant-baseline':'middle',
-      'font-size':11, 'font-weight':700,
+    var badgeTxt = !hasData ? '—' : avg3 > 0 ? rawP + '/100' : '0/100';
+    var badgeEl  = s('text', {
+      x:LBL_W+CW+6, y:rowY+9, 'dominant-baseline':'middle',
+      'font-size':9, 'font-weight':700,
       'font-family':'Lato,Helvetica Neue,Arial,sans-serif',
       fill:avg3 > 0 ? pColor(adjP) : '#d0d0d0'
-    }, !hasData ? '—' : avg3 > 0 ? 'P'+rawP : 'P0'));
+    });
+    badgeEl.textContent = badgeTxt;
+    var dimName = row.key==='usage' ? 'PostHog usage' : row.key==='support' ? 'Zendesk tickets'
+      : row.key==='cases' ? 'Salesforce cases' : row.key==='opportunities' ? 'Salesforce opps' : 'ProductBoard notes';
+    var tipTxt = avg3 > 0
+      ? rawP + ' out of 100 Aurora clients for ' + dimName
+        + ' (3-month avg: ' + avg3.toFixed(1) + ')'
+        + (row.positive ? '' : ' — lower is healthier')
+      : 'No ' + dimName + ' in the last 3 months';
+    var titleEl = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+    titleEl.textContent = tipTxt;
+    badgeEl.appendChild(titleEl);
+    svg.appendChild(badgeEl);
 
-    // Last non-zero value hint
+    // Last non-zero value with full unit label
     var last = vals.slice().reverse().find(function(v){return v!==null && v>0;});
     if (last !== undefined) {
+      var units = row.key==='usage' ? ' users' : row.key==='support' ? ' tickets'
+        : row.key==='cases' ? ' cases' : row.key==='opportunities' ? ' opps' : ' notes';
       svg.appendChild(s('text', {
-        x:LBL_W+CW+38, y:rowY+ROW_H/2, 'dominant-baseline':'middle',
-        'font-size':10, 'font-family':'Lato,Helvetica Neue,Arial,sans-serif', fill:'#c0c0c0'
-      }, last + (row.key==='usage'?' u':row.key==='support'?' t':' n')));
+        x:LBL_W+CW+6, y:rowY+21, 'dominant-baseline':'middle',
+        'font-size':8, 'font-family':'Lato,Helvetica Neue,Arial,sans-serif', fill:'#c0c0c0'
+      }, last + units));
     }
   });
 
-  // Subscription progress track
-  var subY = PAD_T + 3*(ROW_H+GAP) - GAP + 10;
-  if (data.subscription) {
-    var sub = data.subscription;
-    var pct = (sub.percentThrough||0)/100;
-    var fw  = Math.max(8, Math.min(CW-1, Math.round(CW*pct)));
-
-    svg.appendChild(s('text', {
-      x:LBL_W-6, y:subY+8, 'text-anchor':'end', 'dominant-baseline':'middle',
-      'font-size':11, 'font-weight':700, 'font-family':'Lato,Helvetica Neue,Arial,sans-serif', fill:'#6d6d6c'
-    }, 'Renewal'));
-
-    svg.appendChild(s('rect', { x:LBL_W, y:subY+4, width:CW, height:8, fill:'#e6e6e5', rx:4 }));
-    svg.appendChild(s('rect', { x:LBL_W, y:subY+4, width:fw, height:8, fill:'#288184', rx:4 }));
-    svg.appendChild(s('line', {
-      x1:LBL_W+fw, y1:subY, x2:LBL_W+fw, y2:subY+16,
-      stroke:'#288184', 'stroke-width':2
-    }));
-
-    if (sub.startDate) {
-      svg.appendChild(s('text', {
-        x:LBL_W, y:subY+20, 'font-size':9,
-        'font-family':'Lato,Helvetica Neue,Arial,sans-serif', fill:'#c0c0c0'
-      }, sub.startDate.substring(0,7)));
-    }
-    svg.appendChild(s('text', {
-      x:LBL_W+CW, y:subY+20, 'text-anchor':'end', 'font-size':9,
-      'font-family':'Lato,Helvetica Neue,Arial,sans-serif',
-      fill:sub.daysToRenewal < 90 ? '#c62828' : '#c0c0c0'
-    }, sub.endDate ? sub.endDate.substring(0,7) : ''));
-
-    var dColor = sub.daysToRenewal < 60 ? '#c62828' : sub.daysToRenewal < 180 ? '#e65100' : '#3c3c3b';
-    svg.appendChild(s('text', {
-      x:LBL_W+CW+10, y:subY+8, 'dominant-baseline':'middle',
-      'font-size':11, 'font-weight':700,
-      'font-family':'Lato,Helvetica Neue,Arial,sans-serif', fill:dColor
-    }, sub.daysToRenewal + 'd'));
-
-    if (sub.arr) {
-      var arrFmt = sub.arr >= 1000000 ? '£'+(sub.arr/1000000).toFixed(1)+'M' : '£'+(sub.arr/1000).toFixed(0)+'k';
-      svg.appendChild(s('text', {
-        x:LBL_W+CW+38, y:subY+8, 'dominant-baseline':'middle',
-        'font-size':10, 'font-family':'Lato,Helvetica Neue,Arial,sans-serif', fill:'#c0c0c0'
-      }, arrFmt));
-    }
-  }
-
-  // Month axis — show all months (cells are wide enough)
-  var axY = PAD_T + 3*(ROW_H+GAP) - GAP + 12 + SUB_H + 5;
+  // ── Month axis ───────────────────────────────────────────────────────────────
+  var axY = ROWS_Y + N_ROWS*(ROW_H+GAP) - GAP + 6;
   data.months.forEach(function(m, mi) {
     var mo = parseInt(m.split('-')[1]);
     var yr = m.substring(2,4);
     var isJan = mo === 1;
-    // Main label: abbreviated month
     svg.appendChild(s('text', {
       x:LBL_W + mi*CELL + CELL/2, y:axY, 'text-anchor':'middle', 'font-size':10,
       'font-family':'Lato,Helvetica Neue,Arial,sans-serif',
       fill: isJan ? '#3c3c3b' : '#b0b0b0',
       'font-weight': isJan ? 700 : 400
     }, MABBR[mo-1]));
-    // Year label below January
     if (isJan) {
       svg.appendChild(s('text', {
         x:LBL_W + mi*CELL + CELL/2, y:axY+11, 'text-anchor':'middle', 'font-size':9,
@@ -1583,27 +1637,27 @@ window.__epRender = function(container, data) {
     }
   });
 
-  // Wrap in scrollable container and auto-scroll to peak activity region
+  // ── Scrollable wrapper + auto-scroll to centre-of-mass ───────────────────────
   var scroller = document.createElement('div');
   scroller.style.cssText = 'overflow-x:auto;overflow-y:hidden;padding-bottom:4px;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:#d0d0d0 transparent;';
   scroller.appendChild(svg);
   container.appendChild(scroller);
 
-  // Find weighted center of activity (recent months weighted 2×) and scroll to centre it
   var visW = container.offsetWidth || 600;
   var weights = data.months.map(function(m, mi) {
-    var su = data.support[mi] || 0;
-    var us = data.usage[mi] !== null ? (data.usage[mi] || 0) : 0;
-    var pr = data.product[mi] || 0;
-    var recencyBoost = 1 + (mi / (MNTHS - 1));   // 1× for oldest, 2× for newest
-    return (su + us + pr) * recencyBoost;
+    var ca = (data.cases||[])[mi] || 0;
+    var op = (data.opportunities||[])[mi] || 0;
+    var su = (data.support||[])[mi] || 0;
+    var us = data.usage && data.usage[mi] !== null ? ((data.usage[mi]||0)) : 0;
+    var pr = (data.product||[])[mi] || 0;
+    var recencyBoost = 1 + (mi / (MNTHS - 1));
+    return (ca + op + su + us + pr) * recencyBoost;
   });
   var totalW = weights.reduce(function(a,b){return a+b;},0);
   var comIdx = totalW > 0
     ? weights.reduce(function(a,w,i){return a + w*i;},0) / totalW
     : MNTHS - 1;
   var comX = LBL_W + comIdx * CELL + CELL/2;
-  // Scroll so the center-of-mass column is in the middle of the visible area
   scroller.scrollLeft = Math.max(0, comX - visW/2);
 };
 
