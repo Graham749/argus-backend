@@ -20,6 +20,38 @@ body{font-family:'Lato','Helvetica Neue',Arial,sans-serif;background:#f7f7f6;col
 input{font-family:inherit;}
 @keyframes argusBounce{0%,60%,100%{transform:translateY(0);}30%{transform:translateY(-5px);}}
 @keyframes argusFade{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+@keyframes hcBarSlide{0%{transform:translateX(-100%);}60%{transform:translateX(0%);}100%{transform:translateX(100%);}}
+.hc-compact{min-height:28px;padding:0 0 6px;}
+.hc-compact-loading{display:flex;align-items:center;gap:8px;padding:4px 0 6px;}
+.hc-compact-bar{flex:1;height:3px;background:#e6e6e5;border-radius:2px;overflow:hidden;}
+.hc-compact-bar-fill{height:100%;width:60%;background:#288184;border-radius:2px;animation:hcBarSlide 1.5s ease-in-out infinite;}
+.hc-compact-status{display:flex;align-items:center;justify-content:flex-end;gap:5px;flex-wrap:wrap;padding:4px 0 6px;}
+.hc-pill{padding:3px 8px;border-radius:4px;font-size:10px;font-weight:700;white-space:nowrap;}
+.hc-pill-od{background:#fdeee0;color:#c2600f;}
+.hc-pill-ar{background:#fff3e0;color:#e65100;}
+.hc-pill-tw{background:#e3f2fd;color:#1565c0;}
+.hc-pill-ok{background:#e8f5e9;color:#2e7d32;}
+.hc-pill-grey{background:#f7f7f6;color:#6d6d6c;border:1px solid #e6e6e5;}
+.hc-pill-ph{background:#fff8f3;color:#e36a00;}
+.hc-pill-lb{background:#f0f3ff;color:#1D4AFF;}
+.hc-pill-ic{background:#fff4f0;color:#F54E00;}
+.hc-pill-bm{background:#fffbf0;color:#c98f00;}
+.hc-pill-pb{background:#f0e8f8;color:#7030a0;}
+.hc-pill-btn{cursor:pointer;transition:opacity 0.12s;}
+.hc-pill-btn:hover{opacity:0.72;}
+
+/* Health card compact sizing — fits all 4 widgets on a standard laptop */
+#sfCard,#zdTicketsCard,#pbInsightsCard,#phInsightsCard{padding:12px!important;margin-bottom:8px!important;}
+#sfCardHeader,#zdCardHeader,#pbCardHeader,#phCardHeader{margin-bottom:6px!important;}
+/* SF + ZD: direct img logos */
+#sfCardHeader>img,#zdCardHeader>img{width:28px!important;height:28px!important;}
+/* PB: img wrapped in a plain div */
+#pbCardHeader>div:first-child{width:28px!important;height:28px!important;}
+#pbCardHeader>div:first-child img{width:28px!important;height:28px!important;}
+/* PH: img wrapped in a bordered container div */
+#phCardHeader>div:first-child{width:28px!important;height:28px!important;padding:3px!important;}
+#phCardHeader>div:first-child img{width:20px!important;}
+#sfCollapseChev,#zdCollapseChev,#pbCollapseChev,#phCollapseChev{font-size:13px!important;}
 </style>
 </helmet>
 
@@ -77,6 +109,10 @@ input{font-family:inherit;}
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;flex-shrink:0;"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
         Build status
       </a>
+      <a href="#" onClick="{{ goSwIntelligence }}" style="{{ navStyleSwIntelligence }}" style-hover="background:rgba(255,255,255,0.06);color:#fff;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;flex-shrink:0;"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        SW Intelligence
+      </a>
       <div style="font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:rgba(255,255,255,0.32);padding:18px 20px 6px;">Account</div>
       <a href="#" style="display:flex;align-items:center;gap:10px;padding:8px 20px;font-size:13px;color:rgba(255,255,255,0.65);text-decoration:none;border-left:3px solid transparent;" style-hover="background:rgba(255,255,255,0.06);color:#fff;">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;flex-shrink:0;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
@@ -97,19 +133,19 @@ input{font-family:inherit;}
 
       <!-- ============ HEALTH ============ -->
       <sc-if value="{{ isHealth }}" hint-placeholder-val="{{ true }}">
-      <div style="padding:32px;max-width:1000px;animation:argusFade .25s ease;">
-        <div style="margin-bottom:22px;">
-          <div id="healthPageTitle" style="font-size:24px;font-weight:700;letter-spacing:-0.01em;">Client health card</div>
-          <div style="font-size:14px;color:#6d6d6c;margin-top:4px;">Unified signals from Posthog · Zendesk · Salesforce · Productboard</div>
+      <div style="padding:20px 28px;max-width:1000px;animation:argusFade .25s ease;">
+        <div style="margin-bottom:12px;">
+          <div id="healthPageTitle" style="font-size:20px;font-weight:700;letter-spacing:-0.01em;">Client health card</div>
+          <div style="font-size:12px;color:#9d9d9d;margin-top:2px;">Unified signals from Posthog · Zendesk · Salesforce · Productboard</div>
         </div>
 
         <!-- Page-level account selector -->
-        <div style="background:#fff;border:1px solid #e6e6e5;border-radius:10px;padding:14px 20px;margin-bottom:24px;display:flex;align-items:center;gap:16px;box-shadow:0 1px 3px rgba(60,60,59,0.05);">
+        <div style="background:#fff;border:1px solid #e6e6e5;border-radius:8px;padding:10px 16px;margin-bottom:14px;display:flex;align-items:center;gap:12px;box-shadow:0 1px 3px rgba(60,60,59,0.05);">
           <label style="font-size:11px;font-weight:700;color:#3c3c3b;white-space:nowrap;">SELECT ACCOUNT</label>
-          <select id="sfAccountSelector" style="flex:1;padding:8px 12px;border:1px solid #e6e6e5;border-radius:6px;font-size:13px;cursor:pointer;max-width:480px;">
+          <select id="sfAccountSelector" style="flex:1;padding:6px 10px;border:1px solid #e6e6e5;border-radius:6px;font-size:13px;cursor:pointer;max-width:480px;">
             <option value="">-- Loading accounts... --</option>
           </select>
-          <button id="collapseAllBtn" style="padding:6px 14px;border:1px solid #e6e6e5;border-radius:6px;background:#f7f7f6;font-size:11px;font-weight:600;color:#6d6d6c;cursor:pointer;white-space:nowrap;flex-shrink:0;">Collapse All</button>
+          <button id="collapseAllBtn" style="padding:5px 12px;border:1px solid #e6e6e5;border-radius:6px;background:#f7f7f6;font-size:11px;font-weight:600;color:#6d6d6c;cursor:pointer;white-space:nowrap;flex-shrink:0;">Expand All</button>
         </div>
 
         <!-- Salesforce Subscriptions Card (Live Data) -->
@@ -125,8 +161,9 @@ input{font-family:inherit;}
               </div>
               <div style="font-size:11px;color:#9d9d9d;margin-top:2px;">Subscriptions by ARR</div>
             </div>
-            <span id="sfCollapseChev" style="font-size:16px;color:#9d9d9d;flex-shrink:0;margin-left:8px;">▴</span>
+            <span id="sfCollapseChev" style="font-size:16px;color:#9d9d9d;flex-shrink:0;margin-left:8px;">▾</span>
           </div>
+          <div id="sfCompact" class="hc-compact"></div>
 
           <div id="sfCardBody">
           <!-- No account selected -->
@@ -241,8 +278,9 @@ input{font-family:inherit;}
               </div>
               <div style="font-size:11px;color:#9d9d9d;margin-top:2px;">Ticket activity for selected account</div>
             </div>
-            <span id="zdCollapseChev" style="font-size:16px;color:#9d9d9d;flex-shrink:0;margin-left:8px;">▴</span>
+            <span id="zdCollapseChev" style="font-size:16px;color:#9d9d9d;flex-shrink:0;margin-left:8px;">▾</span>
           </div>
+          <div id="zdCompact" class="hc-compact"></div>
 
           <div id="zdCardBody">
           <!-- No account selected -->
@@ -350,8 +388,9 @@ input{font-family:inherit;}
               </div>
               <div style="font-size:11px;color:#9d9d9d;margin-top:2px;">Customer feedback linked to product features</div>
             </div>
-            <span id="pbCollapseChev" style="font-size:16px;color:#9d9d9d;flex-shrink:0;margin-left:8px;">▴</span>
+            <span id="pbCollapseChev" style="font-size:16px;color:#9d9d9d;flex-shrink:0;margin-left:8px;">▾</span>
           </div>
+          <div id="pbCompact" class="hc-compact"></div>
 
           <div id="pbCardBody">
           <div id="pbNoAccount" style="padding:20px 0;text-align:center;color:#9d9d9d;font-size:13px;">Select an account above to view feedback data</div>
@@ -416,8 +455,9 @@ input{font-family:inherit;}
               </div>
               <div style="font-size:11px;color:#9d9d9d;margin-top:2px;">EOS platform usage — pageviews &amp; feature engagement by week</div>
             </div>
-            <span id="phCollapseChev" style="font-size:16px;color:#9d9d9d;flex-shrink:0;margin-left:8px;">▴</span>
+            <span id="phCollapseChev" style="font-size:16px;color:#9d9d9d;flex-shrink:0;margin-left:8px;">▾</span>
           </div>
+          <div id="phCompact" class="hc-compact"></div>
 
           <div id="phCardBody">
           <div id="phNoAccount" style="padding:20px 0;text-align:center;color:#9d9d9d;font-size:13px;">Select an account above to view PostHog analytics</div>
@@ -597,177 +637,8 @@ input{font-family:inherit;}
           </div><!-- /phCardBody -->
         </div>
 
-        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:20px;" dangerouslySetInnerHTML="{{ healthTabsHtml }}"></div>
 
-        <div style="display:flex;gap:4px;margin-bottom:22px;" dangerouslySetInnerHTML="{{ rangesHtml }}"></div>
 
-        <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:20px;">
-          <div style="display:flex;align-items:center;gap:14px;">
-            <div style="{{ hc.avatarStyle }}">{{ hc.initials }}</div>
-            <div>
-              <div style="font-size:22px;font-weight:700;letter-spacing:-0.01em;">{{ hc.name }}</div>
-              <div style="font-size:13px;color:#6d6d6c;margin-top:3px;">{{ hc.meta }}</div>
-              <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;">
-                <sc-for list="{{ hc.flags }}" as="f" hint-placeholder-count="4"><span style="{{ f.style }}">{{ f.text }}</span></sc-for>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div style="background:#fff;border:1px solid #e6e6e5;border-radius:12px;padding:20px;margin-bottom:16px;box-shadow:0 1px 3px rgba(60,60,59,0.07);">
-          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#9d9d9d;margin-bottom:16px;display:flex;align-items:center;gap:6px;">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
-            Aurora product usage — Posthog
-          </div>
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:8px;">
-            <div style="background:#f7f7f6;border-radius:8px;padding:12px 16px;">
-              <div style="font-size:11px;color:#6d6d6c;margin-bottom:3px;">Active users</div>
-              <div onClick="{{ toggleUsers }}" style="font-size:22px;font-weight:700;color:#288184;cursor:pointer;text-decoration:underline;text-decoration-style:dotted;">{{ hc.users }} ▾</div>
-              <div style="font-size:11px;color:#9d9d9d;margin-top:2px;">of {{ hc.licensed }} licensed</div>
-            </div>
-            <div style="background:#f7f7f6;border-radius:8px;padding:12px 16px;">
-              <div style="font-size:11px;color:#6d6d6c;margin-bottom:3px;">Sessions</div>
-              <div style="font-size:22px;font-weight:700;">{{ hc.sessions }}</div>
-              <div style="font-size:11px;color:#9d9d9d;margin-top:2px;">this period</div>
-            </div>
-            <div style="background:#f7f7f6;border-radius:8px;padding:12px 16px;">
-              <div style="font-size:11px;color:#6d6d6c;margin-bottom:3px;">Avg. session</div>
-              <div style="font-size:22px;font-weight:700;">11m</div>
-              <div style="font-size:11px;color:#9d9d9d;margin-top:2px;">minutes</div>
-            </div>
-            <div style="background:#f7f7f6;border-radius:8px;padding:12px 16px;">
-              <div style="font-size:11px;color:#6d6d6c;margin-bottom:3px;">Last active</div>
-              <div style="font-size:22px;font-weight:700;">2h</div>
-              <div style="font-size:11px;color:#9d9d9d;margin-top:2px;">ago</div>
-            </div>
-          </div>
-          <sc-if value="{{ drillUsers }}" hint-placeholder-val="{{ false }}">
-            <div style="margin-top:12px;padding-top:12px;border-top:1px solid #f1f1f0;">
-              <p style="font-size:12px;color:#6d6d6c;margin-bottom:8px;">Active users this period</p>
-              <sc-for list="{{ hc.userRows }}" as="u" hint-placeholder-count="4">
-                <div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid #f1f1f0;">
-                  <div style="width:28px;height:28px;border-radius:50%;background:#e9f2f2;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#288184;flex-shrink:0;">{{ u.init }}</div>
-                  <div style="flex:1;"><div style="font-size:13px;">{{ u.name }}</div><div style="font-size:11px;color:#9d9d9d;">{{ u.role }}</div></div>
-                  <span style="font-size:12px;color:#6d6d6c;min-width:64px;text-align:right;">{{ u.sessions }} sessions</span>
-                  <span style="font-size:11px;color:#b5b5b4;min-width:72px;text-align:right;">{{ u.ago }}</span>
-                </div>
-              </sc-for>
-              <div style="display:flex;align-items:center;gap:10px;padding:7px 0;">
-                <div style="width:28px;height:28px;border-radius:50%;background:#f1f1f0;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#9d9d9d;flex-shrink:0;">+{{ hc.moreUsers }}</div>
-                <div style="font-size:13px;color:#9d9d9d;">{{ hc.moreUsers }} more users</div>
-              </div>
-            </div>
-          </sc-if>
-          <p style="font-size:12px;color:#6d6d6c;margin:18px 0 8px;">Product adoption</p>
-          <sc-for list="{{ hc.productRows }}" as="p" hint-placeholder-count="4">
-            <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid #f1f1f0;">
-              <span style="font-size:13px;color:#3c3c3b;min-width:140px;">{{ p.name }}</span>
-              <div style="flex:1;margin:0 12px;height:6px;background:#e6e6e5;border-radius:3px;overflow:hidden;"><div style="{{ p.barStyle }}"></div></div>
-              <span style="font-size:12px;color:#6d6d6c;min-width:34px;text-align:right;">{{ p.pct }}%</span>
-            </div>
-          </sc-for>
-        </div>
-
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-          <div style="background:#fff;border:1px solid #e6e6e5;border-radius:12px;padding:20px;margin-bottom:16px;box-shadow:0 1px 3px rgba(60,60,59,0.07);">
-            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#9d9d9d;margin-bottom:16px;display:flex;align-items:center;gap:6px;">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-              Open tickets — Zendesk
-            </div>
-            <sc-for list="{{ hc.openTickets }}" as="t" hint-placeholder-count="3">
-              <div style="display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:1px solid #f1f1f0;">
-                <span style="{{ t.badgeStyle }}">{{ t.label }}</span>
-                <div><p style="font-size:13px;color:#3c3c3b;line-height:1.5;">{{ t.text }}</p><p style="font-size:11px;color:#9d9d9d;margin-top:2px;">{{ t.date }}</p></div>
-              </div>
-            </sc-for>
-          </div>
-          <div style="background:#fff;border:1px solid #e6e6e5;border-radius:12px;padding:20px;margin-bottom:16px;box-shadow:0 1px 3px rgba(60,60,59,0.07);">
-            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#9d9d9d;margin-bottom:16px;display:flex;align-items:center;gap:6px;">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><polyline points="20 6 9 17 4 12"/></svg>
-              Closed tickets — selected period
-            </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
-              <div style="background:#f7f7f6;border-radius:8px;padding:12px 16px;"><div style="font-size:11px;color:#6d6d6c;margin-bottom:3px;">Closed</div><div style="font-size:22px;font-weight:700;">{{ hc.closed }}</div><div style="font-size:11px;color:#9d9d9d;margin-top:2px;">tickets</div></div>
-              <div style="background:#f7f7f6;border-radius:8px;padding:12px 16px;"><div style="font-size:11px;color:#6d6d6c;margin-bottom:3px;">Avg. resolution</div><div style="font-size:22px;font-weight:700;">2.4d</div><div style="font-size:11px;color:#9d9d9d;margin-top:2px;">days</div></div>
-            </div>
-            <sc-for list="{{ hc.closedTopics }}" as="c" hint-placeholder-count="4">
-              <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #f1f1f0;font-size:13px;"><span style="color:#3c3c3b;">{{ c.topic }}</span><span style="font-weight:700;color:#6d6d6c;">{{ c.n }}</span></div>
-            </sc-for>
-          </div>
-        </div>
-
-        <div style="background:#fff;border:1px solid #e6e6e5;border-radius:12px;padding:20px;margin-bottom:16px;box-shadow:0 1px 3px rgba(60,60,59,0.07);">
-          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#9d9d9d;margin-bottom:16px;display:flex;align-items:center;gap:6px;">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-            Simulations &amp; credits — selected period
-          </div>
-          <table style="width:100%;border-collapse:collapse;font-size:13px;">
-            <thead><tr>
-              <th style="font-size:11px;font-weight:700;color:#9d9d9d;text-align:left;padding:0 0 8px;border-bottom:1px solid #e6e6e5;letter-spacing:0.04em;text-transform:uppercase;">Product · Region</th>
-              <th style="font-size:11px;font-weight:700;color:#9d9d9d;text-align:right;padding:0 0 8px;border-bottom:1px solid #e6e6e5;letter-spacing:0.04em;text-transform:uppercase;">Simulations</th>
-              <th style="font-size:11px;font-weight:700;color:#9d9d9d;text-align:right;padding:0 0 8px;border-bottom:1px solid #e6e6e5;letter-spacing:0.04em;text-transform:uppercase;">Credits</th>
-            </tr></thead>
-            <tbody>
-              <sc-for list="{{ hc.consumption }}" as="r" hint-placeholder-count="4">
-                <tr>
-                  <td style="padding:9px 0;border-bottom:1px solid #f1f1f0;"><div style="font-weight:700;">{{ r.prod }}</div><div style="font-size:11px;color:#9d9d9d;margin-top:1px;">{{ r.region }}</div></td>
-                  <td style="padding:9px 0;border-bottom:1px solid #f1f1f0;text-align:right;vertical-align:top;">
-                    <sc-if value="{{ r.hasSims }}" hint-placeholder-val="{{ true }}">
-                      <span style="font-weight:700;">{{ r.sims }}</span><span style="font-size:11px;color:#9d9d9d;display:block;">of {{ r.simsOf }}</span>
-                      <div style="margin-top:3px;text-align:right;"><span style="display:inline-block;width:72px;height:5px;background:#e6e6e5;border-radius:3px;overflow:hidden;vertical-align:middle;"><span style="{{ r.simsBarStyle }}"></span></span><span style="{{ r.simsPctStyle }}">{{ r.simsPctLabel }}</span></div>
-                    </sc-if>
-                    <sc-if value="{{ r.noSims }}" hint-placeholder-val="{{ false }}"><span style="color:#b5b5b4;">—</span></sc-if>
-                  </td>
-                  <td style="padding:9px 0;border-bottom:1px solid #f1f1f0;text-align:right;vertical-align:top;">
-                    <sc-if value="{{ r.hasCreds }}" hint-placeholder-val="{{ true }}">
-                      <span style="font-weight:700;">{{ r.creds }}</span><span style="font-size:11px;color:#9d9d9d;display:block;">of {{ r.credsOf }}</span>
-                      <div style="margin-top:3px;text-align:right;"><span style="display:inline-block;width:72px;height:5px;background:#e6e6e5;border-radius:3px;overflow:hidden;vertical-align:middle;"><span style="{{ r.credsBarStyle }}"></span></span><span style="{{ r.credsPctStyle }}">{{ r.credsPctLabel }}</span></div>
-                    </sc-if>
-                    <sc-if value="{{ r.noCreds }}" hint-placeholder-val="{{ false }}"><span style="color:#b5b5b4;">—</span></sc-if>
-                  </td>
-                </tr>
-              </sc-for>
-            </tbody>
-          </table>
-        </div>
-
-        <div style="background:#fff;border:1px solid #e6e6e5;border-radius:12px;padding:20px;margin-bottom:16px;box-shadow:0 1px 3px rgba(60,60,59,0.07);">
-          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#9d9d9d;margin-bottom:16px;display:flex;align-items:center;gap:6px;">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-            Account health — Salesforce
-          </div>
-          <div style="display:flex;align-items:center;gap:10px;margin:4px 0 14px;">
-            <div style="flex:1;height:8px;background:#e6e6e5;border-radius:4px;overflow:hidden;"><div style="{{ hc.churnBarStyle }}"></div></div>
-            <span style="{{ hc.churnPctStyle }}">{{ hc.churnPct }}% churn probability</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid #f1f1f0;font-size:13px;"><span style="color:#6d6d6c;">Contract value</span><span style="font-weight:700;">{{ hc.contract }}</span></div>
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid #f1f1f0;font-size:13px;"><span style="color:#6d6d6c;">Subscription tier</span><span onClick="{{ toggleSubs }}" style="font-weight:700;color:#288184;cursor:pointer;text-decoration:underline;text-decoration-style:dotted;">{{ hc.subSummary }} ▾</span></div>
-          <sc-if value="{{ drillSubs }}" hint-placeholder-val="{{ false }}">
-            <div style="background:#f7f7f6;border-radius:8px;padding:12px;margin:8px 0;">
-              <sc-for list="{{ hc.subscriptions }}" as="s" hint-placeholder-count="3">
-                <div style="display:flex;justify-content:space-between;align-items:flex-start;padding:7px 0;border-bottom:1px solid #e6e6e5;">
-                  <div><div style="font-size:13px;font-weight:700;">{{ s.name }}</div><div style="font-size:11px;color:#9d9d9d;margin-top:2px;">{{ s.detail }}</div></div>
-                  <span style="{{ s.badgeStyle }}">{{ s.status }}</span>
-                </div>
-              </sc-for>
-            </div>
-          </sc-if>
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid #f1f1f0;font-size:13px;"><span style="color:#6d6d6c;">Last commercial contact</span><span style="font-weight:700;">{{ hc.lastContact }}</span></div>
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;font-size:13px;"><span style="color:#6d6d6c;">Open opportunity</span><span style="font-weight:700;">{{ hc.opportunity }}</span></div>
-        </div>
-
-        <div style="background:#fff;border:1px solid #e6e6e5;border-radius:12px;padding:20px;margin-bottom:16px;box-shadow:0 1px 3px rgba(60,60,59,0.07);">
-          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#9d9d9d;margin-bottom:16px;display:flex;align-items:center;gap:6px;">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-            External intelligence — {{ hc.name }}
-          </div>
-          <sc-for list="{{ hc.intel }}" as="i" hint-placeholder-count="4">
-            <div style="display:flex;gap:10px;padding:9px 0;border-bottom:1px solid #f1f1f0;">
-              <span style="font-size:11px;font-weight:700;padding:2px 9px;border-radius:20px;background:#e9f2f2;color:#288184;white-space:nowrap;flex-shrink:0;align-self:flex-start;margin-top:1px;">{{ i.tag }}</span>
-              <div><p style="font-size:13px;color:#3c3c3b;line-height:1.5;">{{ i.text }}</p><p style="font-size:11px;color:#b5b5b4;margin-top:2px;">Source: {{ i.src }}</p></div>
-            </div>
-          </sc-for>
-        </div>
       </div>
       </sc-if>
 
@@ -1364,6 +1235,13 @@ input{font-family:inherit;}
       <div style="padding:32px;max-width:1200px;animation:argusFade .25s ease;" dangerouslySetInnerHTML="{{ mdmHtml }}"></div>
       </sc-if>
 
+      <!-- ============ SW INTELLIGENCE ============ -->
+      <sc-if value="{{ isSwIntelligence }}" hint-placeholder-val="{{ false }}">
+      <div style="width:100%;height:calc(100vh - 60px);overflow:hidden;animation:argusFade .2s ease;">
+        <iframe src="/sw-intelligence?embed=1" style="width:100%;height:100%;border:none;" title="SW Revenue Intelligence"></iframe>
+      </div>
+      </sc-if>
+
     </main>
   </div>
 </div>
@@ -1472,6 +1350,78 @@ document.addEventListener('click', function(e) {
   }, 100);
 });
 
+window.__hcExpand = function(prefix) {
+  var hdr  = document.getElementById(prefix + 'CardHeader');
+  var body = document.getElementById(prefix + 'CardBody');
+  var chev = document.getElementById(prefix + 'CollapseChev');
+  if (!hdr || !body) return;
+  hdr._collapsed = false;
+  body.style.display = 'block';
+  if (chev) chev.textContent = '▴';
+};
+
+// Single shared interval — syncs loading phrases across all 4 widgets simultaneously
+window.__argusLoadTick = function() {
+  var elems = document.querySelectorAll('.hc-load-msg');
+  if (!elems.length) {
+    clearInterval(window.__argusLoadInterval);
+    window.__argusLoadInterval = null;
+    return;
+  }
+  var msg = window.__argusNextMsg();
+  elems.forEach(function(el) { el.textContent = msg; });
+  // Also sync full loading bars inside card bodies (even if collapsed)
+  ['sub-loading-msg','zd-loading-msg','pb-loading-msg','ph-loading-msg'].forEach(function(id) {
+    var el = document.getElementById(id); if (el) el.textContent = msg;
+  });
+};
+window.__argusStartLoad = function() {
+  if (window.__argusLoadInterval) return;
+  window.__argusLoadTick();
+  window.__argusLoadInterval = setInterval(window.__argusLoadTick, 5000);
+};
+
+// Single shared loading phrase queue — all 4 health card widgets draw from this
+window.__argusNextMsg = (function(){
+  var _all = [
+    "Argus had 100 eyes — all of them are bloodshot right now",
+    "The Oracle is consulting... if only it was a materialised table and not a view",
+    "Hermes is on his way — he stopped for coffee",
+    "Please bear with us — this is a Proof of Concept",
+    "Hephaestus is forging your insights — craftsmanship takes time",
+    "The Fates are measuring your metrics — they're very thorough",
+    "100 eyes, one slow query",
+    "Zeus is reviewing the figures — he has notes",
+    "Athena didn't build Athens in a day",
+    "The Titans are crunching numbers — there are a lot of numbers",
+    "Consulting the Oracle... the query is still running",
+    "Good things come to those who wait. So does this reload",
+    "Argus is swimming in the data lake — all 100 eyes open underwater",
+    "Diving deep into the data lake — Argus forgot his goggles",
+    "Something is swimming in the data lake — Argus is investigating",
+    "The data lake is murky today — even Argus can't see the bottom",
+    "Argus took a dip in the data lake — give him a moment to dry off",
+    "Querying the data lake…",
+    "Crunching feature engagement metrics…",
+    "Joining the dots across Salesforce, Zendesk, Productboard and PostHog…",
+    "Aggregating weekly event buckets…",
+    "Fetching investment case views…",
+    "Mapping leaderboard activity…",
+    "Cross-referencing tenant domains…"
+  ];
+  var _q = [];
+  return function() {
+    if (!_q.length) {
+      _q = _all.slice();
+      for (var i = _q.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        var t = _q[i]; _q[i] = _q[j]; _q[j] = t;
+      }
+    }
+    return _q.pop();
+  };
+})();
+
 </script>
 
 <script type="text/x-dc" data-dc-script>
@@ -1574,6 +1524,22 @@ class Component extends DCLogic {
     setTimeout(poll, 300);
   }
 
+  updateHcCompact(id, html) {
+    var el = document.getElementById(id);
+    if (el) el.innerHTML = html;
+  }
+
+  hcCompactLoading(id, label) {
+    this.updateHcCompact(id,
+      '<div class="hc-compact-loading">'
+      + '<span style="font-size:10px;color:#9d9d9d;">' + label + '</span>'
+      + '<span class="hc-load-msg" style="font-size:10px;color:#9d9d9d;font-style:italic;flex:1;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-left:6px;"></span>'
+      + '<div class="hc-compact-bar"><div class="hc-compact-bar-fill"></div></div>'
+      + '</div>'
+    );
+    window.__argusStartLoad && window.__argusStartLoad();
+  }
+
   setupCardCollapses(){
     var cards = [
       { hdr: 'sfCardHeader', body: 'sfCardBody', chev: 'sfCollapseChev' },
@@ -1586,7 +1552,9 @@ class Component extends DCLogic {
       var body = document.getElementById(c.body);
       var chev = document.getElementById(c.chev);
       if (!hdr || !body) return;
-      hdr._collapsed = false;
+      hdr._collapsed = true;
+      body.style.display = 'none';
+      if (chev) chev.textContent = '▾';
       hdr.onclick      = function() {
         hdr._collapsed = !hdr._collapsed;
         body.style.display = hdr._collapsed ? 'none' : 'block';
@@ -1794,11 +1762,6 @@ class Component extends DCLogic {
     show('zdDetailView', false);
 
     // Animated loading bar (matches SF subscriptions style)
-    if (!window.__argusNextMsg) window.__argusNextMsg = (function(){
-      const _all=["Argus had 100 eyes — all of them are bloodshot right now","The Oracle is consulting... if only it was a materialised table and not a view","Hermes is on his way — he stopped for coffee","Please bear with us — this is a Proof of Concept","Hephaestus is forging your insights — craftsmanship takes time","Consulting the Oracle... the query is still running","100 eyes, one slow query","Zeus is reviewing the figures — he has notes","Argus is swimming in the data lake — all 100 eyes open underwater","The data lake is murky today — even Argus can't see the bottom"];
-      let _q=[];
-      return function(){if(!_q.length){_q=_all.slice();for(let i=_q.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));const t=_q[i];_q[i]=_q[j];_q[j]=t;}}return _q.pop();};
-    })();
     const zdLoadingEl = document.getElementById('zdLoading');
     if (zdLoadingEl) {
       zdLoadingEl.style.display = 'block';
@@ -1812,6 +1775,7 @@ class Component extends DCLogic {
           +'<div id="zd-loading-msg" style="font-size:13px;color:#9d9d9d;font-style:italic;min-height:20px;">'+window.__argusNextMsg()+'</div>'
         +'</div>';
     }
+    this.hcCompactLoading('zdCompact', 'Loading support tickets…');
     clearInterval(window.__zdMsgInterval);
     window.__zdMsgInterval = setInterval(function() {
       const el = document.getElementById('zd-loading-msg');
@@ -1935,10 +1899,14 @@ class Component extends DCLogic {
         if (data.error) {
           const err = document.getElementById('zdError');
           if (err) { err.textContent = data.error; err.style.display = ''; }
+          var _zdErrC = document.getElementById('zdCompact');
+          if (_zdErrC) _zdErrC.innerHTML = '<div class="hc-compact-status"><span class="hc-pill hc-pill-od">ZD error — expand for details</span></div>';
           return;
         }
         if (!data.zdOrgId) {
           show('zdNoMatch', true);
+          var _zdC = document.getElementById('zdCompact');
+          if (_zdC) _zdC.innerHTML = '<div class="hc-compact-status"><span class="hc-pill hc-pill-grey">No ZD match</span></div>';
           return;
         }
 
@@ -2077,6 +2045,22 @@ class Component extends DCLogic {
           </svg>`;
         })(data.tickets || []);
 
+        (function(){
+          var ZD_DEFS = [
+            { key:'open',    id:'zdOpenCount',    cls:'hc-pill-od',   lbl:'Open'    },
+            { key:'pending', id:'zdPendingCount', cls:'hc-pill-ar',   lbl:'Pending' },
+            { key:'solved',  id:'zdSolvedCount',  cls:'hc-pill-ok',   lbl:'Solved'  },
+            { key:'closed',  id:'zdClosedCount',  cls:'hc-pill-grey', lbl:'Closed'  },
+          ];
+          var pills = ZD_DEFS.map(function(g){
+            var cnt = (document.getElementById(g.id)||{}).textContent || '0';
+            return '<span class="hc-pill hc-pill-btn ' + g.cls + '" onclick="window.__hcExpand(\'zd\');window.__zdShowDrilldown&&window.__zdShowDrilldown(\'' + g.key + '\')">' + cnt + ' ' + g.lbl + '</span>';
+          }).join('');
+          var _resVal = (document.getElementById('zdAvgResolution')||{}).textContent;
+          if (_resVal && _resVal !== '—') pills += '<span class="hc-pill hc-pill-grey">' + _resVal + ' min avg</span>';
+          var el = document.getElementById('zdCompact');
+          if (el) el.innerHTML = '<div class="hc-compact-status">' + pills + '</div>';
+        })();
         show('zdSummaryView', true);
       })
       .catch(() => {
@@ -2084,6 +2068,8 @@ class Component extends DCLogic {
         show('zdLoading', false);
         const errEl = document.getElementById('zdError');
         if (errEl) { errEl.textContent = 'Failed to load ticket data'; errEl.style.display = ''; }
+        var zdEl = document.getElementById('zdCompact');
+        if (zdEl) zdEl.innerHTML = '<div class="hc-compact-status"><span class="hc-pill hc-pill-od">ZD error — expand for details</span></div>';
       });
   }
 
@@ -2096,14 +2082,9 @@ class Component extends DCLogic {
     show('pbError', false);
     show('pbSummaryView', false);
     show('pbLoading', true);
+    this.hcCompactLoading('pbCompact', 'Loading Productboard insights…');
     show('pbDrilldown', false);
     window.__pbOpenDropdown = null;
-
-    if (!window.__argusNextMsg) window.__argusNextMsg = (function(){
-      const _all=["Argus had 100 eyes — all of them are bloodshot right now","The Oracle is consulting... if only it was a materialised table and not a view","Hermes is on his way — he stopped for coffee","Please bear with us — this is a Proof of Concept","Hephaestus is forging your insights — craftsmanship takes time","Consulting the Oracle... the query is still running","100 eyes, one slow query","Zeus is reviewing the figures — he has notes","Argus is swimming in the data lake — all 100 eyes open underwater","The data lake is murky today — even Argus can't see the bottom"];
-      let _q=[];
-      return function(){if(!_q.length){_q=_all.slice();for(let i=_q.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));const t=_q[i];_q[i]=_q[j];_q[j]=t;}}return _q.pop();};
-    })();
     const pbLoadEl = document.getElementById('pbLoading');
     if (pbLoadEl) {
       pbLoadEl.innerHTML =
@@ -2144,9 +2125,16 @@ class Component extends DCLogic {
         if (data.error) {
           const el = document.getElementById('pbError');
           if (el) { el.textContent = data.error; el.style.display = ''; }
+          var pbErrEl = document.getElementById('pbCompact');
+          if (pbErrEl) pbErrEl.innerHTML = '<div class="hc-compact-status"><span class="hc-pill hc-pill-od">PB error — expand for details</span></div>';
           return;
         }
-        if (!data.pbCompanyId) { show('pbNoMatch', true); return; }
+        if (!data.pbCompanyId) {
+          show('pbNoMatch', true);
+          var pbNmEl = document.getElementById('pbCompact');
+          if (pbNmEl) pbNmEl.innerHTML = '<div class="hc-compact-status"><span class="hc-pill hc-pill-grey">No PB match</span></div>';
+          return;
+        }
 
         const s = data.summary;
         // Build one global note map — each note assigned to exactly one bucket by priority
@@ -2401,12 +2389,28 @@ class Component extends DCLogic {
         };
 
         window.__pbOpenDropdown = null;
+        (function(){
+          var PB_DEFS = [
+            { key:'total',     id:'pbTotalNotes',    cls:'hc-pill-pb',   lbl:'Notes'     },
+            { key:'delivered', id:'pbDeliveredCount',cls:'hc-pill-ok',   lbl:'Delivered' },
+            { key:'pipeline',  id:'pbPipelineCount', cls:'hc-pill-ar',   lbl:'In Pipeline' },
+            { key:'unlinked',  id:'pbUnlinkedCount', cls:'hc-pill-grey', lbl:'Unlinked'  },
+          ];
+          var pills = PB_DEFS.map(function(g){
+            var cnt = (document.getElementById(g.id)||{}).textContent || '0';
+            return '<span class="hc-pill hc-pill-btn ' + g.cls + '" onclick="window.__hcExpand(\'pb\');window.__pbToggleTile&&window.__pbToggleTile(\'' + g.key + '\')">' + cnt + ' ' + g.lbl + '</span>';
+          }).join('');
+          var el = document.getElementById('pbCompact');
+          if (el) el.innerHTML = '<div class="hc-compact-status">' + pills + '</div>';
+        })();
         show('pbSummaryView', true);
       })
       .catch(() => {
         show('pbLoading', false);
         const el = document.getElementById('pbError');
         if (el) { el.textContent = 'Failed to load Productboard data'; el.style.display = ''; }
+        var pbEl = document.getElementById('pbCompact');
+        if (pbEl) pbEl.innerHTML = '<div class="hc-compact-status"><span class="hc-pill hc-pill-od">PB error — expand for details</span></div>';
       });
   }
 
@@ -2421,13 +2425,7 @@ class Component extends DCLogic {
     show('phLoading', true);
     var phInfoBarEl = document.getElementById('phInfoBar');
     if (phInfoBarEl) phInfoBarEl.style.display = 'none';
-    // Expand PostHog card body on new account load and reset users tile arrow
-    var phHdrEl  = document.getElementById('phCardHeader');
-    var phBodyEl = document.getElementById('phCardBody');
-    var phChevEl = document.getElementById('phCollapseChev');
-    if (phHdrEl)  phHdrEl._collapsed = false;
-    if (phBodyEl) phBodyEl.style.display = 'block';
-    if (phChevEl) phChevEl.textContent = '▴';
+    this.hcCompactLoading('phCompact', 'Loading PostHog analytics…');
     var phUsersViewEl = document.getElementById('phUsersView');
     if (phUsersViewEl) phUsersViewEl.style.display = 'none';
     var phRegionsViewEl = document.getElementById('phRegionsView');
@@ -2438,11 +2436,6 @@ class Component extends DCLogic {
     var phTileReset = document.getElementById('phUsersTile');
     if (phTileReset) { var pra = phTileReset.querySelector('.drill-arrow'); if (pra) pra.style.opacity = '0.4'; }
 
-    if (!window.__argusNextMsg) window.__argusNextMsg = (function(){
-      var _all=['Querying the data lake…','Crunching feature engagement metrics…','Joining PostHog tenants to MDM…','Aggregating weekly event buckets…','Counting your power users…','Fetching investment case views…','Mapping leaderboard activity…','Benchmarks data incoming…','Cross-referencing tenant domains…','Almost there…'];
-      var _q=[];
-      return function(){if(!_q.length){_q=_all.slice();for(var i=_q.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=_q[i];_q[i]=_q[j];_q[j]=t;}}return _q.pop();};
-    })();
     var phLoadEl = document.getElementById('phLoading');
     if (phLoadEl) {
       phLoadEl.innerHTML =
@@ -2935,7 +2928,12 @@ class Component extends DCLogic {
       .then(function(data) {
         clearInterval(window.__phMsgInterval);
         show('phLoading', false);
-        if (!data.summary) { show('phNoMatch', true); return; }
+        if (!data.summary) {
+          show('phNoMatch', true);
+          var phNmEl = document.getElementById('phCompact');
+          if (phNmEl) phNmEl.innerHTML = '<div class="hc-compact-status"><span class="hc-pill hc-pill-grey">No PostHog match</span></div>';
+          return;
+        }
 
         var s = data.summary;
         setText('phUsers',       s.uniqueUsers.toLocaleString());
@@ -3948,6 +3946,28 @@ class Component extends DCLogic {
           });
         })();
 
+        (function(){
+          // Compute avg/week and active weeks directly from data (DOM may be overwritten by metric filter)
+          var _phWk  = (window.__phData && window.__phData.weekly) || [];
+          var _phAwk = _phWk.filter(function(w){ return w.events > 0; }).length;
+          var _phAvg = _phAwk > 0 ? Math.round(_phWk.reduce(function(a,w){ return a+(w.events||0); }, 0) / _phAwk) : 0;
+          var PH_DEFS = [
+            { val:(s.uniqueUsers||0).toLocaleString(), cls:'hc-pill-ph',  lbl:'Users',        onclick:"window.__hcExpand('ph');var t=document.getElementById('phUsersTile');if(t)t.click();" },
+            { val:(s.events30d||0).toLocaleString(),   cls:'hc-pill-ph',  lbl:'Events 30d',   onclick:"window.__hcExpand('ph')" },
+            { val:_phAvg.toLocaleString(),             cls:'hc-pill-grey',lbl:'Events/wk avg',onclick:"window.__hcExpand('ph')" },
+            { val:_phAwk,                              cls:'hc-pill-grey',lbl:'Active wks',   onclick:"window.__hcExpand('ph')" },
+            { val:'›', id:'phRegionsCompactPill',        cls:'hc-pill-ph',  lbl:'Regions',      onclick:"window.__hcExpand('ph');var t=document.getElementById('phRegionsTile');if(t)t.click();" },
+            { val:totalLb.toLocaleString(),            cls:'hc-pill-lb',  lbl:'Leaderboards', onclick:"window.__hcExpand('ph')" },
+            { val:totalIc.toLocaleString(),            cls:'hc-pill-ic',  lbl:'Inv. Cases',   onclick:"window.__hcExpand('ph')" },
+            { val:totalBm.toLocaleString(),            cls:'hc-pill-bm',  lbl:'Benchmarks',   onclick:"window.__hcExpand('ph')" },
+          ];
+          var pills = PH_DEFS.map(function(g){
+            var idAttr = g.id ? ' id="' + g.id + '"' : '';
+            return '<span' + idAttr + ' class="hc-pill hc-pill-btn ' + g.cls + '" onclick="' + g.onclick + '">' + g.val + ' ' + g.lbl + '</span>';
+          }).join('');
+          var el = document.getElementById('phCompact');
+          if (el) el.innerHTML = '<div class="hc-compact-status">' + pills + '</div>';
+        })();
         show('phSummaryView', true);
 
         // Pre-populate the Market Regions tile count without waiting for the globe to open
@@ -3957,6 +3977,8 @@ class Component extends DCLogic {
             var distinct = new Set(rows.map(function(r){ return r.region; })).size;
             var el = document.getElementById('phRegionCount');
             if (el) el.textContent = distinct || '—';
+            var pill = document.getElementById('phRegionsCompactPill');
+            if (pill && distinct) pill.textContent = distinct + ' Regions';
           })
           .catch(function(){});
       })
@@ -3965,6 +3987,8 @@ class Component extends DCLogic {
         show('phLoading', false);
         var errEl = document.getElementById('phError');
         if (errEl) { errEl.textContent = 'Error loading PostHog data: ' + err.message; show('phError', true); }
+        var phErrEl = document.getElementById('phCompact');
+        if (phErrEl) phErrEl.innerHTML = '<div class="hc-compact-status"><span class="hc-pill hc-pill-od">PH error — expand for details</span></div>';
       });
   }
 
@@ -4037,12 +4061,6 @@ class Component extends DCLogic {
     const sfNoAcct = document.getElementById('sfNoAccount');
     if (sfNoAcct) sfNoAcct.style.display = 'none';
 
-    // Use shared shuffle queue (initialised in loadMdm; fallback if called first)
-    if (!window.__argusNextMsg) window.__argusNextMsg = (function(){
-      const _all=["Argus had 100 eyes — all of them are bloodshot right now","The Oracle is consulting... if only it was a materialised table and not a view","Hermes is on his way — he stopped for coffee","Please bear with us — this is a Proof of Concept","Hephaestus is forging your insights — craftsmanship takes time","The Fates are measuring your metrics — they're very thorough","100 eyes, one slow query","Zeus is reviewing the figures — he has notes","Athena didn't build Athens in a day","The Titans are crunching numbers — there are a lot of numbers","Consulting the Oracle... the query is still running","Good things come to those who wait. So does this reload","Argus is swimming in the data lake — all 100 eyes open underwater","Diving deep into the data lake — Argus forgot his goggles","Something is swimming in the data lake — Argus is investigating","The data lake is murky today — even Argus can't see the bottom","Argus took a dip in the data lake — give him a moment to dry off"];
-      let _q=[];
-      return function(){if(!_q.length){_q=_all.slice();for(let i=_q.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));const t=_q[i];_q[i]=_q[j];_q[j]=t;}}return _q.pop();};
-    })();
 
     const firstMsg = window.__argusNextMsg();
     loading.innerHTML =
@@ -4055,6 +4073,7 @@ class Component extends DCLogic {
         +'<div id="sub-loading-msg" style="font-size:13px;color:#9d9d9d;font-style:italic;min-height:20px;">'+firstMsg+'</div>'
       +'</div>';
     loading.style.display = 'block';
+    this.hcCompactLoading('sfCompact', 'Loading subscriptions…');
 
     clearInterval(window.__subMsgInterval);
     window.__subMsgInterval = setInterval(function() {
@@ -4087,6 +4106,7 @@ class Component extends DCLogic {
         if(errorText) {
           errorText.textContent = `Error: ${err.message}. Try "TotalEnergies"`;
         }
+        this.updateHcCompact('sfCompact', '<div class="hc-compact-status"><span class="hc-pill hc-pill-od">SF error — expand for details</span></div>');
       });
   }
 
@@ -4300,6 +4320,7 @@ class Component extends DCLogic {
     if(totalCount === 0){
       if(noDataMsg) noDataMsg.style.display = 'block';
       if(riskCardsDiv) riskCardsDiv.style.display = 'none';
+      this.updateHcCompact('sfCompact', '<div class="hc-compact-status"><span class="hc-pill hc-pill-grey">No subscriptions</span></div>');
       return;
     } else {
       if(noDataMsg) noDataMsg.style.display = 'none';
@@ -4322,6 +4343,20 @@ class Component extends DCLogic {
       if(pctEl)   pctEl.textContent   = `(${countPercent}%)`;
       if(arrEl)   arrEl.textContent   = fmtArr(arr);
     }
+
+    // Compact summary strip — read values from already-populated DOM tiles
+    const SF_DEFS = [
+      { key:'OVERDUE',  id:'sf_overdue',  cls:'hc-pill-od', lbl:'Overdue'  },
+      { key:'AT_RISK',  id:'sf_at_risk',  cls:'hc-pill-ar', lbl:'At Risk'  },
+      { key:'TO_WATCH', id:'sf_to_watch', cls:'hc-pill-tw', lbl:'To Watch' },
+      { key:'HEALTHY',  id:'sf_healthy',  cls:'hc-pill-ok', lbl:'Healthy'  },
+    ];
+    const sfPills = SF_DEFS.map(g => {
+      const cnt = (document.getElementById(g.id+'_Count')||{}).textContent || '0';
+      const arr = (document.getElementById(g.id+'_ARR')||{}).textContent   || '';
+      return `<span class="hc-pill hc-pill-btn ${g.cls}" onclick="window.__hcExpand('sf');window.__argus&&window.__argus.showDrilldown('${g.key}')">${cnt} ${g.lbl}${arr?' · '+arr:''}</span>`;
+    }).join('');
+    this.updateHcCompact('sfCompact', `<div class="hc-compact-status">${sfPills}</div>`);
 
   }
 
@@ -4697,12 +4732,6 @@ class Component extends DCLogic {
   // Live data from v_gold_pb_feature_prioritization_final via /api/features
   // Loaded async in componentDidMount — scores are pre-computed by gold layer (0-10 scale)
   async loadFeatures(){
-    // Use shared shuffle queue (fallback init if loadMdm hasn't run yet)
-    if (!window.__argusNextMsg) window.__argusNextMsg = (function(){
-      const _all=["Argus had 100 eyes — all of them are bloodshot right now","The Oracle is consulting... if only it was a materialised table and not a view","Hermes is on his way — he stopped for coffee","Please bear with us — this is a Proof of Concept","Hephaestus is forging your insights — craftsmanship takes time","The Fates are measuring your metrics — they're very thorough","100 eyes, one slow query","Zeus is reviewing the figures — he has notes","Athena didn't build Athens in a day","The Titans are crunching numbers — there are a lot of numbers","Consulting the Oracle... the query is still running","Good things come to those who wait. So does this reload","Argus is swimming in the data lake — all 100 eyes open underwater","Diving deep into the data lake — Argus forgot his goggles","Something is swimming in the data lake — Argus is investigating","The data lake is murky today — even Argus can't see the bottom","Argus took a dip in the data lake — give him a moment to dry off"];
-      let _q=[];
-      return function(){if(!_q.length){_q=_all.slice();for(let i=_q.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));const t=_q[i];_q[i]=_q[j];_q[j]=t;}}return _q.pop();};
-    })();
     clearInterval(window.__featMsgInterval);
     window.__featCurrentMsg = window.__argusNextMsg();
     window.__featMsgInterval = setInterval(function() {
@@ -4718,7 +4747,7 @@ class Component extends DCLogic {
       const data = await res.json();
       const features = (data.features || []).map(f => ({
         id:               f.featureId,
-        name:             f.featureName,
+        name:             f.featureName || f.featureId || '(untitled)',
         criticality:      f.criticalityLabel || '—',
         efficiency:       f.efficiencyImpact || '—',
         rawRegionalPriority: f.rawRegionalPriority !== null && f.rawRegionalPriority !== undefined ? Number(f.rawRegionalPriority) : null,
@@ -4778,40 +4807,6 @@ class Component extends DCLogic {
       // Already loaded — just re-paint the table after re-render
       setTimeout(() => window.__mdmRefresh && window.__mdmRefresh(), 0);
       return;
-    }
-    // Initialise shared shuffle queue once — used by both MDM and subscription loaders
-    if (!window.__argusNextMsg) {
-      const _all = [
-        "Argus had 100 eyes — all of them are bloodshot right now",
-        "The Oracle is consulting... if only it was a materialised table and not a view",
-        "Hermes is on his way — he stopped for coffee",
-        "Please bear with us — this is a Proof of Concept",
-        "Hephaestus is forging your insights — craftsmanship takes time",
-        "The Fates are measuring your metrics — they're very thorough",
-        "100 eyes, one slow query",
-        "Zeus is reviewing the figures — he has notes",
-        "Athena didn't build Athens in a day",
-        "The Titans are crunching numbers — there are a lot of numbers",
-        "Consulting the Oracle... the query is still running",
-        "Good things come to those who wait. So does this reload",
-        "Argus is swimming in the data lake — all 100 eyes open underwater",
-        "Diving deep into the data lake — Argus forgot his goggles",
-        "Something is swimming in the data lake — Argus is investigating",
-        "The data lake is murky today — even Argus can't see the bottom",
-        "Argus took a dip in the data lake — give him a moment to dry off"
-      ];
-      let _q = [];
-      window.__argusNextMsg = function() {
-        if (!_q.length) {
-          // Fisher-Yates shuffle into fresh queue
-          _q = _all.slice();
-          for (let i = _q.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            const t = _q[i]; _q[i] = _q[j]; _q[j] = t;
-          }
-        }
-        return _q.pop();
-      };
     }
 
     // Start message cycling before setState so the interval runs exactly once
@@ -5104,7 +5099,7 @@ class Component extends DCLogic {
       .filter(f=> {
         if(featSearchTerm) {
           if(isIdSearch) return f.id.toLowerCase().startsWith(featSearchTerm) || (f.subId && f.subId.toLowerCase().startsWith(featSearchTerm));
-          return f.name.toLowerCase().includes(featSearchTerm) || (f.fromSub && f.subName && f.subName.toLowerCase().includes(featSearchTerm));
+          return (f.name || '').toLowerCase().includes(featSearchTerm) || (f.fromSub && f.subName && f.subName.toLowerCase().includes(featSearchTerm));
         }
         return true;
       })
@@ -5565,8 +5560,9 @@ class Component extends DCLogic {
       goBriefing:(e)=>{e&&e.preventDefault();this.setV({view:'briefing'});},
       goBuildStatus:(e)=>{e&&e.preventDefault();this.setV({view:'buildStatus'});},
       goMdm:(e)=>{e&&e.preventDefault();window.__mdmSearch='';window.__mdmConfFilter=null;window.__mdmExpandedId=null;this.setV({view:'mdm'}); },
-      navStyleHealth:navStyle('health'), navStyleFeatures:navStyle('features'), navStyleAssistant:navStyle('assistant'), navStyleBriefing:navStyle('briefing'), navStyleBuildStatus:navStyle('buildStatus'), navStyleMdm:navStyle('mdm'),
-      isHealth:S.view==='health', isFeatures:S.view==='features', isAssistant:S.view==='assistant', isBriefing:S.view==='briefing', isBuildStatus:S.view==='buildStatus', isMdm:S.view==='mdm',
+      goSwIntelligence:(e)=>{e&&e.preventDefault();this.setV({view:'swIntelligence'});},
+      navStyleHealth:navStyle('health'), navStyleFeatures:navStyle('features'), navStyleAssistant:navStyle('assistant'), navStyleBriefing:navStyle('briefing'), navStyleBuildStatus:navStyle('buildStatus'), navStyleMdm:navStyle('mdm'), navStyleSwIntelligence:navStyle('swIntelligence'),
+      isHealth:S.view==='health', isFeatures:S.view==='features', isAssistant:S.view==='assistant', isBriefing:S.view==='briefing', isBuildStatus:S.view==='buildStatus', isMdm:S.view==='mdm', isSwIntelligence:S.view==='swIntelligence',
       healthTabsHtml, rangesHtml, healthTabs, ranges, hc,
       toggleUsers:()=>this.toggleDrill('users_'+S.healthClient), drillUsers:!!S.drills['users_'+S.healthClient],
       toggleSubs:()=>this.toggleDrill('subs_'+S.healthClient), drillSubs:!!S.drills['subs_'+S.healthClient],
