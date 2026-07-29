@@ -23,7 +23,9 @@ const phBenchmark    = require('./api/ph-benchmark');
 const phSankey       = require('./api/ph-sankey');
 const accountMatches = require('./api/account-matches');
 const swIntelligence = require('./api/sw-intelligence');
-const clientTimeline = require('./api/client-timeline');
+const clientTimeline    = require('./api/client-timeline');
+const sfCases           = require('./api/sf-cases');
+const sfOpportunities   = require('./api/sf-opportunities');
 const { query: dbQuery } = require('./lib/db');
 
 const app = express();
@@ -83,6 +85,8 @@ app.get('/api/ph-sankey',         phSankey);
 app.get('/api/account-matches',   accountMatches);
 app.get('/api/sw-intelligence',   swIntelligence);
 app.get('/api/client-timeline',   clientTimeline);
+app.get('/api/sf-cases',          sfCases);
+app.get('/api/sf-opportunities',  sfOpportunities);
 app.get('/sw-intelligence', (req, res) => res.sendFile(path.join(argusPath, 'sw-intelligence.html')));
 
 // Serve Argus dashboard at root

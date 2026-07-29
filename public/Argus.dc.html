@@ -41,17 +41,17 @@ input{font-family:inherit;}
 .hc-pill-btn:hover{opacity:0.72;}
 
 /* Health card compact sizing — fits all 4 widgets on a standard laptop */
-#sfCard,#zdTicketsCard,#pbInsightsCard,#phInsightsCard{padding:12px!important;margin-bottom:8px!important;}
-#sfCardHeader,#zdCardHeader,#pbCardHeader,#phCardHeader{margin-bottom:6px!important;}
-/* SF + ZD: direct img logos */
-#sfCardHeader>img,#zdCardHeader>img{width:28px!important;height:28px!important;}
+#sfCard,#sfCasesCard,#sfOppsCard,#zdTicketsCard,#pbInsightsCard,#phInsightsCard{padding:12px!important;margin-bottom:8px!important;}
+#sfCardHeader,#casesCardHeader,#oppsCardHeader,#zdCardHeader,#pbCardHeader,#phCardHeader{margin-bottom:6px!important;}
+/* SF + ZD + new SF cards: direct img logos */
+#sfCardHeader>img,#casesCardHeader>img,#oppsCardHeader>img,#zdCardHeader>img{width:28px!important;height:28px!important;}
 /* PB: img wrapped in a plain div */
 #pbCardHeader>div:first-child{width:28px!important;height:28px!important;}
 #pbCardHeader>div:first-child img{width:28px!important;height:28px!important;}
 /* PH: img wrapped in a bordered container div */
 #phCardHeader>div:first-child{width:28px!important;height:28px!important;padding:3px!important;}
 #phCardHeader>div:first-child img{width:20px!important;}
-#sfCollapseChev,#zdCollapseChev,#pbCollapseChev,#phCollapseChev{font-size:13px!important;}
+#sfCollapseChev,#casesCollapseChev,#oppsCollapseChev,#zdCollapseChev,#pbCollapseChev,#phCollapseChev,#epCollapseChev{font-size:13px!important;}
 </style>
 </helmet>
 
@@ -150,15 +150,18 @@ input{font-family:inherit;}
 
         <!-- Engagement Pulse Card -->
         <div id="epCard" style="display:none;background:#fff;border:1px solid #e6e6e5;border-radius:12px;padding:14px 16px 12px;box-shadow:0 1px 3px rgba(60,60,59,0.07);margin-bottom:10px;">
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+          <div id="epCardHeader" style="display:flex;align-items:center;gap:10px;margin-bottom:10px;cursor:pointer;user-select:none;">
             <span style="font-size:12px;font-weight:700;color:#3c3c3b;letter-spacing:0.04em;text-transform:uppercase;">Engagement Pulse</span>
             <span id="epSubtitle" style="font-size:10px;color:#9d9d9d;flex:1;">Loading...</span>
-            <span id="epBenchNote" style="font-size:10px;color:#9d9d9d;text-align:right;white-space:nowrap;"></span>
+            <span id="epBenchNote" style="font-size:10px;color:#9d9d9d;text-align:right;white-space:nowrap;margin-right:6px;"></span>
+            <span id="epCollapseChev" style="font-size:13px;color:#9d9d9d;flex-shrink:0;">▴</span>
           </div>
-          <div id="epLoading" style="height:130px;display:flex;align-items:center;justify-content:center;color:#9d9d9d;font-size:12px;">
-            <span style="font-style:italic;">Building timeline…</span>
+          <div id="epCardBody">
+            <div id="epLoading" style="height:130px;display:flex;align-items:center;justify-content:center;color:#9d9d9d;font-size:12px;">
+              <span style="font-style:italic;">Building timeline…</span>
+            </div>
+            <div id="epWrap" style="display:none;width:100%;min-height:140px;"></div>
           </div>
-          <div id="epWrap" style="display:none;width:100%;min-height:140px;"></div>
         </div>
 
         <!-- Salesforce Subscriptions Card (Live Data) -->
@@ -276,6 +279,153 @@ input{font-family:inherit;}
             <span style="font-size:13px;" id="sfErrorText"></span>
           </div>
           </div><!-- /sfCardBody -->
+        </div>
+
+        <!-- Salesforce Cases Card -->
+        <div id="sfCasesCard" style="background:#fff;border:1px solid #e6e6e5;border-radius:12px;padding:20px;box-shadow:0 1px 3px rgba(60,60,59,0.07);margin-bottom:28px;">
+          <div id="casesCardHeader" style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+            <img src="./assets/salesforce-2.svg" alt="Salesforce" style="width:44px;height:44px;object-fit:contain;flex-shrink:0;" />
+            <div style="flex:1;">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <div style="font-size:13px;font-weight:700;">Salesforce Cases</div>
+                <div style="background:#e8f5e9;color:#2e7d32;border-radius:4px;padding:2px 7px;font-size:10px;font-weight:600;display:flex;align-items:center;gap:3px;"><span style="font-size:12px;line-height:1;">●</span>Live data</div>
+              </div>
+              <div style="font-size:11px;color:#9d9d9d;margin-top:2px;">Support cases &amp; analyst requests</div>
+            </div>
+            <span id="casesCollapseChev" style="font-size:16px;color:#9d9d9d;flex-shrink:0;margin-left:8px;">▾</span>
+          </div>
+          <div id="casesCompact" class="hc-compact"></div>
+          <div id="casesCardBody">
+            <div id="casesNoAccount" style="padding:24px 0;text-align:center;color:#9d9d9d;font-size:13px;">Select an account above to view cases.</div>
+            <div id="casesLoading" style="display:none;padding:40px 0;text-align:center;color:#9d9d9d;font-size:13px;font-style:italic;">Loading cases…</div>
+            <div id="casesNoMatch" style="display:none;padding:24px 0;text-align:center;color:#9d9d9d;font-size:13px;">No cases found for this account.</div>
+            <div id="casesError"   style="display:none;padding:16px;background:#fff3e0;border-radius:6px;color:#c2600f;font-size:12px;"></div>
+            <div id="casesSummaryView" style="display:none;">
+              <!-- 4 stat tiles -->
+              <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px;">
+                <div id="casesOpenTile"  class="sfSummaryCard" style="background:#fff3e0;border-radius:8px;padding:10px 12px;cursor:pointer;" data-cases-filter="open">
+                  <div style="font-size:10px;font-weight:700;color:#e65100;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;">Open</div>
+                  <div id="casesOpenCount" style="font-size:22px;font-weight:700;color:#3c3c3b;">—</div>
+                  <div style="font-size:10px;color:#9d9d9d;margin-top:2px;">active cases</div>
+                  <span style="font-size:11px;color:#9d9d9d;float:right;margin-top:-14px;">›</span>
+                </div>
+                <div id="casesEscTile" class="sfSummaryCard" style="background:#fce4ec;border-radius:8px;padding:10px 12px;cursor:pointer;" data-cases-filter="escalated">
+                  <div style="font-size:10px;font-weight:700;color:#c62828;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;">Escalated</div>
+                  <div id="casesEscCount" style="font-size:22px;font-weight:700;color:#3c3c3b;">—</div>
+                  <div style="font-size:10px;color:#9d9d9d;margin-top:2px;">flagged</div>
+                  <span style="font-size:11px;color:#9d9d9d;float:right;margin-top:-14px;">›</span>
+                </div>
+                <div id="casesClosedTile" class="sfSummaryCard" style="background:#e8f5e9;border-radius:8px;padding:10px 12px;cursor:pointer;" data-cases-filter="closed">
+                  <div style="font-size:10px;font-weight:700;color:#2e7d32;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;">Closed</div>
+                  <div id="casesClosedCount" style="font-size:22px;font-weight:700;color:#3c3c3b;">—</div>
+                  <div style="font-size:10px;color:#9d9d9d;margin-top:2px;">resolved</div>
+                  <span style="font-size:11px;color:#9d9d9d;float:right;margin-top:-14px;">›</span>
+                </div>
+                <div class="sfSummaryCard" style="background:#f3f3f2;border-radius:8px;padding:10px 12px;cursor:pointer;" data-cases-filter="all">
+                  <div style="font-size:10px;font-weight:700;color:#6d6d6c;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;">Total</div>
+                  <div id="casesTotalCount" style="font-size:22px;font-weight:700;color:#3c3c3b;">—</div>
+                  <div id="casesAvgHours" style="font-size:10px;color:#9d9d9d;margin-top:2px;"></div>
+                  <span style="font-size:11px;color:#9d9d9d;float:right;margin-top:-14px;">›</span>
+                </div>
+              </div>
+              <!-- Type breakdown pills -->
+              <div id="casesTypeBar" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;"></div>
+              <!-- Drilldown table -->
+              <div id="casesDrilldown" style="display:none;margin-top:10px;">
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+                  <button id="casesBackBtn" style="background:none;border:none;color:#288184;font-size:12px;cursor:pointer;padding:0;">‹ Back</button>
+                  <span id="casesDrillTitle" style="font-size:12px;font-weight:700;color:#3c3c3b;"></span>
+                </div>
+                <div style="overflow-x:auto;">
+                  <table style="width:100%;border-collapse:collapse;font-size:11px;">
+                    <thead><tr style="border-bottom:1px solid #e6e6e5;color:#9d9d9d;text-align:left;">
+                      <th style="padding:4px 8px;">#</th>
+                      <th style="padding:4px 8px;">Subject</th>
+                      <th style="padding:4px 8px;">Type</th>
+                      <th style="padding:4px 8px;">Status</th>
+                      <th style="padding:4px 8px;">Created</th>
+                      <th style="padding:4px 8px;">Hours</th>
+                      <th style="padding:4px 8px;">Assignee</th>
+                    </tr></thead>
+                    <tbody id="casesDrillBody"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Salesforce Opportunities Card -->
+        <div id="sfOppsCard" style="background:#fff;border:1px solid #e6e6e5;border-radius:12px;padding:20px;box-shadow:0 1px 3px rgba(60,60,59,0.07);margin-bottom:28px;">
+          <div id="oppsCardHeader" style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+            <img src="./assets/salesforce-2.svg" alt="Salesforce" style="width:44px;height:44px;object-fit:contain;flex-shrink:0;" />
+            <div style="flex:1;">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <div style="font-size:13px;font-weight:700;">Salesforce Opportunities</div>
+                <div style="background:#e8f5e9;color:#2e7d32;border-radius:4px;padding:2px 7px;font-size:10px;font-weight:600;display:flex;align-items:center;gap:3px;"><span style="font-size:12px;line-height:1;">●</span>Live data</div>
+              </div>
+              <div style="font-size:11px;color:#9d9d9d;margin-top:2px;">Pipeline, expansions &amp; renewals</div>
+            </div>
+            <span id="oppsCollapseChev" style="font-size:16px;color:#9d9d9d;flex-shrink:0;margin-left:8px;">▾</span>
+          </div>
+          <div id="oppsCompact" class="hc-compact"></div>
+          <div id="oppsCardBody">
+            <div id="oppsNoAccount" style="padding:24px 0;text-align:center;color:#9d9d9d;font-size:13px;">Select an account above to view opportunities.</div>
+            <div id="oppsLoading" style="display:none;padding:40px 0;text-align:center;color:#9d9d9d;font-size:13px;font-style:italic;">Loading opportunities…</div>
+            <div id="oppsNoMatch" style="display:none;padding:24px 0;text-align:center;color:#9d9d9d;font-size:13px;">No opportunities found for this account.</div>
+            <div id="oppsError"   style="display:none;padding:16px;background:#fff3e0;border-radius:6px;color:#c2600f;font-size:12px;"></div>
+            <div id="oppsSummaryView" style="display:none;">
+              <!-- 4 stat tiles -->
+              <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px;">
+                <div class="sfSummaryCard" style="background:#e3f2fd;border-radius:8px;padding:10px 12px;cursor:pointer;" data-opps-filter="open">
+                  <div style="font-size:10px;font-weight:700;color:#1565c0;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;">Open</div>
+                  <div id="oppsOpenCount" style="font-size:22px;font-weight:700;color:#3c3c3b;">—</div>
+                  <div style="font-size:10px;color:#9d9d9d;margin-top:2px;">in progress</div>
+                  <span style="font-size:11px;color:#9d9d9d;float:right;margin-top:-14px;">›</span>
+                </div>
+                <div class="sfSummaryCard" style="background:#e8f5e9;border-radius:8px;padding:10px 12px;cursor:pointer;" data-opps-filter="won">
+                  <div style="font-size:10px;font-weight:700;color:#2e7d32;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;">Won</div>
+                  <div id="oppsWonCount" style="font-size:22px;font-weight:700;color:#3c3c3b;">—</div>
+                  <div id="oppsWonVal" style="font-size:10px;color:#9d9d9d;margin-top:2px;"></div>
+                  <span style="font-size:11px;color:#9d9d9d;float:right;margin-top:-14px;">›</span>
+                </div>
+                <div class="sfSummaryCard" style="background:#f5f5f5;border-radius:8px;padding:10px 12px;cursor:pointer;" data-opps-filter="lost">
+                  <div style="font-size:10px;font-weight:700;color:#6d6d6c;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;">Lost</div>
+                  <div id="oppsLostCount" style="font-size:22px;font-weight:700;color:#3c3c3b;">—</div>
+                  <div style="font-size:10px;color:#9d9d9d;margin-top:2px;">closed lost</div>
+                  <span style="font-size:11px;color:#9d9d9d;float:right;margin-top:-14px;">›</span>
+                </div>
+                <div class="sfSummaryCard" style="background:#f3e5f5;border-radius:8px;padding:10px 12px;cursor:pointer;" data-opps-filter="all">
+                  <div style="font-size:10px;font-weight:700;color:#6a1b9a;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;">Pipeline</div>
+                  <div id="oppsPipeline" style="font-size:18px;font-weight:700;color:#3c3c3b;">—</div>
+                  <div style="font-size:10px;color:#9d9d9d;margin-top:2px;">open value</div>
+                  <span style="font-size:11px;color:#9d9d9d;float:right;margin-top:-14px;">›</span>
+                </div>
+              </div>
+              <!-- Stage breakdown pills -->
+              <div id="oppsStageBar" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;"></div>
+              <!-- Drilldown table -->
+              <div id="oppsDrilldown" style="display:none;margin-top:10px;">
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+                  <button id="oppsBackBtn" style="background:none;border:none;color:#288184;font-size:12px;cursor:pointer;padding:0;">‹ Back</button>
+                  <span id="oppsDrillTitle" style="font-size:12px;font-weight:700;color:#3c3c3b;"></span>
+                </div>
+                <div style="overflow-x:auto;">
+                  <table style="width:100%;border-collapse:collapse;font-size:11px;">
+                    <thead><tr style="border-bottom:1px solid #e6e6e5;color:#9d9d9d;text-align:left;">
+                      <th style="padding:4px 8px;">Name</th>
+                      <th style="padding:4px 8px;">Stage</th>
+                      <th style="padding:4px 8px;">Amount</th>
+                      <th style="padding:4px 8px;">Type</th>
+                      <th style="padding:4px 8px;">Close Date</th>
+                      <th style="padding:4px 8px;">Created</th>
+                    </tr></thead>
+                    <tbody id="oppsDrillBody"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- Zendesk Tickets Card (Live Data) -->
@@ -1822,19 +1972,22 @@ class Component extends DCLogic {
 
   setupCardCollapses(){
     var cards = [
-      { hdr: 'sfCardHeader', body: 'sfCardBody', chev: 'sfCollapseChev' },
-      { hdr: 'zdCardHeader', body: 'zdCardBody', chev: 'zdCollapseChev' },
-      { hdr: 'pbCardHeader', body: 'pbCardBody', chev: 'pbCollapseChev' },
-      { hdr: 'phCardHeader', body: 'phCardBody', chev: 'phCollapseChev' },
+      { hdr: 'epCardHeader',   body: 'epCardBody',    chev: 'epCollapseChev',   startOpen: true },
+      { hdr: 'sfCardHeader',   body: 'sfCardBody',    chev: 'sfCollapseChev' },
+      { hdr: 'casesCardHeader',body: 'casesCardBody', chev: 'casesCollapseChev' },
+      { hdr: 'oppsCardHeader', body: 'oppsCardBody',  chev: 'oppsCollapseChev' },
+      { hdr: 'zdCardHeader',   body: 'zdCardBody',    chev: 'zdCollapseChev' },
+      { hdr: 'pbCardHeader',   body: 'pbCardBody',    chev: 'pbCollapseChev' },
+      { hdr: 'phCardHeader',   body: 'phCardBody',    chev: 'phCollapseChev' },
     ];
     cards.forEach(function(c) {
       var hdr  = document.getElementById(c.hdr);
       var body = document.getElementById(c.body);
       var chev = document.getElementById(c.chev);
       if (!hdr || !body) return;
-      hdr._collapsed = true;
-      body.style.display = 'none';
-      if (chev) chev.textContent = '▾';
+      hdr._collapsed = c.startOpen ? false : true;
+      body.style.display = c.startOpen ? 'block' : 'none';
+      if (chev) chev.textContent = c.startOpen ? '▴' : '▾';
       hdr.onclick      = function() {
         hdr._collapsed = !hdr._collapsed;
         body.style.display = hdr._collapsed ? 'none' : 'block';
@@ -1883,6 +2036,8 @@ class Component extends DCLogic {
 
   loadAccountWithMatchCheck(accountName) {
     this.fetchSalesforceSubscriptions(accountName);
+    this.fetchSfCases(accountName);
+    this.fetchSfOpportunities(accountName);
     this.fetchZdTickets(accountName);
     this.fetchPbInsights(accountName);
     this.fetchPhTrends(accountName);
@@ -4320,6 +4475,195 @@ class Component extends DCLogic {
     set('zdWidgetTitle',   'Zendesk Support Tickets');
     set('pbWidgetTitle',   'Productboard Insights');
     set('phWidgetTitle',   'PostHog Analytics');
+  }
+
+  fetchSfCases(accountName) {
+    const states = {
+      noAccount: document.getElementById('casesNoAccount'),
+      loading:   document.getElementById('casesLoading'),
+      noMatch:   document.getElementById('casesNoMatch'),
+      error:     document.getElementById('casesError'),
+      summary:   document.getElementById('casesSummaryView'),
+    };
+    Object.values(states).forEach(el => { if (el) el.style.display = 'none'; });
+    if (states.loading) states.loading.style.display = 'block';
+    this.hcCompactLoading('casesCompact', 'Loading cases…');
+
+    fetch('/api/sf-cases?account=' + encodeURIComponent(accountName))
+      .then(r => r.json())
+      .then(data => {
+        if (states.loading) states.loading.style.display = 'none';
+        if (!data.matched || !data.summary) {
+          if (states.noMatch) states.noMatch.style.display = 'block';
+          this.updateHcCompact('casesCompact', '<div class="hc-compact-status"><span class="hc-pill hc-pill-grey">No cases</span></div>');
+          return;
+        }
+        const s = data.summary;
+        document.getElementById('casesOpenCount').textContent   = s.open;
+        document.getElementById('casesEscCount').textContent    = s.escalated;
+        document.getElementById('casesClosedCount').textContent = s.closed;
+        document.getElementById('casesTotalCount').textContent  = s.total;
+        document.getElementById('casesAvgHours').textContent    = s.avgHours ? 'avg ' + s.avgHours + 'h/case' : '';
+
+        // Type pills
+        const typeBar = document.getElementById('casesTypeBar');
+        if (typeBar) {
+          typeBar.innerHTML = s.typeBreakdown.map(t =>
+            `<span class="hc-pill hc-pill-grey" style="cursor:pointer;" data-cases-type="${t.type}">${t.type.replace(/_/g,' ')}&nbsp;<b>${t.cnt}</b></span>`
+          ).join('');
+          typeBar.querySelectorAll('[data-cases-type]').forEach(pill => {
+            pill.onclick = () => this._showCasesDrill(data.cases.filter(c => c.type === pill.dataset.casesType), pill.dataset.casesType.replace(/_/g,' '));
+          });
+        }
+
+        // Tile click → drilldown
+        document.querySelectorAll('[data-cases-filter]').forEach(tile => {
+          tile.onclick = () => {
+            const f = tile.dataset.casesFilter;
+            const filtered = f === 'all' ? data.cases
+              : f === 'open'      ? data.cases.filter(c => !c.isClosed && !c.isEscalated)
+              : f === 'escalated' ? data.cases.filter(c => c.isEscalated)
+              : f === 'closed'    ? data.cases.filter(c => c.isClosed)
+              : data.cases;
+            this._showCasesDrill(filtered, f.charAt(0).toUpperCase()+f.slice(1)+' Cases');
+          };
+        });
+        document.getElementById('casesBackBtn').onclick = () => {
+          document.getElementById('casesDrilldown').style.display = 'none';
+        };
+
+        if (states.summary) states.summary.style.display = 'block';
+
+        // Compact pill
+        const openColor = s.open > 0 ? (s.escalated > 0 ? 'hc-pill-od' : 'hc-pill-tw') : 'hc-pill-ok';
+        this.updateHcCompact('casesCompact',
+          `<div class="hc-compact-status">
+            <span class="hc-pill ${openColor}">${s.open} open</span>
+            ${s.escalated ? `<span class="hc-pill hc-pill-od">${s.escalated} escalated</span>` : ''}
+            <span class="hc-pill hc-pill-grey">${s.total} total</span>
+          </div>`
+        );
+      })
+      .catch(err => {
+        if (states.loading) states.loading.style.display = 'none';
+        if (states.error)   { states.error.style.display = 'block'; states.error.textContent = 'Cases unavailable: ' + err.message; }
+        this.updateHcCompact('casesCompact', '<div class="hc-compact-status"><span class="hc-pill hc-pill-grey">Error</span></div>');
+      });
+  }
+
+  _showCasesDrill(cases, title) {
+    const drillDiv = document.getElementById('casesDrilldown');
+    const titleEl  = document.getElementById('casesDrillTitle');
+    const tbody    = document.getElementById('casesDrillBody');
+    if (!drillDiv || !tbody) return;
+    titleEl.textContent = title + ' (' + cases.length + ')';
+    const fmtDate = d => d ? String(d).substring(0,10) : '—';
+    tbody.innerHTML = cases.map(c => `
+      <tr style="border-bottom:1px solid #f0f0f0;">
+        <td style="padding:4px 8px;color:#9d9d9d;">${c.caseNumber||'—'}</td>
+        <td style="padding:4px 8px;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${(c.subject||'').replace(/"/g,'&quot;')}">${c.subject||'—'}</td>
+        <td style="padding:4px 8px;white-space:nowrap;">${(c.type||'').replace(/_/g,' ')}</td>
+        <td style="padding:4px 8px;white-space:nowrap;">${c.isEscalated ? '<span style="color:#c62828;font-weight:700;">⚠ '+c.status+'</span>' : c.status}</td>
+        <td style="padding:4px 8px;white-space:nowrap;color:#9d9d9d;">${fmtDate(c.createdDate)}</td>
+        <td style="padding:4px 8px;text-align:right;">${c.auroraHours ? c.auroraHours+'h' : '—'}</td>
+        <td style="padding:4px 8px;color:#6d6d6c;white-space:nowrap;">${c.assignee||'—'}</td>
+      </tr>`).join('');
+    drillDiv.style.display = 'block';
+  }
+
+  fetchSfOpportunities(accountName) {
+    const states = {
+      noAccount: document.getElementById('oppsNoAccount'),
+      loading:   document.getElementById('oppsLoading'),
+      noMatch:   document.getElementById('oppsNoMatch'),
+      error:     document.getElementById('oppsError'),
+      summary:   document.getElementById('oppsSummaryView'),
+    };
+    Object.values(states).forEach(el => { if (el) el.style.display = 'none'; });
+    if (states.loading) states.loading.style.display = 'block';
+    this.hcCompactLoading('oppsCompact', 'Loading opportunities…');
+
+    fetch('/api/sf-opportunities?account=' + encodeURIComponent(accountName))
+      .then(r => r.json())
+      .then(data => {
+        if (states.loading) states.loading.style.display = 'none';
+        if (!data.matched || !data.summary) {
+          if (states.noMatch) states.noMatch.style.display = 'block';
+          this.updateHcCompact('oppsCompact', '<div class="hc-compact-status"><span class="hc-pill hc-pill-grey">No opps</span></div>');
+          return;
+        }
+        const s = data.summary;
+        const fmtGbp = v => v >= 1000000 ? '£'+(v/1000000).toFixed(1)+'M' : v >= 1000 ? '£'+(v/1000).toFixed(0)+'k' : v > 0 ? '£'+v : '—';
+        document.getElementById('oppsOpenCount').textContent = s.open;
+        document.getElementById('oppsWonCount').textContent  = s.won;
+        document.getElementById('oppsLostCount').textContent = s.lost;
+        document.getElementById('oppsPipeline').textContent  = fmtGbp(s.pipeline);
+        const wonVal = document.getElementById('oppsWonVal');
+        if (wonVal) wonVal.textContent = s.wonValue ? fmtGbp(s.wonValue) + ' total' : '';
+
+        // Stage pills (open only)
+        const stageBar = document.getElementById('oppsStageBar');
+        if (stageBar) {
+          stageBar.innerHTML = (s.stageBreakdown||[]).map(st =>
+            `<span class="hc-pill hc-pill-grey" style="cursor:pointer;" data-opps-stage="${st.stage}">${st.stage}&nbsp;<b>${st.cnt}</b></span>`
+          ).join('');
+          stageBar.querySelectorAll('[data-opps-stage]').forEach(pill => {
+            pill.onclick = () => this._showOppsDrill(data.opportunities.filter(o => o.stage === pill.dataset.oppsStage && !o.isClosed), pill.dataset.oppsStage);
+          });
+        }
+
+        // Tile click → drilldown
+        document.querySelectorAll('[data-opps-filter]').forEach(tile => {
+          tile.onclick = () => {
+            const f = tile.dataset.oppsFilter;
+            const filtered = f === 'all'  ? data.opportunities
+              : f === 'open' ? data.opportunities.filter(o => !o.isClosed)
+              : f === 'won'  ? data.opportunities.filter(o => o.isWon)
+              : f === 'lost' ? data.opportunities.filter(o => o.isClosed && !o.isWon)
+              : data.opportunities;
+            this._showOppsDrill(filtered, f.charAt(0).toUpperCase()+f.slice(1)+' Opportunities');
+          };
+        });
+        document.getElementById('oppsBackBtn').onclick = () => {
+          document.getElementById('oppsDrilldown').style.display = 'none';
+        };
+
+        if (states.summary) states.summary.style.display = 'block';
+
+        const pipelineStr = s.pipeline ? fmtGbp(s.pipeline) + ' pipeline' : '';
+        this.updateHcCompact('oppsCompact',
+          `<div class="hc-compact-status">
+            <span class="hc-pill hc-pill-lb">${s.open} open</span>
+            <span class="hc-pill hc-pill-ok">${s.won} won</span>
+            ${pipelineStr ? `<span class="hc-pill hc-pill-grey">${pipelineStr}</span>` : ''}
+          </div>`
+        );
+      })
+      .catch(err => {
+        if (states.loading) states.loading.style.display = 'none';
+        if (states.error)   { states.error.style.display = 'block'; states.error.textContent = 'Opportunities unavailable: ' + err.message; }
+        this.updateHcCompact('oppsCompact', '<div class="hc-compact-status"><span class="hc-pill hc-pill-grey">Error</span></div>');
+      });
+  }
+
+  _showOppsDrill(opps, title) {
+    const drillDiv = document.getElementById('oppsDrilldown');
+    const titleEl  = document.getElementById('oppsDrillTitle');
+    const tbody    = document.getElementById('oppsDrillBody');
+    if (!drillDiv || !tbody) return;
+    titleEl.textContent = title + ' (' + opps.length + ')';
+    const fmtDate = d => d ? String(d).substring(0,10) : '—';
+    const fmtAmt  = v => v >= 1000000 ? '£'+(v/1000000).toFixed(1)+'M' : v >= 1000 ? '£'+(v/1000).toFixed(0)+'k' : v > 0 ? '£'+v : '—';
+    tbody.innerHTML = opps.map(o => `
+      <tr style="border-bottom:1px solid #f0f0f0;">
+        <td style="padding:4px 8px;max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${(o.name||'').replace(/"/g,'&quot;')}">${o.name||'—'}</td>
+        <td style="padding:4px 8px;white-space:nowrap;">${o.stage||'—'}</td>
+        <td style="padding:4px 8px;text-align:right;white-space:nowrap;font-weight:600;">${fmtAmt(o.amount)}</td>
+        <td style="padding:4px 8px;white-space:nowrap;color:#6d6d6c;">${o.type||'—'}</td>
+        <td style="padding:4px 8px;white-space:nowrap;color:${o.isClosed&&!o.isWon?'#9d9d9d':'#3c3c3b'};">${fmtDate(o.closeDate)}</td>
+        <td style="padding:4px 8px;white-space:nowrap;color:#9d9d9d;">${fmtDate(o.createdDate)}</td>
+      </tr>`).join('');
+    drillDiv.style.display = 'block';
   }
 
   fetchEngagementTimeline(accountName) {
