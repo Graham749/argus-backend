@@ -5677,11 +5677,11 @@ class Component extends DCLogic {
             : '<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:#f1f1f0;color:#9d9d9d;white-space:nowrap;">No Match</span>';
           const pbPill = !a.hasPbCompany
             ? '<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:#f1f1f0;color:#9d9d9d;white-space:nowrap;">No Match</span>'
-            : a.pbMatchMethod==='website_domain'
-            ? '<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:#f0e9f7;color:#7030a0;white-space:nowrap;">Website</span>'
+            : a.pbMatchMethod==='mdm_domain'
+            ? '<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:#f0e9f7;color:#7030a0;white-space:nowrap;">MDM Domain</span>'
             : a.pbMatchMethod==='eos_domain'
             ? '<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:#f5f0fa;color:#9d60c8;white-space:nowrap;">EOS Domain</span>'
-            : '<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:#faf5fd;color:#c9a0e0;white-space:nowrap;">Name</span>';
+            : '<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:#f1f1f0;color:#9d9d9d;white-space:nowrap;">Unknown</span>';
           const dc = (lbl,val) => val
             ? '<div style="display:flex;gap:6px;margin-bottom:3px;"><span style="font-size:10px;font-weight:700;color:#9d9d9d;min-width:100px;">'+lbl+'</span><span style="font-size:11px;color:#3c3c3b;">'+val+'</span></div>'
             : '';
@@ -5788,7 +5788,7 @@ class Component extends DCLogic {
                   +'<div style="background:#fff;padding:14px 16px;border-right:1px solid #f1f1f0;display:flex;flex-direction:column;">'
                     +'<div style="font-size:10px;font-weight:700;color:#7030a0;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">Productboard</div>'
                     +(a.hasPbCompany
-                      ? dc('Company Name',a.pbCompanyName)+dc('Company ID',a.pbCompanyId)+dc('Primary Domain',a.pbCompanyDomain)+dc('Match Method',a.pbMatchMethod==='website_domain'?'Website Domain':a.pbMatchMethod==='eos_domain'?'EOS Domain':'Name only')
+                      ? dc('Company Name',a.pbCompanyName)+dc('Company ID',a.pbCompanyId)+dc('Primary Domain',a.pbCompanyDomain)+dc('Match Method',a.pbMatchMethod==='mdm_domain'?'MDM Domain':a.pbMatchMethod==='eos_domain'?'EOS Domain':a.pbMatchMethod||'Unknown')
                         +(pbN?'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;">'+stat(pbN,'Feedback')+'</div>':'')
                         +'<div style="margin-top:auto;padding-top:10px;display:flex;justify-content:flex-end;"><a href="https://auroraer.productboard.com/detail/'+a.pbCompanyId+'" target="_blank" style="font-size:10px;color:#7030a0;text-decoration:none;display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border:1px solid #ddc8f0;border-radius:4px;background:#fdf9ff;">↗ Open in Productboard</a></div>'
                       : '<div style="font-size:11px;color:#9d9d9d;">No Productboard company matched</div>')
@@ -5903,7 +5903,6 @@ class Component extends DCLogic {
         const pbNoMatch  = sm.pbTotal - sm.pbCompaniesMatched;
         const pbWebPct   = sm.pbTotal ? sm.pbWebsite/sm.pbTotal : 0;
         const pbEosPct   = sm.pbTotal ? sm.pbEos/sm.pbTotal     : 0;
-        const pbNamePct  = sm.pbTotal ? sm.pbName/sm.pbTotal     : 0;
         const pbNonePct  = sm.pbTotal ? pbNoMatch/sm.pbTotal     : 0;
 
         const step = (n, text) => '<div style="display:flex;gap:10px;align-items:flex-start;">'
@@ -6233,19 +6232,18 @@ class Component extends DCLogic {
               +'<div id="mdm-w4-body" style="display:'+(collapsed?'none':'block')+';padding:0 20px 20px;border-top:1px solid #f1f1f0;">'
                 +'<div style="height:16px;"></div>'
                 +'<div style="display:flex;height:12px;border-radius:6px;overflow:hidden;background:#f1f1f0;">'
-              +'<div style="width:'+Math.round(pbWebPct*100)+'%;background:#7030a0;" title="Website domain: '+sm.pbWebsite+'"></div>'
+              +'<div style="width:'+Math.round(pbWebPct*100)+'%;background:#7030a0;" title="MDM domain: '+sm.pbWebsite+'"></div>'
               +'<div style="width:'+Math.round(pbEosPct*100)+'%;background:#9d60c8;" title="EOS domain: '+sm.pbEos+'"></div>'
-              +'<div style="width:'+Math.round(pbNamePct*100)+'%;background:#c9a0e0;" title="Name fallback: '+sm.pbName+'"></div>'
               +'<div style="width:'+Math.round(pbNonePct*100)+'%;background:#e6e6e5;" title="No PB match: '+pbNoMatch+'"></div>'
             +'</div>'
-            +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;margin-top:14px;">'
+            +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:14px;">'
               +'<div style="display:flex;flex-direction:column;gap:3px;">'
                 +'<div style="display:flex;align-items:center;gap:6px;">'
                   +'<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#7030a0;flex-shrink:0;"></span>'
-                  +'<span style="font-size:12px;font-weight:700;color:#3c3c3b;">Website Domain</span>'
+                  +'<span style="font-size:12px;font-weight:700;color:#3c3c3b;">MDM Domain</span>'
                 +'</div>'
                 +'<div style="font-size:20px;font-weight:900;color:#7030a0;padding-left:16px;">'+sm.pbWebsite.toLocaleString()+'</div>'
-                +'<div style="font-size:11px;color:#9d9d9d;padding-left:16px;">'+pct(sm.pbWebsite,sm.pbTotal)+' of PB · SF website = PB domain</div>'
+                +'<div style="font-size:11px;color:#9d9d9d;padding-left:16px;">'+pct(sm.pbWebsite,sm.pbTotal)+' of PB · SF MDM primary = PB domain</div>'
               +'</div>'
               +'<div style="display:flex;flex-direction:column;gap:3px;">'
                 +'<div style="display:flex;align-items:center;gap:6px;">'
@@ -6253,15 +6251,7 @@ class Component extends DCLogic {
                   +'<span style="font-size:12px;font-weight:700;color:#3c3c3b;">EOS Domain</span>'
                 +'</div>'
                 +'<div style="font-size:20px;font-weight:900;color:#9d60c8;padding-left:16px;">'+sm.pbEos.toLocaleString()+'</div>'
-                +'<div style="font-size:11px;color:#9d9d9d;padding-left:16px;">'+pct(sm.pbEos,sm.pbTotal)+' of PB · EOS access domains</div>'
-              +'</div>'
-              +'<div style="display:flex;flex-direction:column;gap:3px;">'
-                +'<div style="display:flex;align-items:center;gap:6px;">'
-                  +'<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#c9a0e0;flex-shrink:0;"></span>'
-                  +'<span style="font-size:12px;font-weight:700;color:#3c3c3b;">Name Fallback</span>'
-                +'</div>'
-                +'<div style="font-size:20px;font-weight:900;color:#c9a0e0;padding-left:16px;">'+sm.pbName.toLocaleString()+'</div>'
-                +'<div style="font-size:11px;color:#9d9d9d;padding-left:16px;">'+pct(sm.pbName,sm.pbTotal)+' of PB · name match only</div>'
+                +'<div style="font-size:11px;color:#9d9d9d;padding-left:16px;">'+pct(sm.pbEos,sm.pbTotal)+' of PB · EOS access domain list</div>'
               +'</div>'
               +'<div style="display:flex;flex-direction:column;gap:3px;">'
                 +'<div style="display:flex;align-items:center;gap:6px;">'
