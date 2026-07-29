@@ -4875,21 +4875,24 @@ class Component extends DCLogic {
     if(patch.view === 'health'){
       window.__healthLoadStarted = null; // reset for fresh load on this navigation
       const target = window.__argusTargetAccount || localStorage.getItem('argusHealthAccount');
-      if(target){
-        const waitForHealthDOM = () => {
-          const select  = document.getElementById('sfAccountSelector');
-          const summary = document.getElementById('sfSummaryView');
-          if(select && summary){
+      const waitForHealthDOM = () => {
+        const select  = document.getElementById('sfAccountSelector');
+        const summary = document.getElementById('sfSummaryView');
+        if(select && summary){
+          // Re-wire collapse handlers every time we land on health — DOM may have been
+          // re-rendered by setState, which wipes style.display and onclick bindings.
+          this.setupCardCollapses();
+          if(target){
             window.__argusTargetAccount = null;
             select.value = target;
             try{ localStorage.setItem('argusHealthAccount', target); }catch(e){}
             this._triggerHealthLoad(target);
-          } else {
-            setTimeout(waitForHealthDOM, 50);
           }
-        };
-        setTimeout(waitForHealthDOM, 30);
-      }
+        } else {
+          setTimeout(waitForHealthDOM, 50);
+        }
+      };
+      setTimeout(waitForHealthDOM, 30);
     }
   }
   toggleDrill(id){ this.setState(s=>({drills:{...s.drills,[id]:!s.drills[id]}})); }
@@ -5901,9 +5904,10 @@ class Component extends DCLogic {
         // Schedule table population after x-dc sets innerHTML
         setTimeout(function(){ window.__mdmRefresh && window.__mdmRefresh(); }, 0);
         const pbNoMatch  = sm.pbTotal - sm.pbCompaniesMatched;
-        const pbWebPct   = sm.pbTotal ? sm.pbWebsite/sm.pbTotal : 0;
-        const pbEosPct   = sm.pbTotal ? sm.pbEos/sm.pbTotal     : 0;
-        const pbNonePct  = sm.pbTotal ? pbNoMatch/sm.pbTotal     : 0;
+        const pbMdmOnly  = sm.pbCompaniesMatched - sm.pbEos;   // ensures MDM+EOS+NoMatch = pbTotal exactly
+        const pbWebPct   = sm.pbTotal ? pbMdmOnly/sm.pbTotal   : 0;
+        const pbEosPct   = sm.pbTotal ? sm.pbEos/sm.pbTotal    : 0;
+        const pbNonePct  = sm.pbTotal ? pbNoMatch/sm.pbTotal   : 0;
 
         const step = (n, text) => '<div style="display:flex;gap:10px;align-items:flex-start;">'
           +'<span style="min-width:18px;height:18px;border-radius:50%;background:#f1f1f0;color:#6d6d6c;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">'+n+'</span>'
@@ -6232,7 +6236,7 @@ class Component extends DCLogic {
               +'<div id="mdm-w4-body" style="display:'+(collapsed?'none':'block')+';padding:0 20px 20px;border-top:1px solid #f1f1f0;">'
                 +'<div style="height:16px;"></div>'
                 +'<div style="display:flex;height:12px;border-radius:6px;overflow:hidden;background:#f1f1f0;">'
-              +'<div style="width:'+Math.round(pbWebPct*100)+'%;background:#7030a0;" title="MDM domain: '+sm.pbWebsite+'"></div>'
+              +'<div style="width:'+Math.round(pbWebPct*100)+'%;background:#7030a0;" title="MDM domain: '+pbMdmOnly+'"></div>'
               +'<div style="width:'+Math.round(pbEosPct*100)+'%;background:#9d60c8;" title="EOS domain: '+sm.pbEos+'"></div>'
               +'<div style="width:'+Math.round(pbNonePct*100)+'%;background:#e6e6e5;" title="No PB match: '+pbNoMatch+'"></div>'
             +'</div>'
@@ -6242,8 +6246,8 @@ class Component extends DCLogic {
                   +'<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#7030a0;flex-shrink:0;"></span>'
                   +'<span style="font-size:12px;font-weight:700;color:#3c3c3b;">MDM Domain</span>'
                 +'</div>'
-                +'<div style="font-size:20px;font-weight:900;color:#7030a0;padding-left:16px;">'+sm.pbWebsite.toLocaleString()+'</div>'
-                +'<div style="font-size:11px;color:#9d9d9d;padding-left:16px;">'+pct(sm.pbWebsite,sm.pbTotal)+' of PB · SF MDM primary = PB domain</div>'
+                +'<div style="font-size:20px;font-weight:900;color:#7030a0;padding-left:16px;">'+pbMdmOnly.toLocaleString()+'</div>'
+                +'<div style="font-size:11px;color:#9d9d9d;padding-left:16px;">'+pct(pbMdmOnly,sm.pbTotal)+' of PB · SF MDM primary = PB domain</div>'
               +'</div>'
               +'<div style="display:flex;flex-direction:column;gap:3px;">'
                 +'<div style="display:flex;align-items:center;gap:6px;">'
