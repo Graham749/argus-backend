@@ -154,6 +154,7 @@ input{font-family:inherit;}
             <span style="font-size:12px;font-weight:700;color:#3c3c3b;letter-spacing:0.04em;text-transform:uppercase;">Engagement Pulse</span>
             <span id="epSubtitle" style="font-size:10px;color:#9d9d9d;flex:1;">Loading...</span>
             <span id="epBenchNote" style="font-size:10px;color:#9d9d9d;text-align:right;white-space:nowrap;margin-right:6px;"></span>
+            <span id="epExpandBtn" title="Expand timeline" onclick="event.stopPropagation();window.__epToggleExpand&&window.__epToggleExpand()" style="font-size:11px;color:#288184;cursor:pointer;flex-shrink:0;margin-right:6px;padding:1px 5px;border:1px solid #c8e4e4;border-radius:4px;font-weight:600;user-select:none;line-height:1.6;">⤢</span>
             <span id="epCollapseChev" style="font-size:13px;color:#9d9d9d;flex-shrink:0;">▴</span>
           </div>
           <div id="epCardBody">
@@ -316,9 +317,9 @@ input{font-family:inherit;}
                   <span style="font-size:11px;color:#9d9d9d;float:right;margin-top:-14px;">›</span>
                 </div>
                 <div id="casesClosedTile" class="sfSummaryCard" style="background:#e8f5e9;border-radius:8px;padding:10px 12px;cursor:pointer;" data-cases-filter="closed">
-                  <div style="font-size:10px;font-weight:700;color:#2e7d32;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;">Closed</div>
+                  <div style="font-size:10px;font-weight:700;color:#2e7d32;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;">Delivered</div>
                   <div id="casesClosedCount" style="font-size:22px;font-weight:700;color:#3c3c3b;">—</div>
-                  <div style="font-size:10px;color:#9d9d9d;margin-top:2px;">resolved</div>
+                  <div style="font-size:10px;color:#9d9d9d;margin-top:2px;">closed cases</div>
                   <span style="font-size:11px;color:#9d9d9d;float:right;margin-top:-14px;">›</span>
                 </div>
                 <div class="sfSummaryCard" style="background:#f3f3f2;border-radius:8px;padding:10px 12px;cursor:pointer;" data-cases-filter="all">
@@ -387,12 +388,14 @@ input{font-family:inherit;}
                   <div style="font-size:10px;font-weight:700;color:#2e7d32;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;">Won</div>
                   <div id="oppsWonCount" style="font-size:22px;font-weight:700;color:#3c3c3b;">—</div>
                   <div id="oppsWonVal" style="font-size:10px;color:#9d9d9d;margin-top:2px;"></div>
+                  <div id="oppsWonReasons" style="font-size:9px;color:#9d9d9d;margin-top:3px;line-height:1.4;"></div>
                   <span style="font-size:11px;color:#9d9d9d;float:right;margin-top:-14px;">›</span>
                 </div>
                 <div class="sfSummaryCard" style="background:#f5f5f5;border-radius:8px;padding:10px 12px;cursor:pointer;" data-opps-filter="lost">
                   <div style="font-size:10px;font-weight:700;color:#6d6d6c;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;">Lost</div>
                   <div id="oppsLostCount" style="font-size:22px;font-weight:700;color:#3c3c3b;">—</div>
                   <div style="font-size:10px;color:#9d9d9d;margin-top:2px;">closed lost</div>
+                  <div id="oppsLostReasons" style="font-size:9px;color:#9d9d9d;margin-top:3px;line-height:1.4;"></div>
                   <span style="font-size:11px;color:#9d9d9d;float:right;margin-top:-14px;">›</span>
                 </div>
                 <div class="sfSummaryCard" style="background:#f3e5f5;border-radius:8px;padding:10px 12px;cursor:pointer;" data-opps-filter="all">
@@ -414,9 +417,9 @@ input{font-family:inherit;}
                   <table style="width:100%;border-collapse:collapse;font-size:11px;">
                     <thead><tr style="border-bottom:1px solid #e6e6e5;color:#9d9d9d;text-align:left;">
                       <th style="padding:4px 8px;">Name</th>
-                      <th style="padding:4px 8px;">Stage</th>
+                      <th style="padding:4px 8px;">Stage / Reason</th>
                       <th style="padding:4px 8px;">Amount</th>
-                      <th style="padding:4px 8px;">Type</th>
+                      <th style="padding:4px 8px;">Opp Type</th>
                       <th style="padding:4px 8px;">Close Date</th>
                       <th style="padding:4px 8px;">Created</th>
                     </tr></thead>
@@ -1523,6 +1526,22 @@ window.__hcExpand = function(prefix) {
   if (chev) chev.textContent = '▴';
 };
 
+window.__epToggleExpand = function() {
+  window.__epExpanded = !window.__epExpanded;
+  var btn = document.getElementById('epExpandBtn');
+  if (btn) { btn.textContent = window.__epExpanded ? '⤡' : '⤢'; btn.title = window.__epExpanded ? 'Compress timeline' : 'Expand timeline'; }
+  var wrap = document.getElementById('epWrap');
+  if (wrap && window.__epLastData) { wrap.innerHTML = ''; window.__epRender(wrap, window.__epLastData); }
+};
+
+window.__showTextTip = function(e, html) {
+  var t = document.getElementById('eng-tooltip');
+  if (!t) return;
+  t.innerHTML = html;
+  t.style.display = 'block';
+  window.engMoveTip && window.engMoveTip(e);
+};
+
 // Single shared interval — syncs loading phrases across all 4 widgets simultaneously
 window.__argusLoadTick = function() {
   var elems = document.querySelectorAll('.hc-load-msg');
@@ -1546,17 +1565,18 @@ window.__argusStartLoad = function() {
 
 // ── Engagement Pulse SVG renderer ─────────────────────────────────────────────
 window.__epRender = function(container, data) {
+  window.__epLastData = data;
   const MNTHS   = data.months.length;
-  const LBL_W   = 76;   // wider: fits two-line source labels
+  const LBL_W   = 76;
   const RHS_W   = 76;
-  const CELL    = 56;
+  const CELL    = window.__epExpanded ? 90 : 56;
   const CW      = MNTHS * CELL;
   const W       = LBL_W + CW + RHS_W;
   const ROW_H   = 26;
   const GAP     = 5;
   const PAD_T   = 6;
-  const SUB_H   = 28;   // subscription blocks (14px bar + 14px date labels)
-  const SEP_H   = 10;   // gap between sub track and first data row
+  const SUB_H   = 32;   // subscription blocks: 14px bar + 18px date labels (renews label + full date)
+  const SEP_H   = 8;    // gap between sub track and first data row
   const ROWS_Y  = PAD_T + SUB_H + SEP_H;   // y where data rows start
   const N_ROWS  = 5;
   const AX_H    = 18;
@@ -1617,8 +1637,15 @@ window.__epRender = function(container, data) {
     var totalCnt = types.reduce(function(a,t){return a+t.cnt;},0) || sub.count || 1;
     var TRACK_H = 14;
 
-    // Background track
-    svg.appendChild(s('rect', { x:LBL_W, y:subY+2, width:CW, height:TRACK_H, fill:'#e6e6e5', rx:3 }));
+    // Background track (with full-contract tooltip)
+    var bgRect = s('rect', { x:LBL_W, y:subY+2, width:CW, height:TRACK_H, fill:'#e6e6e5', rx:3 });
+    var bgTip = document.createElementNS('http://www.w3.org/2000/svg','title');
+    bgTip.textContent = 'Contract: ' + (sub.startDate||'?') + ' → ' + (sub.endDate||'?')
+      + ' | ' + sub.daysToRenewal + ' days to renewal'
+      + ' | ' + sub.count + ' active sub' + (sub.count!==1?'s':'')
+      + (sub.arr ? ' | ARR £'+(sub.arr>=1000000?'£'+(sub.arr/1000000).toFixed(1)+'M':'£'+(sub.arr/1000).toFixed(0)+'k') : '');
+    bgRect.appendChild(bgTip);
+    svg.appendChild(bgRect);
 
     // Segmented blocks by service type (proportional to count)
     var x0 = LBL_W;
@@ -1645,13 +1672,20 @@ window.__epRender = function(container, data) {
 
     // Start / end date labels below track
     if (sub.startDate) {
-      svg.appendChild(s('text', { x:LBL_W, y:subY+TRACK_H+10, 'font-size':8, 'font-family':'Lato,Helvetica Neue,Arial,sans-serif', fill:'#b0b0b0' }, sub.startDate.substring(0,7)));
+      svg.appendChild(s('text', { x:LBL_W, y:subY+TRACK_H+11, 'font-size':8, 'font-family':'Lato,Helvetica Neue,Arial,sans-serif', fill:'#b0b0b0' }, sub.startDate.substring(0,10)));
     }
-    svg.appendChild(s('text', {
-      x:LBL_W+CW, y:subY+TRACK_H+10, 'text-anchor':'end', 'font-size':8,
-      'font-family':'Lato,Helvetica Neue,Arial,sans-serif',
-      fill:sub.daysToRenewal < 90 ? '#c62828' : '#b0b0b0'
-    }, sub.endDate ? sub.endDate.substring(0,7) : ''));
+    // End / renewal date — prominent, full YYYY-MM-DD, "renews" label
+    if (sub.endDate) {
+      var endColor = sub.daysToRenewal < 60 ? '#c62828' : sub.daysToRenewal < 180 ? '#e65100' : '#3c3c3b';
+      svg.appendChild(s('text', {
+        x:LBL_W+CW, y:subY+TRACK_H+4, 'text-anchor':'end', 'font-size':7,
+        'font-family':'Lato,Helvetica Neue,Arial,sans-serif', fill:endColor, opacity:0.7
+      }, 'renews'));
+      svg.appendChild(s('text', {
+        x:LBL_W+CW, y:subY+TRACK_H+13, 'text-anchor':'end', 'font-size':9, 'font-weight':700,
+        'font-family':'Lato,Helvetica Neue,Arial,sans-serif', fill:endColor
+      }, sub.endDate.substring(0,10)));
+    }
 
     // RHS: days remaining (top) + ARR (bottom)
     var dColor = sub.daysToRenewal < 60 ? '#c62828' : sub.daysToRenewal < 180 ? '#e65100' : '#3c3c3b';
@@ -1746,13 +1780,22 @@ window.__epRender = function(container, data) {
     var dimName = row.key==='usage' ? 'PostHog usage' : row.key==='support' ? 'Zendesk tickets'
       : row.key==='cases' ? 'Salesforce cases' : row.key==='opportunities' ? 'Salesforce opps' : 'ProductBoard notes';
     var tipTxt = avg3 > 0
-      ? rawP + ' out of 100 Aurora clients for ' + dimName
-        + ' (3-month avg: ' + avg3.toFixed(1) + ')'
-        + (row.positive ? '' : ' — lower is healthier')
-      : 'No ' + dimName + ' in the last 3 months';
+      ? '<strong style="font-size:12px;display:block;margin-bottom:3px;">Activity Benchmark</strong>'
+        + 'Ranks <strong>' + rawP + ' out of 100</strong> Aurora clients<br>'
+        + 'Dimension: ' + dimName + '<br>'
+        + '3-month avg: ' + avg3.toFixed(1)
+        + (row.positive ? '' : '<br><em>Lower is healthier for this metric</em>')
+      : '<strong style="font-size:12px;display:block;margin-bottom:3px;">Activity Benchmark</strong>'
+        + 'No ' + dimName + ' in the last 3 months';
+    // Native title for fallback
     var titleEl = document.createElementNS('http://www.w3.org/2000/svg', 'title');
-    titleEl.textContent = tipTxt;
+    titleEl.textContent = tipTxt.replace(/<[^>]+>/g, '');
     badgeEl.appendChild(titleEl);
+    // Rich hover tooltip
+    badgeEl.style.cursor = 'help';
+    badgeEl.addEventListener('mouseenter', function(e) { window.__showTextTip && window.__showTextTip(e, tipTxt); });
+    badgeEl.addEventListener('mousemove',  function(e) { window.engMoveTip  && window.engMoveTip(e); });
+    badgeEl.addEventListener('mouseleave', function()   { window.engHideTip  && window.engHideTip(); });
     svg.appendChild(badgeEl);
 
     // Last non-zero value with full unit label
@@ -4549,13 +4592,29 @@ class Component extends DCLogic {
 
         if (states.summary) states.summary.style.display = 'block';
 
-        // Compact pill
-        const openColor = s.open > 0 ? (s.escalated > 0 ? 'hc-pill-od' : 'hc-pill-tw') : 'hc-pill-ok';
+        // Store data for compact pill drilldown
+        window.__casesData = data;
+        const _casesSelf = this;
+        window.__showCasesDrillFromCompact = function(filter) {
+          window.__hcExpand('cases');
+          var sv = document.getElementById('casesSummaryView'); if (sv) sv.style.display = 'block';
+          if (!window.__casesData) return;
+          var c = window.__casesData.cases;
+          var filtered = filter === 'open'      ? c.filter(function(x){ return !x.isClosed && !x.isEscalated; })
+            : filter === 'escalated' ? c.filter(function(x){ return x.isEscalated; })
+            : filter === 'closed'    ? c.filter(function(x){ return x.isClosed; })
+            : c;
+          var lbl = {open:'Open', escalated:'Escalated', closed:'Delivered', all:'All'}[filter] || filter;
+          _casesSelf._showCasesDrill(filtered, lbl + ' Cases');
+        };
+
+        // Compact pills — match tile colors + clickable filters
         this.updateHcCompact('casesCompact',
           `<div class="hc-compact-status">
-            <span class="hc-pill ${openColor}">${s.open} open</span>
-            ${s.escalated ? `<span class="hc-pill hc-pill-od">${s.escalated} escalated</span>` : ''}
-            <span class="hc-pill hc-pill-grey">${s.total} total</span>
+            <span class="hc-pill hc-pill-btn hc-pill-ar" onclick="window.__showCasesDrillFromCompact('open')">${s.open} Open</span>
+            ${s.escalated ? `<span class="hc-pill hc-pill-btn hc-pill-od" onclick="window.__showCasesDrillFromCompact('escalated')">${s.escalated} Escalated</span>` : ''}
+            <span class="hc-pill hc-pill-btn hc-pill-ok" onclick="window.__showCasesDrillFromCompact('closed')">${s.closed} Delivered</span>
+            <span class="hc-pill hc-pill-btn hc-pill-grey" onclick="window.__showCasesDrillFromCompact('all')">${s.total} Total</span>
           </div>`
         );
       })
@@ -4616,6 +4675,23 @@ class Component extends DCLogic {
         const wonVal = document.getElementById('oppsWonVal');
         if (wonVal) wonVal.textContent = s.wonValue ? fmtGbp(s.wonValue) + ' total' : '';
 
+        // Won/Lost closed reason breakdowns (from StageName)
+        const wonStages = {}, lostStages = {};
+        data.opportunities.forEach(o => {
+          if (o.isWon) wonStages[o.stage||'Closed Won'] = (wonStages[o.stage||'Closed Won']||0)+1;
+          else if (o.isClosed) lostStages[o.stage||'Closed Lost'] = (lostStages[o.stage||'Closed Lost']||0)+1;
+        });
+        const wonReasonsEl = document.getElementById('oppsWonReasons');
+        if (wonReasonsEl) {
+          const entries = Object.entries(wonStages).sort((a,b)=>b[1]-a[1]).slice(0,3);
+          wonReasonsEl.textContent = entries.map(([st,n])=>st.replace(/Closed ?/i,'').trim()||st).filter(Boolean).map((st,i)=>st+' ×'+Object.values(wonStages).sort((a,b)=>b-a)[i]).join(', ');
+        }
+        const lostReasonsEl = document.getElementById('oppsLostReasons');
+        if (lostReasonsEl) {
+          const entries = Object.entries(lostStages).sort((a,b)=>b[1]-a[1]).slice(0,3);
+          lostReasonsEl.textContent = entries.map(([st,n])=>st.replace(/Closed ?Lost ?-?\s*/i,'').trim()||st).filter(Boolean).map((st,i,arr)=>st + ' ×' + entries[i][1]).join(', ');
+        }
+
         // Stage pills (open only)
         const stageBar = document.getElementById('oppsStageBar');
         if (stageBar) {
@@ -4645,12 +4721,29 @@ class Component extends DCLogic {
 
         if (states.summary) states.summary.style.display = 'block';
 
-        const pipelineStr = s.pipeline ? fmtGbp(s.pipeline) + ' pipeline' : '';
+        // Store data for compact pill drilldown
+        window.__oppsData = data;
+        const _oppsSelf = this;
+        window.__showOppsDrillFromCompact = function(filter) {
+          window.__hcExpand('opps');
+          var sv = document.getElementById('oppsSummaryView'); if (sv) sv.style.display = 'block';
+          if (!window.__oppsData) return;
+          var o = window.__oppsData.opportunities;
+          var filtered = filter === 'open' ? o.filter(function(x){ return !x.isClosed; })
+            : filter === 'won'  ? o.filter(function(x){ return x.isWon; })
+            : filter === 'lost' ? o.filter(function(x){ return x.isClosed && !x.isWon; })
+            : o;
+          var lbl = {open:'Open', won:'Won', lost:'Lost', all:'All'}[filter] || filter;
+          _oppsSelf._showOppsDrill(filtered, lbl + ' Opportunities');
+        };
+
+        // Compact pills — all 4 tiles, match colors + clickable
         this.updateHcCompact('oppsCompact',
           `<div class="hc-compact-status">
-            <span class="hc-pill hc-pill-lb">${s.open} open</span>
-            <span class="hc-pill hc-pill-ok">${s.won} won</span>
-            ${pipelineStr ? `<span class="hc-pill hc-pill-grey">${pipelineStr}</span>` : ''}
+            <span class="hc-pill hc-pill-btn hc-pill-tw" onclick="window.__showOppsDrillFromCompact('open')">${s.open} Open</span>
+            <span class="hc-pill hc-pill-btn hc-pill-ok" onclick="window.__showOppsDrillFromCompact('won')">${s.won} Won</span>
+            <span class="hc-pill hc-pill-btn hc-pill-grey" onclick="window.__showOppsDrillFromCompact('lost')">${s.lost} Lost</span>
+            ${s.pipeline ? `<span class="hc-pill hc-pill-btn hc-pill-pb" onclick="window.__showOppsDrillFromCompact('all')">${fmtGbp(s.pipeline)} pipeline</span>` : ''}
           </div>`
         );
       })

@@ -262,6 +262,7 @@ module.exports = async function clientTimeline(req, res) {
           AND IsDeleted = 'false'
           AND NULLIF(TRIM(End_Date__c), '') IS NOT NULL
           AND TRY_CAST(NULLIF(TRIM(End_Date__c), '') AS date) >= CAST(GETDATE() AS date)
+          AND Status__c IN ('Active', 'Termination in Progress')
       `),
 
       sf_account_id ? query(`
