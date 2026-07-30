@@ -154,6 +154,7 @@ input{font-family:inherit;}
             <span style="font-size:12px;font-weight:700;color:#3c3c3b;letter-spacing:0.04em;text-transform:uppercase;">Engagement Pulse</span>
             <span id="epSubtitle" style="font-size:10px;color:#9d9d9d;flex:1;">Loading...</span>
             <span id="epBenchNote" style="font-size:10px;color:#9d9d9d;text-align:right;white-space:nowrap;margin-right:6px;"></span>
+            <button id="epFullscreenBtn" title="Full screen" onclick="(function(){var c=document.getElementById('epCard');if(!document.fullscreenElement){c.requestFullscreen&&c.requestFullscreen();}else{document.exitFullscreen&&document.exitFullscreen();}})();" style="background:none;border:1px solid #e6e6e5;border-radius:6px;padding:3px 7px;font-size:13px;color:#9d9d9d;cursor:pointer;flex-shrink:0;line-height:1;">⛶</button>
             <span id="epCollapseChev" style="font-size:13px;color:#9d9d9d;flex-shrink:0;">▴</span>
           </div>
           <div id="epCardBody">
@@ -348,6 +349,8 @@ input{font-family:inherit;}
             <div id="casesNoMatch" style="display:none;padding:24px 0;text-align:center;color:#9d9d9d;font-size:13px;">No cases found for this account.</div>
             <div id="casesError"   style="display:none;padding:16px;background:#fff3e0;border-radius:6px;color:#c2600f;font-size:12px;"></div>
             <div id="casesSummaryView" style="display:none;">
+              <!-- Timeline graph -->
+              <div id="casesTimelineWrap" style="width:100%;margin-bottom:12px;"></div>
               <!-- 4 stat tiles -->
               <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px;">
                 <div id="casesOpenTile"  class="sfSummaryCard" style="background:#fff3e0;border-radius:8px;padding:10px 12px;cursor:pointer;" data-cases-filter="open">
@@ -434,6 +437,8 @@ input{font-family:inherit;}
 
           <!-- Summary view -->
           <div id="zdSummaryView" style="display:none;">
+              <!-- Timeline graph -->
+              <div id="zdTimelineWrap" style="width:100%;margin-bottom:12px;"></div>
             <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px;">
               <div id="zdOpenTile" title="Click to view open tickets" style="background:#fff3e0;border-radius:8px;padding:12px;cursor:pointer;border:1px solid #ffe0b2;position:relative;">
                 <div style="font-size:11px;font-weight:700;color:#c2600f;text-transform:uppercase;margin-bottom:4px;">Open</div>
@@ -536,6 +541,8 @@ input{font-family:inherit;}
           <div id="pbError" style="display:none;padding:16px;background:#fdeee0;border-radius:8px;font-size:12px;color:#c2600f;text-align:center;"></div>
 
           <div id="pbSummaryView" style="display:none;">
+              <!-- Timeline graph -->
+              <div id="pbTimelineWrap" style="width:100%;margin-bottom:12px;"></div>
             <!-- Company profile bar — populated by JS when data loads -->
             <div id="pbCompanyProfile" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 12px;background:#f7f7f6;border-radius:8px;margin-bottom:12px;font-size:12px;"></div>
             <!-- Stat tiles — click Delivered / In Pipeline / Unlinked to drilldown -->
@@ -1526,6 +1533,111 @@ window.__argusStartLoad = function() {
   window.__argusLoadInterval = setInterval(window.__argusLoadTick, 5000);
 };
 
+// ── Shared backward-timeline renderer (used by Cases, Tickets, PB Notes widgets) ─
+window.__renderWidgetTimeline = function(opts) {
+  // opts: {container, values, months, color, nullBg, selectedMonth, onMonthClick}
+  var values  = opts.values  || [];
+  var months  = opts.months  || [];
+  var color   = opts.color   || '#c62828';
+  var nullBg  = opts.nullBg  || '#f5f5f5';
+  var selMo   = opts.selectedMonth || null;
+  var onClk   = opts.onMonthClick  || function(){};
+  var container = opts.container;
+
+  var W      = Math.max(container.offsetWidth || 0, 400);
+  var ROW_H  = 64;
+  var AX_H   = 22;
+  var TOTAL  = ROW_H + AX_H;
+  var COLS   = 20;
+  var COL_W  = Math.max(22, Math.floor(W / COLS));
+  var BAR_W  = Math.max(COL_W - 3, 3);
+  var BAR_MAX = ROW_H - 14;
+
+  var backCols = [];
+  backCols.push({ label:'18m-', yearLbl:'', key:'pre' });
+  for (var bi = 0; bi < 18; bi++) {
+    var bmo = months[bi];
+    if (!bmo) { backCols.push({ label:'', yearLbl:'', key:null }); continue; }
+    var bd = new Date(bmo + '-01');
+    backCols.push({
+      label: bd.toLocaleDateString('en-GB', {month:'short'}),
+      yearLbl: bd.getMonth()===0 ? "'"+String(bd.getFullYear()).slice(2) : '',
+      key: bmo
+    });
+  }
+  var currMo = months[18];
+  var currD  = currMo ? new Date(currMo + '-01') : new Date();
+  backCols.push({
+    label: currD.toLocaleDateString('en-GB', {month:'short'}),
+    yearLbl: currD.getMonth()===0 ? "'"+String(currD.getFullYear()).slice(2) : '',
+    key: currMo, isCurrent: true
+  });
+
+  var monthMap = {};
+  months.forEach(function(m, i) { if (m) monthMap[m] = values[i] != null ? values[i] : 0; });
+  var allVals = months.map(function(m,i){ return values[i] != null ? values[i] : 0; });
+  var maxV = Math.max(0.01, Math.max.apply(null, allVals));
+
+  function s2(tag, a, txt) {
+    var e = document.createElementNS('http://www.w3.org/2000/svg', tag);
+    for (var k in (a||{})) e.setAttribute(k, a[k]);
+    if (txt !== undefined) e.textContent = txt;
+    return e;
+  }
+
+  var svgW = COLS * COL_W;
+  var svg = s2('svg', { viewBox:'0 0 '+svgW+' '+TOTAL, width:'100%', style:'display:block;cursor:pointer;' });
+
+  backCols.forEach(function(col, ci) {
+    var colX = ci * COL_W;
+    var mid  = colX + COL_W / 2;
+    var v    = col.key && col.key !== 'pre' ? (monthMap[col.key] !== undefined ? monthMap[col.key] : 0) : null;
+    var isNull = v === null;
+    var isSel  = !!(selMo && col.key && col.key === selMo);
+    var isCurr = !!(col.isCurrent);
+    var bg     = isNull ? nullBg : (isCurr ? '#e8edf5' : '#f5f5f5');
+    var dimmed = !!(selMo && !isSel && col.key !== 'pre');
+
+    var bgRect = s2('rect', { x:colX+1, y:0, width:BAR_W, height:ROW_H, fill:bg, rx:2,
+      opacity: dimmed ? 0.4 : 1 });
+    svg.appendChild(bgRect);
+
+    if (!isNull && v > 0 && maxV > 0) {
+      var barH = Math.max(4, Math.round((v/maxV)*BAR_MAX));
+      var barY = ROW_H - barH;
+      var bar  = s2('rect', { x:colX+1, y:barY, width:BAR_W, height:barH, fill:color, rx:2,
+        opacity: dimmed ? 0.25 : 0.9 });
+      svg.appendChild(bar);
+      var countLbl = v >= 1000 ? (v/1000).toFixed(1)+'k' : String(v);
+      var lblY     = barH >= 14 ? barY + 9 : barY - 2;
+      svg.appendChild(s2('text', { x:mid, y:lblY, 'text-anchor':'middle', 'font-size':8,
+        fill: dimmed ? '#c0c0c0' : (barH >= 14 ? '#fff' : '#3c3c3b'),
+        'font-family':'Lato,Helvetica Neue,Arial,sans-serif' }, countLbl));
+    }
+
+    if (isSel) {
+      svg.appendChild(s2('rect', { x:colX, y:0, width:COL_W, height:ROW_H,
+        fill:'none', stroke:'#288184', 'stroke-width':2, rx:2 }));
+    }
+
+    svg.appendChild(s2('text', { x:mid, y:ROW_H+13, 'text-anchor':'middle', 'font-size':8,
+      fill: col.key==='pre' ? '#d0d0d0' : (isSel ? '#288184' : '#9d9d9d'),
+      'font-family':'Lato,Helvetica Neue,Arial,sans-serif' }, col.label));
+    if (col.yearLbl) svg.appendChild(s2('text', { x:mid, y:ROW_H+22, 'text-anchor':'middle', 'font-size':9,
+      'font-weight':600, fill: isSel ? '#288184' : '#555',
+      'font-family':'Lato,Helvetica Neue,Arial,sans-serif' }, col.yearLbl));
+
+    if (!isNull && col.key && col.key !== 'pre') {
+      var hitRect = s2('rect', { x:colX+1, y:0, width:BAR_W, height:ROW_H+AX_H, fill:'transparent', cursor:'pointer' });
+      (function(key){ hitRect.addEventListener('click', function(){ onClk(key); }); })(col.key);
+      svg.appendChild(hitRect);
+    }
+  });
+
+  container.innerHTML = '';
+  container.appendChild(svg);
+};
+
 // ── Engagement Pulse SVG renderer ─────────────────────────────────────────────
 window.__epRender = function(container, data) {
   window.__epLastData = data;
@@ -1554,7 +1666,7 @@ window.__epRender = function(container, data) {
 
   // Row order: SF Opps (with its own axis) → SF Cases → ZD Support → PH Usage → PB Product
   const ROWS = [
-    { key:'opportunities',label:'Opps',     source:'Salesforce',   color:'#e65100', nullBg:'#f5f5f5', positive:true,  bench:(data.benchmark||{}).opps    || {p25:0,p50:0.3,p75:1,p90:3}    },
+    { key:'opportunities',label:'Opportunities', source:'Salesforce',   color:'#e65100', nullBg:'#f5f5f5', positive:true,  bench:(data.benchmark||{}).opps    || {p25:0,p50:0.3,p75:1,p90:3}    },
     { key:'cases',        label:'Cases',    source:'Salesforce',   color:'#c62828', nullBg:'#f5f5f5', positive:false, bench:(data.benchmark||{}).cases   || {p25:0,p50:0.5,p75:1.5,p90:4}  },
     { key:'support',      label:'Tickets',  source:'Zendesk',      color:'#d84315', nullBg:'#f5f5f5', positive:false, bench:(data.benchmark||{}).support || {p25:0,p50:1,p75:3,p90:8}      },
     { key:'usage',        label:'Usage',    source:'PostHog',      color:'#1565c0', nullBg:'#dce8f7', positive:true,  bench:(data.benchmark||{}).usage   || {p25:2,p50:8,p75:22,p90:55}    },
@@ -1711,7 +1823,7 @@ window.__epRender = function(container, data) {
     var barH = col.subs.length ? Math.max(6, Math.round((col.arr/maxCalArr)*BAR_MAX_CAL)) : 0;
     var barY = subY + CAL_H - barH;
 
-    svg.appendChild(s('rect',{ x:cx+1, y:subY, width:CAL_BAR_W, height:CAL_H, fill:'#f5f5f5', rx:2 }));
+    svg.appendChild(s('rect',{ x:cx+1, y:subY, width:CAL_BAR_W, height:CAL_H, fill:ci===1?'#e8edf5':'#f5f5f5', rx:2 }));
     if (barH) {
       svg.appendChild(s('rect',{ x:cx+1, y:barY, width:CAL_BAR_W, height:barH,
         fill:col.color, rx:2, opacity:0.85 }));
@@ -1784,7 +1896,7 @@ window.__epRender = function(container, data) {
         var pipeV = col.oppPipe || 0;
         var total = wonV + pipeV;
 
-        svg.appendChild(s('rect', { x:colX+1, y:rowY, width:CAL_BAR_W, height:ROW_H, fill:'#f5f5f5', rx:2 }));
+        svg.appendChild(s('rect', { x:colX+1, y:rowY, width:CAL_BAR_W, height:ROW_H, fill:ci===1?'#e8edf5':'#f5f5f5', rx:2 }));
 
         if (total > 0 && oppMaxV > 0) {
           var totalH = Math.max(4, Math.round((total/oppMaxV)*OPP_BAR_MAX));
@@ -1829,7 +1941,7 @@ window.__epRender = function(container, data) {
 
         svg.appendChild(s('rect', {
           x:colX+1, y:rowY, width:CAL_BAR_W, height:ROW_H,
-          fill:isNull ? row.nullBg : '#f5f5f5', rx:2
+          fill:isNull ? row.nullBg : (ci===19?'#e8edf5':'#f5f5f5'), rx:2
         }));
 
         if (!isNull && v > 0 && maxV > 0) {
@@ -1930,11 +2042,25 @@ window.__epRender = function(container, data) {
     }, col.yearLbl));
   });
 
-  // ── Separator line between opps section and lower rows ──────────────────────
-  svg.appendChild(s('line', {
-    x1:LBL_W, y1:ROWS_Y+ROW_H+OPPS_AX_H+2, x2:LBL_W+CW, y2:ROWS_Y+ROW_H+OPPS_AX_H+2,
-    stroke:'#e8e8e7', 'stroke-width':1
-  }));
+  // ── Directional section divider ──────────────────────────────────────────────
+  var divY = ROWS_Y + ROW_H + OPPS_AX_H + 2;
+  svg.appendChild(s('line', { x1:LBL_W, y1:divY, x2:LBL_W+CW, y2:divY, stroke:'#d8d8d7', 'stroke-width':1 }));
+  // Opportunity icon path (inlined at 14px, forward-facing)
+  var OPP_PATH = 'm10.26 10.39c0.14 0.01 0.28 0.07 0.42 0.22l3.51 3.52h-1.43zm-3.27-2.77c0.13-0.01 0.28 0.04 0.43 0.12 0.60 0.31 0.87 0.53 1.00 0.79 0.16 0.30 0.19 0.80 0.19 1.67c0 0.05 0 0.09 0.01 0.13l-1.20 0.69c-0.40 0.23-0.67 0.33-1.10 0.35 0.15-1.18 0.22-2.08 0.28-3.24 0.02-0.34 0.18-0.49 0.39-0.50zm2.25-4.93 0.64 0.02c-0.01 0.01-0.02 0.03-0.03 0.05-0.24 0.52-0.56 0.80-0.92 0.98 0.16-0.27 0.27-0.61 0.30-1.05zm3.30-0.87c-0.09 0-0.17 0.05-0.17 0.12v0.04l-4.01 0.10c-0.45 0.01-0.43 0.56 0 0.57l0.40 0.01c-0.11 0.56-0.37 0.84-0.68 1.08c-0.18 0.13-0.56 0.33-0.82 0.34l-1.24 0.02c-0.27 0.01-0.48 0.24-0.45 0.51 0.23 1.74 0.19 3.93-0.18 6.67c0 0.03 0 0.05 0 0.08h-0.24c-0.75 0-0.94 0.15-1.52 0.71l-2.37 2.26c-0.16 0.15-0.10 0.55 0.18 0.55h13.90c0.21 0-0.31 0.34 0.10 0.55l-4.41-4.42c-0.23-0.23-0.50-0.32-0.79-0.31c-0.24 0.01-0.50 0.09-0.77 0.22c0-0.68-0.03-1.22-0.28-1.71c-0.26-0.51-0.77-0.86-1.50-1.21l-0.06-1.95c1.34-0.15 2.45-0.95 2.79-1.87c0.05-0.14 0.04-0.26-0.01-0.35l1.94 0.06v0.04c0 0.07 0.07 0.12 0.17 0.12s0.17-0.05 0.17-0.12v-0.89c0-0.07-0.07-0.12-0.17-0.12z';
+  // "Looking ahead →" label + icon (left side, near label column)
+  var aheadG = s('g', { transform:'translate('+(LBL_W+4)+','+(divY-9)+') scale(0.85)' });
+  var aheadPath = s('path', { d:OPP_PATH, fill:'#9d9d9d' });
+  aheadG.appendChild(aheadPath);
+  svg.appendChild(aheadG);
+  svg.appendChild(s('text', { x:LBL_W+22, y:divY-3, 'font-size':8, fill:'#9d9d9d',
+    'font-family':'Lato,Helvetica Neue,Arial,sans-serif' }, 'Looking ahead'));
+  // "← Looking back" label + icon (right side, mirrored)
+  var backG = s('g', { transform:'translate('+(LBL_W+CW-2)+','+(divY+14)+') scale(-0.85,0.85)' });
+  var backPath = s('path', { d:OPP_PATH, fill:'#9d9d9d' });
+  backG.appendChild(backPath);
+  svg.appendChild(backG);
+  svg.appendChild(s('text', { x:LBL_W+CW-24, y:divY+11, 'text-anchor':'end', 'font-size':8, fill:'#9d9d9d',
+    'font-family':'Lato,Helvetica Neue,Arial,sans-serif' }, 'Looking back'));
 
   // ── Bottom month axis (backward grid: 18m- · 18 past months · now) ───────────
   var axY = ROWS_Y + N_ROWS*(ROW_H+GAP) - GAP + OPPS_AX_H + SEP_OPPS + 6;
@@ -2486,6 +2612,31 @@ class Component extends DCLogic {
       zdSetArrows(null);
     };
 
+    window.__zdShowMonthDrilldown = function(mo, tickets) {
+      var titleEl = document.getElementById('zdDrilldownTitle');
+      if (titleEl) titleEl.textContent = mo + ' — ' + tickets.length + ' ticket' + (tickets.length !== 1 ? 's' : '');
+      var priorityColour = { urgent:'#d32f2f', high:'#e65100', normal:'#1565c0', low:'#6d6d6c' };
+      var priorityBg     = { urgent:'#fdeee0', high:'#fff3e0', normal:'#e3f2fd', low:'#f7f7f6' };
+      var statusStyle    = { open:'background:#fff3e0;color:#e65100;', new:'background:#fff3e0;color:#e65100;', pending:'background:#fff8e1;color:#f9a825;', solved:'background:#e8f5e9;color:#2e7d32;', closed:'background:#f7f7f6;color:#6d6d6c;' };
+      var tbody = document.getElementById('zdDrilldownBody');
+      if (!tbody) return;
+      tbody.innerHTML = tickets.map(function(t) {
+        var p = (t.priority || 'normal').toLowerCase();
+        var st = t.status.toLowerCase();
+        var spentMins = t.timeSpentMinutes || 0;
+        return '<tr style="border-bottom:1px solid #f1f1f0;">'
+          + '<td style="padding:9px 12px;"><span style="font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;background:'+(priorityBg[p]||'#f7f7f6')+';color:'+(priorityColour[p]||'#6d6d6c')+';text-transform:uppercase;">'+(p==='normal'?'STD':p.toUpperCase())+'</span></td>'
+          + '<td style="padding:9px 12px;font-size:12px;color:#3c3c3b;max-width:320px;"><a href="https://auroraer.zendesk.com/agent/tickets/'+t.id+'" target="_blank" style="color:#03363D;text-decoration:none;">'+t.subject+'</a></td>'
+          + '<td style="padding:9px 12px;text-align:center;font-size:11px;"><a href="https://auroraer.zendesk.com/agent/tickets/'+t.id+'" target="_blank" style="color:#6d6d6c;text-decoration:none;">#'+t.id+'</a></td>'
+          + '<td style="padding:9px 12px;text-align:center;"><span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px;'+(statusStyle[st]||'background:#f7f7f6;color:#6d6d6c;')+'">'+st.toUpperCase()+'</span></td>'
+          + '<td style="padding:9px 12px;text-align:center;font-size:12px;color:#6d6d6c;">'+new Date(t.createdAt).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})+'</td>'
+          + '<td style="padding:9px 12px;text-align:center;font-size:12px;font-weight:700;color:#3c3c3b;">'+(spentMins||'—')+'</td>'
+          + '<td style="padding:9px 12px;text-align:center;font-size:12px;color:#6d6d6c;">'+t.replies+'</td>'
+          + '</tr>';
+      }).join('');
+      show('zdDetailView', true);
+    };
+
     fetch(`/api/zd-tickets?account=${encodeURIComponent(accountName)}&t=${Date.now()}`)
       .then(r => r.json())
       .then(data => {
@@ -2657,6 +2808,40 @@ class Component extends DCLogic {
           if (el) el.innerHTML = '<div class="hc-compact-status">' + pills + '</div>';
         })();
         show('zdSummaryView', true);
+
+        // Render backward timeline graph
+        var zdWrap = document.getElementById('zdTimelineWrap');
+        if (zdWrap && window.__epLastTimeline) {
+          window.__zdMo = null;
+          var renderZdGraph = function() {
+            window.__renderWidgetTimeline({
+              container: zdWrap,
+              values: window.__epLastTimeline.support,
+              months: window.__epLastTimeline.months,
+              color: '#d84315',
+              nullBg: '#f5f5f5',
+              selectedMonth: window.__zdMo,
+              onMonthClick: function(mo) {
+                window.__zdMo = window.__zdMo === mo ? null : mo;
+                renderZdGraph();
+                if (window.__zdMo) {
+                  var allT = window.__zdTickets || [];
+                  var filtered = allT.filter(function(t) {
+                    var d = t.createdAt ? String(t.createdAt).substring(0,7) : '';
+                    return d === window.__zdMo;
+                  });
+                  // Show drilldown with all statuses for the selected month
+                  window.__zdTickets_filtered = filtered;
+                  window.__zdShowMonthDrilldown(window.__zdMo, filtered);
+                } else {
+                  show('zdDetailView', false);
+                  window.__zdActiveTile = null;
+                }
+              }
+            });
+          };
+          renderZdGraph();
+        }
       })
       .catch(() => {
         clearInterval(window.__zdMsgInterval);
@@ -2732,6 +2917,7 @@ class Component extends DCLogic {
         }
 
         const s = data.summary;
+        window.__pbData = data;
         // Build one global note map — each note assigned to exactly one bucket by priority
         // (delivered > pipeline > review) so counts add up: Total = Delivered + InProgress + Unlinked
         const _PRI = { delivered: 3, pipeline: 2, review: 1 };
@@ -2999,6 +3185,72 @@ class Component extends DCLogic {
           if (el) el.innerHTML = '<div class="hc-compact-status">' + pills + '</div>';
         })();
         show('pbSummaryView', true);
+
+        // Render backward timeline graph
+        var pbWrap = document.getElementById('pbTimelineWrap');
+        if (pbWrap && window.__epLastTimeline) {
+          window.__pbMo = null;
+          var renderPbGraph = function() {
+            window.__renderWidgetTimeline({
+              container: pbWrap,
+              values: window.__epLastTimeline.product,
+              months: window.__epLastTimeline.months,
+              color: '#6a1b9a',
+              nullBg: '#f5f5f5',
+              selectedMonth: window.__pbMo,
+              onMonthClick: function(mo) {
+                window.__pbMo = window.__pbMo === mo ? null : mo;
+                renderPbGraph();
+                if (window.__pbMo) {
+                  // Filter notes by month across features and unlinked
+                  var allNotes = [];
+                  var pbDat = window.__pbData;
+                  if (pbDat) {
+                    (pbDat.features || []).forEach(function(f) {
+                      (f.notes || []).forEach(function(n) {
+                        var d = n.createdAt ? String(n.createdAt).substring(0,7) : '';
+                        if (d === window.__pbMo) allNotes.push({ note:n, feature:f.featureName });
+                      });
+                    });
+                    (pbDat.unlinkedNotes || []).forEach(function(n) {
+                      var d = n.createdAt ? String(n.createdAt).substring(0,7) : '';
+                      if (d === window.__pbMo) allNotes.push({ note:n, feature:'(unlinked)' });
+                    });
+                  }
+                  window.__pbShowMonthDrilldown(window.__pbMo, allNotes);
+                } else {
+                  var pbDrill = document.getElementById('pbDrilldown');
+                  if (pbDrill) pbDrill.style.display = 'none';
+                }
+              }
+            });
+          };
+          renderPbGraph();
+        }
+
+        window.__pbShowMonthDrilldown = function(mo, notes) {
+          var pbDrill = document.getElementById('pbDrilldown');
+          if (!pbDrill) return;
+          pbDrill.style.display = 'block';
+          pbDrill.innerHTML = '<div style="padding:12px 16px;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;gap:12px;">'
+            + '<span style="font-size:12px;font-weight:700;color:#3c3c3b;">' + mo + ' — ' + notes.length + ' note' + (notes.length !== 1 ? 's' : '') + '</span>'
+            + '<button onclick="window.__pbMo=null;document.getElementById(\'pbDrilldown\').style.display=\'none\';var w=document.getElementById(\'pbTimelineWrap\');if(w&&window.__epLastTimeline){window.__renderWidgetTimeline({container:w,values:window.__epLastTimeline.product,months:window.__epLastTimeline.months,color:\'#6a1b9a\',nullBg:\'#f5f5f5\',selectedMonth:null,onMonthClick:function(){}});}" style="background:none;border:none;color:#288184;font-size:12px;cursor:pointer;padding:0;">← Clear</button>'
+            + '</div>'
+            + '<div style="max-height:300px;overflow-y:auto;">'
+            + '<table style="width:100%;border-collapse:collapse;font-size:11px;">'
+            + '<thead><tr style="border-bottom:1px solid #e6e6e5;color:#9d9d9d;text-align:left;"><th style="padding:6px 10px;">Note</th><th style="padding:6px 10px;">Feature</th><th style="padding:6px 10px;">Created</th></tr></thead>'
+            + '<tbody>'
+            + notes.map(function(item) {
+                var n = item.note;
+                var excerpt = (n.content || n.excerpt || '').substring(0, 120).replace(/</g,'&lt;').replace(/>/g,'&gt;');
+                return '<tr style="border-bottom:1px solid #f5f5f5;">'
+                  + '<td style="padding:6px 10px;max-width:280px;">' + (n.title || excerpt || '(no title)') + '</td>'
+                  + '<td style="padding:6px 10px;color:#6a1b9a;">' + item.feature + '</td>'
+                  + '<td style="padding:6px 10px;color:#9d9d9d;white-space:nowrap;">' + (n.createdAt ? String(n.createdAt).substring(0,10) : '—') + '</td>'
+                  + '</tr>';
+              }).join('')
+            + '</tbody></table></div>';
+        };
       })
       .catch(() => {
         show('pbLoading', false);
@@ -4699,7 +4951,13 @@ class Component extends DCLogic {
         document.getElementById('casesBackBtn').onclick = () => {
           document.getElementById('casesDrilldown').style.display = 'none';
           window.__casesActiveDrilldown = null;
+          window.__casesMo = null;
           document.querySelectorAll('[data-cases-filter]').forEach(t => t.style.outline = '');
+          var casesWrap2 = document.getElementById('casesTimelineWrap');
+          if (casesWrap2 && window.__epLastTimeline) {
+            window.__renderWidgetTimeline({ container:casesWrap2, values:window.__epLastTimeline.cases,
+              months:window.__epLastTimeline.months, color:'#c62828', nullBg:'#f5f5f5', selectedMonth:null, onMonthClick:function(){} });
+          }
         };
 
         if (states.summary) states.summary.style.display = 'block';
@@ -4707,6 +4965,41 @@ class Component extends DCLogic {
         // Store data for compact pill drilldown
         window.__casesData = data;
         const _casesSelf = this;
+
+        // Render backward timeline graph
+        var casesWrap = document.getElementById('casesTimelineWrap');
+        if (casesWrap && window.__epLastTimeline) {
+          window.__casesMo = null;
+          var renderCasesGraph = function() {
+            window.__renderWidgetTimeline({
+              container: casesWrap,
+              values: window.__epLastTimeline.cases,
+              months: window.__epLastTimeline.months,
+              color: '#c62828',
+              nullBg: '#f5f5f5',
+              selectedMonth: window.__casesMo,
+              onMonthClick: function(mo) {
+                window.__casesMo = window.__casesMo === mo ? null : mo;
+                renderCasesGraph();
+                // Filter drilldown by month
+                var base = window.__casesData ? window.__casesData.cases : [];
+                if (window.__casesMo) {
+                  var filtered = base.filter(function(c) {
+                    var d = c.createdDate ? String(c.createdDate).substring(0,7) : '';
+                    return d === window.__casesMo;
+                  });
+                  _casesSelf._showCasesDrill(filtered, window.__casesMo + ' — ' + filtered.length + ' cases');
+                } else {
+                  document.getElementById('casesDrilldown').style.display = 'none';
+                  window.__casesActiveDrilldown = null;
+                  document.querySelectorAll('[data-cases-filter]').forEach(function(t){ t.style.outline = ''; });
+                }
+              }
+            });
+          };
+          renderCasesGraph();
+        }
+
         window.__showCasesDrillFromCompact = function(filter) {
           window.__hcExpand('cases');
           var sv = document.getElementById('casesSummaryView'); if (sv) sv.style.display = 'block';
@@ -4938,6 +5231,7 @@ class Component extends DCLogic {
         subtitle.textContent = accountName + (subCount ? ' · ' + subCount + ' active sub' + (subCount !== 1 ? 's' : '') : '');
         benchNote.textContent = parts.length ? 'vs all accounts · ' + parts.join(' · ') : '';
 
+        window.__epLastTimeline = data; // shared by widget timeline graphs
         window.__epRender(wrap, data);
       })
       .catch(err => {
@@ -5057,7 +5351,8 @@ class Component extends DCLogic {
         btn.style.display = 'inline-block';
         btn.dataset.hidden = 'false';
       } else {
-        btn.style.display = 'none';
+        btn.style.display = 'inline-block';
+        btn.style.opacity = '0.4';
         btn.dataset.hidden = 'true';
       }
 
@@ -5401,8 +5696,10 @@ class Component extends DCLogic {
     if (window.__sfActiveDrilldown === key) { this.showSummary(); return; }
     window.__sfActiveDrilldown = key;
 
-    document.getElementById('sfSummaryView').style.display = 'none';
+    // Keep summary (renewal calendar graph) visible; show detail below it
     document.getElementById('sfDetailView').style.display  = 'block';
+    const detailEl = document.getElementById('sfDetailView');
+    if (detailEl) setTimeout(function(){ detailEl.scrollIntoView({ behavior:'smooth', block:'nearest' }); }, 50);
 
     const titleEl = document.getElementById('sfDrilldownTitle');
     if (titleEl) {
