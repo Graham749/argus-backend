@@ -65,9 +65,13 @@ async function query(sqlText) {
     const result = await pool.request().query(sqlText);
     return result.recordset;
   } catch (err) {
-    if (err.code === 'ECONNCLOSED' || err.code === 'ENOTOPEN') {
-      // Pool went stale — force rebuild and retry once.
-      console.warn('[db] stale pool detected, reconnecting…');
+    const isAuthErr = err.code === 'ECONNCLOSED' || err.code === 'ENOTOPEN' ||
+      (err.message && /authentication failed|login failed|token.*invalid|invalid.*token/i.test(err.message));
+    if (isAuthErr) {
+      // Expired token or stale pool — clear everything and retry once with a fresh token.
+      console.warn('[db] auth/connection error, clearing token cache and reconnecting…', err.message);
+      _cachedToken = null;
+      _tokenExpiry  = null;
       _pool = null;
       _poolToken = null;
       const pool = await getPool(true);

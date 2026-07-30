@@ -71,6 +71,7 @@ module.exports = async function sfCases(req, res) {
         subject:     r.subject,
         type:        r.case_type || 'Other',
         status:      r.status,
+        isClosed:    r.is_closed    === 'True' || r.is_closed    === true,
         isEscalated: r.is_escalated === 'True' || r.is_escalated === true,
         isChargeable:r.is_chargeable === 'True' || r.is_chargeable === true,
         createdDate: r.created_date,

@@ -35,9 +35,11 @@ module.exports = async function sfOpportunities(req, res) {
 
     if (!rows.length) return res.json({ matched: true, summary: null, opportunities: [] });
 
-    const open = rows.filter(r => r.IsClosed === 'false' || r.IsClosed === false);
-    const won  = rows.filter(r => r.IsWon   === 'true'  || r.IsWon   === true);
-    const lost = rows.filter(r => (r.IsClosed === 'true' || r.IsClosed === true) && !(r.IsWon === 'true' || r.IsWon === true));
+    const isClosed = r => r.IsClosed === 'true' || r.IsClosed === true || r.IsClosed === 1;
+    const isWon    = r => r.IsWon   === 'true' || r.IsWon   === true  || r.IsWon   === 1;
+    const open = rows.filter(r => !isClosed(r) && !isWon(r));
+    const won  = rows.filter(r => isWon(r));
+    const lost = rows.filter(r => isClosed(r) && !isWon(r));
 
     const pipeline = open.reduce((s, r) => s + (Number(r.amount) || 0), 0);
     const wonVal   = won.reduce((s, r)  => s + (Number(r.amount) || 0), 0);

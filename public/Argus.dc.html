@@ -26,6 +26,7 @@ input{font-family:inherit;}
 .hc-compact-bar{flex:1;height:3px;background:#e6e6e5;border-radius:2px;overflow:hidden;}
 .hc-compact-bar-fill{height:100%;width:60%;background:#288184;border-radius:2px;animation:hcBarSlide 1.5s ease-in-out infinite;}
 .hc-compact-status{display:flex;align-items:center;justify-content:flex-end;gap:5px;flex-wrap:wrap;padding:4px 0 6px;}
+.ep-fullscreen-overlay{position:fixed!important;inset:0!important;width:100vw!important;height:100vh!important;z-index:9999!important;overflow-y:auto!important;margin:0!important;border-radius:0!important;box-sizing:border-box!important;}
 .hc-pill{padding:3px 8px;border-radius:4px;font-size:10px;font-weight:700;white-space:nowrap;}
 .hc-pill-od{background:#fdeee0;color:#c2600f;}
 .hc-pill-ar{background:#fff3e0;color:#e65100;}
@@ -153,8 +154,7 @@ input{font-family:inherit;}
           <div id="epCardHeader" style="display:flex;align-items:center;gap:10px;margin-bottom:10px;cursor:pointer;user-select:none;">
             <span style="font-size:12px;font-weight:700;color:#3c3c3b;letter-spacing:0.04em;text-transform:uppercase;">Engagement Pulse</span>
             <span id="epSubtitle" style="font-size:10px;color:#9d9d9d;flex:1;">Loading...</span>
-            <span id="epBenchNote" style="font-size:10px;color:#9d9d9d;text-align:right;white-space:nowrap;margin-right:6px;"></span>
-            <button id="epFullscreenBtn" title="Full screen" onclick="(function(){var c=document.getElementById('epCard');if(!document.fullscreenElement){c.requestFullscreen&&c.requestFullscreen();}else{document.exitFullscreen&&document.exitFullscreen();}})();" style="background:none;border:1px solid #e6e6e5;border-radius:6px;padding:3px 7px;font-size:13px;color:#9d9d9d;cursor:pointer;flex-shrink:0;line-height:1;">⛶</button>
+            <span id="epBenchNote" style="font-size:10px;color:#9d9d9d;text-align:right;white-space:nowrap;"></span>
             <span id="epCollapseChev" style="font-size:13px;color:#9d9d9d;flex-shrink:0;">▴</span>
           </div>
           <div id="epCardBody">
@@ -208,9 +208,9 @@ input{font-family:inherit;}
             </div>
 
 
-            <!-- Risk summary pills + Renewal timeline (replaces static risk tiles) -->
-            <div id="sfRiskSummaryRow" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:8px;min-height:24px;"></div>
-            <div id="sfTimelineWrap" style="width:100%;margin-bottom:4px;"></div>
+            <!-- Renewal timeline then risk pills below (consistent with other widgets) -->
+            <div id="sfTimelineWrap" style="width:100%;margin-bottom:8px;"></div>
+            <div id="sfRiskSummaryRow" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:4px;min-height:24px;"></div>
           </div>
 
           <!-- Detail View (Drilldown) -->
@@ -274,34 +274,17 @@ input{font-family:inherit;}
             <div id="oppsNoMatch" style="display:none;padding:24px 0;text-align:center;color:#9d9d9d;font-size:13px;">No opportunities found for this account.</div>
             <div id="oppsError"   style="display:none;padding:16px;background:#fff3e0;border-radius:6px;color:#c2600f;font-size:12px;"></div>
             <div id="oppsSummaryView" style="display:none;">
-              <!-- 4 stat tiles -->
-              <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px;">
-                <div class="sfSummaryCard" style="background:#e3f2fd;border-radius:8px;padding:10px 12px;cursor:pointer;" data-opps-filter="open">
-                  <div style="font-size:10px;font-weight:700;color:#1565c0;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;">Open</div>
-                  <div id="oppsOpenCount" style="font-size:22px;font-weight:700;color:#3c3c3b;">—</div>
-                  <div style="font-size:10px;color:#9d9d9d;margin-top:2px;">in progress</div>
-                  <span style="font-size:11px;color:#9d9d9d;float:right;margin-top:-14px;">›</span>
-                </div>
-                <div class="sfSummaryCard" style="background:#e8f5e9;border-radius:8px;padding:10px 12px;cursor:pointer;" data-opps-filter="won">
-                  <div style="font-size:10px;font-weight:700;color:#2e7d32;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;">Won</div>
-                  <div id="oppsWonCount" style="font-size:22px;font-weight:700;color:#3c3c3b;">—</div>
-                  <div id="oppsWonVal" style="font-size:10px;color:#9d9d9d;margin-top:2px;"></div>
-                  <div id="oppsWonReasons" style="font-size:9px;color:#9d9d9d;margin-top:3px;line-height:1.4;"></div>
-                  <span style="font-size:11px;color:#9d9d9d;float:right;margin-top:-14px;">›</span>
-                </div>
-                <div class="sfSummaryCard" style="background:#f5f5f5;border-radius:8px;padding:10px 12px;cursor:pointer;" data-opps-filter="lost">
-                  <div style="font-size:10px;font-weight:700;color:#6d6d6c;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;">Lost</div>
-                  <div id="oppsLostCount" style="font-size:22px;font-weight:700;color:#3c3c3b;">—</div>
-                  <div style="font-size:10px;color:#9d9d9d;margin-top:2px;">closed lost</div>
-                  <div id="oppsLostReasons" style="font-size:9px;color:#9d9d9d;margin-top:3px;line-height:1.4;"></div>
-                  <span style="font-size:11px;color:#9d9d9d;float:right;margin-top:-14px;">›</span>
-                </div>
-                <div class="sfSummaryCard" style="background:#f3e5f5;border-radius:8px;padding:10px 12px;cursor:pointer;" data-opps-filter="all">
-                  <div style="font-size:10px;font-weight:700;color:#6a1b9a;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;">Pipeline</div>
-                  <div id="oppsPipeline" style="font-size:18px;font-weight:700;color:#3c3c3b;">—</div>
-                  <div style="font-size:10px;color:#9d9d9d;margin-top:2px;">open value</div>
-                  <span style="font-size:11px;color:#9d9d9d;float:right;margin-top:-14px;">›</span>
-                </div>
+              <!-- Hidden spans kept for JS compat -->
+              <span id="oppsWonReasons" style="display:none;"></span>
+              <span id="oppsLostReasons" style="display:none;"></span>
+              <!-- Backward timeline graph (created date, 18m ago → now) -->
+              <div id="oppsTimelineWrap" style="margin-bottom:12px;display:none;"></div>
+              <!-- Compact status pills -->
+              <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:10px;">
+                <span class="hc-pill hc-pill-btn" style="background:#e3f2fd;color:#1565c0;cursor:pointer;" data-opps-filter="open"><span id="oppsOpenCount">—</span> Open</span>
+                <span class="hc-pill hc-pill-btn" style="background:#e8f5e9;color:#2e7d32;cursor:pointer;" data-opps-filter="won"><span id="oppsWonCount">—</span> Won · <span id="oppsWonVal"></span></span>
+                <span class="hc-pill hc-pill-btn" style="background:#f5f5f5;color:#6d6d6c;cursor:pointer;" data-opps-filter="lost"><span id="oppsLostCount">—</span> Lost</span>
+                <span class="hc-pill hc-pill-btn" style="background:#f3e5f5;color:#6a1b9a;cursor:pointer;" data-opps-filter="all"><span id="oppsPipeline">—</span> pipeline</span>
               </div>
               <!-- Stage breakdown pills -->
               <div id="oppsStageBar" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;"></div>
@@ -350,33 +333,14 @@ input{font-family:inherit;}
             <div id="casesError"   style="display:none;padding:16px;background:#fff3e0;border-radius:6px;color:#c2600f;font-size:12px;"></div>
             <div id="casesSummaryView" style="display:none;">
               <!-- Timeline graph -->
-              <div id="casesTimelineWrap" style="width:100%;margin-bottom:12px;"></div>
-              <!-- 4 stat tiles -->
-              <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px;">
-                <div id="casesOpenTile"  class="sfSummaryCard" style="background:#fff3e0;border-radius:8px;padding:10px 12px;cursor:pointer;" data-cases-filter="open">
-                  <div style="font-size:10px;font-weight:700;color:#e65100;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;">Open</div>
-                  <div id="casesOpenCount" style="font-size:22px;font-weight:700;color:#3c3c3b;">—</div>
-                  <div style="font-size:10px;color:#9d9d9d;margin-top:2px;">active cases</div>
-                  <span style="font-size:11px;color:#9d9d9d;float:right;margin-top:-14px;">›</span>
-                </div>
-                <div id="casesEscTile" class="sfSummaryCard" style="background:#fce4ec;border-radius:8px;padding:10px 12px;cursor:pointer;" data-cases-filter="escalated">
-                  <div style="font-size:10px;font-weight:700;color:#c62828;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;">Escalated</div>
-                  <div id="casesEscCount" style="font-size:22px;font-weight:700;color:#3c3c3b;">—</div>
-                  <div style="font-size:10px;color:#9d9d9d;margin-top:2px;">flagged</div>
-                  <span style="font-size:11px;color:#9d9d9d;float:right;margin-top:-14px;">›</span>
-                </div>
-                <div id="casesClosedTile" class="sfSummaryCard" style="background:#e8f5e9;border-radius:8px;padding:10px 12px;cursor:pointer;" data-cases-filter="closed">
-                  <div style="font-size:10px;font-weight:700;color:#2e7d32;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;">Delivered</div>
-                  <div id="casesClosedCount" style="font-size:22px;font-weight:700;color:#3c3c3b;">—</div>
-                  <div style="font-size:10px;color:#9d9d9d;margin-top:2px;">closed cases</div>
-                  <span style="font-size:11px;color:#9d9d9d;float:right;margin-top:-14px;">›</span>
-                </div>
-                <div class="sfSummaryCard" style="background:#f3f3f2;border-radius:8px;padding:10px 12px;cursor:pointer;" data-cases-filter="all">
-                  <div style="font-size:10px;font-weight:700;color:#6d6d6c;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;">Total</div>
-                  <div id="casesTotalCount" style="font-size:22px;font-weight:700;color:#3c3c3b;">—</div>
-                  <div id="casesAvgHours" style="font-size:10px;color:#9d9d9d;margin-top:2px;"></div>
-                  <span style="font-size:11px;color:#9d9d9d;float:right;margin-top:-14px;">›</span>
-                </div>
+              <div id="casesTimelineWrap" style="width:100%;margin-bottom:12px;display:none;"></div>
+              <!-- Compact status pills (replaces large tile grid) -->
+              <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:10px;">
+                <span class="hc-pill hc-pill-btn" style="background:#fff3e0;color:#e65100;cursor:pointer;" data-cases-filter="open"><span id="casesOpenCount">—</span> Open</span>
+                <span class="hc-pill hc-pill-btn" style="background:#fdeee0;color:#c2600f;cursor:pointer;" data-cases-filter="escalated"><span id="casesEscCount">—</span> Escalated</span>
+                <span class="hc-pill hc-pill-btn" style="background:#e8f5e9;color:#2e7d32;cursor:pointer;" data-cases-filter="closed"><span id="casesClosedCount">—</span> Delivered</span>
+                <span class="hc-pill hc-pill-btn" style="background:#f3f3f2;color:#6d6d6c;cursor:pointer;" data-cases-filter="all"><span id="casesTotalCount">—</span> Total</span>
+                <span id="casesAvgHours" style="font-size:10px;color:#9d9d9d;"></span>
               </div>
               <!-- Type breakdown pills -->
               <div id="casesTypeBar" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;"></div>
@@ -438,32 +402,17 @@ input{font-family:inherit;}
           <!-- Summary view -->
           <div id="zdSummaryView" style="display:none;">
               <!-- Timeline graph -->
-              <div id="zdTimelineWrap" style="width:100%;margin-bottom:12px;"></div>
-            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px;">
-              <div id="zdOpenTile" title="Click to view open tickets" style="background:#fff3e0;border-radius:8px;padding:12px;cursor:pointer;border:1px solid #ffe0b2;position:relative;">
-                <div style="font-size:11px;font-weight:700;color:#c2600f;text-transform:uppercase;margin-bottom:4px;">Open</div>
-                <div style="font-size:16px;font-weight:700;color:#e65100;" id="zdOpenCount">0</div>
-                <div style="font-size:16px;font-weight:700;color:#e65100;margin-top:4px;" id="zdOpenPct">—</div>
-                <span class="drill-arrow" style="position:absolute;top:50%;right:10px;transform:translateY(-50%);font-size:11px;color:#3c3c3b;opacity:0.35;pointer-events:none;line-height:1;">▼</span>
-              </div>
-              <div id="zdPendingTile" title="Click to view pending tickets" style="background:#fff8e1;border-radius:8px;padding:12px;cursor:pointer;border:1px solid #fff176;position:relative;">
-                <div style="font-size:11px;font-weight:700;color:#f57f17;text-transform:uppercase;margin-bottom:4px;">Pending</div>
-                <div style="font-size:16px;font-weight:700;color:#f9a825;" id="zdPendingCount">0</div>
-                <div style="font-size:16px;font-weight:700;color:#f9a825;margin-top:4px;" id="zdPendingPct">—</div>
-                <span class="drill-arrow" style="position:absolute;top:50%;right:10px;transform:translateY(-50%);font-size:11px;color:#3c3c3b;opacity:0.35;pointer-events:none;line-height:1;">▼</span>
-              </div>
-              <div id="zdSolvedTile" title="Click to view solved tickets" style="background:#e8f5e9;border-radius:8px;padding:12px;cursor:pointer;border:1px solid #c8e6c9;position:relative;">
-                <div style="font-size:11px;font-weight:700;color:#2e7d32;text-transform:uppercase;margin-bottom:4px;">Solved</div>
-                <div style="font-size:16px;font-weight:700;color:#4caf50;" id="zdSolvedCount">0</div>
-                <div style="font-size:16px;font-weight:700;color:#4caf50;margin-top:4px;" id="zdSolvedPct">—</div>
-                <span class="drill-arrow" style="position:absolute;top:50%;right:10px;transform:translateY(-50%);font-size:11px;color:#3c3c3b;opacity:0.35;pointer-events:none;line-height:1;">▼</span>
-              </div>
-              <div id="zdClosedTile" title="Click to view closed tickets" style="background:#f7f7f6;border-radius:8px;padding:12px;cursor:pointer;border:1px solid #e6e6e5;position:relative;">
-                <div style="font-size:11px;font-weight:700;color:#6d6d6c;text-transform:uppercase;margin-bottom:4px;">Closed</div>
-                <div style="font-size:16px;font-weight:700;color:#6d6d6c;" id="zdClosedCount">0</div>
-                <div style="font-size:16px;font-weight:700;color:#6d6d6c;margin-top:4px;" id="zdClosedPct">—</div>
-                <span class="drill-arrow" style="position:absolute;top:50%;right:10px;transform:translateY(-50%);font-size:11px;color:#3c3c3b;opacity:0.35;pointer-events:none;line-height:1;">▼</span>
-              </div>
+              <div id="zdTimelineWrap" style="width:100%;margin-bottom:12px;display:none;"></div>
+            <!-- Compact status pills -->
+            <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:12px;">
+              <span class="hc-pill hc-pill-btn hc-pill-od" id="zdOpenTile"><span id="zdOpenCount">0</span> Open</span>
+              <span class="hc-pill hc-pill-btn hc-pill-ar" id="zdPendingTile"><span id="zdPendingCount">0</span> Pending</span>
+              <span class="hc-pill hc-pill-btn hc-pill-ok" id="zdSolvedTile"><span id="zdSolvedCount">0</span> Solved</span>
+              <span class="hc-pill hc-pill-btn hc-pill-grey" id="zdClosedTile"><span id="zdClosedCount">0</span> Closed</span>
+              <span id="zdOpenPct" style="display:none;"></span>
+              <span id="zdPendingPct" style="display:none;"></span>
+              <span id="zdSolvedPct" style="display:none;"></span>
+              <span id="zdClosedPct" style="display:none;"></span>
             </div>
 
             <!-- Resolution stats -->
@@ -542,40 +491,22 @@ input{font-family:inherit;}
 
           <div id="pbSummaryView" style="display:none;">
               <!-- Timeline graph -->
-              <div id="pbTimelineWrap" style="width:100%;margin-bottom:12px;"></div>
+              <div id="pbTimelineWrap" style="width:100%;margin-bottom:12px;display:none;"></div>
             <!-- Company profile bar — populated by JS when data loads -->
             <div id="pbCompanyProfile" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 12px;background:#f7f7f6;border-radius:8px;margin-bottom:12px;font-size:12px;"></div>
-            <!-- Stat tiles — click Delivered / In Pipeline / Unlinked to drilldown -->
-            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px;">
-              <!-- Total Notes — clickable drilldown -->
-              <div style="background:#f0e8f8;border-radius:8px;padding:12px;border:1px solid #dcc8f0;cursor:pointer;user-select:none;position:relative;" id="pbTile-total">
-                <div style="font-size:10px;font-weight:700;color:#5a1f8a;text-transform:uppercase;margin-bottom:4px;">Total Notes <span id="pbChev-total" style="opacity:0.6;">▾</span></div>
-                <div style="font-size:22px;font-weight:700;color:#7030a0;" id="pbTotalNotes">—</div>
-                <div style="font-size:10px;color:#9d9d9d;margin-top:2px;" id="pbTotalFeatures">— features</div>
-                <div style="font-size:9px;color:#b0a0c0;margin-top:3px;">excl. archived</div>
-                <span class="drill-arrow" style="position:absolute;top:50%;right:10px;transform:translateY(-50%);font-size:11px;color:#3c3c3b;opacity:0.35;pointer-events:none;line-height:1;">▼</span>
-              </div>
-              <!-- Delivered -->
-              <div style="background:#e6faf4;border-radius:8px;padding:12px;border:1px solid #b3efd8;cursor:pointer;user-select:none;position:relative;" id="pbTile-delivered">
-                <div style="font-size:10px;font-weight:700;color:#00664f;text-transform:uppercase;margin-bottom:4px;">Delivered <span id="pbChev-delivered" style="opacity:0.6;">▾</span></div>
-                <div style="font-size:22px;font-weight:700;color:#00966b;" id="pbDeliveredCount">—</div>
-                <div style="font-size:10px;color:#9d9d9d;margin-top:2px;" id="pbDeliveredFeatures">— features</div>
-                <span class="drill-arrow" style="position:absolute;top:50%;right:10px;transform:translateY(-50%);font-size:11px;color:#3c3c3b;opacity:0.35;pointer-events:none;line-height:1;">▼</span>
-              </div>
-              <!-- In Progress (pipeline + review combined) -->
-              <div style="background:#fff8e1;border-radius:8px;padding:12px;border:1px solid #ffe082;cursor:pointer;user-select:none;position:relative;" id="pbTile-pipeline">
-                <div style="font-size:10px;font-weight:700;color:#7a5200;text-transform:uppercase;margin-bottom:4px;">In Progress <span id="pbChev-pipeline" style="opacity:0.6;">▾</span></div>
-                <div style="font-size:22px;font-weight:700;color:#b89400;" id="pbPipelineCount">—</div>
-                <div style="font-size:10px;color:#9d9d9d;margin-top:2px;" id="pbPipelineFeatures">— features</div>
-                <span class="drill-arrow" style="position:absolute;top:50%;right:10px;transform:translateY(-50%);font-size:11px;color:#3c3c3b;opacity:0.35;pointer-events:none;line-height:1;">▼</span>
-              </div>
-              <!-- Unlinked Notes -->
-              <div style="background:#f7f7f6;border-radius:8px;padding:12px;border:1px solid #e6e6e5;cursor:pointer;user-select:none;position:relative;" id="pbTile-unlinked">
-                <div style="font-size:10px;font-weight:700;color:#3c3c3b;text-transform:uppercase;margin-bottom:4px;">Unlinked Notes <span id="pbChev-unlinked" style="opacity:0.6;">▾</span></div>
-                <div style="font-size:22px;font-weight:700;color:#6d6d6c;" id="pbUnlinkedCount">—</div>
-                <div style="font-size:10px;color:#9d9d9d;margin-top:2px;">no feature link</div>
-                <span class="drill-arrow" style="position:absolute;top:50%;right:10px;transform:translateY(-50%);font-size:11px;color:#3c3c3b;opacity:0.35;pointer-events:none;line-height:1;">▼</span>
-              </div>
+            <!-- Compact status pills -->
+            <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:12px;">
+              <span class="hc-pill hc-pill-btn hc-pill-pb" id="pbTile-total"><span id="pbTotalNotes">—</span> Notes</span>
+              <span class="hc-pill hc-pill-btn hc-pill-ok" id="pbTile-delivered"><span id="pbDeliveredCount">—</span> Delivered</span>
+              <span class="hc-pill hc-pill-btn hc-pill-ar" id="pbTile-pipeline"><span id="pbPipelineCount">—</span> In Pipeline</span>
+              <span class="hc-pill hc-pill-btn hc-pill-grey" id="pbTile-unlinked"><span id="pbUnlinkedCount">—</span> Unlinked</span>
+              <span id="pbTotalFeatures" style="display:none;"></span>
+              <span id="pbDeliveredFeatures" style="display:none;"></span>
+              <span id="pbPipelineFeatures" style="display:none;"></span>
+              <span id="pbChev-total" style="display:none;"></span>
+              <span id="pbChev-delivered" style="display:none;"></span>
+              <span id="pbChev-pipeline" style="display:none;"></span>
+              <span id="pbChev-unlinked" style="display:none;"></span>
             </div>
 
             <!-- Drilldown panel — expands below tiles when a tile is clicked -->
@@ -1538,13 +1469,18 @@ window.__renderWidgetTimeline = function(opts) {
   // opts: {container, values, months, color, nullBg, selectedMonth, onMonthClick}
   var values  = opts.values  || [];
   var months  = opts.months  || [];
-  var color   = opts.color   || '#c62828';
-  var nullBg  = opts.nullBg  || '#f5f5f5';
-  var selMo   = opts.selectedMonth || null;
-  var onClk   = opts.onMonthClick  || function(){};
+  var color    = opts.color    || '#c62828';
+  var nullBg   = opts.nullBg   || '#f5f5f5';
+  var selMo    = opts.selectedMonth || null;
+  var onClk    = opts.onMonthClick  || function(){};
+  var segments = opts.segments || null;  // optional fn(monthKey) → [{value,color}, ...]
   var container = opts.container;
 
-  var W      = Math.max(container.offsetWidth || 0, 400);
+  // Use parent width — 0 when card is collapsed (display:none ancestor), real width when visible.
+  // If 0, skip render entirely; the card expand handler will call rerender() at correct size.
+  var parentW = container.parentElement ? (container.parentElement.clientWidth || container.parentElement.offsetWidth || 0) : 0;
+  if (!parentW) return;
+  var W      = Math.max(parentW, 400);
   var ROW_H  = 64;
   var AX_H   = 22;
   var TOTAL  = ROW_H + AX_H;
@@ -1605,9 +1541,23 @@ window.__renderWidgetTimeline = function(opts) {
     if (!isNull && v > 0 && maxV > 0) {
       var barH = Math.max(4, Math.round((v/maxV)*BAR_MAX));
       var barY = ROW_H - barH;
-      var bar  = s2('rect', { x:colX+1, y:barY, width:BAR_W, height:barH, fill:color, rx:2,
-        opacity: dimmed ? 0.25 : 0.9 });
-      svg.appendChild(bar);
+      if (segments && col.key && col.key !== 'pre') {
+        // ── Stacked color bar ─────────────────────────────────────────────────
+        var segs  = segments(col.key);
+        var total = segs.reduce(function(a,s){ return a+s.value; }, 0) || 1;
+        var stackY = ROW_H;
+        segs.forEach(function(seg) {
+          if (!seg.value) return;
+          var segH = Math.max(1, Math.round((seg.value/total)*barH));
+          stackY -= segH;
+          svg.appendChild(s2('rect', { x:colX+1, y:stackY, width:BAR_W, height:segH,
+            fill:seg.color, rx:0, opacity: dimmed ? 0.25 : 0.9 }));
+        });
+      } else {
+        // ── Single colour bar ─────────────────────────────────────────────────
+        svg.appendChild(s2('rect', { x:colX+1, y:barY, width:BAR_W, height:barH, fill:color, rx:2,
+          opacity: dimmed ? 0.25 : 0.9 }));
+      }
       var countLbl = v >= 1000 ? (v/1000).toFixed(1)+'k' : String(v);
       var lblY     = barH >= 14 ? barY + 9 : barY - 2;
       svg.appendChild(s2('text', { x:mid, y:lblY, 'text-anchor':'middle', 'font-size':8,
@@ -1636,6 +1586,55 @@ window.__renderWidgetTimeline = function(opts) {
 
   container.innerHTML = '';
   container.appendChild(svg);
+  container.style.display = 'block';
+};
+
+// ── Engagement Pulse fullscreen — dedicated fixed mount div at body level ──────
+window.__epToggleFullscreen = function() {
+  var card = document.getElementById('epCard');
+  var btn  = document.getElementById('epFullscreenBtn');
+  if (!card || !btn) return;
+
+  // Get-or-create the fixed mount (direct child of body → no stacking-context issues)
+  var mount = document.getElementById('epFsMount');
+  if (!mount) {
+    mount = document.createElement('div');
+    mount.id = 'epFsMount';
+    mount.style.cssText = 'display:none;position:fixed;inset:0;z-index:9999;background:#fff;overflow-y:auto;padding:20px;box-sizing:border-box;';
+    document.body.appendChild(mount);
+  }
+
+  if (mount.contains(card)) {
+    // ── EXIT fullscreen ────────────────────────────────────────────────────────
+    var ph = document.getElementById('epFsPlaceholder');
+    if (ph && ph.parentNode) {
+      ph.parentNode.insertBefore(card, ph);
+      ph.parentNode.removeChild(ph);
+    }
+    card.style.width = '';
+    mount.style.display = 'none';
+    document.body.style.overflow = '';
+    btn.title = 'Full screen';
+    btn.textContent = '⛶';
+  } else {
+    // ── ENTER fullscreen ───────────────────────────────────────────────────────
+    // Insert invisible placeholder to remember card's original DOM position
+    var ph2 = document.createElement('div');
+    ph2.id = 'epFsPlaceholder';
+    ph2.style.display = 'none';
+    card.parentNode.insertBefore(ph2, card);
+    mount.appendChild(card);
+    card.style.width = '100%';
+    mount.style.display = 'block';
+    // Force card body open (collapse handler may fire from the header click bubble)
+    var epBodyEl = document.getElementById('epCardBody');
+    var epHdrEl  = document.getElementById('epCardHeader');
+    if (epBodyEl) epBodyEl.style.display = 'block';
+    if (epHdrEl)  epHdrEl._collapsed = false;
+    document.body.style.overflow = 'hidden';
+    btn.title = 'Exit full screen';
+    btn.textContent = '✕';
+  }
 };
 
 // ── Engagement Pulse SVG renderer ─────────────────────────────────────────────
@@ -1654,8 +1653,8 @@ window.__epRender = function(container, data) {
   const SUB_H      = 68;   // renewal calendar: 48px bar area + 20px month/year labels
   const SEP_H      = 6;    // gap between calendar and opps row
   const ROWS_Y     = PAD_T + SUB_H + SEP_H;
-  const OPPS_AX_H  = 20;   // month axis below opps row
-  const SEP_OPPS   = 4;    // gap between opps axis and cases row
+  const OPPS_AX_H  = 24;   // month axis below opps row
+  const SEP_OPPS   = 28;   // gap between opps axis and cases row (space for section labels)
   const N_ROWS     = 5;
   const AX_H       = 18;
   const TOTAL      = ROWS_Y + N_ROWS*(ROW_H+GAP) - GAP + OPPS_AX_H + SEP_OPPS + 6 + AX_H + 4;
@@ -1668,9 +1667,9 @@ window.__epRender = function(container, data) {
   const ROWS = [
     { key:'opportunities',label:'Opportunities', source:'Salesforce',   color:'#e65100', nullBg:'#f5f5f5', positive:true,  bench:(data.benchmark||{}).opps    || {p25:0,p50:0.3,p75:1,p90:3}    },
     { key:'cases',        label:'Cases',    source:'Salesforce',   color:'#c62828', nullBg:'#f5f5f5', positive:false, bench:(data.benchmark||{}).cases   || {p25:0,p50:0.5,p75:1.5,p90:4}  },
-    { key:'support',      label:'Tickets',  source:'Zendesk',      color:'#d84315', nullBg:'#f5f5f5', positive:false, bench:(data.benchmark||{}).support || {p25:0,p50:1,p75:3,p90:8}      },
-    { key:'usage',        label:'Usage',    source:'PostHog',      color:'#1565c0', nullBg:'#dce8f7', positive:true,  bench:(data.benchmark||{}).usage   || {p25:2,p50:8,p75:22,p90:55}    },
-    { key:'product',      label:'Notes',    source:'ProductBoard', color:'#6a1b9a', nullBg:'#f5f5f5', positive:true,  bench:(data.benchmark||{}).product || {p25:0,p50:0.3,p75:1.2,p90:4}  },
+    { key:'support',      label:'Tickets',  source:'Zendesk',      color:'#c2600f', nullBg:'#f5f5f5', positive:false, bench:(data.benchmark||{}).support || {p25:0,p50:1,p75:3,p90:8}      },
+    { key:'usage',        label:'Usage',    source:'PostHog',      color:'#1565c0', nullBg:'#f5f5f5', positive:true,  bench:(data.benchmark||{}).usage   || {p25:2,p50:8,p75:22,p90:55}    },
+    { key:'product',      label:'Notes',    source:'ProductBoard', color:'#7030a0', nullBg:'#f5f5f5', positive:true,  bench:(data.benchmark||{}).product || {p25:0,p50:0.3,p75:1.2,p90:4}  },
   ];
 
   function s(tag, a, txt) {
@@ -2042,25 +2041,9 @@ window.__epRender = function(container, data) {
     }, col.yearLbl));
   });
 
-  // ── Directional section divider ──────────────────────────────────────────────
+  // ── Section divider — white space only, no labels ────────────────────────────
   var divY = ROWS_Y + ROW_H + OPPS_AX_H + 2;
-  svg.appendChild(s('line', { x1:LBL_W, y1:divY, x2:LBL_W+CW, y2:divY, stroke:'#d8d8d7', 'stroke-width':1 }));
-  // Opportunity icon path (inlined at 14px, forward-facing)
-  var OPP_PATH = 'm10.26 10.39c0.14 0.01 0.28 0.07 0.42 0.22l3.51 3.52h-1.43zm-3.27-2.77c0.13-0.01 0.28 0.04 0.43 0.12 0.60 0.31 0.87 0.53 1.00 0.79 0.16 0.30 0.19 0.80 0.19 1.67c0 0.05 0 0.09 0.01 0.13l-1.20 0.69c-0.40 0.23-0.67 0.33-1.10 0.35 0.15-1.18 0.22-2.08 0.28-3.24 0.02-0.34 0.18-0.49 0.39-0.50zm2.25-4.93 0.64 0.02c-0.01 0.01-0.02 0.03-0.03 0.05-0.24 0.52-0.56 0.80-0.92 0.98 0.16-0.27 0.27-0.61 0.30-1.05zm3.30-0.87c-0.09 0-0.17 0.05-0.17 0.12v0.04l-4.01 0.10c-0.45 0.01-0.43 0.56 0 0.57l0.40 0.01c-0.11 0.56-0.37 0.84-0.68 1.08c-0.18 0.13-0.56 0.33-0.82 0.34l-1.24 0.02c-0.27 0.01-0.48 0.24-0.45 0.51 0.23 1.74 0.19 3.93-0.18 6.67c0 0.03 0 0.05 0 0.08h-0.24c-0.75 0-0.94 0.15-1.52 0.71l-2.37 2.26c-0.16 0.15-0.10 0.55 0.18 0.55h13.90c0.21 0-0.31 0.34 0.10 0.55l-4.41-4.42c-0.23-0.23-0.50-0.32-0.79-0.31c-0.24 0.01-0.50 0.09-0.77 0.22c0-0.68-0.03-1.22-0.28-1.71c-0.26-0.51-0.77-0.86-1.50-1.21l-0.06-1.95c1.34-0.15 2.45-0.95 2.79-1.87c0.05-0.14 0.04-0.26-0.01-0.35l1.94 0.06v0.04c0 0.07 0.07 0.12 0.17 0.12s0.17-0.05 0.17-0.12v-0.89c0-0.07-0.07-0.12-0.17-0.12z';
-  // "Looking ahead →" label + icon (left side, near label column)
-  var aheadG = s('g', { transform:'translate('+(LBL_W+4)+','+(divY-9)+') scale(0.85)' });
-  var aheadPath = s('path', { d:OPP_PATH, fill:'#9d9d9d' });
-  aheadG.appendChild(aheadPath);
-  svg.appendChild(aheadG);
-  svg.appendChild(s('text', { x:LBL_W+22, y:divY-3, 'font-size':8, fill:'#9d9d9d',
-    'font-family':'Lato,Helvetica Neue,Arial,sans-serif' }, 'Looking ahead'));
-  // "← Looking back" label + icon (right side, mirrored)
-  var backG = s('g', { transform:'translate('+(LBL_W+CW-2)+','+(divY+14)+') scale(-0.85,0.85)' });
-  var backPath = s('path', { d:OPP_PATH, fill:'#9d9d9d' });
-  backG.appendChild(backPath);
-  svg.appendChild(backG);
-  svg.appendChild(s('text', { x:LBL_W+CW-24, y:divY+11, 'text-anchor':'end', 'font-size':8, fill:'#9d9d9d',
-    'font-family':'Lato,Helvetica Neue,Arial,sans-serif' }, 'Looking back'));
+  svg.appendChild(s('line', { x1:LBL_W, y1:divY, x2:LBL_W+CW, y2:divY, stroke:'#e8e8e7', 'stroke-width':1 }));
 
   // ── Bottom month axis (backward grid: 18m- · 18 past months · now) ───────────
   var axY = ROWS_Y + N_ROWS*(ROW_H+GAP) - GAP + OPPS_AX_H + SEP_OPPS + 6;
@@ -2241,25 +2224,29 @@ class Component extends DCLogic {
 
   setupCardCollapses(){
     var cards = [
-      { hdr: 'sfCardHeader',   body: 'sfCardBody',    chev: 'sfCollapseChev' },
-      { hdr: 'casesCardHeader',body: 'casesCardBody', chev: 'casesCollapseChev' },
-      { hdr: 'oppsCardHeader', body: 'oppsCardBody',  chev: 'oppsCollapseChev' },
-      { hdr: 'zdCardHeader',   body: 'zdCardBody',    chev: 'zdCollapseChev' },
-      { hdr: 'pbCardHeader',   body: 'pbCardBody',    chev: 'pbCollapseChev' },
-      { hdr: 'phCardHeader',   body: 'phCardBody',    chev: 'phCollapseChev' },
+      { hdr: 'sfCardHeader',   body: 'sfCardBody',    chev: 'sfCollapseChev',    compact: 'sfCompact'    },
+      { hdr: 'casesCardHeader',body: 'casesCardBody', chev: 'casesCollapseChev', compact: 'casesCompact', rerender: function(){ window.__renderCasesGraph && window.__renderCasesGraph(); } },
+      { hdr: 'oppsCardHeader', body: 'oppsCardBody',  chev: 'oppsCollapseChev',  compact: 'oppsCompact',  rerender: function(){ window.__renderOppsGraph  && window.__renderOppsGraph();  } },
+      { hdr: 'zdCardHeader',   body: 'zdCardBody',    chev: 'zdCollapseChev',    compact: 'zdCompact',    rerender: function(){ window.__renderZdGraph    && window.__renderZdGraph();    } },
+      { hdr: 'pbCardHeader',   body: 'pbCardBody',    chev: 'pbCollapseChev',    compact: 'pbCompact',    rerender: function(){ window.__renderPbGraph    && window.__renderPbGraph();    } },
+      { hdr: 'phCardHeader',   body: 'phCardBody',    chev: 'phCollapseChev',    compact: 'phCompact'    },
     ];
     cards.forEach(function(c) {
-      var hdr  = document.getElementById(c.hdr);
-      var body = document.getElementById(c.body);
-      var chev = document.getElementById(c.chev);
+      var hdr     = document.getElementById(c.hdr);
+      var body    = document.getElementById(c.body);
+      var chev    = document.getElementById(c.chev);
+      var compact = c.compact ? document.getElementById(c.compact) : null;
       if (!hdr || !body) return;
       hdr._collapsed = c.startOpen ? false : true;
       body.style.display = c.startOpen ? 'block' : 'none';
       if (chev) chev.textContent = c.startOpen ? '▴' : '▾';
+      if (compact) compact.style.display = hdr._collapsed ? 'block' : 'none';
       hdr.onclick      = function() {
         hdr._collapsed = !hdr._collapsed;
         body.style.display = hdr._collapsed ? 'none' : 'block';
         if (chev) chev.textContent = hdr._collapsed ? '▾' : '▴';
+        if (compact) compact.style.display = hdr._collapsed ? 'block' : 'none';
+        if (!hdr._collapsed && c.rerender) c.rerender();
         updateCollapseAllBtn();
       };
       hdr.onmouseenter = function() { this.style.opacity = '0.85'; };
@@ -2287,13 +2274,16 @@ class Component extends DCLogic {
         });
         var target = anyExpanded; // true = collapse all, false = expand all
         cards.forEach(function(c) {
-          var hdr  = document.getElementById(c.hdr);
-          var body = document.getElementById(c.body);
-          var chev = document.getElementById(c.chev);
+          var hdr     = document.getElementById(c.hdr);
+          var body    = document.getElementById(c.body);
+          var chev    = document.getElementById(c.chev);
+          var compact = c.compact ? document.getElementById(c.compact) : null;
           if (!hdr || !body) return;
           hdr._collapsed = target;
           body.style.display = target ? 'none' : 'block';
           if (chev) chev.textContent = target ? '▾' : '▴';
+          if (compact) compact.style.display = target ? 'block' : 'none';
+          if (!target && c.rerender) c.rerender();
         });
         btn.textContent = target ? 'Expand All' : 'Collapse All';
       };
@@ -2523,13 +2513,16 @@ class Component extends DCLogic {
         return;
       }
 
-      const allTickets = (window.__zdTickets || []).filter(t => {
+      const base = window.__zdMo
+        ? (window.__zdTickets || []).filter(t => String(t.createdAt||'').substring(0,7) === window.__zdMo)
+        : (window.__zdTickets || []);
+      const allTickets = base.filter(t => {
         if (status === 'open') return t.status === 'open' || t.status === 'new';
         return t.status === status;
       });
 
       const titleEl = document.getElementById('zdDrilldownTitle');
-      if (titleEl) titleEl.textContent = allTickets.length + ' ' + status + ' ticket' + (allTickets.length !== 1 ? 's' : '');
+      if (titleEl) titleEl.textContent = allTickets.length + ' ' + status + ' ticket' + (allTickets.length !== 1 ? 's' : '') + (window.__zdMo ? ' · ' + window.__zdMo : '');
 
       const priorityColour = { urgent:'#d32f2f', high:'#e65100', normal:'#1565c0', low:'#6d6d6c' };
       const priorityBg     = { urgent:'#fdeee0', high:'#fff3e0', normal:'#e3f2fd', low:'#f7f7f6' };
@@ -2809,39 +2802,59 @@ class Component extends DCLogic {
         })();
         show('zdSummaryView', true);
 
-        // Render backward timeline graph
+        // Render backward timeline graph — defined outside guard so timeline can trigger it later
         var zdWrap = document.getElementById('zdTimelineWrap');
-        if (zdWrap && window.__epLastTimeline) {
-          window.__zdMo = null;
-          var renderZdGraph = function() {
-            window.__renderWidgetTimeline({
-              container: zdWrap,
-              values: window.__epLastTimeline.support,
-              months: window.__epLastTimeline.months,
-              color: '#d84315',
-              nullBg: '#f5f5f5',
-              selectedMonth: window.__zdMo,
-              onMonthClick: function(mo) {
-                window.__zdMo = window.__zdMo === mo ? null : mo;
-                renderZdGraph();
-                if (window.__zdMo) {
-                  var allT = window.__zdTickets || [];
-                  var filtered = allT.filter(function(t) {
-                    var d = t.createdAt ? String(t.createdAt).substring(0,7) : '';
-                    return d === window.__zdMo;
-                  });
-                  // Show drilldown with all statuses for the selected month
-                  window.__zdTickets_filtered = filtered;
-                  window.__zdShowMonthDrilldown(window.__zdMo, filtered);
-                } else {
-                  show('zdDetailView', false);
-                  window.__zdActiveTile = null;
-                }
+        window.__zdMo = null;
+        var renderZdGraph = function() {
+          if (!zdWrap || !window.__epLastTimeline) return;
+          window.__renderWidgetTimeline({
+            container: zdWrap,
+            values: window.__epLastTimeline.support,
+            months: window.__epLastTimeline.months,
+            color: '#c2600f',
+            nullBg: '#f5f5f5',
+            selectedMonth: window.__zdMo,
+            segments: function(mo) {
+              var all = window.__zdTickets || [];
+              var solved = 0, closed = 0, pending = 0, open = 0;
+              all.forEach(function(t) {
+                if (String(t.createdAt||'').substring(0,7) !== mo) return;
+                var st = (t.status||'').toLowerCase();
+                if (st === 'solved')        solved++;
+                else if (st === 'closed')   closed++;
+                else if (st === 'pending')  pending++;
+                else                        open++;
+              });
+              return [
+                { value: solved,  color: '#2e7d32' },
+                { value: closed,  color: '#9e9e9e' },
+                { value: pending, color: '#e65100' },
+                { value: open,    color: '#c2600f' },
+              ].filter(function(s){ return s.value > 0; });
+            },
+            onMonthClick: function(mo) {
+              window.__zdMo = window.__zdMo === mo ? null : mo;
+              renderZdGraph();
+              var allT = window.__zdTickets || [];
+              var pool = window.__zdMo
+                ? allT.filter(function(t){ return String(t.createdAt||'').substring(0,7) === window.__zdMo; })
+                : allT;
+              document.getElementById('zdOpenCount').textContent    = pool.filter(function(t){ var st=(t.status||'').toLowerCase(); return st==='open'||st==='new'; }).length;
+              document.getElementById('zdPendingCount').textContent = pool.filter(function(t){ return (t.status||'').toLowerCase()==='pending'; }).length;
+              document.getElementById('zdSolvedCount').textContent  = pool.filter(function(t){ return (t.status||'').toLowerCase()==='solved'; }).length;
+              document.getElementById('zdClosedCount').textContent  = pool.filter(function(t){ return (t.status||'').toLowerCase()==='closed'; }).length;
+              if (window.__zdMo) {
+                window.__zdTickets_filtered = pool;
+                window.__zdShowMonthDrilldown(window.__zdMo, pool);
+              } else {
+                show('zdDetailView', false);
+                window.__zdActiveTile = null;
               }
-            });
-          };
-          renderZdGraph();
-        }
+            }
+          });
+        };
+        window.__renderZdGraph = renderZdGraph;
+        renderZdGraph();
       })
       .catch(() => {
         clearInterval(window.__zdMsgInterval);
@@ -3002,9 +3015,10 @@ class Component extends DCLogic {
           ? `<span style="background:#e6faf4;color:#00664f;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;">Processed</span>`
           : `<span style="background:#f7f7f6;color:#6d6d6c;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;">New</span>`;
 
-        // Filter global note map by bucket, sorted newest first
+        // Filter global note map by bucket (and active month if set), sorted newest first
         const notesForBucket = (bucket) =>
-          _allNotes.filter(n => n.bucket === bucket)
+          _allNotes.filter(n => n.bucket === bucket &&
+            (!window.__pbMo || String(n.createdAt||'').substring(0,7) === window.__pbMo))
                    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
         // Render note rows as table tbodies (note primary, features as expand)
@@ -3186,47 +3200,55 @@ class Component extends DCLogic {
         })();
         show('pbSummaryView', true);
 
-        // Render backward timeline graph
+        // Render backward timeline graph — defined outside guard so timeline can trigger it later
         var pbWrap = document.getElementById('pbTimelineWrap');
-        if (pbWrap && window.__epLastTimeline) {
-          window.__pbMo = null;
-          var renderPbGraph = function() {
-            window.__renderWidgetTimeline({
-              container: pbWrap,
-              values: window.__epLastTimeline.product,
-              months: window.__epLastTimeline.months,
-              color: '#6a1b9a',
-              nullBg: '#f5f5f5',
-              selectedMonth: window.__pbMo,
-              onMonthClick: function(mo) {
-                window.__pbMo = window.__pbMo === mo ? null : mo;
-                renderPbGraph();
-                if (window.__pbMo) {
-                  // Filter notes by month across features and unlinked
-                  var allNotes = [];
-                  var pbDat = window.__pbData;
-                  if (pbDat) {
-                    (pbDat.features || []).forEach(function(f) {
-                      (f.notes || []).forEach(function(n) {
-                        var d = n.createdAt ? String(n.createdAt).substring(0,7) : '';
-                        if (d === window.__pbMo) allNotes.push({ note:n, feature:f.featureName });
-                      });
+        window.__pbMo = null;
+        var renderPbGraph = function() {
+          if (!pbWrap || !window.__epLastTimeline) return;
+          window.__renderWidgetTimeline({
+            container: pbWrap,
+            values: window.__epLastTimeline.product,
+            months: window.__epLastTimeline.months,
+            color: '#7030a0',
+            nullBg: '#f5f5f5',
+            selectedMonth: window.__pbMo,
+            onMonthClick: function(mo) {
+              window.__pbMo = window.__pbMo === mo ? null : mo;
+              renderPbGraph();
+              // Update pill counts for selected month (or restore totals)
+              var moLinked = window.__pbMo
+                ? _allNotes.filter(function(n){ return String(n.createdAt||'').substring(0,7) === window.__pbMo; })
+                : _allNotes;
+              var moUnlinkedLen = window.__pbMo
+                ? (data.unlinkedNotes||[]).filter(function(n){ return String(n.createdAt||'').substring(0,7) === window.__pbMo; }).length
+                : _unlinked;
+              document.getElementById('pbTotalNotes').textContent     = moLinked.length + moUnlinkedLen;
+              document.getElementById('pbDeliveredCount').textContent = moLinked.filter(function(n){ return n.bucket==='delivered'; }).length;
+              document.getElementById('pbPipelineCount').textContent  = moLinked.filter(function(n){ return n.bucket==='pipeline'||n.bucket==='review'; }).length;
+              document.getElementById('pbUnlinkedCount').textContent  = moUnlinkedLen;
+              if (window.__pbMo) {
+                var allNotes = [];
+                var pbDat = window.__pbData;
+                if (pbDat) {
+                  (pbDat.features || []).forEach(function(f) {
+                    (f.notes || []).forEach(function(n) {
+                      if (String(n.createdAt||'').substring(0,7) === window.__pbMo) allNotes.push({ note:n, feature:f.featureName });
                     });
-                    (pbDat.unlinkedNotes || []).forEach(function(n) {
-                      var d = n.createdAt ? String(n.createdAt).substring(0,7) : '';
-                      if (d === window.__pbMo) allNotes.push({ note:n, feature:'(unlinked)' });
-                    });
-                  }
-                  window.__pbShowMonthDrilldown(window.__pbMo, allNotes);
-                } else {
-                  var pbDrill = document.getElementById('pbDrilldown');
-                  if (pbDrill) pbDrill.style.display = 'none';
+                  });
+                  (pbDat.unlinkedNotes || []).forEach(function(n) {
+                    if (String(n.createdAt||'').substring(0,7) === window.__pbMo) allNotes.push({ note:n, feature:'(unlinked)' });
+                  });
                 }
+                window.__pbShowMonthDrilldown(window.__pbMo, allNotes);
+              } else {
+                var pbDrill = document.getElementById('pbDrilldown');
+                if (pbDrill) pbDrill.style.display = 'none';
               }
-            });
-          };
-          renderPbGraph();
-        }
+            }
+          });
+        };
+        window.__renderPbGraph = renderPbGraph;
+        renderPbGraph();
 
         window.__pbShowMonthDrilldown = function(mo, notes) {
           var pbDrill = document.getElementById('pbDrilldown');
@@ -3234,7 +3256,7 @@ class Component extends DCLogic {
           pbDrill.style.display = 'block';
           pbDrill.innerHTML = '<div style="padding:12px 16px;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;gap:12px;">'
             + '<span style="font-size:12px;font-weight:700;color:#3c3c3b;">' + mo + ' — ' + notes.length + ' note' + (notes.length !== 1 ? 's' : '') + '</span>'
-            + '<button onclick="window.__pbMo=null;document.getElementById(\'pbDrilldown\').style.display=\'none\';var w=document.getElementById(\'pbTimelineWrap\');if(w&&window.__epLastTimeline){window.__renderWidgetTimeline({container:w,values:window.__epLastTimeline.product,months:window.__epLastTimeline.months,color:\'#6a1b9a\',nullBg:\'#f5f5f5\',selectedMonth:null,onMonthClick:function(){}});}" style="background:none;border:none;color:#288184;font-size:12px;cursor:pointer;padding:0;">← Clear</button>'
+            + '<button onclick="window.__pbMo=null;document.getElementById(\'pbDrilldown\').style.display=\'none\';window.__renderPbGraph&&window.__renderPbGraph();" style="background:none;border:none;color:#288184;font-size:12px;cursor:pointer;padding:0;">← Clear</button>'
             + '</div>'
             + '<div style="max-height:300px;overflow-y:auto;">'
             + '<table style="width:100%;border-collapse:collapse;font-size:11px;">'
@@ -4916,22 +4938,48 @@ class Component extends DCLogic {
         document.getElementById('casesTotalCount').textContent  = s.total;
         document.getElementById('casesAvgHours').textContent    = s.avgHours ? 'avg ' + s.avgHours + 'h/case' : '';
 
-        // Type pills
-        const typeBar = document.getElementById('casesTypeBar');
-        if (typeBar) {
-          typeBar.innerHTML = s.typeBreakdown.map(t =>
-            `<span class="hc-pill hc-pill-grey" style="cursor:pointer;" data-cases-type="${t.type}">${t.type.replace(/_/g,' ')}&nbsp;<b>${t.cnt}</b></span>`
+        // Type pills — extracted so onMonthClick can refresh them
+        const _casesSelf2 = this;
+        const renderCasesTypeBar = (pool) => {
+          const typeBar = document.getElementById('casesTypeBar');
+          if (!typeBar) return;
+          const typeCounts = {};
+          pool.forEach(c => { const t = c.type||'Other'; typeCounts[t]=(typeCounts[t]||0)+1; });
+          const entries = Object.entries(typeCounts).sort((a,b)=>b[1]-a[1]);
+          typeBar.innerHTML = entries.map(([t,cnt]) =>
+            `<span class="hc-pill hc-pill-grey" style="cursor:pointer;" data-cases-type="${t}">${t.replace(/_/g,' ')}&nbsp;<b>${cnt}</b></span>`
           ).join('');
           typeBar.querySelectorAll('[data-cases-type]').forEach(pill => {
-            pill.onclick = () => this._showCasesDrill(data.cases.filter(c => c.type === pill.dataset.casesType), pill.dataset.casesType.replace(/_/g,' '));
+            pill.onclick = () => {
+              const t = pill.dataset.casesType;
+              if (window.__casesActiveType === t && !window.__casesMo) {
+                window.__casesActiveType = null;
+                typeBar.querySelectorAll('[data-cases-type]').forEach(p => p.style.outline = '');
+                document.getElementById('casesDrilldown').style.display = 'none';
+                window.__casesActiveDrilldown = null;
+                return;
+              }
+              window.__casesActiveType = t;
+              typeBar.querySelectorAll('[data-cases-type]').forEach(p => p.style.outline = '');
+              document.querySelectorAll('[data-cases-filter]').forEach(p => p.style.outline = '');
+              pill.style.outline = '2px solid #288184';
+              window.__casesActiveDrilldown = 'type_' + t;
+              const base = window.__casesMo
+                ? data.cases.filter(c => String(c.createdDate||'').substring(0,7) === window.__casesMo)
+                : data.cases;
+              _casesSelf2._showCasesDrill(base.filter(c => c.type === t),
+                t.replace(/_/g,' ') + (window.__casesMo ? ' · '+window.__casesMo : ''));
+            };
           });
-        }
+        };
+        window.__renderCasesTypeBar = renderCasesTypeBar;
+        renderCasesTypeBar(data.cases);
 
         // Tile click → drilldown (with toggle: re-click collapses)
         document.querySelectorAll('[data-cases-filter]').forEach(tile => {
           tile.onclick = () => {
             const f = tile.dataset.casesFilter;
-            if (window.__casesActiveDrilldown === f) {
+            if (window.__casesActiveDrilldown === f && !window.__casesMo) {
               document.getElementById('casesDrilldown').style.display = 'none';
               window.__casesActiveDrilldown = null;
               document.querySelectorAll('[data-cases-filter]').forEach(t => t.style.outline = '');
@@ -4940,19 +4988,25 @@ class Component extends DCLogic {
             document.querySelectorAll('[data-cases-filter]').forEach(t => t.style.outline = '');
             tile.style.outline = '2px solid #288184';
             window.__casesActiveDrilldown = f;
-            const filtered = f === 'all' ? data.cases
-              : f === 'open'      ? data.cases.filter(c => !c.isClosed && !c.isEscalated)
-              : f === 'escalated' ? data.cases.filter(c => c.isEscalated)
-              : f === 'closed'    ? data.cases.filter(c => c.isClosed)
+            const base = window.__casesMo
+              ? data.cases.filter(c => String(c.createdDate||'').substring(0,7) === window.__casesMo)
               : data.cases;
-            this._showCasesDrill(filtered, f === 'closed' ? 'Delivered Cases' : f.charAt(0).toUpperCase()+f.slice(1)+' Cases');
+            const filtered = f === 'all' ? base
+              : f === 'open'      ? base.filter(c => !c.isClosed && !c.isEscalated)
+              : f === 'escalated' ? base.filter(c => c.isEscalated)
+              : f === 'closed'    ? base.filter(c => c.isClosed)
+              : base;
+            const moLabel = window.__casesMo ? ' · ' + window.__casesMo : '';
+            this._showCasesDrill(filtered, (f === 'closed' ? 'Delivered Cases' : f.charAt(0).toUpperCase()+f.slice(1)+' Cases') + moLabel);
           };
         });
         document.getElementById('casesBackBtn').onclick = () => {
           document.getElementById('casesDrilldown').style.display = 'none';
           window.__casesActiveDrilldown = null;
+          window.__casesActiveType = null;
           window.__casesMo = null;
           document.querySelectorAll('[data-cases-filter]').forEach(t => t.style.outline = '');
+          document.getElementById('casesTypeBar') && document.getElementById('casesTypeBar').querySelectorAll('[data-cases-type]').forEach(t => t.style.outline = '');
           var casesWrap2 = document.getElementById('casesTimelineWrap');
           if (casesWrap2 && window.__epLastTimeline) {
             window.__renderWidgetTimeline({ container:casesWrap2, values:window.__epLastTimeline.cases,
@@ -4966,39 +5020,57 @@ class Component extends DCLogic {
         window.__casesData = data;
         const _casesSelf = this;
 
-        // Render backward timeline graph
+        // Render backward timeline graph — defined outside guard so timeline can trigger it later
         var casesWrap = document.getElementById('casesTimelineWrap');
-        if (casesWrap && window.__epLastTimeline) {
-          window.__casesMo = null;
-          var renderCasesGraph = function() {
-            window.__renderWidgetTimeline({
-              container: casesWrap,
-              values: window.__epLastTimeline.cases,
-              months: window.__epLastTimeline.months,
-              color: '#c62828',
-              nullBg: '#f5f5f5',
-              selectedMonth: window.__casesMo,
-              onMonthClick: function(mo) {
-                window.__casesMo = window.__casesMo === mo ? null : mo;
-                renderCasesGraph();
-                // Filter drilldown by month
-                var base = window.__casesData ? window.__casesData.cases : [];
-                if (window.__casesMo) {
-                  var filtered = base.filter(function(c) {
-                    var d = c.createdDate ? String(c.createdDate).substring(0,7) : '';
-                    return d === window.__casesMo;
-                  });
-                  _casesSelf._showCasesDrill(filtered, window.__casesMo + ' — ' + filtered.length + ' cases');
-                } else {
-                  document.getElementById('casesDrilldown').style.display = 'none';
-                  window.__casesActiveDrilldown = null;
-                  document.querySelectorAll('[data-cases-filter]').forEach(function(t){ t.style.outline = ''; });
-                }
+        window.__casesMo = null;
+        var renderCasesGraph = function() {
+          if (!casesWrap || !window.__epLastTimeline) return;
+          window.__renderWidgetTimeline({
+            container: casesWrap,
+            values: window.__epLastTimeline.cases,
+            months: window.__epLastTimeline.months,
+            color: '#c62828',
+            nullBg: '#f5f5f5',
+            selectedMonth: window.__casesMo,
+            segments: function(mo) {
+              var all = (window.__casesData||{}).cases || [];
+              var closed = 0, esc = 0, open = 0;
+              all.forEach(function(c) {
+                if (String(c.createdDate||'').substring(0,7) !== mo) return;
+                if (c.isClosed)                      closed++;
+                else if (c.isEscalated)              esc++;
+                else                                 open++;
+              });
+              return [
+                { value: closed, color: '#2e7d32' },
+                { value: open,   color: '#e65100' },
+                { value: esc,    color: '#c2600f' },
+              ].filter(function(s){ return s.value > 0; });
+            },
+            onMonthClick: function(mo) {
+              window.__casesMo = window.__casesMo === mo ? null : mo;
+              renderCasesGraph();
+              var allC = window.__casesData ? window.__casesData.cases : [];
+              var pool = window.__casesMo
+                ? allC.filter(function(c){ return String(c.createdDate||'').substring(0,7) === window.__casesMo; })
+                : allC;
+              document.getElementById('casesOpenCount').textContent   = pool.filter(function(c){ return !c.isClosed && !c.isEscalated; }).length;
+              document.getElementById('casesEscCount').textContent    = pool.filter(function(c){ return c.isEscalated; }).length;
+              document.getElementById('casesClosedCount').textContent = pool.filter(function(c){ return c.isClosed; }).length;
+              document.getElementById('casesTotalCount').textContent  = pool.length;
+              window.__renderCasesTypeBar && window.__renderCasesTypeBar(pool);
+              if (window.__casesMo) {
+                _casesSelf._showCasesDrill(pool, window.__casesMo + ' — ' + pool.length + ' case' + (pool.length !== 1 ? 's' : ''));
+              } else {
+                document.getElementById('casesDrilldown').style.display = 'none';
+                window.__casesActiveDrilldown = null;
+                document.querySelectorAll('[data-cases-filter]').forEach(function(t){ t.style.outline = ''; });
               }
-            });
-          };
-          renderCasesGraph();
-        }
+            }
+          });
+        };
+        window.__renderCasesGraph = renderCasesGraph;
+        renderCasesGraph();
 
         window.__showCasesDrillFromCompact = function(filter) {
           window.__hcExpand('cases');
@@ -5097,22 +5169,50 @@ class Component extends DCLogic {
           lostReasonsEl.textContent = entries.map(([st,n])=>st.replace(/Closed ?Lost ?-?\s*/i,'').trim()||st).filter(Boolean).map((st,i,arr)=>st + ' ×' + entries[i][1]).join(', ');
         }
 
-        // Stage pills (open only)
-        const stageBar = document.getElementById('oppsStageBar');
-        if (stageBar) {
-          stageBar.innerHTML = (s.stageBreakdown||[]).map(st =>
-            `<span class="hc-pill hc-pill-grey" style="cursor:pointer;" data-opps-stage="${st.stage}">${st.stage}&nbsp;<b>${st.cnt}</b></span>`
+        // Stage pills (open only) — extracted so onMonthClick can refresh them
+        const _oppsSelf2 = this;
+        const renderOppsStageBar = (pool) => {
+          const stageBar = document.getElementById('oppsStageBar');
+          if (!stageBar) return;
+          const stageCounts = {};
+          pool.filter(o => !o.isClosed && !o.isWon).forEach(o => {
+            const st = o.stage||'Unknown'; stageCounts[st]=(stageCounts[st]||0)+1;
+          });
+          const entries = Object.entries(stageCounts).sort((a,b)=>b[1]-a[1]);
+          stageBar.innerHTML = entries.map(([st,cnt]) =>
+            `<span class="hc-pill hc-pill-grey" style="cursor:pointer;" data-opps-stage="${st}">${st}&nbsp;<b>${cnt}</b></span>`
           ).join('');
           stageBar.querySelectorAll('[data-opps-stage]').forEach(pill => {
-            pill.onclick = () => this._showOppsDrill(data.opportunities.filter(o => o.stage === pill.dataset.oppsStage && !o.isClosed), pill.dataset.oppsStage);
+            pill.onclick = () => {
+              const st = pill.dataset.oppsStage;
+              if (window.__oppsActiveStage === st && !window.__oppsMo) {
+                window.__oppsActiveStage = null;
+                stageBar.querySelectorAll('[data-opps-stage]').forEach(p => p.style.outline = '');
+                document.getElementById('oppsDrilldown').style.display = 'none';
+                window.__oppsActiveDrilldown = null;
+                return;
+              }
+              window.__oppsActiveStage = st;
+              stageBar.querySelectorAll('[data-opps-stage]').forEach(p => p.style.outline = '');
+              document.querySelectorAll('[data-opps-filter]').forEach(p => p.style.outline = '');
+              pill.style.outline = '2px solid #288184';
+              window.__oppsActiveDrilldown = 'stage_' + st;
+              const base = window.__oppsMo
+                ? data.opportunities.filter(o => String(o.createdDate||'').substring(0,7) === window.__oppsMo)
+                : data.opportunities;
+              _oppsSelf2._showOppsDrill(base.filter(o => o.stage === st && !o.isClosed && !o.isWon),
+                st + (window.__oppsMo ? ' · '+window.__oppsMo : ''));
+            };
           });
-        }
+        };
+        window.__renderOppsStageBar = renderOppsStageBar;
+        renderOppsStageBar(data.opportunities);
 
         // Tile click → drilldown (with toggle: re-click collapses)
         document.querySelectorAll('[data-opps-filter]').forEach(tile => {
           tile.onclick = () => {
             const f = tile.dataset.oppsFilter;
-            if (window.__oppsActiveDrilldown === f) {
+            if (window.__oppsActiveDrilldown === f && !window.__oppsMo) {
               document.getElementById('oppsDrilldown').style.display = 'none';
               window.__oppsActiveDrilldown = null;
               document.querySelectorAll('[data-opps-filter]').forEach(t => t.style.outline = '');
@@ -5121,18 +5221,26 @@ class Component extends DCLogic {
             document.querySelectorAll('[data-opps-filter]').forEach(t => t.style.outline = '');
             tile.style.outline = '2px solid #288184';
             window.__oppsActiveDrilldown = f;
-            const filtered = f === 'all'  ? data.opportunities
-              : f === 'open' ? data.opportunities.filter(o => !o.isClosed)
-              : f === 'won'  ? data.opportunities.filter(o => o.isWon)
-              : f === 'lost' ? data.opportunities.filter(o => o.isClosed && !o.isWon)
+            const base = window.__oppsMo
+              ? data.opportunities.filter(o => String(o.createdDate||'').substring(0,7) === window.__oppsMo)
               : data.opportunities;
-            this._showOppsDrill(filtered, f.charAt(0).toUpperCase()+f.slice(1)+' Opportunities');
+            const filtered = f === 'all'  ? base
+              : f === 'open' ? base.filter(o => !o.isClosed && !o.isWon)
+              : f === 'won'  ? base.filter(o => o.isWon)
+              : f === 'lost' ? base.filter(o => o.isClosed && !o.isWon)
+              : base;
+            const moLabel = window.__oppsMo ? ' · ' + window.__oppsMo : '';
+            this._showOppsDrill(filtered, f.charAt(0).toUpperCase()+f.slice(1)+' Opportunities' + moLabel);
           };
         });
         document.getElementById('oppsBackBtn').onclick = () => {
           document.getElementById('oppsDrilldown').style.display = 'none';
           window.__oppsActiveDrilldown = null;
+          window.__oppsActiveStage = null;
+          window.__oppsMo = null;
           document.querySelectorAll('[data-opps-filter]').forEach(t => t.style.outline = '');
+          document.getElementById('oppsStageBar') && document.getElementById('oppsStageBar').querySelectorAll('[data-opps-stage]').forEach(t => t.style.outline = '');
+          window.__renderOppsGraph && window.__renderOppsGraph();
         };
 
         if (states.summary) states.summary.style.display = 'block';
@@ -5140,6 +5248,66 @@ class Component extends DCLogic {
         // Store data for compact pill drilldown
         window.__oppsData = data;
         const _oppsSelf = this;
+
+        // Render backward timeline graph (by created date) — defined outside guard so timeline can trigger later
+        var oppsWrap = document.getElementById('oppsTimelineWrap');
+        window.__oppsMo = null;
+        var renderOppsGraph = function() {
+          if (!oppsWrap || !window.__epLastTimeline) return;
+          window.__renderWidgetTimeline({
+            container: oppsWrap,
+            values: window.__epLastTimeline.opportunities,
+            months: window.__epLastTimeline.months,
+            color: '#e65100',
+            nullBg: '#f5f5f5',
+            selectedMonth: window.__oppsMo,
+            segments: function(mo) {
+              var all = (window.__oppsData||{}).opportunities || [];
+              var won  = 0, open = 0, lost = 0;
+              all.forEach(function(o) {
+                if (String(o.createdDate||'').substring(0,7) !== mo) return;
+                if (o.isWon)                    won++;
+                else if (!o.isClosed)           open++;
+                else                            lost++;
+              });
+              return [
+                { value: won,  color: '#2e7d32' },
+                { value: open, color: '#1565c0' },
+                { value: lost, color: '#6d6d6c' },
+              ].filter(function(s){ return s.value > 0; });
+            },
+            onMonthClick: function(mo) {
+              window.__oppsMo = window.__oppsMo === mo ? null : mo;
+              renderOppsGraph();
+              var allO = window.__oppsData ? window.__oppsData.opportunities : [];
+              var pool = window.__oppsMo
+                ? allO.filter(function(o){ return String(o.createdDate||'').substring(0,7) === window.__oppsMo; })
+                : allO;
+              var moOpen = pool.filter(function(o){ return !o.isClosed && !o.isWon; }).length;
+              var moWon  = pool.filter(function(o){ return o.isWon; }).length;
+              var moLost = pool.filter(function(o){ return o.isClosed && !o.isWon; }).length;
+              var moPipe = pool.filter(function(o){ return !o.isClosed && !o.isWon; }).reduce(function(sum,o){ return sum+(Number(o.amount)||0); }, 0);
+              document.getElementById('oppsOpenCount').textContent = moOpen;
+              document.getElementById('oppsWonCount').textContent  = moWon;
+              document.getElementById('oppsLostCount').textContent = moLost;
+              document.getElementById('oppsPipeline').textContent  = fmtGbp(moPipe);
+              var wonValEl = document.getElementById('oppsWonVal');
+              if (wonValEl) wonValEl.textContent = window.__oppsMo ? '' : (s.wonValue ? fmtGbp(s.wonValue)+' total' : '');
+              window.__renderOppsStageBar && window.__renderOppsStageBar(pool);
+              if (window.__oppsMo) {
+                document.querySelectorAll('[data-opps-filter]').forEach(function(t){ t.style.outline = ''; });
+                window.__oppsActiveDrilldown = 'month_' + mo;
+                _oppsSelf._showOppsDrill(pool, window.__oppsMo + ' — ' + pool.length + ' opp' + (pool.length !== 1 ? 's' : ''));
+              } else {
+                document.getElementById('oppsDrilldown').style.display = 'none';
+                window.__oppsActiveDrilldown = null;
+                document.querySelectorAll('[data-opps-filter]').forEach(function(t){ t.style.outline = ''; });
+              }
+            }
+          });
+        };
+        window.__renderOppsGraph = renderOppsGraph;
+        renderOppsGraph();
         window.__showOppsDrillFromCompact = function(filter) {
           window.__hcExpand('opps');
           var sv = document.getElementById('oppsSummaryView'); if (sv) sv.style.display = 'block';
@@ -5232,6 +5400,11 @@ class Component extends DCLogic {
         benchNote.textContent = parts.length ? 'vs all accounts · ' + parts.join(' · ') : '';
 
         window.__epLastTimeline = data; // shared by widget timeline graphs
+        // Re-render widget graphs for cards that loaded before this timeline arrived
+        if (window.__renderOppsGraph)  window.__renderOppsGraph();
+        if (window.__renderCasesGraph) window.__renderCasesGraph();
+        if (window.__renderZdGraph)    window.__renderZdGraph();
+        if (window.__renderPbGraph)    window.__renderPbGraph();
         window.__epRender(wrap, data);
       })
       .catch(err => {
@@ -5532,21 +5705,27 @@ class Component extends DCLogic {
     if(riskSummary){
       riskSummary.innerHTML = RISK_DEFS.map(d => {
         const g = groups[d.key] || { subs:[] };
-        if(!g.subs.length) return '';
+        const cnt = g.subs.length;
         const arr = g.subs.reduce((s,r) => s + r.arr_gbp, 0);
-        return `<span class="hc-pill hc-pill-btn ${d.cls}" style="cursor:pointer;" onclick="window.__argus&&window.__argus.showDrilldown('${d.key}')">${g.subs.length} ${d.lbl} · ${fmtArr(arr)}</span>`;
+        const dim = cnt === 0 ? 'opacity:0.35;pointer-events:none;' : 'cursor:pointer;';
+        const lbl = cnt > 0 ? `${cnt} ${d.lbl} · ${fmtArr(arr)}` : `0 ${d.lbl}`;
+        return `<span class="hc-pill hc-pill-btn ${d.cls}" style="${dim}" ${cnt > 0 ? `onclick="window.__argus&&window.__argus.showDrilldown('${d.key}')"` : ''}>${lbl}</span>`;
       }).join('');
     }
 
     // Render renewal timeline SVG
+    window.__sfLastSubs = filteredSubs;
+    window.__sfRenewalMo = null;
     this.renderRenewalTimeline(filteredSubs);
 
     // Compact strip for when card is collapsed
     const sfPills = RISK_DEFS.map(d => {
       const g = groups[d.key] || { subs:[] };
-      if(!g.subs.length) return '';
+      const cnt = g.subs.length;
       const arr = g.subs.reduce((s,r) => s + r.arr_gbp, 0);
-      return `<span class="hc-pill hc-pill-btn ${d.cls}" onclick="window.__hcExpand('sf');window.__argus&&window.__argus.showDrilldown('${d.key}')">${g.subs.length} ${d.lbl} · ${fmtArr(arr)}</span>`;
+      const dim = cnt === 0 ? ' style="opacity:0.35;pointer-events:none;"' : '';
+      const lbl = cnt > 0 ? `${cnt} ${d.lbl} · ${fmtArr(arr)}` : `0 ${d.lbl}`;
+      return `<span class="hc-pill hc-pill-btn ${d.cls}"${dim} ${cnt > 0 ? `onclick="window.__hcExpand('sf');window.__argus&&window.__argus.showDrilldown('${d.key}')"` : ''}>${lbl}</span>`;
     }).join('');
     this.updateHcCompact('sfCompact', `<div class="hc-compact-status">${sfPills}</div>`);
 
@@ -5653,9 +5832,11 @@ class Component extends DCLogic {
       // Track background
       g.appendChild(mk('rect', { x:x+2, y:COUNT_H, width:BAR_W, height:BAR_AREA, fill:'#f5f5f5', rx:3 }));
 
+      const isSel = window.__sfRenewalMo && col.key === window.__sfRenewalMo;
+
       if (barH) {
         // Filled bar
-        const bar = mk('rect', { x:x+2, y:barY, width:BAR_W, height:barH, fill:col.color, rx:3, opacity:0.85 });
+        const bar = mk('rect', { x:x+2, y:barY, width:BAR_W, height:barH, fill:col.color, rx:3, opacity: isSel ? 1 : 0.85 });
         g.appendChild(bar);
 
         // Count above bar
@@ -5668,15 +5849,31 @@ class Component extends DCLogic {
             'font-size':7, fill:'#fff', 'font-family':FONT }, fmtA(col.arr)));
 
         // Hover
-        g.addEventListener('mouseenter', () => bar.setAttribute('opacity','1'));
-        g.addEventListener('mouseleave', () => bar.setAttribute('opacity','0.85'));
-        g.addEventListener('click', () => this.showMonthDrilldown(col));
+        g.addEventListener('mouseenter', () => { if (!isSel) bar.setAttribute('opacity','1'); });
+        g.addEventListener('mouseleave', () => { if (!isSel) bar.setAttribute('opacity','0.85'); });
+        g.addEventListener('click', () => {
+          const wasSelected = window.__sfRenewalMo === col.key;
+          window.__sfRenewalMo = wasSelected ? null : col.key;
+          this.renderRenewalTimeline(window.__sfLastSubs || subs);
+          if (!wasSelected) this.showMonthDrilldown(col);
+          else {
+            const detail = document.getElementById('sfDetailView');
+            if (detail) detail.style.display = 'none';
+            window.__sfActiveDrilldown = null;
+          }
+        });
+      }
+
+      // Selected month highlight frame
+      if (isSel) {
+        g.appendChild(mk('rect', { x:x+1, y:COUNT_H-2, width:COL_W-2, height:BAR_AREA+4,
+          fill:'none', stroke:'#288184', 'stroke-width':2, rx:3 }));
       }
 
       // Month label
       const lblY = COUNT_H + BAR_AREA + 13;
       g.appendChild(mk('text', { x:cx, y:lblY, 'text-anchor':'middle', 'font-size':8,
-        fill:col.subs.length?'#3c3c3b':'#c8c8c8', 'font-family':FONT },
+        fill: isSel ? '#288184' : (col.subs.length?'#3c3c3b':'#c8c8c8'), 'font-family':FONT },
         col.label.split('\n')[0]));
       if (col.label.includes('\n'))
         g.appendChild(mk('text', { x:cx, y:lblY+10, 'text-anchor':'middle', 'font-size':8,
