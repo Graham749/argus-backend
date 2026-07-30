@@ -1972,7 +1972,6 @@ class Component extends DCLogic {
 
   setupCardCollapses(){
     var cards = [
-      { hdr: 'epCardHeader',   body: 'epCardBody',    chev: 'epCollapseChev',   startOpen: true },
       { hdr: 'sfCardHeader',   body: 'sfCardBody',    chev: 'sfCollapseChev' },
       { hdr: 'casesCardHeader',body: 'casesCardBody', chev: 'casesCollapseChev' },
       { hdr: 'oppsCardHeader', body: 'oppsCardBody',  chev: 'oppsCollapseChev' },
@@ -2032,6 +2031,22 @@ class Component extends DCLogic {
       btn.onmouseenter = function() { this.style.background = '#ececeb'; };
       btn.onmouseleave = function() { this.style.background = '#f7f7f6'; };
     }
+
+    // Pulse card: independent toggle — excluded from Collapse All
+    var epHdr  = document.getElementById('epCardHeader');
+    var epBody = document.getElementById('epCardBody');
+    var epChev = document.getElementById('epCollapseChev');
+    if (epHdr && epBody) {
+      if (epHdr._collapsed === undefined) epHdr._collapsed = false;
+      epHdr.onclick = function() {
+        epHdr._collapsed = !epHdr._collapsed;
+        epBody.style.display = epHdr._collapsed ? 'none' : 'block';
+        if (epChev) epChev.textContent = epHdr._collapsed ? '▾' : '▴';
+      };
+      epHdr.onmouseenter = function() { this.style.opacity = '0.85'; };
+      epHdr.onmouseleave = function() { this.style.opacity = '1'; };
+    }
+    updateCollapseAllBtn();
   }
 
   loadAccountWithMatchCheck(accountName) {
@@ -4675,6 +4690,13 @@ class Component extends DCLogic {
     if (!card) return;
 
     card.style.display = 'block';
+    // Always restore the body in case user had collapsed it or Collapse All fired
+    const epBody2 = document.getElementById('epCardBody');
+    const epHdr2  = document.getElementById('epCardHeader');
+    const epChev2 = document.getElementById('epCollapseChev');
+    if (epBody2) epBody2.style.display = 'block';
+    if (epHdr2)  epHdr2._collapsed = false;
+    if (epChev2) epChev2.textContent = '▴';
     loading.style.display = 'flex';
     wrap.style.display = 'none';
     wrap.innerHTML = '';
