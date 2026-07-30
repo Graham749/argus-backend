@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SW Revenue Intelligence</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f7f7f5;color:#0b0b0b;font-size:14px;line-height:1.5}
+nav{background:#fff;border-bottom:0.5px solid rgba(11,11,11,.1);padding:0 24px;display:flex;align-items:center;position:sticky;top:0;z-index:100}
+.embed-mode .nav-back,.embed-mode .nav-brand,.embed-mode .nav-meta,.embed-mode .nav-sep{display:none!important}
+.embed-mode nav{padding:0 24px;background:#fff;border-bottom:0.5px solid rgba(11,11,11,.1)}
+.embed-mode .nav-tab{padding:12px 14px}
+.embed-mode main{padding-top:20px}
+.embed-mode body{background:#f7f7f6}
+.nav-brand{font-size:15px;font-weight:500;padding:14px 0;margin-right:28px;white-space:nowrap}
+.nav-tabs{display:flex}
+.nav-tab{padding:14px 14px;font-size:13px;cursor:pointer;border-bottom:2px solid transparent;color:#52514e;white-space:nowrap}
+.nav-tab:hover{color:#0b0b0b}
+.nav-tab.active{color:#0b0b0b;border-bottom-color:#0b0b0b;font-weight:500}
+.nav-meta{margin-left:auto;font-size:12px;color:#898781;display:flex;align-items:center;gap:6px;white-space:nowrap}
+.nav-back{font-size:12px;color:#898781;text-decoration:none;display:flex;align-items:center;gap:4px;padding:14px 0;margin-right:20px;}
+.nav-back:hover{color:#0b0b0b}
+main{max-width:1280px;margin:0 auto;padding:24px}
+section{display:none}
+section.active{display:block}
+.kpi-row{display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap}
+.kpi{background:#fff;border:0.5px solid rgba(11,11,11,.1);border-radius:8px;padding:14px 18px;min-width:160px}
+.kpi-label{font-size:11px;color:#898781;margin-bottom:3px;text-transform:uppercase;letter-spacing:.04em}
+.kpi-value{font-size:26px;font-weight:500;line-height:1.2}
+.kpi-sub{font-size:12px;margin-top:3px}
+.card{background:#fff;border:0.5px solid rgba(11,11,11,.1);border-radius:12px;padding:18px 20px;margin-bottom:18px}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:12px;flex-wrap:wrap}
+.card-title{font-size:14px;font-weight:500}
+.filter-bar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;align-items:center}
+.filter-label{font-size:12px;color:#898781}
+.pill{display:inline-flex;align-items:center;padding:4px 10px;border-radius:100px;border:0.5px solid rgba(11,11,11,.15);background:#fff;font-size:12px;cursor:pointer;color:#52514e}
+.pill:hover{border-color:rgba(11,11,11,.4)}
+.pill.active{background:#0b0b0b;color:#fff;border-color:#0b0b0b}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:7px 10px;border-bottom:0.5px solid rgba(11,11,11,.15);font-weight:500;font-size:11px;color:#898781;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;cursor:default}
+th.sortable{cursor:pointer}
+th.sortable:hover{color:#0b0b0b}
+td{padding:7px 10px;border-bottom:0.5px solid rgba(11,11,11,.06);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#fafaf8}
+.badge-ok{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:100px;font-size:11px;font-weight:500;background:#eaf3de;color:#3b6d11}
+.badge-neu{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:100px;font-size:11px;font-weight:500;background:#f1efe8;color:#5f5e5a}
+input[type=search]{padding:6px 10px;border:0.5px solid rgba(11,11,11,.2);border-radius:6px;font-size:13px;width:200px;outline:none}
+input[type=search]:focus{border-color:#378add}
+select{padding:5px 8px;border:0.5px solid rgba(11,11,11,.2);border-radius:6px;font-size:12px;background:#fff;outline:none;cursor:pointer}
+.empty{text-align:center;padding:32px;color:#898781;font-size:13px}
+.toggle-group{display:flex;border:0.5px solid rgba(11,11,11,.2);border-radius:6px;overflow:hidden}
+.toggle-btn{padding:5px 10px;font-size:12px;cursor:pointer;background:#fff;color:#52514e;border:none;border-right:0.5px solid rgba(11,11,11,.15)}
+.toggle-btn:last-child{border-right:none}
+.toggle-btn.active{background:#0b0b0b;color:#fff}
+td.rc{font-weight:500;border-right:0.5px solid rgba(11,11,11,.08);background:#fafaf8;white-space:nowrap}
+.sep{border-left:2px solid #e1e0d9;background:#fafaf8}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:800px){.grid2{grid-template-columns:1fr}}
+.pg{background:#eaf3de;color:#3b6d11;padding:2px 8px;border-radius:100px;font-size:12px;font-weight:500;display:inline-block}
+.py{background:#faeeda;color:#854f0b;padding:2px 8px;border-radius:100px;font-size:12px;font-weight:500;display:inline-block}
+.pr{background:#fcebeb;color:#a32d2d;padding:2px 8px;border-radius:100px;font-size:12px;font-weight:500;display:inline-block}
+.pn{background:#f1efe8;color:#5f5e5a;padding:2px 8px;border-radius:100px;font-size:12px;font-weight:500;display:inline-block}
+#loading{display:flex;align-items:center;justify-content:center;height:60vh;flex-direction:column;gap:16px;color:#898781;font-size:13px}
+.spinner{width:32px;height:32px;border:3px solid #e1e0d9;border-top-color:#0b0b0b;border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.tbc-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(247,247,245,0.85);border-radius:8px;font-size:12px;color:#898781;font-weight:500;letter-spacing:.04em;text-transform:uppercase;pointer-events:none}
+</style>
+</head>
+<body>
+<nav>
+  <a href="/" class="nav-back"><i class="ti ti-arrow-left" aria-hidden="true"></i> Argus</a>
+  <span class="nav-sep" style="width:1px;height:24px;background:rgba(11,11,11,.1);margin-right:20px;flex-shrink:0;"></span>
+  <div class="nav-brand"><i class="ti ti-chart-line" aria-hidden="true" style="margin-right:6px"></i>SW Intelligence</div>
+  <div class="nav-tabs">
+    <div class="nav-tab active" onclick="showTab('overview')">Overview</div>
+    <div class="nav-tab" onclick="showTab('clients')">Account view</div>
+    <div class="nav-tab" onclick="showTab('signals')">Focus areas</div>
+    <div class="nav-tab" onclick="showTab('clientlist')">Client list</div>
+  </div>
+  <div class="nav-meta"><i class="ti ti-refresh" aria-hidden="true"></i>ARR <strong id="arr-date">—</strong>&nbsp;&middot;&nbsp;Usage <strong id="usage-date">—</strong></div>
+</nav>
+
+<div id="loading"><div class="spinner"></div>Loading SW data…</div>
+
+<main id="main-content" style="display:none">
+<section id="overview" class="active">
+  <div class="kpi-row" id="kpi-row"></div>
+  <div class="card"><div class="card-header"><span class="card-title">Region summary</span></div><table id="region-table"></table></div>
+  <div class="card">
+    <div class="card-header"><span class="card-title">ARR vs target by software</span>
+      <div style="display:flex;gap:6px">
+        <select id="arr-mkt" onchange="renderARR()"><option value="ALL">All regions</option></select>
+        <select id="arr-sw"  onchange="renderARR()"><option value="ALL">All SW</option><option>Chronos</option><option>Amun</option><option>Origin</option><option>Lumus</option><option>Solaris</option></select>
+      </div>
+    </div>
+    <table id="arr-table"></table>
+  </div>
+  <div class="card">
+    <div class="card-header"><span class="card-title">ARR trend</span>
+      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+        <select id="trend-mkt" onchange="renderTrend()"><option value="ALL">All regions</option></select>
+        <select id="trend-sw"  onchange="renderTrend()"><option value="ALL">All SW</option><option>Chronos</option><option>Amun</option><option>Origin</option><option>Lumus</option><option>Solaris</option></select>
+        <div class="toggle-group">
+          <div class="toggle-btn active" id="tog-arr"     onclick="setMetric('arr')">ARR</div>
+          <div class="toggle-btn"        id="tog-clients" onclick="setMetric('clients')">Clients</div>
+          <div class="toggle-btn"        id="tog-avg"     onclick="setMetric('avg')">Avg ARR</div>
+        </div>
+      </div>
+    </div>
+    <div style="position:relative;height:300px"><canvas id="chart-trend"></canvas><div class="tbc-overlay">Historical trend — pending monthly snapshot data</div></div>
+  </div>
+</section>
+
+<section id="clients">
+  <div class="filter-bar">
+    <input type="search" id="cl-search" placeholder="Search account…" oninput="renderClients()">
+    <select id="cl-mkt" onchange="renderClients()"><option value="ALL">All regions</option></select>
+    <select id="cl-sw"  onchange="renderClients()"><option value="ALL">All SW</option><option>Chronos</option><option>Amun</option><option>Origin</option><option>Lumus</option><option>Solaris</option></select>
+  </div>
+  <div class="filter-bar">
+    <span class="filter-label">Signals:</span>
+    <div class="pill active" id="fp-ALL"         onclick="setFP(this,'ALL')">All</div>
+    <div class="pill"        id="fp-upsell"      onclick="setFP(this,'upsell')">Cross-sell</div>
+    <div class="pill"        id="fp-terminating" onclick="setFP(this,'terminating')">Termination</div>
+    <span class="filter-label" style="margin-left:8px">Renewal:</span>
+    <div class="pill" id="fp-r3m" onclick="setFP(this,'r3m')">3M</div>
+    <div class="pill" id="fp-r6m" onclick="setFP(this,'r6m')">6M</div>
+  </div>
+  <div class="card" style="padding:0;overflow:hidden"><table id="client-table"></table></div>
+</section>
+
+<section id="signals">
+  <div class="grid2">
+    <div class="card">
+      <div class="card-header"><span class="card-title" style="color:#a32d2d"><i class="ti ti-alert-triangle" aria-hidden="true" style="margin-right:6px"></i>Termination in progress</span></div>
+      <p style="font-size:12px;color:#898781;margin-bottom:12px">SW subscriptions with active termination — sorted by ARR at risk</p>
+      <table id="sig-tip"></table>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title" style="color:#3c3489"><i class="ti ti-calendar-due" aria-hidden="true" style="margin-right:6px"></i>Renewals due — next 6 months</span></div>
+      <p style="font-size:12px;color:#898781;margin-bottom:12px">SW subscriptions expiring within 6 months — sorted by ARR</p>
+      <table id="sig-renewals"></table>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title" style="color:#185fa5"><i class="ti ti-arrows-maximize" aria-hidden="true" style="margin-right:6px"></i>Cross-sell — single product &gt;&#x20AC;20k</span></div>
+      <p style="font-size:12px;color:#898781;margin-bottom:12px">One SW product, ARR &gt; €20k — sorted by ARR</p>
+      <table id="sig-upsell"></table>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title" style="color:#854f0b"><i class="ti ti-moon" aria-hidden="true" style="margin-right:6px"></i>No usage — 90 days</span></div>
+      <p style="font-size:12px;color:#898781;margin-bottom:12px">Accounts with no SW runs in past 90 days</p>
+      <div style="padding:24px;text-align:center;color:#898781;font-size:12px;border:0.5px dashed rgba(11,11,11,.2);border-radius:6px">Usage data pending Software Health integration</div>
+    </div>
+  </div>
+</section>
+
+<section id="clientlist">
+  <div class="filter-bar">
+    <input type="search" id="cll-search" placeholder="Search account…" oninput="renderClientList()">
+    <select id="cll-mkt"  onchange="renderClientList()"><option value="ALL">All regions</option></select>
+    <select id="cll-tier" onchange="renderClientList()"><option value="ALL">All tiers</option><option>Tier 1</option><option>Tier 2</option><option>Tier 3</option></select>
+    <div class="pill active" id="cll-all"    onclick="cllFilter(this,'ALL')">All</div>
+    <div class="pill"        id="cll-swonly" onclick="cllFilter(this,'sw')">SW clients only</div>
+    <div class="pill"        id="cll-nosw"   onclick="cllFilter(this,'nosw')">Subscription only</div>
+  </div>
+  <div class="card" style="padding:0;overflow:hidden"><table id="cll-table"></table></div>
+</section>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+let DATA = null;
+const SW_BG={Chronos:"#e6f1fb",Amun:"#eaf3de",Origin:"#faeeda",Lumus:"#e1f5ee",Solaris:"#fbeaf0"};
+const SW_COL={Chronos:"#0c447c",Amun:"#27500a",Origin:"#633806",Lumus:"#085041",Solaris:"#72243e"};
+const SUB_BG={PRMF:"#eeedfe",Flex:"#e6f1fb","Granular Data":"#f1efe8",Grid:"#faeeda","Non-Standard":"#fcebeb"};
+const SUB_COL={PRMF:"#3c3489",Flex:"#185fa5","Granular Data":"#5f5e5a",Grid:"#854f0b","Non-Standard":"#a32d2d"};
+let MKT_COL={France:"#1e40af",Iberia:"#854d0e",Italy:"#166534"};
+let SS={col:"arr_k",dir:-1}, TC=null, CLLmode="ALL", FP="ALL";
+
+function showTab(id){
+  document.querySelectorAll(".nav-tab").forEach(function(t,i){t.classList.toggle("active",["overview","clients","signals","clientlist"][i]===id);});
+  document.querySelectorAll("section").forEach(function(s){s.classList.toggle("active",s.id===id);});
+  if(id==="overview"){setTimeout(function(){renderARR();},50);}
+  if(id==="clients"){renderClients();}
+  if(id==="signals"){renderSignals();}
+  if(id==="clientlist"){renderClientList();}
+}
+function mktSpan(m){return "<span style='color:"+(MKT_COL[m]||"#5f5e5a")+";font-weight:500'>"+m+"</span>";}
+function swTag(s){return "<span style='display:inline-flex;align-items:center;padding:1px 6px;border-radius:4px;font-size:11px;margin:1px;background:"+(SW_BG[s]||"#f1efe8")+";color:"+(SW_COL[s]||"#5f5e5a")+"'>"+s+"</span>";}
+function subTag(s){return "<span style='display:inline-flex;align-items:center;padding:1px 6px;border-radius:4px;font-size:11px;margin:1px;background:"+(SUB_BG[s]||"#f1efe8")+";color:"+(SUB_COL[s]||"#5f5e5a")+"'>"+s+"</span>";}
+function pctBadge(p,noTarget){
+  if(noTarget||p===null||p===undefined) return "<span class='pn'>&mdash;</span>";
+  var cls=p>=100?"pg":p>=80?"py":"pr";
+  return "<span class='"+cls+"'>"+(p>=100?"✓ ":"")+p.toFixed(0)+"%</span>";
+}
+function dash(){return "<span style='color:#c3c2b7'>—</span>";}
+function eur(k){return "<span style='font-weight:500'>€"+k.toFixed(0)+"k</span>";}
+
+function renderOverview(){
+  if(!DATA) return;
+  document.getElementById("arr-date").textContent=DATA.arr_as_of;
+  document.getElementById("usage-date").textContent=DATA.usage_as_of;
+  var tA=DATA.arr_vs_target.reduce(function(s,r){return s+r.actual_k;},0);
+  var tT=DATA.arr_vs_target.reduce(function(s,r){return s+r.target_k;},0);
+  var pct=tT>0?tA/tT*100:0;
+  var pc=pct>=100?"#16a34a":pct>=80?"#ef9f27":"#dc2626";
+  document.getElementById("kpi-row").innerHTML=
+    "<div class='kpi'><div class='kpi-label'>Total SW ARR</div><div class='kpi-value'>€"+Math.round(tA).toLocaleString()+"k</div>"
+    +"<div class='kpi-sub' style='color:"+pc+";font-weight:500'>"+pct.toFixed(0)+"% vs target</div>"
+    +"<div class='kpi-sub' style='color:#898781'>target €"+Math.round(tT).toLocaleString()+"k</div></div>"
+    +"<div class='kpi'><div class='kpi-label'>Renewals due</div>"
+    +"<div class='kpi-value'><span style='color:#633806'>"+DATA.renewals_3m_count+"</span>"
+    +"<span style='font-size:22px;color:#898781'>/</span>"
+    +"<span style='color:#3b6d11'>"+DATA.renewals_6m_count+"</span></div>"
+    +"<div class='kpi-sub' style='color:#898781'>within 3M / 6M</div></div>"
+    +"<div class='kpi'><div class='kpi-label'>Terminations</div>"
+    +"<div class='kpi-value' style='color:#dc2626'>"+DATA.termination_count+"</div>"
+    +"<div class='kpi-sub' style='color:#898781'>in progress</div></div>";
+  document.getElementById("region-table").innerHTML="<thead><tr><th>Region</th><th>ARR</th><th>Target</th><th>%</th><th>At or above target</th><th>Below 80%</th></tr></thead><tbody>"
+    +DATA.region_summary.map(function(r){
+      var above=r.above.map(swTag).join(" ");
+      var below=r.below80.map(function(x){return "<span style='background:#fcebeb;color:#a32d2d;padding:2px 7px;border-radius:100px;font-size:11px;font-weight:500'>"+x.sw+" "+x.pct+"%</span>";}).join(" ");
+      return "<tr><td style='font-weight:500'>"+r.market+"</td><td>€"+r.arr_k.toFixed(0)+"k</td>"
+        +"<td style='color:#898781'>€"+r.target_k.toFixed(0)+"k</td>"
+        +"<td>"+pctBadge(r.pct, r.pct===null)+"</td>"
+        +"<td>"+(above||dash())+"</td><td>"+(below||"<span style='color:#898781'>all ≥80%</span>")+"</td></tr>";
+    }).join("")+"</tbody>";
+  renderARR();
+}
+
+function renderARR(){
+  if(!DATA) return;
+  var mkt=document.getElementById("arr-mkt").value;
+  var sw=document.getElementById("arr-sw").value;
+  var rows=DATA.arr_vs_target;
+  if(mkt!=="ALL") rows=rows.filter(function(r){return r.market===mkt;});
+  if(sw!=="ALL") rows=rows.filter(function(r){return r.sw===sw;});
+  var html="<thead><tr><th>Region</th><th>Software</th><th>ARR</th><th>Target</th><th>%</th><th style='text-align:center'>Clients</th><th>Top contributors</th></tr></thead><tbody>";
+  var lm="";
+  rows.forEach(function(r){
+    var pct=r.target_k>0?r.actual_k/r.target_k*100:null;
+    var contrib=r.top_clients.map(function(c){return c.name.split(" ")[0]+" €"+c.arr_k+"k";}).join(" · ");
+    var mc=r.market!==lm?"<td class='rc'>"+r.market+"</td>":"<td class='rc' style='color:transparent'>"+r.market+"</td>";
+    lm=r.market;
+    html+="<tr>"+mc+"<td>"+swTag(r.sw)+"</td>"
+      +"<td style='font-weight:500'>€"+r.actual_k.toFixed(0)+"k</td>"
+      +"<td style='color:#898781'>"+(r.target_k>0?"€"+r.target_k.toFixed(0)+"k":"&mdash;")+"</td>"
+      +"<td>"+(pct!==null?pctBadge(pct,false):pctBadge(0,true))+"</td>"
+      +"<td style='text-align:center;color:#898781'>"+(r.client_count>0?r.client_count+" client"+(r.client_count>1?"s":""):"&mdash;")+"</td>"
+      +"<td style='font-size:11px;color:#52514e'>"+(contrib||"&mdash;")+"</td></tr>";
+  });
+  document.getElementById("arr-table").innerHTML=html+"</tbody>";
+}
+
+function renderTrend(){
+  // TBC — no historical snapshot data yet; chart canvas stays empty
+  if(TC){TC.destroy();TC=null;}
+}
+function setMetric(){}
+
+function setFP(el,mode){
+  FP=mode;
+  document.querySelectorAll("#clients .pill").forEach(function(p){p.classList.remove("active");});
+  el.classList.add("active");
+  renderClients();
+}
+
+function renderClients(){
+  if(!DATA) return;
+  var search=document.getElementById("cl-search").value.toLowerCase();
+  var mkt=document.getElementById("cl-mkt").value;
+  var sw=document.getElementById("cl-sw").value;
+  var rows=DATA.clients.slice();
+  if(search) rows=rows.filter(function(r){return r.account.toLowerCase().indexOf(search)>=0||(r.parent&&r.parent.toLowerCase().indexOf(search)>=0);});
+  if(mkt!=="ALL") rows=rows.filter(function(r){return r.market===mkt;});
+  if(sw!=="ALL") rows=rows.filter(function(r){return r.products.indexOf(sw)>=0;});
+  if(FP==="upsell") rows=rows.filter(function(r){return r.flag_upsell;});
+  if(FP==="terminating") rows=rows.filter(function(r){return r.flag_terminating;});
+  if(FP==="r3m") rows=rows.filter(function(r){return r.sw_lines&&r.sw_lines.some(function(l){return l.renewal_badge==="3M";});});
+  if(FP==="r6m") rows=rows.filter(function(r){return r.flag_renewal;});
+  var acctGroups={};
+  rows.forEach(function(r){if(!acctGroups[r.account])acctGroups[r.account]=[];acctGroups[r.account].push(r);});
+  var acctMax={};
+  Object.keys(acctGroups).forEach(function(a){acctMax[a]=Math.max.apply(null,acctGroups[a].map(function(r){return r[SS.col]!=null?r[SS.col]:-999;}));});
+  var sortedAccts=Object.keys(acctGroups).sort(function(a,b){return SS.dir*(acctMax[b]-acctMax[a]);});
+  sortedAccts.forEach(function(a){acctGroups[a].sort(function(x,y){var xv=x[SS.col]!=null?x[SS.col]:-999,yv=y[SS.col]!=null?y[SS.col]:-999;return SS.dir*(yv-xv);});});
+  function si(c){return SS.col===c?(SS.dir===-1?"↓":"↑"):"<span style='color:#c3c2b7'>·</span>";}
+  var html="<thead><tr>"
+    +"<th class='sortable' data-col='account'>Account "+si("account")+"</th>"
+    +"<th>Parent</th><th>Region</th><th>Products</th>"
+    +"<th class='sortable' data-col='arr_k'>ARR "+si("arr_k")+"</th>"
+    +"<th>Signals</th><th>Renewal</th><th>Termination</th>"
+    +"</tr></thead><tbody>";
+  if(!sortedAccts.length) html+="<tr><td colspan='8' class='empty'>No matching accounts</td></tr>";
+  var totalRows=0;
+  sortedAccts.forEach(function(acct){
+    var la=null;
+    acctGroups[acct].forEach(function(r){
+      totalRows++;
+      var lines=r.sw_lines||[];
+      var pCell="<div style='display:flex;flex-direction:column;gap:4px'>"+lines.map(function(l){return swTag(l.sw);}).join("")+"</div>";
+      var sigs=[];
+      if(r.flag_upsell) sigs.push("<span style='background:#e6f1fb;color:#0c447c;display:inline-flex;padding:2px 7px;border-radius:100px;font-size:11px;font-weight:500'>cross-sell</span>");
+      if(r.flag_terminating) sigs.push("<span style='background:#fcebeb;color:#791f1f;display:inline-flex;padding:2px 7px;border-radius:100px;font-size:11px;font-weight:500'>termin.</span>");
+      var sCell=sigs.length?"<div style='display:flex;flex-direction:column;gap:3px'>"+sigs.join("")+"</div>":dash();
+      var tLines=lines.map(function(l){return l.terminating?swTag(l.sw):dash();});
+      var tCell=lines.some(function(l){return l.terminating;})?"<div style='display:flex;flex-direction:column;gap:4px'>"+tLines.join("")+"</div>":dash();
+      var rnLines=lines.map(function(l){
+        if(!l.renewal_badge) return dash();
+        var bc=l.renewal_badge==="3M"?"#faeeda":"#eaf3de",tc=l.renewal_badge==="3M"?"#633806":"#27500a";
+        return "<span style='display:inline-flex;padding:2px 7px;border-radius:100px;font-size:11px;font-weight:500;background:"+bc+";color:"+tc+"'>"+l.renewal_badge+"</span>";
+      });
+      var rnCell=lines.some(function(l){return l.renewal_badge;})?"<div style='display:flex;flex-direction:column;gap:4px'>"+rnLines.join("")+"</div>":dash();
+      var ac=la!==r.account
+        ?"<td style='font-weight:500;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap' title='"+r.account.replace(/'/g,"&#39;")+"'>"+r.account+"</td>"
+        :"<td style='color:transparent;font-size:10px;max-width:150px'>"+r.account+"</td>";
+      la=r.account;
+      html+="<tr>"+ac
+        +"<td style='font-size:11px;color:#898781'>"+(r.parent||"&mdash;")+"</td>"
+        +"<td>"+mktSpan(r.market)+"</td>"
+        +"<td>"+pCell+"</td>"
+        +"<td style='font-weight:500'>€"+r.arr_k.toFixed(0)+"k</td>"
+        +"<td>"+sCell+"</td>"
+        +"<td>"+rnCell+"</td>"
+        +"<td>"+tCell+"</td>"
+        +"</tr>";
+    });
+  });
+  html+="</tbody><tfoot><tr><td colspan='8' style='font-size:11px;color:#898781;padding:6px 10px'>"+totalRows+" account lines</td></tr></tfoot>";
+  document.getElementById("client-table").innerHTML=html;
+  document.querySelectorAll("#client-table th.sortable").forEach(function(th){
+    th.addEventListener("click",function(){
+      var col=th.getAttribute("data-col");
+      if(SS.col===col)SS.dir*=-1; else{SS.col=col;SS.dir=-1;}
+      renderClients();
+    });
+  });
+}
+
+function renderSignals(){
+  if(!DATA) return;
+  document.getElementById("sig-tip").innerHTML="<thead><tr><th>Account</th><th>Parent</th><th>Region</th><th>SW</th><th>ARR at risk</th><th>Reason</th></tr></thead><tbody>"
+    +(DATA.termination_in_progress.length?DATA.termination_in_progress.map(function(r){
+      return "<tr><td style='font-weight:500'>"+r.account+"</td><td style='font-size:11px;color:#898781'>"+(r.parent||"&mdash;")+"</td><td>"+mktSpan(r.market)+"</td><td>"+swTag(r.sw)+"</td>"
+        +"<td style='color:#dc2626;font-weight:500'>"+(r.arr_k>0?eur(r.arr_k):dash())+"</td>"
+        +"<td style='font-size:11px;color:#52514e'>"+(r.termination_reason||"&mdash;")+"</td></tr>";
+    }).join(""):"<tr><td colspan='6' class='empty'>None</td></tr>")+"</tbody>";
+  document.getElementById("sig-renewals").innerHTML="<thead><tr><th>Account</th><th>Parent</th><th>Region</th><th>SW</th><th>Due</th><th>End date</th><th>ARR</th><th>Extension?</th></tr></thead><tbody>"
+    +(DATA.renewals_due.length?DATA.renewals_due.map(function(r){
+      var rb=r.renewal_badge,bc=rb==="3M"?"#faeeda":"#eaf3ea",tc=rb==="3M"?"#633806":"#27500a";
+      var db=rb?"<span style='display:inline-flex;padding:2px 7px;border-radius:100px;font-size:11px;font-weight:500;background:"+bc+";color:"+tc+"'>"+rb+"</span>":"&mdash;";
+      var ext=r.extension==="Yes"?"<span class='badge-ok'>Yes</span>":"<span class='badge-neu'>No</span>";
+      return "<tr><td style='font-weight:500'>"+r.account+"</td><td style='font-size:11px;color:#898781'>"+(r.parent||"&mdash;")+"</td><td>"+mktSpan(r.market)+"</td><td>"+swTag(r.sw||"")+"</td><td>"+db+"</td>"
+        +"<td style='color:#3c3489;font-weight:500'>"+(r.end_date||"&mdash;")+"</td><td>"+eur(r.arr_k)+"</td><td>"+ext+"</td></tr>";
+    }).join(""):"<tr><td colspan='8' class='empty'>None</td></tr>")+"</tbody>";
+  var xs=DATA.clients.filter(function(c){return c.flag_upsell;}).sort(function(a,b){return b.arr_k-a.arr_k;});
+  document.getElementById("sig-upsell").innerHTML="<thead><tr><th>Account</th><th>Parent</th><th>Region</th><th>SW</th><th>ARR</th></tr></thead><tbody>"
+    +(xs.length?xs.map(function(c){return "<tr><td style='font-weight:500'>"+c.account+"</td><td style='font-size:11px;color:#898781'>"+(c.parent||"&mdash;")+"</td><td>"+mktSpan(c.market)+"</td><td>"+c.products.map(swTag).join("")+"</td><td>"+eur(c.arr_k)+"</td></tr>";}).join(""):"<tr><td colspan='5' class='empty'>None</td></tr>")+"</tbody>";
+}
+
+function cllFilter(el,mode){
+  CLLmode=mode;
+  ["cll-all","cll-swonly","cll-nosw"].forEach(function(id){document.getElementById(id).classList.remove("active");});
+  el.classList.add("active");
+  renderClientList();
+}
+
+function renderClientList(){
+  if(!DATA) return;
+  var search=document.getElementById("cll-search").value.toLowerCase();
+  var mkt=document.getElementById("cll-mkt").value;
+  var tier=document.getElementById("cll-tier").value;
+  var rows=DATA.client_list.slice();
+  if(search) rows=rows.filter(function(r){return r.account.toLowerCase().indexOf(search)>=0||(r.parent&&r.parent.toLowerCase().indexOf(search)>=0);});
+  if(mkt!=="ALL") rows=rows.filter(function(r){return r.market===mkt;});
+  if(tier!=="ALL") rows=rows.filter(function(r){return r.tier===tier;});
+  if(CLLmode==="sw")   rows=rows.filter(function(r){return r.sw_products&&r.sw_products.length>0;});
+  if(CLLmode==="nosw") rows=rows.filter(function(r){return !r.sw_products||r.sw_products.length===0;});
+  var html="<thead><tr><th>Account</th><th>Parent</th><th>Region</th><th>Tier</th><th>Software</th><th>SW ARR</th><th class='sep'>Subscriptions</th><th>Sub ARR</th></tr></thead><tbody>";
+  if(!rows.length) html+="<tr><td colspan='8' class='empty'>No matching accounts</td></tr>";
+  rows.forEach(function(r){
+    var sw=r.sw_products&&r.sw_products.length?r.sw_products.map(swTag).join(""):"<span style='color:#c3c2b7'>&mdash;</span>";
+    var sub=r.sub_products&&r.sub_products.length?r.sub_products.map(subTag).join(""):"<span style='color:#c3c2b7'>&mdash;</span>";
+    var sa=r.sw_arr_k>0?eur(r.sw_arr_k):"<span style='color:#c3c2b7'>&mdash;</span>";
+    var sba=r.sub_arr_k>0?eur(r.sub_arr_k):"<span style='color:#c3c2b7'>&mdash;</span>";
+    html+="<tr><td style='font-weight:500;white-space:nowrap'>"+r.account+"</td>"
+      +"<td style='font-size:11px;color:#898781'>"+(r.parent||"&mdash;")+"</td>"
+      +"<td>"+mktSpan(r.market)+"</td>"
+      +"<td style='font-size:11px;color:#898781'>"+(r.tier||"&mdash;")+"</td>"
+      +"<td>"+sw+"</td><td>"+sa+"</td>"
+      +"<td class='sep'>"+sub+"</td><td>"+sba+"</td></tr>";
+  });
+  html+="</tbody><tfoot><tr><td colspan='8' style='font-size:11px;color:#898781;padding:6px 10px'>"+rows.length+" accounts</td></tr></tfoot>";
+  document.getElementById("cll-table").innerHTML=html;
+}
+
+if(new URLSearchParams(location.search).get('embed')==='1'){
+  document.documentElement.classList.add('embed-mode');
+}
+
+function populateRegionSelects(regions){
+  const ids = ['arr-mkt','trend-mkt','cl-mkt','cll-mkt'];
+  ids.forEach(id => {
+    const sel = document.getElementById(id);
+    if(!sel) return;
+    const cur = sel.value;
+    while(sel.options.length > 1) sel.remove(1);
+    regions.forEach(r => { const o=document.createElement('option'); o.value=r; o.textContent=r; sel.appendChild(o); });
+    if([...sel.options].some(o=>o.value===cur)) sel.value=cur;
+  });
+}
+
+async function loadData(){
+  try {
+    const resp = await fetch('/api/sw-intelligence');
+    if(!resp.ok) throw new Error('HTTP '+resp.status);
+    DATA = await resp.json();
+    if(DATA.mkt_col) MKT_COL = DATA.mkt_col;
+    if(DATA.regions && DATA.regions.length) populateRegionSelects(DATA.regions);
+    document.getElementById('loading').style.display='none';
+    document.getElementById('main-content').style.display='block';
+    renderOverview();
+  } catch(e) {
+    document.getElementById('loading').innerHTML=
+      '<p style="color:#dc2626;font-size:13px">Failed to load SW data: '+e.message+'</p>';
+  }
+}
+loadData();
+</script>
+</body>
+</html>

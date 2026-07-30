@@ -20,11 +20,14 @@ async function getAccountSubscriptions(req, res) {
     let accountLookup = accountCache[accountName];
 
     if (!accountLookup || now - accountLookup.cachedAt >= ACCOUNT_TTL) {
-      const rows = await query(`
+      const esc = accountName.replace(/'/g, "''");
+
+      // 1. Try exact name match in customer accounts
+      let baseRows = await query(`
         WITH account_info AS (
           SELECT TOP 1 account_id, account_name, parent_account_id
           FROM [dbo].[v_silver_sf_customer_accounts]
-          WHERE account_name = '${accountName.replace(/'/g, "''")}'
+          WHERE account_name = '${esc}'
         ),
         parent_info AS (
           SELECT TOP 1 account_id, account_name
@@ -32,13 +35,51 @@ async function getAccountSubscriptions(req, res) {
           WHERE account_id = (SELECT parent_account_id FROM account_info WHERE parent_account_id IS NOT NULL)
         )
         SELECT
-          (SELECT account_id   FROM account_info) as account_id,
-          (SELECT account_name FROM account_info) as account_name,
+          (SELECT account_id        FROM account_info) as account_id,
+          (SELECT account_name      FROM account_info) as account_name,
           (SELECT parent_account_id FROM account_info) as parent_account_id,
-          (SELECT account_name FROM parent_info) as parent_account_name
+          (SELECT account_name      FROM parent_info)  as parent_account_name
       `);
+
+      // 2. If not found by name, resolve via MDM sf_account_id (handles dropdown name vs SF name mismatch)
+      if (!baseRows?.[0]?.account_id) {
+        const mdm = await query(`
+          SELECT TOP 1 sf_account_id FROM v_silver_mdm_account WHERE sf_account_name = '${esc}'
+        `);
+        const sfId = mdm?.[0]?.sf_account_id;
+        if (sfId) {
+          const sfEsc = sfId.replace(/'/g, "''");
+          baseRows = await query(`
+            WITH account_info AS (
+              SELECT TOP 1 account_id, account_name, parent_account_id
+              FROM [dbo].[v_silver_sf_customer_accounts]
+              WHERE account_id = '${sfEsc}'
+            ),
+            parent_info AS (
+              SELECT TOP 1 account_id, account_name
+              FROM [dbo].[v_silver_sf_customer_accounts]
+              WHERE account_id = (SELECT parent_account_id FROM account_info WHERE parent_account_id IS NOT NULL)
+            )
+            SELECT
+              (SELECT account_id        FROM account_info) as account_id,
+              (SELECT account_name      FROM account_info) as account_name,
+              (SELECT parent_account_id FROM account_info) as parent_account_id,
+              (SELECT account_name      FROM parent_info)  as parent_account_name
+          `);
+        }
+      }
+
+      const rows = baseRows;
       if (!rows || rows.length === 0 || !rows[0].account_id) {
-        return res.status(404).json({ error: `Account not found: ${accountName}` });
+        // Account is in the MDM dropdown but not in SF customer accounts — return empty data
+        // rather than an error so the UI shows "No subscriptions" cleanly
+        return res.json({
+          account: accountName,
+          summary: { total_subscriptions:0, active_subscriptions:0, total_arr_gbp:0,
+                     renewals_next_30_days:0, renewals_next_90_days:0, health_status:'HEALTHY' },
+          contract_cards: [],
+          subscriptions: [],
+        });
       }
       accountLookup = {
         accountId:         rows[0].account_id,
