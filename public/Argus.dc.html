@@ -154,7 +154,7 @@ input{font-family:inherit;}
             <span style="font-size:12px;font-weight:700;color:#3c3c3b;letter-spacing:0.04em;text-transform:uppercase;">Engagement Pulse</span>
             <span id="epSubtitle" style="font-size:10px;color:#9d9d9d;flex:1;">Loading...</span>
             <span id="epBenchNote" style="font-size:10px;color:#9d9d9d;text-align:right;white-space:nowrap;margin-right:6px;"></span>
-            <span id="epExpandBtn" title="Expand timeline" onclick="event.stopPropagation();window.__epToggleExpand&&window.__epToggleExpand()" style="font-size:11px;color:#288184;cursor:pointer;flex-shrink:0;margin-right:6px;padding:1px 5px;border:1px solid #c8e4e4;border-radius:4px;font-weight:600;user-select:none;line-height:1.6;">⤢</span>
+            <span id="epExpandBtn" title="Expand timeline" style="font-size:11px;color:#288184;cursor:pointer;flex-shrink:0;margin-right:6px;padding:1px 5px;border:1px solid #c8e4e4;border-radius:4px;font-weight:600;user-select:none;line-height:1.6;">⤢</span>
             <span id="epCollapseChev" style="font-size:13px;color:#9d9d9d;flex-shrink:0;">▴</span>
           </div>
           <div id="epCardBody">
@@ -334,7 +334,7 @@ input{font-family:inherit;}
               <!-- Drilldown table -->
               <div id="casesDrilldown" style="display:none;margin-top:10px;">
                 <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
-                  <button id="casesBackBtn" style="background:none;border:none;color:#288184;font-size:12px;cursor:pointer;padding:0;">‹ Back</button>
+                  <button id="casesBackBtn" style="background:none;border:none;color:#288184;font-size:12px;cursor:pointer;padding:0;">← Back to Summary</button>
                   <span id="casesDrillTitle" style="font-size:12px;font-weight:700;color:#3c3c3b;"></span>
                 </div>
                 <div style="overflow-x:auto;">
@@ -410,7 +410,7 @@ input{font-family:inherit;}
               <!-- Drilldown table -->
               <div id="oppsDrilldown" style="display:none;margin-top:10px;">
                 <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
-                  <button id="oppsBackBtn" style="background:none;border:none;color:#288184;font-size:12px;cursor:pointer;padding:0;">‹ Back</button>
+                  <button id="oppsBackBtn" style="background:none;border:none;color:#288184;font-size:12px;cursor:pointer;padding:0;">← Back to Summary</button>
                   <span id="oppsDrillTitle" style="font-size:12px;font-weight:700;color:#3c3c3b;"></span>
                 </div>
                 <div style="overflow-x:auto;">
@@ -1526,12 +1526,11 @@ window.__hcExpand = function(prefix) {
   if (chev) chev.textContent = '▴';
 };
 
+// __epToggleExpand is now wired via addEventListener in setupCardCollapses;
+// kept as a callable fallback in case it's invoked programmatically
 window.__epToggleExpand = function() {
-  window.__epExpanded = !window.__epExpanded;
   var btn = document.getElementById('epExpandBtn');
-  if (btn) { btn.textContent = window.__epExpanded ? '⤡' : '⤢'; btn.title = window.__epExpanded ? 'Compress timeline' : 'Expand timeline'; }
-  var wrap = document.getElementById('epWrap');
-  if (wrap && window.__epLastData) { wrap.innerHTML = ''; window.__epRender(wrap, window.__epLastData); }
+  if (btn) btn.click();
 };
 
 window.__showTextTip = function(e, html) {
@@ -1572,7 +1571,7 @@ window.__epRender = function(container, data) {
   const CELL    = window.__epExpanded ? 90 : 56;
   const CW      = MNTHS * CELL;
   const W       = LBL_W + CW + RHS_W;
-  const ROW_H   = 26;
+  const ROW_H   = window.__epExpanded ? 34 : 26;
   const GAP     = 5;
   const PAD_T   = 6;
   const SUB_H   = 32;   // subscription blocks: 14px bar + 18px date labels (renews label + full date)
@@ -2075,7 +2074,7 @@ class Component extends DCLogic {
       btn.onmouseleave = function() { this.style.background = '#f7f7f6'; };
     }
 
-    // Pulse card: independent toggle — excluded from Collapse All
+    // Pulse card: independent collapse toggle — excluded from Collapse All
     var epHdr  = document.getElementById('epCardHeader');
     var epBody = document.getElementById('epCardBody');
     var epChev = document.getElementById('epCollapseChev');
@@ -2088,6 +2087,23 @@ class Component extends DCLogic {
       };
       epHdr.onmouseenter = function() { this.style.opacity = '0.85'; };
       epHdr.onmouseleave = function() { this.style.opacity = '1'; };
+    }
+
+    // Pulse expand button — wired here to avoid inline HTML onclick issues
+    var epExpandBtn = document.getElementById('epExpandBtn');
+    if (epExpandBtn) {
+      epExpandBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        window.__epExpanded = !window.__epExpanded;
+        epExpandBtn.textContent = window.__epExpanded ? '⤡' : '⤢';
+        epExpandBtn.title = window.__epExpanded ? 'Compress timeline' : 'Expand timeline';
+        var wrap = document.getElementById('epWrap');
+        if (wrap && window.__epLastData) {
+          wrap.innerHTML = '';
+          window.__epRender(wrap, window.__epLastData);
+          wrap.style.display = 'block';
+        }
+      });
     }
     updateCollapseAllBtn();
   }
@@ -2155,8 +2171,8 @@ class Component extends DCLogic {
         }
       }
 
-      // Add event listeners for summary cards
-      document.querySelectorAll('.sfSummaryCard').forEach(card => {
+      // Add event listeners for SF subscription risk cards only (scoped by data-group)
+      document.querySelectorAll('#sfCard [data-group]').forEach(card => {
         card.addEventListener('click', () => {
           const group = card.getAttribute('data-group');
           this.showDrilldown(group);
@@ -2172,8 +2188,8 @@ class Component extends DCLogic {
 
     waitForDOM();
 
-    // Add event listeners for summary cards
-    document.querySelectorAll('.sfSummaryCard').forEach(card=>{
+    // Add event listeners for SF subscription risk cards only (scoped by data-group)
+    document.querySelectorAll('#sfCard [data-group]').forEach(card=>{
       card.addEventListener('click', ()=>{
         const group = card.getAttribute('data-group');
         this.showDrilldown(group);
@@ -4574,20 +4590,31 @@ class Component extends DCLogic {
           });
         }
 
-        // Tile click → drilldown
+        // Tile click → drilldown (with toggle: re-click collapses)
         document.querySelectorAll('[data-cases-filter]').forEach(tile => {
           tile.onclick = () => {
             const f = tile.dataset.casesFilter;
+            if (window.__casesActiveDrilldown === f) {
+              document.getElementById('casesDrilldown').style.display = 'none';
+              window.__casesActiveDrilldown = null;
+              document.querySelectorAll('[data-cases-filter]').forEach(t => t.style.outline = '');
+              return;
+            }
+            document.querySelectorAll('[data-cases-filter]').forEach(t => t.style.outline = '');
+            tile.style.outline = '2px solid #288184';
+            window.__casesActiveDrilldown = f;
             const filtered = f === 'all' ? data.cases
               : f === 'open'      ? data.cases.filter(c => !c.isClosed && !c.isEscalated)
               : f === 'escalated' ? data.cases.filter(c => c.isEscalated)
               : f === 'closed'    ? data.cases.filter(c => c.isClosed)
               : data.cases;
-            this._showCasesDrill(filtered, f.charAt(0).toUpperCase()+f.slice(1)+' Cases');
+            this._showCasesDrill(filtered, f === 'closed' ? 'Delivered Cases' : f.charAt(0).toUpperCase()+f.slice(1)+' Cases');
           };
         });
         document.getElementById('casesBackBtn').onclick = () => {
           document.getElementById('casesDrilldown').style.display = 'none';
+          window.__casesActiveDrilldown = null;
+          document.querySelectorAll('[data-cases-filter]').forEach(t => t.style.outline = '');
         };
 
         if (states.summary) states.summary.style.display = 'block';
@@ -4703,10 +4730,19 @@ class Component extends DCLogic {
           });
         }
 
-        // Tile click → drilldown
+        // Tile click → drilldown (with toggle: re-click collapses)
         document.querySelectorAll('[data-opps-filter]').forEach(tile => {
           tile.onclick = () => {
             const f = tile.dataset.oppsFilter;
+            if (window.__oppsActiveDrilldown === f) {
+              document.getElementById('oppsDrilldown').style.display = 'none';
+              window.__oppsActiveDrilldown = null;
+              document.querySelectorAll('[data-opps-filter]').forEach(t => t.style.outline = '');
+              return;
+            }
+            document.querySelectorAll('[data-opps-filter]').forEach(t => t.style.outline = '');
+            tile.style.outline = '2px solid #288184';
+            window.__oppsActiveDrilldown = f;
             const filtered = f === 'all'  ? data.opportunities
               : f === 'open' ? data.opportunities.filter(o => !o.isClosed)
               : f === 'won'  ? data.opportunities.filter(o => o.isWon)
@@ -4717,6 +4753,8 @@ class Component extends DCLogic {
         });
         document.getElementById('oppsBackBtn').onclick = () => {
           document.getElementById('oppsDrilldown').style.display = 'none';
+          window.__oppsActiveDrilldown = null;
+          document.querySelectorAll('[data-opps-filter]').forEach(t => t.style.outline = '');
         };
 
         if (states.summary) states.summary.style.display = 'block';
@@ -5052,7 +5090,7 @@ class Component extends DCLogic {
     document.getElementById('sfDetailView').style.display = 'none';
     document.getElementById('sfSummaryView').style.display = 'block';
     window.__sfActiveDrilldown = null;
-    document.querySelectorAll('.sfSummaryCard').forEach(function(c) {
+    document.querySelectorAll('#sfCard [data-group]').forEach(function(c) {
       var a = c.querySelector('.drill-arrow'); if (a) a.style.opacity = '0.4';
     });
 
@@ -5198,7 +5236,7 @@ class Component extends DCLogic {
     document.getElementById('sfDetailView').style.display = 'block';
     document.getElementById('sfDrilldownTitle').textContent = `${group} Subscriptions`;
     window.__sfActiveDrilldown = group;
-    document.querySelectorAll('.sfSummaryCard').forEach(function(c) {
+    document.querySelectorAll('#sfCard [data-group]').forEach(function(c) {
       var a = c.querySelector('.drill-arrow');
       if (a) a.style.opacity = c.getAttribute('data-group') === group ? '0' : '0.4';
     });
