@@ -189,7 +189,7 @@ module.exports = async function clientTimeline(req, res) {
     const phEsc = (phTenant || '').replace(/'/g, "''");
 
     // Step 3: parallel per-account queries + benchmark
-    const [zdMonthly, phMonthly, pbMonthly, caseMonthly, oppMonthly, subRows, subTypeRows, bench] = await Promise.all([
+    const [zdMonthly, phMonthly, pbMonthly, caseMonthly, oppMonthly, oppCloseRows, subRows, subTypeRows, bench] = await Promise.all([
 
       zd_org_id ? query(`
         SELECT
@@ -241,13 +241,27 @@ module.exports = async function clientTimeline(req, res) {
       sf_account_id ? query(`
         SELECT
           FORMAT(TRY_CAST(CreatedDate AS datetime2), 'yyyy-MM') AS mo,
-          COUNT(*) AS opps
+          COUNT(*) AS opps,
+          SUM(CASE WHEN IsWon = 'true' THEN COALESCE(TRY_CAST(NULLIF(TRIM(Amount),'') AS float),0) ELSE 0 END) AS won_value,
+          SUM(CASE WHEN IsClosed = 'false' THEN COALESCE(TRY_CAST(NULLIF(TRIM(Amount),'') AS float),0) ELSE 0 END) AS pipeline_value
         FROM bronze_sfapi_opportunity
         WHERE AccountId = '${sfEsc}'
           AND IsDeleted = 'false'
           AND CreatedDate IS NOT NULL
         GROUP BY FORMAT(TRY_CAST(CreatedDate AS datetime2), 'yyyy-MM')
         ORDER BY mo
+      `) : Promise.resolve([]),
+
+      sf_account_id ? query(`
+        SELECT
+          FORMAT(TRY_CAST(NULLIF(TRIM(CloseDate),'') AS datetime2), 'yyyy-MM') AS close_mo,
+          SUM(CASE WHEN IsClosed = 'false' THEN COALESCE(TRY_CAST(NULLIF(TRIM(Amount),'') AS float),0) ELSE 0 END) AS pipeline_value,
+          SUM(CASE WHEN IsWon = 'true'    THEN COALESCE(TRY_CAST(NULLIF(TRIM(Amount),'') AS float),0) ELSE 0 END) AS won_value
+        FROM bronze_sfapi_opportunity
+        WHERE AccountId = '${sfEsc}'
+          AND IsDeleted = 'false'
+          AND CloseDate IS NOT NULL
+        GROUP BY FORMAT(TRY_CAST(NULLIF(TRIM(CloseDate),'') AS datetime2), 'yyyy-MM')
       `) : Promise.resolve([]),
 
       query(`
@@ -262,7 +276,6 @@ module.exports = async function clientTimeline(req, res) {
           AND IsDeleted = 'false'
           AND NULLIF(TRIM(End_Date__c), '') IS NOT NULL
           AND TRY_CAST(NULLIF(TRIM(End_Date__c), '') AS date) >= CAST(GETDATE() AS date)
-          AND Status__c IN ('Active', 'Termination in Progress')
       `),
 
       sf_account_id ? query(`
@@ -279,21 +292,39 @@ module.exports = async function clientTimeline(req, res) {
       getBenchmark()
     ]);
 
-    // Build 13-month grid
-    const months = buildMonths(13);
+    // Build 19-month grid (months[0..17] = 18 past months, months[18] = current)
+    const months = buildMonths(19);
     const PH_DATA_START = '2026-04';
 
     const zdMap   = {}; zdMonthly.forEach(r   => { zdMap[r.mo]   = Number(r.tickets); });
     const phMap   = {}; phMonthly.forEach(r   => { phMap[r.mo]   = Number(r.users);   });
     const pbMap   = {}; pbMonthly.forEach(r   => { pbMap[r.mo]   = Number(r.notes);   });
     const caseMap = {}; caseMonthly.forEach(r  => { caseMap[r.mo] = Number(r.cases);   });
-    const oppMap  = {}; oppMonthly.forEach(r   => { oppMap[r.mo]  = Number(r.opps);    });
+    const oppMap     = {};
+    const oppWonMap  = {};
+    const oppPipeMap = {};
+    oppMonthly.forEach(r => {
+      oppMap[r.mo]     = Number(r.opps)          || 0;
+      oppWonMap[r.mo]  = Number(r.won_value)      || 0;
+      oppPipeMap[r.mo] = Number(r.pipeline_value) || 0;
+    });
 
     const support      = months.map(m => zdMap[m]   !== undefined ? zdMap[m]   : 0);
     const usage        = months.map(m => m < PH_DATA_START ? null : (phMap[m] !== undefined ? phMap[m] : 0));
     const product      = months.map(m => pbMap[m]   !== undefined ? pbMap[m]   : 0);
     const cases        = months.map(m => caseMap[m]  !== undefined ? caseMap[m]  : 0);
-    const opportunities = months.map(m => oppMap[m]  !== undefined ? oppMap[m]  : 0);
+    const opportunities      = months.map(m => oppMap[m]     || 0);
+    const opp_won_value      = months.map(m => oppWonMap[m]  || 0);
+    const opp_pipeline_value = months.map(m => oppPipeMap[m] || 0);
+
+    // Opp data by CloseDate — for alignment with renewal calendar (keyed by yyyy-MM)
+    const opp_by_close_date = {};
+    (oppCloseRows || []).forEach(r => {
+      if (r.close_mo) opp_by_close_date[r.close_mo] = {
+        pipeline_value: Number(r.pipeline_value) || 0,
+        won_value:      Number(r.won_value)      || 0,
+      };
+    });
 
     // Subscription details
     const sub = subRows?.[0];
@@ -336,6 +367,9 @@ module.exports = async function clientTimeline(req, res) {
       product,
       cases,
       opportunities,
+      opp_won_value,
+      opp_pipeline_value,
+      opp_by_close_date,
       subscription,
       subscriptionTypes,
       benchmark: bench,

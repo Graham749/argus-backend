@@ -154,7 +154,6 @@ input{font-family:inherit;}
             <span style="font-size:12px;font-weight:700;color:#3c3c3b;letter-spacing:0.04em;text-transform:uppercase;">Engagement Pulse</span>
             <span id="epSubtitle" style="font-size:10px;color:#9d9d9d;flex:1;">Loading...</span>
             <span id="epBenchNote" style="font-size:10px;color:#9d9d9d;text-align:right;white-space:nowrap;margin-right:6px;"></span>
-            <span id="epExpandBtn" title="Expand timeline" style="font-size:11px;color:#288184;cursor:pointer;flex-shrink:0;margin-right:6px;padding:1px 5px;border:1px solid #c8e4e4;border-radius:4px;font-weight:600;user-select:none;line-height:1.6;">⤢</span>
             <span id="epCollapseChev" style="font-size:13px;color:#9d9d9d;flex-shrink:0;">▴</span>
           </div>
           <div id="epCardBody">
@@ -208,37 +207,9 @@ input{font-family:inherit;}
             </div>
 
 
-            <!-- Risk Status Cards -->
-            <div id="sfRiskCardsContainer" style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;">
-              <div class="sfSummaryCard" data-group="OVERDUE" style="background:#fdeee0;border-radius:8px;padding:12px;cursor:pointer;border:1px solid #e6e6e5;position:relative;">
-                <div style="font-size:11px;font-weight:700;color:#c2600f;text-transform:uppercase;margin-bottom:4px;">Overdue</div>
-                <div style="font-size:20px;font-weight:700;color:#d32f2f;line-height:1;" id="sf_overdue_Count">0</div>
-                <div style="font-size:11px;color:#d32f2f;margin-top:2px;" id="sf_overdue_Pct">—</div>
-                <div style="font-size:13px;font-weight:600;color:#d32f2f;margin-top:4px;" id="sf_overdue_ARR">£0k</div>
-                <span class="drill-arrow" style="position:absolute;top:50%;right:10px;transform:translateY(-50%);font-size:11px;color:#3c3c3b;opacity:0.35;pointer-events:none;line-height:1;">▼</span>
-              </div>
-              <div class="sfSummaryCard" data-group="AT_RISK" style="background:#fff3e0;border-radius:8px;padding:12px;cursor:pointer;border:1px solid #e6e6e5;position:relative;">
-                <div style="font-size:11px;font-weight:700;color:#e65100;text-transform:uppercase;margin-bottom:4px;">At Risk</div>
-                <div style="font-size:20px;font-weight:700;color:#ff9800;line-height:1;" id="sf_at_risk_Count">0</div>
-                <div style="font-size:11px;color:#ff9800;margin-top:2px;" id="sf_at_risk_Pct">—</div>
-                <div style="font-size:13px;font-weight:600;color:#ff9800;margin-top:4px;" id="sf_at_risk_ARR">£0k</div>
-                <span class="drill-arrow" style="position:absolute;top:50%;right:10px;transform:translateY(-50%);font-size:11px;color:#3c3c3b;opacity:0.35;pointer-events:none;line-height:1;">▼</span>
-              </div>
-              <div class="sfSummaryCard" data-group="TO_WATCH" style="background:#e3f2fd;border-radius:8px;padding:12px;cursor:pointer;border:1px solid #e6e6e5;position:relative;">
-                <div style="font-size:11px;font-weight:700;color:#1565c0;text-transform:uppercase;margin-bottom:4px;">To Watch</div>
-                <div style="font-size:20px;font-weight:700;color:#2196f3;line-height:1;" id="sf_to_watch_Count">0</div>
-                <div style="font-size:11px;color:#2196f3;margin-top:2px;" id="sf_to_watch_Pct">—</div>
-                <div style="font-size:13px;font-weight:600;color:#2196f3;margin-top:4px;" id="sf_to_watch_ARR">£0k</div>
-                <span class="drill-arrow" style="position:absolute;top:50%;right:10px;transform:translateY(-50%);font-size:11px;color:#3c3c3b;opacity:0.35;pointer-events:none;line-height:1;">▼</span>
-              </div>
-              <div class="sfSummaryCard" data-group="HEALTHY" style="background:#e8f5e9;border-radius:8px;padding:12px;cursor:pointer;border:1px solid #e6e6e5;position:relative;">
-                <div style="font-size:11px;font-weight:700;color:#2e7d32;text-transform:uppercase;margin-bottom:4px;">Healthy</div>
-                <div style="font-size:20px;font-weight:700;color:#4caf50;line-height:1;" id="sf_healthy_Count">0</div>
-                <div style="font-size:11px;color:#4caf50;margin-top:2px;" id="sf_healthy_Pct">—</div>
-                <div style="font-size:13px;font-weight:600;color:#4caf50;margin-top:4px;" id="sf_healthy_ARR">£0k</div>
-                <span class="drill-arrow" style="position:absolute;top:50%;right:10px;transform:translateY(-50%);font-size:11px;color:#3c3c3b;opacity:0.35;pointer-events:none;line-height:1;">▼</span>
-              </div>
-            </div>
+            <!-- Risk summary pills + Renewal timeline (replaces static risk tiles) -->
+            <div id="sfRiskSummaryRow" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:8px;min-height:24px;"></div>
+            <div id="sfTimelineWrap" style="width:100%;margin-bottom:4px;"></div>
           </div>
 
           <!-- Detail View (Drilldown) -->
@@ -280,80 +251,6 @@ input{font-family:inherit;}
             <span style="font-size:13px;" id="sfErrorText"></span>
           </div>
           </div><!-- /sfCardBody -->
-        </div>
-
-        <!-- Salesforce Cases Card -->
-        <div id="sfCasesCard" style="background:#fff;border:1px solid #e6e6e5;border-radius:12px;padding:20px;box-shadow:0 1px 3px rgba(60,60,59,0.07);margin-bottom:28px;">
-          <div id="casesCardHeader" style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
-            <img src="./assets/salesforce-2.svg" alt="Salesforce" style="width:44px;height:44px;object-fit:contain;flex-shrink:0;" />
-            <div style="flex:1;">
-              <div style="display:flex;align-items:center;gap:8px;">
-                <div style="font-size:13px;font-weight:700;">Salesforce Cases</div>
-                <div style="background:#e8f5e9;color:#2e7d32;border-radius:4px;padding:2px 7px;font-size:10px;font-weight:600;display:flex;align-items:center;gap:3px;"><span style="font-size:12px;line-height:1;">●</span>Live data</div>
-              </div>
-              <div style="font-size:11px;color:#9d9d9d;margin-top:2px;">Support cases &amp; analyst requests</div>
-            </div>
-            <span id="casesCollapseChev" style="font-size:16px;color:#9d9d9d;flex-shrink:0;margin-left:8px;">▾</span>
-          </div>
-          <div id="casesCompact" class="hc-compact"></div>
-          <div id="casesCardBody">
-            <div id="casesNoAccount" style="padding:24px 0;text-align:center;color:#9d9d9d;font-size:13px;">Select an account above to view cases.</div>
-            <div id="casesLoading" style="display:none;padding:40px 0;text-align:center;color:#9d9d9d;font-size:13px;font-style:italic;">Loading cases…</div>
-            <div id="casesNoMatch" style="display:none;padding:24px 0;text-align:center;color:#9d9d9d;font-size:13px;">No cases found for this account.</div>
-            <div id="casesError"   style="display:none;padding:16px;background:#fff3e0;border-radius:6px;color:#c2600f;font-size:12px;"></div>
-            <div id="casesSummaryView" style="display:none;">
-              <!-- 4 stat tiles -->
-              <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px;">
-                <div id="casesOpenTile"  class="sfSummaryCard" style="background:#fff3e0;border-radius:8px;padding:10px 12px;cursor:pointer;" data-cases-filter="open">
-                  <div style="font-size:10px;font-weight:700;color:#e65100;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;">Open</div>
-                  <div id="casesOpenCount" style="font-size:22px;font-weight:700;color:#3c3c3b;">—</div>
-                  <div style="font-size:10px;color:#9d9d9d;margin-top:2px;">active cases</div>
-                  <span style="font-size:11px;color:#9d9d9d;float:right;margin-top:-14px;">›</span>
-                </div>
-                <div id="casesEscTile" class="sfSummaryCard" style="background:#fce4ec;border-radius:8px;padding:10px 12px;cursor:pointer;" data-cases-filter="escalated">
-                  <div style="font-size:10px;font-weight:700;color:#c62828;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;">Escalated</div>
-                  <div id="casesEscCount" style="font-size:22px;font-weight:700;color:#3c3c3b;">—</div>
-                  <div style="font-size:10px;color:#9d9d9d;margin-top:2px;">flagged</div>
-                  <span style="font-size:11px;color:#9d9d9d;float:right;margin-top:-14px;">›</span>
-                </div>
-                <div id="casesClosedTile" class="sfSummaryCard" style="background:#e8f5e9;border-radius:8px;padding:10px 12px;cursor:pointer;" data-cases-filter="closed">
-                  <div style="font-size:10px;font-weight:700;color:#2e7d32;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;">Delivered</div>
-                  <div id="casesClosedCount" style="font-size:22px;font-weight:700;color:#3c3c3b;">—</div>
-                  <div style="font-size:10px;color:#9d9d9d;margin-top:2px;">closed cases</div>
-                  <span style="font-size:11px;color:#9d9d9d;float:right;margin-top:-14px;">›</span>
-                </div>
-                <div class="sfSummaryCard" style="background:#f3f3f2;border-radius:8px;padding:10px 12px;cursor:pointer;" data-cases-filter="all">
-                  <div style="font-size:10px;font-weight:700;color:#6d6d6c;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;">Total</div>
-                  <div id="casesTotalCount" style="font-size:22px;font-weight:700;color:#3c3c3b;">—</div>
-                  <div id="casesAvgHours" style="font-size:10px;color:#9d9d9d;margin-top:2px;"></div>
-                  <span style="font-size:11px;color:#9d9d9d;float:right;margin-top:-14px;">›</span>
-                </div>
-              </div>
-              <!-- Type breakdown pills -->
-              <div id="casesTypeBar" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;"></div>
-              <!-- Drilldown table -->
-              <div id="casesDrilldown" style="display:none;margin-top:10px;">
-                <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
-                  <button id="casesBackBtn" style="background:none;border:none;color:#288184;font-size:12px;cursor:pointer;padding:0;">← Back to Summary</button>
-                  <span id="casesDrillTitle" style="font-size:12px;font-weight:700;color:#3c3c3b;"></span>
-                </div>
-                <div style="overflow-x:auto;">
-                  <table style="width:100%;border-collapse:collapse;font-size:11px;">
-                    <thead><tr style="border-bottom:1px solid #e6e6e5;color:#9d9d9d;text-align:left;">
-                      <th style="padding:4px 8px;">#</th>
-                      <th style="padding:4px 8px;">Subject</th>
-                      <th style="padding:4px 8px;">Type</th>
-                      <th style="padding:4px 8px;">Status</th>
-                      <th style="padding:4px 8px;">Created</th>
-                      <th style="padding:4px 8px;">Hours</th>
-                      <th style="padding:4px 8px;">Assignee</th>
-                    </tr></thead>
-                    <tbody id="casesDrillBody"></tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
 
         <!-- Salesforce Opportunities Card -->
@@ -424,6 +321,80 @@ input{font-family:inherit;}
                       <th style="padding:4px 8px;">Created</th>
                     </tr></thead>
                     <tbody id="oppsDrillBody"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Salesforce Cases Card -->
+        <div id="sfCasesCard" style="background:#fff;border:1px solid #e6e6e5;border-radius:12px;padding:20px;box-shadow:0 1px 3px rgba(60,60,59,0.07);margin-bottom:28px;">
+          <div id="casesCardHeader" style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+            <img src="./assets/salesforce-2.svg" alt="Salesforce" style="width:44px;height:44px;object-fit:contain;flex-shrink:0;" />
+            <div style="flex:1;">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <div style="font-size:13px;font-weight:700;">Salesforce Cases</div>
+                <div style="background:#e8f5e9;color:#2e7d32;border-radius:4px;padding:2px 7px;font-size:10px;font-weight:600;display:flex;align-items:center;gap:3px;"><span style="font-size:12px;line-height:1;">●</span>Live data</div>
+              </div>
+              <div style="font-size:11px;color:#9d9d9d;margin-top:2px;">Support cases &amp; analyst requests</div>
+            </div>
+            <span id="casesCollapseChev" style="font-size:16px;color:#9d9d9d;flex-shrink:0;margin-left:8px;">▾</span>
+          </div>
+          <div id="casesCompact" class="hc-compact"></div>
+          <div id="casesCardBody">
+            <div id="casesNoAccount" style="padding:24px 0;text-align:center;color:#9d9d9d;font-size:13px;">Select an account above to view cases.</div>
+            <div id="casesLoading" style="display:none;padding:40px 0;text-align:center;color:#9d9d9d;font-size:13px;font-style:italic;">Loading cases…</div>
+            <div id="casesNoMatch" style="display:none;padding:24px 0;text-align:center;color:#9d9d9d;font-size:13px;">No cases found for this account.</div>
+            <div id="casesError"   style="display:none;padding:16px;background:#fff3e0;border-radius:6px;color:#c2600f;font-size:12px;"></div>
+            <div id="casesSummaryView" style="display:none;">
+              <!-- 4 stat tiles -->
+              <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px;">
+                <div id="casesOpenTile"  class="sfSummaryCard" style="background:#fff3e0;border-radius:8px;padding:10px 12px;cursor:pointer;" data-cases-filter="open">
+                  <div style="font-size:10px;font-weight:700;color:#e65100;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;">Open</div>
+                  <div id="casesOpenCount" style="font-size:22px;font-weight:700;color:#3c3c3b;">—</div>
+                  <div style="font-size:10px;color:#9d9d9d;margin-top:2px;">active cases</div>
+                  <span style="font-size:11px;color:#9d9d9d;float:right;margin-top:-14px;">›</span>
+                </div>
+                <div id="casesEscTile" class="sfSummaryCard" style="background:#fce4ec;border-radius:8px;padding:10px 12px;cursor:pointer;" data-cases-filter="escalated">
+                  <div style="font-size:10px;font-weight:700;color:#c62828;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;">Escalated</div>
+                  <div id="casesEscCount" style="font-size:22px;font-weight:700;color:#3c3c3b;">—</div>
+                  <div style="font-size:10px;color:#9d9d9d;margin-top:2px;">flagged</div>
+                  <span style="font-size:11px;color:#9d9d9d;float:right;margin-top:-14px;">›</span>
+                </div>
+                <div id="casesClosedTile" class="sfSummaryCard" style="background:#e8f5e9;border-radius:8px;padding:10px 12px;cursor:pointer;" data-cases-filter="closed">
+                  <div style="font-size:10px;font-weight:700;color:#2e7d32;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;">Delivered</div>
+                  <div id="casesClosedCount" style="font-size:22px;font-weight:700;color:#3c3c3b;">—</div>
+                  <div style="font-size:10px;color:#9d9d9d;margin-top:2px;">closed cases</div>
+                  <span style="font-size:11px;color:#9d9d9d;float:right;margin-top:-14px;">›</span>
+                </div>
+                <div class="sfSummaryCard" style="background:#f3f3f2;border-radius:8px;padding:10px 12px;cursor:pointer;" data-cases-filter="all">
+                  <div style="font-size:10px;font-weight:700;color:#6d6d6c;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;">Total</div>
+                  <div id="casesTotalCount" style="font-size:22px;font-weight:700;color:#3c3c3b;">—</div>
+                  <div id="casesAvgHours" style="font-size:10px;color:#9d9d9d;margin-top:2px;"></div>
+                  <span style="font-size:11px;color:#9d9d9d;float:right;margin-top:-14px;">›</span>
+                </div>
+              </div>
+              <!-- Type breakdown pills -->
+              <div id="casesTypeBar" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;"></div>
+              <!-- Drilldown table -->
+              <div id="casesDrilldown" style="display:none;margin-top:10px;">
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+                  <button id="casesBackBtn" style="background:none;border:none;color:#288184;font-size:12px;cursor:pointer;padding:0;">← Back to Summary</button>
+                  <span id="casesDrillTitle" style="font-size:12px;font-weight:700;color:#3c3c3b;"></span>
+                </div>
+                <div style="overflow-x:auto;">
+                  <table style="width:100%;border-collapse:collapse;font-size:11px;">
+                    <thead><tr style="border-bottom:1px solid #e6e6e5;color:#9d9d9d;text-align:left;">
+                      <th style="padding:4px 8px;">#</th>
+                      <th style="padding:4px 8px;">Subject</th>
+                      <th style="padding:4px 8px;">Type</th>
+                      <th style="padding:4px 8px;">Status</th>
+                      <th style="padding:4px 8px;">Created</th>
+                      <th style="padding:4px 8px;">Hours</th>
+                      <th style="padding:4px 8px;">Assignee</th>
+                    </tr></thead>
+                    <tbody id="casesDrillBody"></tbody>
                   </table>
                 </div>
               </div>
@@ -1526,13 +1497,6 @@ window.__hcExpand = function(prefix) {
   if (chev) chev.textContent = '▴';
 };
 
-// __epToggleExpand is now wired via addEventListener in setupCardCollapses;
-// kept as a callable fallback in case it's invoked programmatically
-window.__epToggleExpand = function() {
-  var btn = document.getElementById('epExpandBtn');
-  if (btn) btn.click();
-};
-
 window.__showTextTip = function(e, html) {
   var t = document.getElementById('eng-tooltip');
   if (!t) return;
@@ -1565,30 +1529,33 @@ window.__argusStartLoad = function() {
 // ── Engagement Pulse SVG renderer ─────────────────────────────────────────────
 window.__epRender = function(container, data) {
   window.__epLastData = data;
-  const MNTHS   = data.months.length;
-  const LBL_W   = 76;
-  const RHS_W   = 76;
-  const CELL    = window.__epExpanded ? 90 : 56;
-  const CW      = MNTHS * CELL;
-  const W       = LBL_W + CW + RHS_W;
-  const ROW_H   = window.__epExpanded ? 34 : 26;
-  const GAP     = 5;
-  const PAD_T   = 6;
-  const SUB_H   = 32;   // subscription blocks: 14px bar + 18px date labels (renews label + full date)
-  const SEP_H   = 8;    // gap between sub track and first data row
-  const ROWS_Y  = PAD_T + SUB_H + SEP_H;   // y where data rows start
-  const N_ROWS  = 5;
-  const AX_H    = 18;
-  const TOTAL   = ROWS_Y + N_ROWS*(ROW_H+GAP) - GAP + 6 + AX_H + 4;
+  const LBL_W      = 76;
+  const RHS_W      = 76;
+  const visW       = Math.max(container.offsetWidth || 0,
+                               (container.parentElement ? container.parentElement.clientWidth : 0), 600);
+  const CELL       = Math.max(22, Math.floor((visW - LBL_W - RHS_W) / 20));
+  const CW         = 20 * CELL;
+  const W          = LBL_W + CW + RHS_W;
+  const ROW_H      = 38;
+  const GAP        = 4;
+  const PAD_T      = 6;
+  const SUB_H      = 68;   // renewal calendar: 48px bar area + 20px month/year labels
+  const SEP_H      = 6;    // gap between calendar and opps row
+  const ROWS_Y     = PAD_T + SUB_H + SEP_H;
+  const OPPS_AX_H  = 20;   // month axis below opps row
+  const SEP_OPPS   = 4;    // gap between opps axis and cases row
+  const N_ROWS     = 5;
+  const AX_H       = 18;
+  const TOTAL      = ROWS_Y + N_ROWS*(ROW_H+GAP) - GAP + OPPS_AX_H + SEP_OPPS + 6 + AX_H + 4;
 
   const PH_START  = '2026-04';
   const MABBR     = ['J','F','M','A','M','J','J','A','S','O','N','D'];
   const TYPE_COLS = ['#1565c0','#388e3c','#f57c00','#6a1b9a','#00838f','#c62828','#546e7a','#ad1457'];
 
-  // Row order matches widget order: SF Cases → SF Opps → ZD Support → PH Usage → PB Product
+  // Row order: SF Opps (with its own axis) → SF Cases → ZD Support → PH Usage → PB Product
   const ROWS = [
-    { key:'cases',        label:'Cases',    source:'Salesforce',   color:'#c62828', nullBg:'#f5f5f5', positive:false, bench:(data.benchmark||{}).cases   || {p25:0,p50:0.5,p75:1.5,p90:4}  },
     { key:'opportunities',label:'Opps',     source:'Salesforce',   color:'#e65100', nullBg:'#f5f5f5', positive:true,  bench:(data.benchmark||{}).opps    || {p25:0,p50:0.3,p75:1,p90:3}    },
+    { key:'cases',        label:'Cases',    source:'Salesforce',   color:'#c62828', nullBg:'#f5f5f5', positive:false, bench:(data.benchmark||{}).cases   || {p25:0,p50:0.5,p75:1.5,p90:4}  },
     { key:'support',      label:'Tickets',  source:'Zendesk',      color:'#d84315', nullBg:'#f5f5f5', positive:false, bench:(data.benchmark||{}).support || {p25:0,p50:1,p75:3,p90:8}      },
     { key:'usage',        label:'Usage',    source:'PostHog',      color:'#1565c0', nullBg:'#dce8f7', positive:true,  bench:(data.benchmark||{}).usage   || {p25:2,p50:8,p75:22,p90:55}    },
     { key:'product',      label:'Notes',    source:'ProductBoard', color:'#6a1b9a', nullBg:'#f5f5f5', positive:true,  bench:(data.benchmark||{}).product || {p25:0,p50:0.3,p75:1.2,p90:4}  },
@@ -1616,89 +1583,167 @@ window.__epRender = function(container, data) {
     return pct >= 75 ? '#2e7d32' : pct >= 50 ? '#455a64' : pct >= 25 ? '#9d9d9d' : '#e65100';
   }
 
-  var svg = s('svg', { width:W, height:TOTAL });
+  var svg = s('svg', { viewBox:'0 0 '+W+' '+TOTAL, width:'100%', style:'display:block;' });
 
-  // ── Subscription track at TOP (Salesforce Subscriptions) ────────────────────
+  // ── Build shared 20-column grid (Past · 18 months · 18m+) ───────────────────
+  // Used by both Renewals row AND Opps row for perfect column alignment.
+  var calToday    = new Date(); calToday.setHours(0,0,0,0);
+  var CAL_MONTHS  = 18;
+  var nCalCols    = 20;
+  var CAL_COL_W   = CELL;
+  var CAL_BAR_W   = Math.max(CELL - 3, 3);
+  var CAL_H       = SUB_H - 20;
+  var BAR_MAX_CAL = CAL_H - 12;
+  var fmtArrCal   = function(v){ return v>=1e6?'£'+(v/1e6).toFixed(1)+'m':'£'+Math.round(v/1e3)+'k'; };
+  var urgColorCal = function(d){ return d<0?'#d32f2f':d<30?'#e65100':d<90?'#1565c0':'#2e7d32'; };
+
+  // Monthly buckets
+  var calBuckets = [];
+  for (var mi2 = 0; mi2 < CAL_MONTHS; mi2++) {
+    var bStart = new Date(calToday.getFullYear(), calToday.getMonth()+mi2, 1);
+    var bEnd   = new Date(calToday.getFullYear(), calToday.getMonth()+mi2+1, 1);
+    var bKey   = bStart.getFullYear()+'-'+String(bStart.getMonth()+1).padStart(2,'0');
+    calBuckets.push({ label: bStart.toLocaleDateString('en-GB',{month:'short'}),
+      yearLbl: bStart.getMonth()===0||mi2===0 ? "'"+String(bStart.getFullYear()).slice(2) : '',
+      key:bKey, start:bStart, end:bEnd, subs:[], arr:0, oppWon:0, oppPipe:0 });
+  }
+  var pastBucket   = { label:'Past',  yearLbl:'', key:'past',   subs:[], arr:0, oppWon:0, oppPipe:0 };
+  var beyondBucket = { label:'18m+',  yearLbl:'', key:'beyond', subs:[], arr:0, oppWon:0, oppPipe:0 };
+
+  // Populate renewals
+  var renewalSubs = (data.renewalSubs && data.renewalSubs.length) ? data.renewalSubs : [];
+  renewalSubs.filter(function(rs){ return rs.days_to_renewal < 0; }).forEach(function(rs){
+    pastBucket.subs.push(rs); pastBucket.arr += rs.arr_gbp||0;
+  });
+  renewalSubs.filter(function(rs){ return rs.days_to_renewal>=0 && rs.renewal_date; }).forEach(function(rs){
+    var rd = new Date(rs.renewal_date); rd.setHours(0,0,0,0);
+    var found = false;
+    for (var bi=0; bi<calBuckets.length; bi++) {
+      if (rd >= calBuckets[bi].start && rd < calBuckets[bi].end) {
+        calBuckets[bi].subs.push(rs); calBuckets[bi].arr += rs.arr_gbp||0; found=true; break;
+      }
+    }
+    if (!found) { beyondBucket.subs.push(rs); beyondBucket.arr += rs.arr_gbp||0; }
+  });
+
+  // Populate opp data by CloseDate into the same columns
+  var oppByClose = data.opp_by_close_date || {};
+  Object.keys(oppByClose).forEach(function(mo) {
+    var d = new Date(mo+'-01'); d.setHours(0,0,0,0);
+    if (d < calBuckets[0].start) {
+      pastBucket.oppWon  += oppByClose[mo].won_value      || 0;
+      pastBucket.oppPipe += oppByClose[mo].pipeline_value || 0;
+    } else {
+      var found = false;
+      for (var bi=0; bi<calBuckets.length; bi++) {
+        if (d >= calBuckets[bi].start && d < calBuckets[bi].end) {
+          calBuckets[bi].oppWon  += oppByClose[mo].won_value      || 0;
+          calBuckets[bi].oppPipe += oppByClose[mo].pipeline_value || 0;
+          found = true; break;
+        }
+      }
+      if (!found) {
+        beyondBucket.oppWon  += oppByClose[mo].won_value      || 0;
+        beyondBucket.oppPipe += oppByClose[mo].pipeline_value || 0;
+      }
+    }
+  });
+
+  // Set renewal color per bucket
+  pastBucket.color = pastBucket.subs.length ? '#c62828' : '#e0e0e0';
+  calBuckets.forEach(function(b){
+    var minD = b.subs.length ? Math.min.apply(null,b.subs.map(function(rs){return rs.days_to_renewal;})) : 9999;
+    b.color = urgColorCal(minD);
+  });
+  beyondBucket.color = '#388e3c';
+
+  // Fixed 20-column array: [past, m0..m17, beyond]
+  var calCols = [pastBucket].concat(calBuckets).concat([beyondBucket]);
+
+  // ── Backward 20-column grid (18m- · 18 past months · now) ───────────────────
+  // Used by Cases, Tickets, Usage, Notes rows — mirrors forward grid structure.
+  var backCols = [];
+  backCols.push({ label:'18m-', yearLbl:'', key:'pre' });   // col 0: pre-history
+  for (var bi4 = 0; bi4 < 18; bi4++) {
+    var bmo2 = data.months[bi4];
+    var bd2  = new Date(bmo2 + '-01');
+    backCols.push({
+      label: bd2.toLocaleDateString('en-GB', {month:'short'}),
+      yearLbl: bd2.getMonth()===0 ? "'"+String(bd2.getFullYear()).slice(2) : '',
+      key: bmo2
+    });
+  }
+  // col 19: current month (partial)
+  var currMo2 = data.months[18];
+  var currD2  = new Date(currMo2 + '-01');
+  backCols.push({
+    label: currD2.toLocaleDateString('en-GB', {month:'short'}),
+    yearLbl: currD2.getMonth()===0 ? "'"+String(currD2.getFullYear()).slice(2) : '',
+    key: currMo2, isCurrent: true
+  });
+
+  // Today marker (spans renewals + opps rows)
+  var oppsRowY  = ROWS_Y;  // opps is first row (ri=0), no offset
+  var daysInMo2 = new Date(calToday.getFullYear(), calToday.getMonth()+1, 0).getDate();
+  var todayFrac2= calToday.getDate() / daysInMo2;
+  var todayCalX = LBL_W + 1*CAL_COL_W + Math.round(todayFrac2 * CAL_COL_W);
+  var todayBotY = oppsRowY + ROW_H;
+  svg.appendChild(s('line',{ x1:todayCalX, y1:PAD_T, x2:todayCalX, y2:todayBotY,
+    stroke:'#c0c0c0','stroke-width':1,'stroke-dasharray':'3,2' }));
+
+  // ── Renewal calendar row ─────────────────────────────────────────────────────
   var subY = PAD_T;
-  // Label: two lines
   svg.appendChild(s('text', {
     x:LBL_W-6, y:subY+7, 'text-anchor':'end', 'dominant-baseline':'middle',
     'font-size':11, 'font-weight':700, 'font-family':'Lato,Helvetica Neue,Arial,sans-serif', fill:'#6d6d6c'
-  }, 'Subscriptions'));
+  }, 'Renewals'));
   svg.appendChild(s('text', {
     x:LBL_W-6, y:subY+18, 'text-anchor':'end', 'dominant-baseline':'middle',
     'font-size':8, 'font-family':'Lato,Helvetica Neue,Arial,sans-serif', fill:'#b0b0b0'
   }, 'Salesforce'));
 
-  if (data.subscription) {
-    var sub = data.subscription;
-    var types = data.subscriptionTypes || [];
-    var totalCnt = types.reduce(function(a,t){return a+t.cnt;},0) || sub.count || 1;
-    var TRACK_H = 14;
+  var maxCalArr = 1;
+  calCols.forEach(function(c){ if (c.arr > maxCalArr) maxCalArr = c.arr; });
 
-    // Background track (with full-contract tooltip)
-    var bgRect = s('rect', { x:LBL_W, y:subY+2, width:CW, height:TRACK_H, fill:'#e6e6e5', rx:3 });
-    var bgTip = document.createElementNS('http://www.w3.org/2000/svg','title');
-    bgTip.textContent = 'Contract: ' + (sub.startDate||'?') + ' → ' + (sub.endDate||'?')
-      + ' | ' + sub.daysToRenewal + ' days to renewal'
-      + ' | ' + sub.count + ' active sub' + (sub.count!==1?'s':'')
-      + (sub.arr ? ' | ARR £'+(sub.arr>=1000000?'£'+(sub.arr/1000000).toFixed(1)+'M':'£'+(sub.arr/1000).toFixed(0)+'k') : '');
-    bgRect.appendChild(bgTip);
-    svg.appendChild(bgRect);
+  calCols.forEach(function(col, ci){
+    var cx  = LBL_W + ci * CAL_COL_W;
+    var mid = cx + CAL_COL_W / 2;
+    var barH = col.subs.length ? Math.max(6, Math.round((col.arr/maxCalArr)*BAR_MAX_CAL)) : 0;
+    var barY = subY + CAL_H - barH;
 
-    // Segmented blocks by service type (proportional to count)
-    var x0 = LBL_W;
-    types.forEach(function(t, ti) {
-      var tw = Math.max(2, Math.round(CW * t.cnt / totalCnt));
-      if (ti === types.length - 1) tw = LBL_W + CW - x0; // fill remainder
-      var seg = s('rect', { x:x0, y:subY+2, width:tw, height:TRACK_H, fill:TYPE_COLS[ti%TYPE_COLS.length], rx:0, opacity:0.82 });
-      var tip = document.createElementNS('http://www.w3.org/2000/svg','title');
-      tip.textContent = (t.service_type||'Other') + ': ' + t.cnt + ' subscription' + (t.cnt!==1?'s':'');
-      if (t.arr_gbp) tip.textContent += ' · £'+(t.arr_gbp/1000).toFixed(0)+'k ARR';
-      seg.appendChild(tip);
-      svg.appendChild(seg);
-      x0 += tw;
-    });
-    if (!types.length) {
-      svg.appendChild(s('rect', { x:LBL_W, y:subY+2, width:Math.round(CW*(sub.percentThrough||50)/100), height:TRACK_H, fill:'#288184', rx:3, opacity:0.8 }));
+    svg.appendChild(s('rect',{ x:cx+1, y:subY, width:CAL_BAR_W, height:CAL_H, fill:'#f5f5f5', rx:2 }));
+    if (barH) {
+      svg.appendChild(s('rect',{ x:cx+1, y:barY, width:CAL_BAR_W, height:barH,
+        fill:col.color, rx:2, opacity:0.85 }));
+      svg.appendChild(s('text',{ x:mid, y:barY-2, 'text-anchor':'middle',
+        'font-size':8, 'font-weight':700, fill:col.color,
+        'font-family':'Lato,Helvetica Neue,Arial,sans-serif' }, col.subs.length));
+      if (barH >= 16)
+        svg.appendChild(s('text',{ x:mid, y:barY+barH/2+3, 'text-anchor':'middle',
+          'font-size':7, fill:'#fff', 'font-family':'Lato,Helvetica Neue,Arial,sans-serif' },
+          fmtArrCal(col.arr)));
     }
+    var lbl0 = col.label.split('\n')[0];
+    var lbl1 = col.label.split('\n')[1];
+    svg.appendChild(s('text',{ x:mid, y:subY+CAL_H+9, 'text-anchor':'middle',
+      'font-size':8, fill:col.subs.length?'#3c3c3b':'#d0d0d0',
+      'font-family':'Lato,Helvetica Neue,Arial,sans-serif' }, lbl0));
+    if (lbl1) svg.appendChild(s('text',{ x:mid, y:subY+CAL_H+18, 'text-anchor':'middle',
+      'font-size':8, fill:col.subs.length?'#3c3c3b':'#d0d0d0',
+      'font-family':'Lato,Helvetica Neue,Arial,sans-serif' }, lbl1));
+    if (col.yearLbl) svg.appendChild(s('text',{ x:mid, y:subY+CAL_H+18, 'text-anchor':'middle',
+      'font-size':9, 'font-weight':600, fill:'#555', 'font-family':'Lato,Helvetica Neue,Arial,sans-serif' }, col.yearLbl));
+  });
 
-    // "Now" marker — where we are in the contract
-    if (sub.percentThrough > 0 && sub.percentThrough < 100) {
-      var nowX = LBL_W + Math.round(CW * sub.percentThrough / 100);
-      svg.appendChild(s('line', { x1:nowX, y1:subY, x2:nowX, y2:subY+TRACK_H+4, stroke:'#3c3c3b', 'stroke-width':1.5, opacity:0.7 }));
-    }
-
-    // Start / end date labels below track
-    if (sub.startDate) {
-      svg.appendChild(s('text', { x:LBL_W, y:subY+TRACK_H+11, 'font-size':8, 'font-family':'Lato,Helvetica Neue,Arial,sans-serif', fill:'#b0b0b0' }, sub.startDate.substring(0,10)));
-    }
-    // End / renewal date — prominent, full YYYY-MM-DD, "renews" label
-    if (sub.endDate) {
-      var endColor = sub.daysToRenewal < 60 ? '#c62828' : sub.daysToRenewal < 180 ? '#e65100' : '#3c3c3b';
-      svg.appendChild(s('text', {
-        x:LBL_W+CW, y:subY+TRACK_H+4, 'text-anchor':'end', 'font-size':7,
-        'font-family':'Lato,Helvetica Neue,Arial,sans-serif', fill:endColor, opacity:0.7
-      }, 'renews'));
-      svg.appendChild(s('text', {
-        x:LBL_W+CW, y:subY+TRACK_H+13, 'text-anchor':'end', 'font-size':9, 'font-weight':700,
-        'font-family':'Lato,Helvetica Neue,Arial,sans-serif', fill:endColor
-      }, sub.endDate.substring(0,10)));
-    }
-
-    // RHS: days remaining (top) + ARR (bottom)
-    var dColor = sub.daysToRenewal < 60 ? '#c62828' : sub.daysToRenewal < 180 ? '#e65100' : '#3c3c3b';
-    svg.appendChild(s('text', {
-      x:LBL_W+CW+6, y:subY+9, 'dominant-baseline':'middle',
-      'font-size':9, 'font-weight':700, 'font-family':'Lato,Helvetica Neue,Arial,sans-serif', fill:dColor
-    }, sub.daysToRenewal + 'd'));
-    if (sub.arr) {
-      var arrFmt = sub.arr >= 1000000 ? '£'+(sub.arr/1000000).toFixed(1)+'M' : '£'+(sub.arr/1000).toFixed(0)+'k';
-      svg.appendChild(s('text', {
-        x:LBL_W+CW+6, y:subY+20, 'dominant-baseline':'middle',
-        'font-size':8, 'font-family':'Lato,Helvetica Neue,Arial,sans-serif', fill:'#b0b0b0'
-      }, arrFmt));
-    }
+  // RHS: total ARR + count
+  if (renewalSubs.length) {
+    var totalCalArr = renewalSubs.reduce(function(a,r){return a+r.arr_gbp;},0);
+    svg.appendChild(s('text',{ x:LBL_W+CW+6, y:subY+9, 'dominant-baseline':'middle',
+      'font-size':9, 'font-weight':700, 'font-family':'Lato,Helvetica Neue,Arial,sans-serif', fill:'#3c3c3b'
+    }, renewalSubs.length + ' subs'));
+    svg.appendChild(s('text',{ x:LBL_W+CW+6, y:subY+21, 'dominant-baseline':'middle',
+      'font-size':8, 'font-family':'Lato,Helvetica Neue,Arial,sans-serif', fill:'#b0b0b0'
+    }, fmtArrCal(totalCalArr)));
   }
 
   // Separator line between subscription track and data rows
@@ -1710,7 +1755,8 @@ window.__epRender = function(container, data) {
   // ── Data rows ────────────────────────────────────────────────────────────────
   ROWS.forEach(function(row, ri) {
     var vals = data[row.key] || [];
-    var rowY = ROWS_Y + ri*(ROW_H+GAP);
+    // ri=0 is opps row; ri>0 rows shift down past the opps-specific month axis
+    var rowY = ROWS_Y + ri*(ROW_H+GAP) + (ri > 0 ? OPPS_AX_H + SEP_OPPS : 0);
     var maxV = Math.max(row.bench.p90||0.01, Math.max.apply(null, vals.filter(function(v){return v!==null;})||[0]));
 
     // Two-line label: name + source
@@ -1723,68 +1769,129 @@ window.__epRender = function(container, data) {
       'font-size':7.5, 'font-family':'Lato,Helvetica Neue,Arial,sans-serif', fill:'#b8b8b8'
     }, row.source));
 
-    // P25–P75 background band
-    if (row.bench.p75 > row.bench.p25 && maxV > 0) {
-      var bT = rowY + ROW_H - Math.min(ROW_H-2, (row.bench.p75/maxV)*(ROW_H-2));
-      var bB = rowY + ROW_H - Math.min(ROW_H-2, (row.bench.p25/maxV)*(ROW_H-2));
-      svg.appendChild(s('rect', { x:LBL_W, y:bT, width:CW, height:Math.max(1,bB-bT), fill:row.color, opacity:0.07 }));
-    }
+    var BAR_MAX = ROW_H - 12;  // reserve 12px at top for count labels
 
-    vals.forEach(function(v, mi) {
-      var x = LBL_W + mi*CELL;
-      var isNull = v === null;
+    if (row.key === 'opportunities') {
+      // Uses same calCols/CAL_COL_W as renewal calendar — perfect column alignment
+      var oppMaxV = 1;
+      calCols.forEach(function(col){ var t=(col.oppWon||0)+(col.oppPipe||0); if(t>oppMaxV) oppMaxV=t; });
+      var OPP_BAR_MAX = ROW_H - 12;
 
-      svg.appendChild(s('rect', {
-        x:x+0.5, y:rowY, width:CELL-1, height:ROW_H,
-        fill:isNull ? row.nullBg : '#f7f7f6', rx:2
-      }));
+      calCols.forEach(function(col, ci) {
+        var colX = LBL_W + ci * CAL_COL_W;
+        var mid  = colX + CAL_COL_W / 2;
+        var wonV  = col.oppWon  || 0;
+        var pipeV = col.oppPipe || 0;
+        var total = wonV + pipeV;
 
-      if (!isNull && v > 0 && maxV > 0) {
-        var barH = Math.max(3, (v/maxV)*(ROW_H-3));
-        var barY = rowY + ROW_H - barH;
-        var opac = 0.5 + 0.5*(mi/(MNTHS-1));
-        var unitLabel = row.key==='usage'?' users':row.key==='support'?' tickets':row.key==='cases'?' cases':row.key==='opportunities'?' opps':' notes';
-        var bar = s('rect', { x:x+2, y:barY, width:CELL-4, height:barH, fill:row.color, rx:2, opacity:opac });
-        var t = s('title');
-        t.textContent = data.months[mi] + ': ' + v + unitLabel + ' · median ' + (row.bench.p50||0).toFixed(1);
-        bar.appendChild(t);
-        svg.appendChild(bar);
+        svg.appendChild(s('rect', { x:colX+1, y:rowY, width:CAL_BAR_W, height:ROW_H, fill:'#f5f5f5', rx:2 }));
+
+        if (total > 0 && oppMaxV > 0) {
+          var totalH = Math.max(4, Math.round((total/oppMaxV)*OPP_BAR_MAX));
+          var barBase = rowY + ROW_H;
+          // Pipeline (bottom, orange)
+          if (pipeV > 0) {
+            var pH = Math.round((pipeV/total)*totalH); if (pH<2) pH=2;
+            svg.appendChild(s('rect',{ x:colX+1, y:barBase-pH, width:CAL_BAR_W, height:pH, fill:'#e65100', rx:2, opacity:0.85 }));
+          }
+          // Won (top, green)
+          if (wonV > 0) {
+            var wH = totalH - (pipeV>0 ? Math.round((pipeV/total)*totalH) : 0); if (wH<2) wH=2;
+            svg.appendChild(s('rect',{ x:colX+1, y:barBase-totalH, width:CAL_BAR_W, height:wH, fill:'#2e7d32', rx:2, opacity:0.85 }));
+          }
+          // Value label above bar
+          var fmtV = function(n){ return n>=1e6?(n/1e6).toFixed(1)+'M':n>=1000?Math.round(n/1000)+'k':''; };
+          var topLbl = total>=1000 ? fmtV(total) : '';
+          if (topLbl) {
+            var topY = rowY+ROW_H-totalH-2; if(topY<rowY+2) topY=rowY+2;
+            svg.appendChild(s('text',{ x:mid, y:topY, 'text-anchor':'middle',
+              'font-size':7, fill:'#3c3c3b', 'font-family':'Lato,Helvetica Neue,Arial,sans-serif' }, topLbl));
+          }
+        }
+      });
+
+      // Won/pipeline legend
+      svg.appendChild(s('text', { x:LBL_W+CW+6, y:rowY+11,
+        'font-size':8, fill:'#2e7d32', 'font-family':'Lato,Helvetica Neue,Arial,sans-serif' }, '■ Won'));
+      svg.appendChild(s('text', { x:LBL_W+CW+6, y:rowY+22,
+        'font-size':8, fill:'#e65100', 'font-family':'Lato,Helvetica Neue,Arial,sans-serif' }, '■ Pipeline'));
+
+    } else {
+      // Backward 20-column grid: 18m- · 18 past months · now (mirrors forward grid)
+      var monthMap = {};
+      data.months.forEach(function(m, i) { monthMap[m] = (data[row.key]||[])[i]; });
+
+      backCols.forEach(function(col, ci) {
+        var colX = LBL_W + ci * CELL;
+        var mid  = colX + CELL / 2;
+        var v = col.key !== 'pre' ? (monthMap[col.key] !== undefined ? monthMap[col.key] : 0) : null;
+        var isNull = v === null;
+
+        svg.appendChild(s('rect', {
+          x:colX+1, y:rowY, width:CAL_BAR_W, height:ROW_H,
+          fill:isNull ? row.nullBg : '#f5f5f5', rx:2
+        }));
+
+        if (!isNull && v > 0 && maxV > 0) {
+          var barH2 = Math.max(4, Math.round((v/maxV)*BAR_MAX));
+          var barY2 = rowY + ROW_H - barH2;
+          var unitLabel = row.key==='support'?' tickets':row.key==='cases'?' cases':row.key==='usage'?' users':' notes';
+          var bar = s('rect', { x:colX+1, y:barY2, width:CAL_BAR_W, height:barH2, fill:row.color, rx:2, opacity:0.85 });
+          var t = s('title');
+          t.textContent = col.key + ': ' + v + unitLabel + ' · median ' + (row.bench.p50||0).toFixed(1);
+          bar.appendChild(t);
+          svg.appendChild(bar);
+
+          var countLbl = v >= 1000 ? (v/1000).toFixed(1)+'k' : String(v);
+          var lblY2    = barH2 >= 14 ? barY2 + 9 : barY2 - 2;
+          var lblFill2 = barH2 >= 14 ? '#fff'     : '#3c3c3b';
+          svg.appendChild(s('text', {
+            x:mid, y:lblY2, 'text-anchor':'middle',
+            'font-size':8, fill:lblFill2, 'font-family':'Lato,Helvetica Neue,Arial,sans-serif'
+          }, countLbl));
+        }
+      });
+
+      // P50 benchmark dashed line
+      if (row.bench.p50 > 0 && maxV > 0) {
+        var ly = rowY + ROW_H - Math.min(BAR_MAX, Math.round((row.bench.p50/maxV)*BAR_MAX));
+        svg.appendChild(s('line', {
+          x1:LBL_W, y1:ly, x2:LBL_W+CW, y2:ly,
+          stroke:'#9d9d9d', 'stroke-width':1, 'stroke-dasharray':'3,3', opacity:0.6
+        }));
       }
-    });
-
-    // P50 benchmark dashed line
-    if (row.bench.p50 > 0 && maxV > 0) {
-      var ly = rowY + ROW_H - Math.min(ROW_H-2, (row.bench.p50/maxV)*(ROW_H-2));
-      svg.appendChild(s('line', {
-        x1:LBL_W, y1:ly, x2:LBL_W+CW, y2:ly,
-        stroke:'#9d9d9d', 'stroke-width':1, 'stroke-dasharray':'3,3', opacity:0.6
-      }));
     }
 
-    // RHS: percentile badge (X/100) + last-value hint — stacked
+    // RHS: percentile badge + avg sub-label (opps row uses legend instead)
+    if (row.key === 'opportunities') return;
     var recent = vals.slice(-3).filter(function(v){return v!==null;});
     var avg3   = recent.length ? recent.reduce(function(a,v){return a+v;},0)/recent.length : 0;
     var rawP   = bPct(avg3, row.bench);
     var adjP   = row.positive ? rawP : 100 - rawP;
     var hasData = vals.some(function(v){return v!==null;});
 
-    var badgeTxt = !hasData ? '—' : avg3 > 0 ? rawP + '/100' : '0/100';
+    function ordSuffix(n) {
+      var s = ['th','st','nd','rd'], v = n % 100;
+      return n + (s[(v-20)%10] || s[v] || s[0]);
+    }
+    var pctLabel = !hasData ? '—' : ordSuffix(avg3 > 0 ? rawP : 0);
     var badgeEl  = s('text', {
       x:LBL_W+CW+6, y:rowY+9, 'dominant-baseline':'middle',
       'font-size':9, 'font-weight':700,
       'font-family':'Lato,Helvetica Neue,Arial,sans-serif',
       fill:avg3 > 0 ? pColor(adjP) : '#d0d0d0'
     });
-    badgeEl.textContent = badgeTxt;
+    badgeEl.textContent = pctLabel;
     var dimName = row.key==='usage' ? 'PostHog usage' : row.key==='support' ? 'Zendesk tickets'
       : row.key==='cases' ? 'Salesforce cases' : row.key==='opportunities' ? 'Salesforce opps' : 'ProductBoard notes';
     var tipTxt = avg3 > 0
-      ? '<strong style="font-size:12px;display:block;margin-bottom:3px;">Activity Benchmark</strong>'
-        + 'Ranks <strong>' + rawP + ' out of 100</strong> Aurora clients<br>'
+      ? '<strong style="font-size:12px;display:block;margin-bottom:3px;">Engagement Percentile</strong>'
+        + 'This account is in the <strong>' + ordSuffix(rawP) + ' percentile</strong> across Aurora clients<br>'
+        + '<span style="color:#9d9d9d;font-size:10px;">Higher means more engagement than more clients</span><br><br>'
         + 'Dimension: ' + dimName + '<br>'
         + '3-month avg: ' + avg3.toFixed(1)
-        + (row.positive ? '' : '<br><em>Lower is healthier for this metric</em>')
-      : '<strong style="font-size:12px;display:block;margin-bottom:3px;">Activity Benchmark</strong>'
+        + (row.positive ? '' : '<br><em style="color:#e65100;">Lower is healthier for this metric</em>')
+      : '<strong style="font-size:12px;display:block;margin-bottom:3px;">Engagement Percentile</strong>'
         + 'No ' + dimName + ' in the last 3 months';
     // Native title for fallback
     var titleEl = document.createElementNS('http://www.w3.org/2000/svg', 'title');
@@ -1797,60 +1904,54 @@ window.__epRender = function(container, data) {
     badgeEl.addEventListener('mouseleave', function()   { window.engHideTip  && window.engHideTip(); });
     svg.appendChild(badgeEl);
 
-    // Last non-zero value with full unit label
-    var last = vals.slice().reverse().find(function(v){return v!==null && v>0;});
-    if (last !== undefined) {
+    // 3-month avg sub-label (makes "3 tickets" read as "avg 1/mo" — clearer than raw last-value)
+    if (avg3 > 0) {
       var units = row.key==='usage' ? ' users' : row.key==='support' ? ' tickets'
         : row.key==='cases' ? ' cases' : row.key==='opportunities' ? ' opps' : ' notes';
+      var avgDisp = avg3 >= 10 ? Math.round(avg3) : avg3.toFixed(1).replace(/\.0$/,'');
       svg.appendChild(s('text', {
         x:LBL_W+CW+6, y:rowY+21, 'dominant-baseline':'middle',
         'font-size':8, 'font-family':'Lato,Helvetica Neue,Arial,sans-serif', fill:'#c0c0c0'
-      }, last + units));
+      }, 'avg '+avgDisp+units));
     }
   });
 
-  // ── Month axis ───────────────────────────────────────────────────────────────
-  var axY = ROWS_Y + N_ROWS*(ROW_H+GAP) - GAP + 6;
-  data.months.forEach(function(m, mi) {
-    var mo = parseInt(m.split('-')[1]);
-    var yr = m.substring(2,4);
-    var isJan = mo === 1;
+  // ── Opps axis — same columns as calCols for alignment with renewals ──────────
+  var oppsAxY = ROWS_Y + ROW_H + 4;
+  calCols.forEach(function(col, ci) {
+    var mid = LBL_W + ci*CAL_COL_W + CAL_COL_W/2;
+    var lbl0 = col.label.split('\n')[0];
+    svg.appendChild(s('text', { x:mid, y:oppsAxY+9, 'text-anchor':'middle',
+      'font-size':8, fill:(col.oppWon||col.oppPipe)?'#3c3c3b':'#d0d0d0',
+      'font-family':'Lato,Helvetica Neue,Arial,sans-serif'
+    }, lbl0));
+    if (col.yearLbl) svg.appendChild(s('text', { x:mid, y:oppsAxY+18, 'text-anchor':'middle',
+      'font-size':9, 'font-weight':600, fill:'#555', 'font-family':'Lato,Helvetica Neue,Arial,sans-serif'
+    }, col.yearLbl));
+  });
+
+  // ── Separator line between opps section and lower rows ──────────────────────
+  svg.appendChild(s('line', {
+    x1:LBL_W, y1:ROWS_Y+ROW_H+OPPS_AX_H+2, x2:LBL_W+CW, y2:ROWS_Y+ROW_H+OPPS_AX_H+2,
+    stroke:'#e8e8e7', 'stroke-width':1
+  }));
+
+  // ── Bottom month axis (backward grid: 18m- · 18 past months · now) ───────────
+  var axY = ROWS_Y + N_ROWS*(ROW_H+GAP) - GAP + OPPS_AX_H + SEP_OPPS + 6;
+  backCols.forEach(function(col, ci) {
+    var mid = LBL_W + ci*CELL + CELL/2;
     svg.appendChild(s('text', {
-      x:LBL_W + mi*CELL + CELL/2, y:axY, 'text-anchor':'middle', 'font-size':10,
+      x:mid, y:axY+9, 'text-anchor':'middle', 'font-size':8,
       'font-family':'Lato,Helvetica Neue,Arial,sans-serif',
-      fill: isJan ? '#3c3c3b' : '#b0b0b0',
-      'font-weight': isJan ? 700 : 400
-    }, MABBR[mo-1]));
-    if (isJan) {
-      svg.appendChild(s('text', {
-        x:LBL_W + mi*CELL + CELL/2, y:axY+11, 'text-anchor':'middle', 'font-size':9,
-        'font-family':'Lato,Helvetica Neue,Arial,sans-serif', fill:'#455a64', 'font-weight':700
-      }, "'"+yr));
-    }
+      fill: col.key==='pre' ? '#d0d0d0' : '#9d9d9d'
+    }, col.label));
+    if (col.yearLbl) svg.appendChild(s('text', {
+      x:mid, y:axY+18, 'text-anchor':'middle', 'font-size':9,
+      'font-weight':600, fill:'#555', 'font-family':'Lato,Helvetica Neue,Arial,sans-serif'
+    }, col.yearLbl));
   });
 
-  // ── Scrollable wrapper + auto-scroll to centre-of-mass ───────────────────────
-  var scroller = document.createElement('div');
-  scroller.style.cssText = 'overflow-x:auto;overflow-y:hidden;padding-bottom:4px;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:#d0d0d0 transparent;';
-  scroller.appendChild(svg);
-  container.appendChild(scroller);
-
-  var visW = container.offsetWidth || 600;
-  var weights = data.months.map(function(m, mi) {
-    var ca = (data.cases||[])[mi] || 0;
-    var op = (data.opportunities||[])[mi] || 0;
-    var su = (data.support||[])[mi] || 0;
-    var us = data.usage && data.usage[mi] !== null ? ((data.usage[mi]||0)) : 0;
-    var pr = (data.product||[])[mi] || 0;
-    var recencyBoost = 1 + (mi / (MNTHS - 1));
-    return (ca + op + su + us + pr) * recencyBoost;
-  });
-  var totalW = weights.reduce(function(a,b){return a+b;},0);
-  var comIdx = totalW > 0
-    ? weights.reduce(function(a,w,i){return a + w*i;},0) / totalW
-    : MNTHS - 1;
-  var comX = LBL_W + comIdx * CELL + CELL/2;
-  scroller.scrollLeft = Math.max(0, comX - visW/2);
+  container.appendChild(svg);
 };
 
 // Single shared loading phrase queue — all 4 health card widgets draw from this
@@ -2089,22 +2190,6 @@ class Component extends DCLogic {
       epHdr.onmouseleave = function() { this.style.opacity = '1'; };
     }
 
-    // Pulse expand button — wired here to avoid inline HTML onclick issues
-    var epExpandBtn = document.getElementById('epExpandBtn');
-    if (epExpandBtn) {
-      epExpandBtn.addEventListener('click', function(e) {
-        e.stopPropagation();
-        window.__epExpanded = !window.__epExpanded;
-        epExpandBtn.textContent = window.__epExpanded ? '⤡' : '⤢';
-        epExpandBtn.title = window.__epExpanded ? 'Compress timeline' : 'Expand timeline';
-        var wrap = document.getElementById('epWrap');
-        if (wrap && window.__epLastData) {
-          wrap.innerHTML = '';
-          window.__epRender(wrap, window.__epLastData);
-          wrap.style.display = 'block';
-        }
-      });
-    }
     updateCollapseAllBtn();
   }
 
@@ -4834,10 +4919,14 @@ class Component extends DCLogic {
     subtitle.textContent = accountName;
 
     const enc = encodeURIComponent(accountName);
-    fetch('/api/client-timeline?account=' + enc)
-      .then(r => r.json())
-      .then(data => {
+    Promise.all([
+      fetch('/api/client-timeline?account=' + enc).then(r => r.json()),
+      fetch('/api/accounts/' + enc + '?t=' + Date.now()).then(r => r.json()).catch(() => null),
+    ])
+      .then(([data, acctData]) => {
         if (data.error) throw new Error(data.error);
+        // Attach individual subscription list for the renewal calendar
+        data.renewalSubs = (acctData && acctData.subscriptions) ? acctData.subscriptions : [];
         loading.style.display = 'none';
         wrap.style.display = 'block';
 
@@ -4845,7 +4934,8 @@ class Component extends DCLogic {
         if (data.hasZd)  parts.push('ZD 13mo');
         if (data.hasPh)  parts.push('PH 4mo');
         if (data.hasPb)  parts.push('PB notes');
-        subtitle.textContent = accountName + (data.subscription ? ' · ' + (data.subscription.count) + ' active sub' + (data.subscription.count !== 1 ? 's' : '') : '');
+        const subCount = data.renewalSubs.length || (data.subscription ? data.subscription.count : 0);
+        subtitle.textContent = accountName + (subCount ? ' · ' + subCount + ' active sub' + (subCount !== 1 ? 's' : '') : '');
         benchNote.textContent = parts.length ? 'vs all accounts · ' + parts.join(' · ') : '';
 
         window.__epRender(wrap, data);
@@ -4901,7 +4991,7 @@ class Component extends DCLogic {
     fetch(`/api/accounts/${encodeURIComponent(accountName)}?t=${Date.now()}`)
       .then(r=>{
         console.log('[Argus] Response status:', r.status);
-        if(!r.ok) throw new Error('Account not found');
+        if(!r.ok) return r.json().catch(()=>({})).then(body=>{ throw new Error(body.error || `Server error (${r.status})`); });
         return r.json();
       })
       .then(data=>{
@@ -4918,7 +5008,7 @@ class Component extends DCLogic {
         error.style.display = 'block';
         const errorText = document.getElementById('sfErrorText');
         if(errorText) {
-          errorText.textContent = `Error: ${err.message}. Try "TotalEnergies"`;
+          errorText.textContent = `Error: ${err.message}`;
         }
         this.updateHcCompact('sfCompact', '<div class="hc-compact-status"><span class="hc-pill hc-pill-od">SF error — expand for details</span></div>');
       });
@@ -5112,66 +5202,257 @@ class Component extends DCLogic {
     const groups = this.groupByRenewalDays(filteredSubs);
     this.currentGroupedSubs = groups;
 
-    const idMap = {
-      'OVERDUE': 'sf_overdue',
-      'AT_RISK': 'sf_at_risk',
-      'TO_WATCH': 'sf_to_watch',
-      'HEALTHY': 'sf_healthy'
-    };
+    const RISK_DEFS = [
+      { key:'OVERDUE',  cls:'hc-pill-od', lbl:'Overdue'  },
+      { key:'AT_RISK',  cls:'hc-pill-ar', lbl:'At Risk'  },
+      { key:'TO_WATCH', cls:'hc-pill-tw', lbl:'To Watch' },
+      { key:'HEALTHY',  cls:'hc-pill-ok', lbl:'Healthy'  },
+    ];
+    const fmtArr = (v) => v >= 1e6 ? '£'+(v/1e6).toFixed(1)+'m' : '£'+Math.round(v/1000)+'k';
 
     // Calculate totals
     let totalCount = 0;
-    let totalArr = 0;
     for(const group of Object.values(groups)){
       totalCount += group.subs.length;
-      totalArr += group.subs.reduce((sum, s) => sum + s.arr_gbp, 0);
     }
 
-    // Show/hide no-data message and risk cards
-    const noDataMsg = document.getElementById('sfNoDataMessage');
-    const riskCardsDiv = document.getElementById('sfRiskCardsContainer');
+    // Show/hide no-data message and timeline
+    const noDataMsg   = document.getElementById('sfNoDataMessage');
+    const timelineEl  = document.getElementById('sfTimelineWrap');
+    const riskSummary = document.getElementById('sfRiskSummaryRow');
 
     if(totalCount === 0){
-      if(noDataMsg) noDataMsg.style.display = 'block';
-      if(riskCardsDiv) riskCardsDiv.style.display = 'none';
+      if(noDataMsg)   noDataMsg.style.display   = 'block';
+      if(timelineEl)  timelineEl.style.display  = 'none';
+      if(riskSummary) riskSummary.style.display = 'none';
       this.updateHcCompact('sfCompact', '<div class="hc-compact-status"><span class="hc-pill hc-pill-grey">No subscriptions</span></div>');
       return;
     } else {
-      if(noDataMsg) noDataMsg.style.display = 'none';
-      if(riskCardsDiv) riskCardsDiv.style.display = 'grid';
+      if(noDataMsg)   noDataMsg.style.display   = 'none';
+      if(timelineEl)  timelineEl.style.display  = 'block';
+      if(riskSummary) riskSummary.style.display = 'flex';
     }
 
-    // Populate risk status cards
-    const fmtArr = (v) => v >= 1e6 ? '£'+(v/1e6).toFixed(1)+'m' : '£'+Math.round(v/1000)+'k';
-    for(const [key, group] of Object.entries(groups)){
-      const count = group.subs.length;
-      const arr = group.subs.reduce((sum, s) => sum + s.arr_gbp, 0);
-      const countPercent = totalCount > 0 ? ((count / totalCount) * 100).toFixed(1) : '0.0';
-
-      const idPrefix = idMap[key];
-      const countEl = document.getElementById(`${idPrefix}_Count`);
-      const pctEl   = document.getElementById(`${idPrefix}_Pct`);
-      const arrEl   = document.getElementById(`${idPrefix}_ARR`);
-
-      if(countEl) countEl.textContent = count;
-      if(pctEl)   pctEl.textContent   = `(${countPercent}%)`;
-      if(arrEl)   arrEl.textContent   = fmtArr(arr);
+    // Risk summary pills row (compact, clickable)
+    if(riskSummary){
+      riskSummary.innerHTML = RISK_DEFS.map(d => {
+        const g = groups[d.key] || { subs:[] };
+        if(!g.subs.length) return '';
+        const arr = g.subs.reduce((s,r) => s + r.arr_gbp, 0);
+        return `<span class="hc-pill hc-pill-btn ${d.cls}" style="cursor:pointer;" onclick="window.__argus&&window.__argus.showDrilldown('${d.key}')">${g.subs.length} ${d.lbl} · ${fmtArr(arr)}</span>`;
+      }).join('');
     }
 
-    // Compact summary strip — read values from already-populated DOM tiles
-    const SF_DEFS = [
-      { key:'OVERDUE',  id:'sf_overdue',  cls:'hc-pill-od', lbl:'Overdue'  },
-      { key:'AT_RISK',  id:'sf_at_risk',  cls:'hc-pill-ar', lbl:'At Risk'  },
-      { key:'TO_WATCH', id:'sf_to_watch', cls:'hc-pill-tw', lbl:'To Watch' },
-      { key:'HEALTHY',  id:'sf_healthy',  cls:'hc-pill-ok', lbl:'Healthy'  },
-    ];
-    const sfPills = SF_DEFS.map(g => {
-      const cnt = (document.getElementById(g.id+'_Count')||{}).textContent || '0';
-      const arr = (document.getElementById(g.id+'_ARR')||{}).textContent   || '';
-      return `<span class="hc-pill hc-pill-btn ${g.cls}" onclick="window.__hcExpand('sf');window.__argus&&window.__argus.showDrilldown('${g.key}')">${cnt} ${g.lbl}${arr?' · '+arr:''}</span>`;
+    // Render renewal timeline SVG
+    this.renderRenewalTimeline(filteredSubs);
+
+    // Compact strip for when card is collapsed
+    const sfPills = RISK_DEFS.map(d => {
+      const g = groups[d.key] || { subs:[] };
+      if(!g.subs.length) return '';
+      const arr = g.subs.reduce((s,r) => s + r.arr_gbp, 0);
+      return `<span class="hc-pill hc-pill-btn ${d.cls}" onclick="window.__hcExpand('sf');window.__argus&&window.__argus.showDrilldown('${d.key}')">${g.subs.length} ${d.lbl} · ${fmtArr(arr)}</span>`;
     }).join('');
     this.updateHcCompact('sfCompact', `<div class="hc-compact-status">${sfPills}</div>`);
 
+  }
+
+  renderRenewalTimeline(subs) {
+    const wrap = document.getElementById('sfTimelineWrap');
+    if (!wrap) return;
+    wrap.innerHTML = '';
+    if (!subs.length) return;
+
+    const today = new Date(); today.setHours(0,0,0,0);
+    const MONTHS = 18;
+    const svgNS = 'http://www.w3.org/2000/svg';
+    const FONT  = 'Lato,Helvetica Neue,Arial,sans-serif';
+    const fmtA  = v => v >= 1e6 ? '£'+(v/1e6).toFixed(1)+'m' : '£'+Math.round(v/1e3)+'k';
+
+    // -- Overdue bucket --
+    const overdueSubs = subs.filter(s => s.days_to_renewal < 0);
+
+    // -- Month buckets for next 18 months --
+    const monthBuckets = [];
+    for (let i = 0; i < MONTHS; i++) {
+      const start = new Date(today.getFullYear(), today.getMonth() + i, 1);
+      const end   = new Date(today.getFullYear(), today.getMonth() + i + 1, 1);
+      monthBuckets.push({
+        key: 'month_'+i, year: start.getFullYear(), month: start.getMonth(),
+        label: start.toLocaleDateString('en-GB', {month:'short'}),
+        yearLabel: start.getMonth() === 0 || i === 0 ? "'"+String(start.getFullYear()).slice(2) : '',
+        start, end, subs:[], arr:0
+      });
+    }
+
+    // -- Beyond bucket --
+    const beyond = { key:'beyond', label:'18m+', yearLabel:'', subs:[], arr:0 };
+
+    subs.filter(s => s.days_to_renewal >= 0 && s.renewal_date).forEach(s => {
+      const rd = new Date(s.renewal_date); rd.setHours(0,0,0,0);
+      const b  = monthBuckets.find(b => rd >= b.start && rd < b.end);
+      if (b) { b.subs.push(s); b.arr += s.arr_gbp||0; }
+      else   { beyond.subs.push(s); beyond.arr += s.arr_gbp||0; }
+    });
+
+    const urgencyColor = days =>
+      days < 0  ? '#d32f2f' :
+      days < 30 ? '#e65100' :
+      days < 90 ? '#1565c0' : '#2e7d32';
+
+    // -- Build ordered columns --
+    const cols = [];
+    if (overdueSubs.length)
+      cols.push({ key:'OVERDUE', label:'Past\nDue', yearLabel:'', subs:overdueSubs,
+        arr:overdueSubs.reduce((s,r)=>s+r.arr_gbp,0), color:'#c62828', isSpecial:true });
+    monthBuckets.forEach(b => {
+      const minDays = b.subs.length ? Math.min(...b.subs.map(s=>s.days_to_renewal)) : 9999;
+      b.color = urgencyColor(minDays);
+      cols.push(b);
+    });
+    if (beyond.subs.length)
+      cols.push({ ...beyond, color:'#388e3c', isSpecial:true });
+
+    // -- SVG layout --
+    const W        = Math.max(wrap.offsetWidth||860, 400);
+    const H        = 108;
+    const PAD_L    = 4, PAD_R = 4;
+    const COUNT_H  = 14;   // space above bars for count labels
+    const LABEL_H  = 28;   // space below bars for month + year labels
+    const BAR_AREA = H - COUNT_H - LABEL_H;
+    const nCols    = cols.length;
+    const COL_W    = Math.floor((W - PAD_L - PAD_R) / nCols);
+    const BAR_W    = Math.max(COL_W - 4, 4);
+    const maxArr   = Math.max(...cols.map(c=>c.arr), 1);
+    const BAR_MAX  = BAR_AREA - 2;
+
+    const svg = document.createElementNS(svgNS, 'svg');
+    svg.setAttribute('width', W); svg.setAttribute('height', H);
+    svg.style.cssText = 'display:block;overflow:visible;';
+
+    const mk = (tag, attrs, txt) => {
+      const el = document.createElementNS(svgNS, tag);
+      Object.entries(attrs).forEach(([k,v]) => el.setAttribute(k, v));
+      if (txt !== undefined) el.textContent = String(txt);
+      return el;
+    };
+
+    // Today marker (inside current-month column = first non-overdue column)
+    const todayColIdx = overdueSubs.length;
+    const daysInMo    = new Date(today.getFullYear(), today.getMonth()+1, 0).getDate();
+    const todayFrac   = today.getDate() / daysInMo;
+    const todayX      = PAD_L + todayColIdx * COL_W + Math.round(todayFrac * COL_W);
+    svg.appendChild(mk('line', { x1:todayX, y1:COUNT_H, x2:todayX, y2:COUNT_H+BAR_AREA,
+      stroke:'#c0c0c0', 'stroke-width':1, 'stroke-dasharray':'3,2' }));
+    svg.appendChild(mk('text', { x:todayX+3, y:COUNT_H+9, 'font-size':7, fill:'#b0b0b0', 'font-family':FONT }, 'today'));
+
+    cols.forEach((col, i) => {
+      const x   = PAD_L + i * COL_W;
+      const cx  = x + COL_W / 2;
+      const barH = col.subs.length ? Math.max(8, Math.round((col.arr/maxArr)*BAR_MAX)) : 0;
+      const barY = COUNT_H + (BAR_AREA - barH);
+
+      const g = document.createElementNS(svgNS, 'g');
+      g.style.cursor = col.subs.length ? 'pointer' : 'default';
+
+      // Track background
+      g.appendChild(mk('rect', { x:x+2, y:COUNT_H, width:BAR_W, height:BAR_AREA, fill:'#f5f5f5', rx:3 }));
+
+      if (barH) {
+        // Filled bar
+        const bar = mk('rect', { x:x+2, y:barY, width:BAR_W, height:barH, fill:col.color, rx:3, opacity:0.85 });
+        g.appendChild(bar);
+
+        // Count above bar
+        g.appendChild(mk('text', { x:cx, y:barY-3, 'text-anchor':'middle', 'font-size':9,
+          'font-weight':700, fill:col.color, 'font-family':FONT }, col.subs.length));
+
+        // ARR inside bar if tall enough
+        if (barH >= 18)
+          g.appendChild(mk('text', { x:cx, y:barY+barH/2+4, 'text-anchor':'middle',
+            'font-size':7, fill:'#fff', 'font-family':FONT }, fmtA(col.arr)));
+
+        // Hover
+        g.addEventListener('mouseenter', () => bar.setAttribute('opacity','1'));
+        g.addEventListener('mouseleave', () => bar.setAttribute('opacity','0.85'));
+        g.addEventListener('click', () => this.showMonthDrilldown(col));
+      }
+
+      // Month label
+      const lblY = COUNT_H + BAR_AREA + 13;
+      g.appendChild(mk('text', { x:cx, y:lblY, 'text-anchor':'middle', 'font-size':8,
+        fill:col.subs.length?'#3c3c3b':'#c8c8c8', 'font-family':FONT },
+        col.label.split('\n')[0]));
+      if (col.label.includes('\n'))
+        g.appendChild(mk('text', { x:cx, y:lblY+10, 'text-anchor':'middle', 'font-size':8,
+          fill:col.subs.length?'#3c3c3b':'#c8c8c8', 'font-family':FONT }, col.label.split('\n')[1]));
+      if (col.yearLabel)
+        g.appendChild(mk('text', { x:cx, y:lblY+10, 'text-anchor':'middle',
+          'font-size':9, 'font-weight':600, fill:'#555', 'font-family':FONT }, col.yearLabel));
+
+      svg.appendChild(g);
+    });
+
+    wrap.appendChild(svg);
+  }
+
+  showMonthDrilldown(col) {
+    const key = col.key;
+    if (window.__sfActiveDrilldown === key) { this.showSummary(); return; }
+    window.__sfActiveDrilldown = key;
+
+    document.getElementById('sfSummaryView').style.display = 'none';
+    document.getElementById('sfDetailView').style.display  = 'block';
+
+    const titleEl = document.getElementById('sfDrilldownTitle');
+    if (titleEl) {
+      if (key === 'OVERDUE')  titleEl.textContent = 'Past Due Renewals';
+      else if (key === 'beyond') titleEl.textContent = 'Renewals beyond 18 months';
+      else {
+        const d = new Date(col.year, col.month, 1);
+        titleEl.textContent = d.toLocaleDateString('en-GB', {month:'long', year:'numeric'}) + ' Renewals';
+      }
+    }
+
+    this.currentDrilldownSubs = col.subs;
+    this.currentSortField     = 'days_to_renewal';
+    this.currentSortDir       = 1;
+    this.currentAccountFilter = null;
+
+    // Account filter buttons (only if multiple accounts)
+    const accts = [...new Set(col.subs.map(s=>s.account_name).filter(Boolean))].sort();
+    const filtersDiv  = document.getElementById('sfAccountFilters');
+    const filtersBtns = document.getElementById('sfFilterButtons');
+    if (accts.length > 1) {
+      filtersDiv.style.display = 'flex';
+      filtersBtns.innerHTML = '';
+      const allBtn = document.createElement('button');
+      allBtn.textContent = 'All Accounts';
+      allBtn.style.cssText = 'padding:6px 12px;border-radius:4px;border:1px solid #e6e6e5;background:#288184;color:#fff;font-size:11px;font-weight:700;cursor:pointer;';
+      allBtn.onclick = () => {
+        this.currentAccountFilter = null;
+        document.querySelectorAll('#sfFilterButtons button').forEach(b=>{b.style.background='#fff';b.style.color='#3c3c3b';});
+        allBtn.style.background='#288184'; allBtn.style.color='#fff';
+        this.showDetailView();
+      };
+      filtersBtns.appendChild(allBtn);
+      accts.forEach(name => {
+        const btn = document.createElement('button');
+        btn.textContent = name;
+        btn.style.cssText = 'padding:6px 12px;border-radius:4px;border:1px solid #e6e6e5;background:#fff;color:#3c3c3b;font-size:11px;cursor:pointer;';
+        btn.onclick = () => {
+          this.currentAccountFilter = name;
+          document.querySelectorAll('#sfFilterButtons button').forEach(b=>{b.style.background='#fff';b.style.color='#3c3c3b';});
+          btn.style.background='#288184'; btn.style.color='#fff';
+          this.showDetailView();
+        };
+        filtersBtns.appendChild(btn);
+      });
+    } else {
+      if (filtersDiv) filtersDiv.style.display = 'none';
+    }
+
+    this.showDetailView();
   }
 
   showDetailView(){
@@ -5233,6 +5514,7 @@ class Component extends DCLogic {
       return;
     }
 
+    document.getElementById('sfSummaryView').style.display = 'none';
     document.getElementById('sfDetailView').style.display = 'block';
     document.getElementById('sfDrilldownTitle').textContent = `${group} Subscriptions`;
     window.__sfActiveDrilldown = group;
