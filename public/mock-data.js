@@ -599,10 +599,10 @@
   document.addEventListener('DOMContentLoaded', function() {
     var wrap = document.createElement('div');
     wrap.id = 'mock-nav-wrap';
-    wrap.style.cssText = 'position:fixed;top:0;left:440px;height:60px;display:none;align-items:center;gap:8px;z-index:200;pointer-events:auto;';
+    wrap.style.cssText = 'position:fixed;top:18px;left:440px;display:none;align-items:center;gap:8px;z-index:200;pointer-events:auto;';
     wrap.innerHTML =
-      '<span style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;background:#ffcc00;color:#3c3c3b;padding:3px 10px;border-radius:20px;">Mock data</span>'
-      + '<button id="tour-relaunch" title="Show walkthrough" style="width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,0.12);color:#fff;border:1.5px solid rgba(255,255,255,0.25);font-size:12px;font-weight:700;cursor:pointer;line-height:1;">?</button>';
+      '<button id="tour-relaunch" title="Show walkthrough" style="width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,0.12);color:#fff;border:1.5px solid rgba(255,255,255,0.25);font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;margin:0;box-sizing:border-box;">?</button>'
+      + '<span style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;background:#ffcc00;color:#3c3c3b;padding:3px 10px;border-radius:20px;">Mock data</span>';
     document.body.appendChild(wrap);
 
     document.getElementById('tour-relaunch').onclick = function() {
@@ -611,11 +611,13 @@
       window.__launchTour && window.__launchTour();
     };
 
-    // Show only when health card is active
+    // Badge always visible; ? button only on health card
+    var tourBtn = document.getElementById('tour-relaunch');
     setInterval(function() {
       var sel = document.getElementById('sfAccountSelector');
       var onHealth = sel && sel.offsetParent !== null;
-      wrap.style.display = onHealth ? 'flex' : 'none';
+      wrap.style.display = 'flex';
+      tourBtn.style.display = onHealth ? 'flex' : 'none';
     }, 300);
   });
 
