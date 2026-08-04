@@ -9,3 +9,4 @@ yarn-error.log*
 .vscode/
 *.swp
 *.swo
+mock-standalone.html
