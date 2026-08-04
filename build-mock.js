@@ -3,13 +3,49 @@
 // Usage: node build-mock.js
 // Output: mock-standalone.html
 
-const fs   = require('fs');
-const path = require('path');
+const fs    = require('fs');
+const path  = require('path');
+const https = require('https');
 const { execSync } = require('child_process');
 
 const PUBLIC = path.join(__dirname, 'public');
 const ASSETS = path.join(PUBLIC, 'assets');
+const CACHE  = path.join(__dirname, '.build-cache');
 const OUT    = path.join(__dirname, 'mock-standalone.html');
+
+// ── CDN deps inlined to avoid network requirement at runtime ──────────────────
+const CDN_DEPS = [
+  { name: 'react.js',     url: 'https://unpkg.com/react@18.3.1/umd/react.production.min.js' },
+  { name: 'react-dom.js', url: 'https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js' },
+  { name: 'd3.js',        url: 'https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js' },
+  { name: 'topojson.js',  url: 'https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js' },
+  { name: 'd3-sankey.js', url: 'https://cdn.jsdelivr.net/npm/d3-sankey@0.12.3/dist/d3-sankey.min.js' },
+];
+
+function download(url) {
+  return new Promise((resolve, reject) => {
+    https.get(url, res => {
+      if (res.statusCode === 301 || res.statusCode === 302) return download(res.headers.location).then(resolve).catch(reject);
+      const chunks = [];
+      res.on('data', c => chunks.push(c));
+      res.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
+      res.on('error', reject);
+    }).on('error', reject);
+  });
+}
+
+async function getCdnDep(dep) {
+  if (!fs.existsSync(CACHE)) fs.mkdirSync(CACHE);
+  const cached = path.join(CACHE, dep.name);
+  if (fs.existsSync(cached)) return fs.readFileSync(cached, 'utf8');
+  process.stdout.write(`  Downloading ${dep.name}...`);
+  const src = await download(dep.url);
+  fs.writeFileSync(cached, src);
+  process.stdout.write(' done\n');
+  return src;
+}
+
+(async () => {
 
 // ── Version stamp ─────────────────────────────────────────────────────────────
 let gitHash = 'local';
@@ -17,10 +53,19 @@ try { gitHash = execSync('git rev-parse --short HEAD', { cwd: __dirname }).toStr
 const date    = new Date().toISOString().slice(0, 10);
 const version = `${date} · ${gitHash}`;
 
+console.log(`\nBuilding Argus mock standalone — ${version}`);
+
+// ── Download / cache CDN deps ─────────────────────────────────────────────────
+console.log('CDN dependencies:');
+const cdnSources = {};
+for (const dep of CDN_DEPS) {
+  cdnSources[dep.name] = await getCdnDep(dep);
+}
+
 // ── Read source files ─────────────────────────────────────────────────────────
-let html      = fs.readFileSync(path.join(PUBLIC, 'Argus.dc.html'), 'utf8');
-let mockJs    = fs.readFileSync(path.join(PUBLIC, 'mock-data.js'),  'utf8');
-const supportJs = fs.readFileSync(path.join(PUBLIC, 'support.js'),  'utf8');
+let html        = fs.readFileSync(path.join(PUBLIC, 'Argus.dc.html'), 'utf8');
+let mockJs      = fs.readFileSync(path.join(PUBLIC, 'mock-data.js'),  'utf8');
+const supportJs = fs.readFileSync(path.join(PUBLIC, 'support.js'),    'utf8');
 
 // ── Transform mock-data.js ────────────────────────────────────────────────────
 
@@ -56,17 +101,29 @@ mockJs = mockJs.replace(
 
 // ── Transform HTML ────────────────────────────────────────────────────────────
 
-// 1. Inline support.js and mock-data.js
+// 1. Replace CDN script tags with inline versions
+html = html
+  .replace('<script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>',
+    `<script>\n${cdnSources['d3.js']}\n</script>`)
+  .replace('<script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>',
+    `<script>\n${cdnSources['topojson.js']}\n</script>`)
+  .replace('<script src="https://cdn.jsdelivr.net/npm/d3-sankey@0.12.3/dist/d3-sankey.min.js"></script>',
+    `<script>\n${cdnSources['d3-sankey.js']}\n</script>`);
+
+// 2. Inline React + ReactDOM BEFORE support.js (support.js skips its own fetch if they're on window)
+const reactBlock = `<script>\n${cdnSources['react.js']}\n</script>\n<script>\n${cdnSources['react-dom.js']}\n</script>`;
 html = html.replace(
   '<script src="./support.js"></script>',
-  `<script>\n${supportJs}\n</script>`
+  `${reactBlock}\n<script>\n${supportJs}\n</script>`
 );
+
+// 3. Inline mock-data.js
 html = html.replace(
   '<script src="./mock-data.js"></script>',
   `<script>\n${mockJs}\n</script>`
 );
 
-// 2. Base64-encode images
+// 4. Base64-encode images
 function dataUri(filename) {
   const fullPath = path.join(ASSETS, filename);
   if (!fs.existsSync(fullPath)) { console.warn(`  WARN: missing asset — ${filename}`); return null; }
@@ -75,7 +132,6 @@ function dataUri(filename) {
   return `data:${mime};base64,${fs.readFileSync(fullPath).toString('base64')}`;
 }
 
-// Each entry: [string to find in HTML, asset filename]
 const imageReplacements = [
   ['assets/logo-negative.png',                     'logo-negative.png'],
   ['assets/Argus Logo.svg',                         'Argus Logo.svg'],
@@ -89,11 +145,10 @@ const imageReplacements = [
 for (const [ref, filename] of imageReplacements) {
   const uri = dataUri(filename);
   if (!uri) continue;
-  // Plain string replace — handles special chars in filenames safely
   while (html.includes(ref)) html = html.replace(ref, uri);
 }
 
-// 3. SW Intelligence iframe → placeholder (requires live backend)
+// 5. SW Intelligence iframe → placeholder (requires live backend)
 html = html.replace(
   '<iframe src="/sw-intelligence?embed=1" style="width:100%;height:100%;border:none;" title="SW Revenue Intelligence"></iframe>',
   '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:12px;color:#9d9d9d;">'
@@ -103,7 +158,7 @@ html = html.replace(
   + '</div>'
 );
 
-// 4. Add version comment at top of file
+// 6. Version comment at top
 html = `<!-- Argus mock standalone — ${version} -->\n` + html;
 
 // ── Write output ──────────────────────────────────────────────────────────────
@@ -112,3 +167,5 @@ const kb = (fs.statSync(OUT).size / 1024).toFixed(0);
 console.log(`\n✓  mock-standalone.html  (${kb} KB)`);
 console.log(`   Version : ${version}`);
 console.log(`   Upload to Claude and share the artifact URL.\n`);
+
+})().catch(e => { console.error('\nBuild failed:', e.message); process.exit(1); });

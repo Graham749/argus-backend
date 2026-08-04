@@ -10,3 +10,4 @@ yarn-error.log*
 *.swp
 *.swo
 mock-standalone.html
+.build-cache/
