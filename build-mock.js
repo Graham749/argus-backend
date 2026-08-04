@@ -13,14 +13,7 @@ const ASSETS = path.join(PUBLIC, 'assets');
 const CACHE  = path.join(__dirname, '.build-cache');
 const OUT    = path.join(__dirname, 'mock-standalone.html');
 
-// ── CDN deps inlined to avoid network requirement at runtime ──────────────────
-const CDN_DEPS = [
-  { name: 'react.js',     url: 'https://unpkg.com/react@18.3.1/umd/react.production.min.js' },
-  { name: 'react-dom.js', url: 'https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js' },
-  { name: 'd3.js',        url: 'https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js' },
-  { name: 'topojson.js',  url: 'https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js' },
-  { name: 'd3-sankey.js', url: 'https://cdn.jsdelivr.net/npm/d3-sankey@0.12.3/dist/d3-sankey.min.js' },
-];
+const CDN_DEPS = []; // Claude artifacts have internet — CDN scripts load at runtime
 
 function download(url) {
   return new Promise((resolve, reject) => {
@@ -81,16 +74,10 @@ mockJs = mockJs.replace(
   '// (beforeunload cache-clear removed in standalone build)'
 );
 
-// 3. Inject countries-110m.json into the fetch interceptor so globe works offline
-const countriesRaw = fs.readFileSync(path.join(ASSETS, 'countries-110m.json'), 'utf8');
-const countriesMin = JSON.stringify(JSON.parse(countriesRaw));
-mockJs = mockJs.replace(
-  'const _origFetch = window.fetch;',
-  `window.__mockCountries = ${countriesMin};\n  const _origFetch = window.fetch;`
-);
+// 3. Redirect countries-110m.json to CDN (Claude artifact has internet access)
 mockJs = mockJs.replace(
   'return _origFetch(url, opts);',
-  `if (u.includes('countries-110m.json')) return ok(window.__mockCountries);\n    return _origFetch(url, opts);`
+  `if (u.includes('countries-110m.json')) return _origFetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json');\n    return _origFetch(url, opts);`
 );
 
 // 4. Version stamp in the badge
@@ -101,29 +88,19 @@ mockJs = mockJs.replace(
 
 // ── Transform HTML ────────────────────────────────────────────────────────────
 
-// 1. Replace CDN script tags with inline versions
-html = html
-  .replace('<script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>',
-    `<script>\n${cdnSources['d3.js']}\n</script>`)
-  .replace('<script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>',
-    `<script>\n${cdnSources['topojson.js']}\n</script>`)
-  .replace('<script src="https://cdn.jsdelivr.net/npm/d3-sankey@0.12.3/dist/d3-sankey.min.js"></script>',
-    `<script>\n${cdnSources['d3-sankey.js']}\n</script>`);
-
-// 2. Inline React + ReactDOM BEFORE support.js (support.js skips its own fetch if they're on window)
-const reactBlock = `<script>\n${cdnSources['react.js']}\n</script>\n<script>\n${cdnSources['react-dom.js']}\n</script>`;
+// 1. Inline support.js (local file — not on CDN)
 html = html.replace(
   '<script src="./support.js"></script>',
-  `${reactBlock}\n<script>\n${supportJs}\n</script>`
+  `<script>\n${supportJs}\n</script>`
 );
 
-// 3. Inline mock-data.js
+// 2. Inline mock-data.js
 html = html.replace(
   '<script src="./mock-data.js"></script>',
   `<script>\n${mockJs}\n</script>`
 );
 
-// 4. Base64-encode images
+// 3. Base64-encode images — deduplicate isotope.png (used 3× in template)
 function dataUri(filename) {
   const fullPath = path.join(ASSETS, filename);
   if (!fs.existsSync(fullPath)) { console.warn(`  WARN: missing asset — ${filename}`); return null; }
@@ -132,10 +109,16 @@ function dataUri(filename) {
   return `data:${mime};base64,${fs.readFileSync(fullPath).toString('base64')}`;
 }
 
+// Isotope: inject once via script, replace src refs with data-iso marker
+const isotopeUri = dataUri('isotope.png');
+if (isotopeUri) {
+  html = html.replace(/src="assets\/isotope\.png"/g, 'data-iso="1" src=""');
+  html = html.replace('</body>', `<script>document.querySelectorAll('[data-iso]').forEach(function(i){i.src='${isotopeUri}';});</script>\n</body>`);
+}
+
 const imageReplacements = [
   ['assets/logo-negative.png',                     'logo-negative.png'],
   ['assets/Argus Logo.svg',                         'Argus Logo.svg'],
-  ['assets/isotope.png',                            'isotope.png'],
   ['./assets/salesforce-2.svg',                     'salesforce-2.svg'],
   ['./assets/Zendesk.png',                          'Zendesk.png'],
   ['./assets/Productboard Logo Vector.svg .png',    'Productboard Logo Vector.svg .png'],
