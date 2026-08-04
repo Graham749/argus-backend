@@ -7,14 +7,19 @@ const fs      = require('fs');
 const path    = require('path');
 const https   = require('https');
 const { execSync } = require('child_process');
-const { minify } = require('html-minifier-terser');
 
 const PUBLIC = path.join(__dirname, 'public');
 const ASSETS = path.join(PUBLIC, 'assets');
 const CACHE  = path.join(__dirname, '.build-cache');
 const OUT    = path.join(__dirname, 'mock-standalone.html');
 
-const CDN_DEPS = []; // Claude artifacts have internet — CDN scripts load at runtime
+// React must be inlined — Claude artifact sandbox blocks unpkg.com at runtime.
+// d3/topojson/d3-sankey are loaded by support.js via script tags after React boots;
+// those CDNs (cdnjs/jsdelivr) are reachable from the artifact sandbox.
+const CDN_DEPS = [
+  { name: 'react.production.min.js',     url: 'https://unpkg.com/react@18.3.1/umd/react.production.min.js' },
+  { name: 'react-dom.production.min.js', url: 'https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js' },
+];
 
 function download(url) {
   return new Promise((resolve, reject) => {
@@ -55,6 +60,9 @@ const cdnSources = {};
 for (const dep of CDN_DEPS) {
   cdnSources[dep.name] = await getCdnDep(dep);
 }
+const reactInline =
+  `<script>${cdnSources['react.production.min.js']}</script>\n` +
+  `<script>${cdnSources['react-dom.production.min.js']}</script>`;
 
 // ── Read source files ─────────────────────────────────────────────────────────
 let html        = fs.readFileSync(path.join(PUBLIC, 'Argus.dc.html'), 'utf8');
@@ -89,10 +97,12 @@ mockJs = mockJs.replace(
 
 // ── Transform HTML ────────────────────────────────────────────────────────────
 
-// 1. Inline support.js (local file — not on CDN)
+// 1. Inline React then support.js — React must already exist so support.js skips CDN fetch
+// Escape "<script" literal inside support.js string to prevent HTML parser confusion
+const supportJsSafe = supportJs.replace(/<script/g, '\\x3Cscript');
 html = html.replace(
   '<script src="./support.js"></script>',
-  `<script>\n${supportJs}\n</script>`
+  `${reactInline}\n<script>\n${supportJsSafe}\n</script>`
 );
 
 // 2. Inline mock-data.js
@@ -145,21 +155,46 @@ html = html.replace(
 // 6. Version comment at top
 html = `<!-- Argus mock standalone — ${version} -->\n` + html;
 
-// ── Minify ────────────────────────────────────────────────────────────────────
-console.log('Minifying...');
-const minified = await minify(html, {
-  collapseWhitespace: true,
-  removeComments: true,
-  removeRedundantAttributes: true,
-  removeScriptTypeAttributes: true,
-  removeStyleLinkTypeAttributes: true,
-  useShortDoctype: true,
-  minifyCSS: true,
-  minifyJS: {
-    compress: { passes: 1 },
-    mangle: false,   // keep variable names — x-dc relies on named vars
-  },
-});
+// ── Compact: script-aware whitespace stripper ──────────────────────────────────
+// html-minifier-terser cannot handle the x-dc template block (which contains
+// JavaScript expressions with bare '<') or support.js (which has '<script' in
+// a string literal). Roll our own: collapse inter-tag whitespace in pure-HTML
+// sections; leave every <script…>…</script> block verbatim.
+console.log('Compacting...');
+function compactHtml(src) {
+  const out = [];
+  let pos = 0;
+  // Walk through the source matching script blocks
+  const RE_OPEN  = /<script(\s[^>]*)?>/gi;
+  const RE_CLOSE = /<\/script>/gi;
+  let m;
+  RE_OPEN.lastIndex = 0;
+  while ((m = RE_OPEN.exec(src)) !== null) {
+    // Compact the HTML chunk before this script tag
+    out.push(compactHtmlChunk(src.slice(pos, m.index)));
+    const scriptStart = m.index;
+    // Find the matching </script>
+    RE_CLOSE.lastIndex = m.index + m[0].length;
+    const closeM = RE_CLOSE.exec(src);
+    if (!closeM) { out.push(src.slice(scriptStart)); pos = src.length; break; }
+    // Emit the entire script block verbatim (strip blank lines only)
+    const scriptBlock = src.slice(scriptStart, closeM.index + closeM[0].length);
+    out.push(scriptBlock.split('\n').filter(l => l.trim().length > 0).join('\n'));
+    pos = closeM.index + closeM[0].length;
+    RE_OPEN.lastIndex = pos; // resume outer scan after this close
+  }
+  out.push(compactHtmlChunk(src.slice(pos)));
+  return out.join('');
+}
+
+function compactHtmlChunk(chunk) {
+  return chunk
+    .replace(/<!--[\s\S]*?-->/g, '')    // remove HTML comments
+    .replace(/>\s+</g, '><')            // collapse whitespace between tags
+    .split('\n').map(l => l.trim()).filter(l => l.length > 0).join('\n');
+}
+
+const minified = compactHtml(html);
 
 // ── Write output ──────────────────────────────────────────────────────────────
 fs.writeFileSync(OUT, minified, 'utf8');
