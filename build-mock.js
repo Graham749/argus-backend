@@ -3,10 +3,11 @@
 // Usage: node build-mock.js
 // Output: mock-standalone.html
 
-const fs    = require('fs');
-const path  = require('path');
-const https = require('https');
+const fs      = require('fs');
+const path    = require('path');
+const https   = require('https');
 const { execSync } = require('child_process');
+const { minify } = require('html-minifier-terser');
 
 const PUBLIC = path.join(__dirname, 'public');
 const ASSETS = path.join(PUBLIC, 'assets');
@@ -144,10 +145,27 @@ html = html.replace(
 // 6. Version comment at top
 html = `<!-- Argus mock standalone — ${version} -->\n` + html;
 
+// ── Minify ────────────────────────────────────────────────────────────────────
+console.log('Minifying...');
+const minified = await minify(html, {
+  collapseWhitespace: true,
+  removeComments: true,
+  removeRedundantAttributes: true,
+  removeScriptTypeAttributes: true,
+  removeStyleLinkTypeAttributes: true,
+  useShortDoctype: true,
+  minifyCSS: true,
+  minifyJS: {
+    compress: { passes: 1 },
+    mangle: false,   // keep variable names — x-dc relies on named vars
+  },
+});
+
 // ── Write output ──────────────────────────────────────────────────────────────
-fs.writeFileSync(OUT, html, 'utf8');
+fs.writeFileSync(OUT, minified, 'utf8');
+const lineCount = minified.split('\n').length;
 const kb = (fs.statSync(OUT).size / 1024).toFixed(0);
-console.log(`\n✓  mock-standalone.html  (${kb} KB)`);
+console.log(`\n✓  mock-standalone.html  (${kb} KB, ${lineCount} lines)`);
 console.log(`   Version : ${version}`);
 console.log(`   Upload to Claude and share the artifact URL.\n`);
 
