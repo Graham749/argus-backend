@@ -142,14 +142,19 @@ for (const [ref, filename] of imageReplacements) {
   while (html.includes(ref)) html = html.replace(ref, uri);
 }
 
-// 5. SW Intelligence iframe → placeholder (requires live backend)
+// 5. SW Intelligence — inline as srcdoc with mock always active.
+// sw-intelligence.html has its own self-contained mock mode (inline fixture data).
+// Remove the ?mock URL guard so it activates unconditionally in the bundle.
+let swHtml = fs.readFileSync(path.join(PUBLIC, 'sw-intelligence.html'), 'utf8');
+swHtml = swHtml.replace(
+  "if (!new URLSearchParams(location.search).has('mock')) return;",
+  '// standalone build — mock always active'
+);
+// Encode for srcdoc attribute (& and " must be escaped in HTML attributes)
+const swSrcdoc = swHtml.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
 html = html.replace(
   '<iframe src="/sw-intelligence?embed=1" style="width:100%;height:100%;border:none;" title="SW Revenue Intelligence"></iframe>',
-  '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:12px;color:#9d9d9d;">'
-  + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:40px;height:40px;opacity:0.4;"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>'
-  + '<div style="font-size:14px;font-weight:600;">SW Intelligence</div>'
-  + '<div style="font-size:12px;">Available in the live version</div>'
-  + '</div>'
+  `<iframe srcdoc="${swSrcdoc}" style="width:100%;height:100%;border:none;" title="SW Revenue Intelligence"></iframe>`
 );
 
 // 6. Version comment at top
