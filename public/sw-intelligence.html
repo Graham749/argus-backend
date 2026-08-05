@@ -70,7 +70,10 @@ table{width:100%;border-collapse:collapse;font-size:13px}
 th{text-align:left;padding:7px 10px;border-bottom:1px solid #e6e6e5;font-weight:600;font-size:10px;color:#9d9d9d;text-transform:uppercase;letter-spacing:.06em;white-space:nowrap}
 th.sortable{cursor:pointer}
 th.sortable:hover{color:#3c3c3b}
+th.num{text-align:right}
 td{padding:7px 10px;border-bottom:1px solid rgba(230,230,229,.6);vertical-align:middle}
+td.num{text-align:right;white-space:nowrap}
+td.nowrap{white-space:nowrap}
 tr:last-child td{border-bottom:none}
 tr.hoverable:hover td{background:#fafaf8;cursor:pointer}
 td.rc{font-weight:600;border-right:1px solid #e6e6e5;background:#fafaf8;white-space:nowrap}
@@ -113,8 +116,14 @@ tfoot td{font-size:11px;color:#9d9d9d;padding:6px 10px;border-top:1px solid #e6e
     <div class="nav-tab" onclick="showTab('clients')">Account view</div>
     <div class="nav-tab" onclick="showTab('signals')">Focus areas</div>
     <div class="nav-tab" onclick="showTab('clientlist')">Client list</div>
-    <span id="live-dot" style="display:none;margin-left:auto;font-size:10px;font-weight:700;letter-spacing:.06em;color:#2e7d32;white-space:nowrap;padding:0 16px;align-self:center;">● LIVE · Fabric</span>
-    <span id="demo-dot" style="display:none;margin-left:auto;font-size:10px;font-weight:700;letter-spacing:.06em;color:#e65100;white-space:nowrap;padding:0 16px;align-self:center;">● DEMO</span>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:10px;padding:0 14px;flex-shrink:0">
+      <div class="toggle-group" id="curr-toggle">
+        <div class="toggle-btn active" data-curr="eur" onclick="setCurr('eur')">€ EUR</div>
+        <div class="toggle-btn" data-curr="gbp" onclick="setCurr('gbp')">£ GBP</div>
+      </div>
+      <span id="live-dot" style="display:none;font-size:10px;font-weight:700;letter-spacing:.06em;color:#2e7d32;white-space:nowrap">● LIVE</span>
+      <span id="demo-dot" style="display:none;font-size:10px;font-weight:700;letter-spacing:.06em;color:#e65100;white-space:nowrap">● DEMO</span>
+    </div>
   </div>
   <div class="nav-meta">ARR <strong id="arr-date">—</strong>&nbsp;·&nbsp;Fabric</div>
 </nav>
@@ -289,6 +298,24 @@ tfoot td{font-size:11px;color:#9d9d9d;padding:6px 10px;border-top:1px solid #e6e
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
 let DATA = null;
+let CURR = 'eur';
+const DATA_CACHE = {};
+
+function currSym() { return CURR === 'gbp' ? '£' : '€'; }
+function setCurr(c) {
+  CURR = c;
+  document.querySelectorAll('#curr-toggle .toggle-btn').forEach(function(b) {
+    b.classList.toggle('active', b.dataset.curr === c);
+  });
+  if (DATA_CACHE[c]) {
+    DATA = DATA_CACHE[c];
+    var active = document.querySelector('section.active');
+    if (active) showTab(active.id);
+  } else {
+    loadData(c);
+  }
+}
+
 const SW_COLORS = {
   Chronos:  { bg:'#e3f0fb', fg:'#0c447c' },
   Amun:     { bg:'#e8f5e9', fg:'#2e7d32' },
@@ -335,7 +362,7 @@ function pctBadge(p, noTarget) {
   return "<span class='"+cls+"'>"+(p >= 100 ? '✓ ' : '')+p.toFixed(0)+"%</span>";
 }
 function dash() { return "<span style='color:#d0d0d0'>—</span>"; }
-function eur(k)  { return "<span style='font-weight:600'>€"+k.toFixed(0)+"k</span>"; }
+function eur(k)  { return "<span style='font-weight:600'>"+currSym()+k.toFixed(0)+"k</span>"; }
 function progBar(pct, noTarget) {
   if (noTarget || pct === null) return "<span style='font-size:11px;color:#9d9d9d'>no target</span>";
   var w = Math.min(100, pct);
@@ -369,7 +396,7 @@ function renderExec() {
   var clients = new Set(DATA.clients.map(c => c.account)).size;
 
   document.getElementById('exec-kpi-row').innerHTML =
-    "<div class='kpi'><div class='kpi-label'>Total SW ARR</div><div class='kpi-value teal'>€"+Math.round(totalArr).toLocaleString()+"k</div>"
+    "<div class='kpi'><div class='kpi-label'>Total SW ARR</div><div class='kpi-value teal'>"+currSym()+Math.round(totalArr).toLocaleString()+"k</div>"
     +(pct !== null ? "<div class='kpi-sub' style='color:"+pctC+";font-weight:600'>"+pct.toFixed(0)+"% vs target</div>" : "<div class='kpi-sub'>no target set</div>")
     +"</div>"
     +"<div class='kpi'><div class='kpi-label'>SW Clients</div><div class='kpi-value'>"+clients+"</div><div class='kpi-sub'>active subscriptions</div></div>"
@@ -391,14 +418,14 @@ function renderExec() {
   var maxArr = Math.max.apply(null, rs.map(function(r){ return r.arr_k; })) || 1;
 
   document.getElementById('exec-lb-table').innerHTML =
-    "<thead><tr><th>Region</th><th>ARR</th><th style='min-width:80px'>vs Target</th><th style='min-width:100px'></th></tr></thead><tbody>"
+    "<thead><tr><th>Region</th><th class='num'>ARR</th><th style='min-width:80px'>vs Target</th><th style='min-width:100px'></th></tr></thead><tbody>"
     + rs.map(function(r) {
         var p = r.pct;
         var barC = p === null ? '#288184' : p >= 100 ? '#2e7d32' : p >= 80 ? '#288184' : p >= 50 ? '#e65100' : '#c62828';
         var barW = Math.round(r.arr_k / maxArr * 100);
         return "<tr>"
           + "<td style='font-weight:600'>"+mktSpan(r.market)+"</td>"
-          + "<td style='font-weight:600'>€"+r.arr_k.toFixed(0)+"k</td>"
+          + "<td class='num' style='font-weight:600'>"+currSym()+r.arr_k.toFixed(0)+"k</td>"
           + "<td>"+pctBadge(p, p===null)+"</td>"
           + "<td><div class='prog-wrap'><div class='prog-bar' style='width:"+barW+"%;background:"+barC+"'></div></div></td>"
           + "</tr>";
@@ -409,10 +436,10 @@ function renderExec() {
   var tips = DATA.termination_in_progress.slice(0, 6);
   document.getElementById('exec-tip-count').textContent = DATA.termination_count;
   document.getElementById('exec-tip-table').innerHTML = tips.length
-    ? "<thead><tr><th>Account</th><th>Region</th><th>Product</th><th>ARR at risk</th></tr></thead><tbody>"
+    ? "<thead><tr><th>Account</th><th>Region</th><th>Product</th><th class='num'>ARR at risk</th></tr></thead><tbody>"
       + tips.map(function(r) {
           return "<tr><td style='font-weight:600'>"+r.account+"</td><td>"+mktSpan(r.market)+"</td><td>"+swTag(r.sw)+"</td>"
-            +"<td style='color:#c62828;font-weight:600'>"+(r.arr_k > 0 ? "€"+r.arr_k.toFixed(0)+"k" : dash())+"</td></tr>";
+            +"<td class='num' style='color:#c62828;font-weight:600'>"+(r.arr_k > 0 ? currSym()+r.arr_k.toFixed(0)+"k" : dash())+"</td></tr>";
         }).join('')
       + "</tbody>"
     : "<tr><td colspan='4' class='empty' style='padding:16px;'>No terminations in progress</td></tr>";
@@ -421,11 +448,11 @@ function renderExec() {
   var rens = DATA.renewals_due.slice(0, 6);
   document.getElementById('exec-ren-count').textContent = DATA.renewals_6m_count;
   document.getElementById('exec-ren-table').innerHTML = rens.length
-    ? "<thead><tr><th>Account</th><th>Region</th><th>Product</th><th>End date</th><th>ARR</th></tr></thead><tbody>"
+    ? "<thead><tr><th>Account</th><th>Region</th><th>Product</th><th class='nowrap'>End date</th><th class='num'>ARR</th></tr></thead><tbody>"
       + rens.map(function(r) {
           var bc = r.renewal_badge === '3M' ? '<span class="py">3M</span>' : '<span class="badge-ok">6M</span>';
           return "<tr><td style='font-weight:600'>"+r.account+"</td><td>"+mktSpan(r.market)+"</td><td>"+swTag(r.sw||'')+"</td>"
-            +"<td style='color:#3c3c3b;font-size:12px'>"+bc+" "+r.end_date+"</td><td>"+eur(r.arr_k)+"</td></tr>";
+            +"<td class='nowrap' style='font-size:12px'>"+bc+" "+r.end_date+"</td><td class='num'>"+eur(r.arr_k)+"</td></tr>";
         }).join('')
       + "</tbody>"
     : "<tr><td colspan='5' class='empty' style='padding:16px;'>No renewals in next 6 months</td></tr>";
@@ -445,9 +472,9 @@ function renderExec() {
       + "<div style='min-width:90px;font-size:12px;font-weight:600;color:#3c3c3b;text-align:right;flex-shrink:0'>"+p[0]+"</div>"
       + "<div style='flex:1;height:20px;background:#f5f5f5;border-radius:4px;overflow:hidden'>"
       +   "<div style='height:100%;width:"+w+"%;background:"+c+";border-radius:4px;display:flex;align-items:center;padding:0 8px'>"
-      +     (w > 15 ? "<span style='font-size:11px;font-weight:700;color:#fff'>€"+p[1].toFixed(0)+"k</span>" : "")
+      +     (w > 15 ? "<span style='font-size:11px;font-weight:700;color:#fff'>"+currSym()+p[1].toFixed(0)+"k</span>" : "")
       +   "</div></div>"
-      + (w <= 15 ? "<span style='font-size:12px;font-weight:600;color:#3c3c3b;flex-shrink:0'>€"+p[1].toFixed(0)+"k</span>" : "")
+      + (w <= 15 ? "<span style='font-size:12px;font-weight:600;color:#3c3c3b;flex-shrink:0'>"+currSym()+p[1].toFixed(0)+"k</span>" : "")
       + "</div>";
   }).join('');
 }
@@ -463,7 +490,7 @@ function renderOverview() {
   var pc  = pct === null ? '#9d9d9d' : pct >= 100 ? '#2e7d32' : pct >= 80 ? '#288184' : '#c62828';
 
   document.getElementById('kpi-row').innerHTML =
-    "<div class='kpi'><div class='kpi-label'>Total SW ARR</div><div class='kpi-value teal'>€"+Math.round(tA).toLocaleString()+"k</div>"
+    "<div class='kpi'><div class='kpi-label'>Total SW ARR</div><div class='kpi-value teal'>"+currSym()+Math.round(tA).toLocaleString()+"k</div>"
     +(pct!==null?"<div class='kpi-sub' style='color:"+pc+";font-weight:600'>"+pct.toFixed(0)+"% vs target</div>":"<div class='kpi-sub'>no target set</div>")+"</div>"
     +"<div class='kpi'><div class='kpi-label'>Renewals due (3M / 6M)</div>"
     +"<div class='kpi-value'><span style='color:#e65100'>"+DATA.renewals_3m_count+"</span>"
@@ -473,15 +500,15 @@ function renderOverview() {
     +"<div class='kpi'><div class='kpi-label'>Terminations</div><div class='kpi-value warn'>"+DATA.termination_count+"</div><div class='kpi-sub'>in progress</div></div>";
 
   document.getElementById('region-table').innerHTML =
-    "<thead><tr><th>Region</th><th>ARR</th><th>Target</th><th>%</th><th>Progress</th><th>Below 80%</th></tr></thead><tbody>"
+    "<thead><tr><th>Region</th><th class='num'>ARR</th><th class='num'>Target</th><th>%</th><th>Progress</th><th>Below 80%</th></tr></thead><tbody>"
     + DATA.region_summary.map(function(r) {
         var below = r.below80.map(function(x){
           return "<span style='background:#ffebee;color:#c62828;padding:2px 7px;border-radius:100px;font-size:11px;font-weight:600'>"+x.sw+" "+x.pct+"%</span>";
         }).join(' ');
         return "<tr>"
           +"<td style='font-weight:600'>"+mktSpan(r.market)+"</td>"
-          +"<td style='font-weight:600'>€"+r.arr_k.toFixed(0)+"k</td>"
-          +"<td style='color:#9d9d9d'>"+(r.target_k > 0 ? "€"+r.target_k.toFixed(0)+"k" : dash())+"</td>"
+          +"<td class='num' style='font-weight:600'>"+currSym()+r.arr_k.toFixed(0)+"k</td>"
+          +"<td class='num' style='color:#9d9d9d'>"+(r.target_k > 0 ? currSym()+r.target_k.toFixed(0)+"k" : dash())+"</td>"
           +"<td>"+pctBadge(r.pct, r.pct===null)+"</td>"
           +"<td style='min-width:100px'>"+progBar(r.pct, r.pct===null)+"</td>"
           +"<td>"+(below || "<span style='color:#2e7d32;font-size:11px'>all ≥ 80%</span>")+"</td></tr>";
@@ -497,18 +524,18 @@ function renderARR() {
   var rows = DATA.arr_vs_target.slice();
   if (mkt !== 'ALL') rows = rows.filter(function(r){ return r.market === mkt; });
   if (sw  !== 'ALL') rows = rows.filter(function(r){ return r.sw     === sw; });
-  var html = "<thead><tr><th>Region</th><th>Product</th><th>ARR</th><th>Target</th><th>%</th><th style='text-align:center'>Clients</th><th>Top contributors</th></tr></thead><tbody>";
+  var html = "<thead><tr><th>Region</th><th>Product</th><th class='num'>ARR</th><th class='num'>Target</th><th>%</th><th style='text-align:center'>Clients</th><th>Top contributors</th></tr></thead><tbody>";
   var lm = '';
   rows.forEach(function(r) {
     var pct     = r.target_k > 0 ? r.actual_k/r.target_k*100 : null;
-    var contrib = r.top_clients.map(function(c){ return c.name.split(' ')[0]+' €'+c.arr_k+'k'; }).join(' · ');
+    var contrib = r.top_clients.map(function(c){ return c.name.split(' ')[0]+' '+currSym()+c.arr_k+'k'; }).join(' · ');
     var mc = r.market !== lm
       ? "<td class='rc'>"+mktSpan(r.market)+"</td>"
       : "<td class='rc' style='color:transparent;user-select:none'>"+r.market+"</td>";
     lm = r.market;
     html += "<tr>"+mc+"<td>"+swTag(r.sw)+"</td>"
-      +"<td style='font-weight:600'>€"+r.actual_k.toFixed(0)+"k</td>"
-      +"<td style='color:#9d9d9d'>"+(r.target_k>0?"€"+r.target_k.toFixed(0)+"k":dash())+"</td>"
+      +"<td class='num' style='font-weight:600'>"+currSym()+r.actual_k.toFixed(0)+"k</td>"
+      +"<td class='num' style='color:#9d9d9d'>"+(r.target_k>0?currSym()+r.target_k.toFixed(0)+"k":dash())+"</td>"
       +"<td>"+pctBadge(pct, pct===null)+"</td>"
       +"<td style='text-align:center;color:#9d9d9d'>"+(r.client_count>0?r.client_count+" client"+(r.client_count>1?'s':''):dash())+"</td>"
       +"<td style='font-size:11px;color:#6d6d6c'>"+(contrib||dash())+"</td></tr>";
@@ -550,7 +577,7 @@ function renderClients() {
   var html = "<thead><tr>"
     +"<th class='sortable' data-col='account'>Account "+si('account')+"</th>"
     +"<th>Parent</th><th>Region</th><th>Products</th>"
-    +"<th class='sortable' data-col='arr_k'>SW ARR "+si('arr_k')+"</th>"
+    +"<th class='sortable num' data-col='arr_k'>SW ARR "+si('arr_k')+"</th>"
     +"<th>Signals</th><th>Renewal</th><th>Termination</th>"
     +"</tr></thead><tbody>";
 
@@ -590,7 +617,7 @@ function renderClients() {
         +"<td style='font-size:11px;color:#9d9d9d'>"+(r.parent||dash())+"</td>"
         +"<td>"+mktSpan(r.market)+"</td>"
         +"<td>"+pCell+"</td>"
-        +"<td style='font-weight:600'>€"+r.arr_k.toFixed(0)+"k</td>"
+        +"<td class='num' style='font-weight:600'>"+currSym()+r.arr_k.toFixed(0)+"k</td>"
         +"<td>"+sCell+"</td>"
         +"<td>"+rnCell+"</td>"
         +"<td>"+tCell+"</td></tr>";
@@ -611,20 +638,20 @@ function renderClients() {
 function renderSignals() {
   if (!DATA) return;
   document.getElementById('sig-tip').innerHTML =
-    "<thead><tr><th>Account</th><th>Parent</th><th>Region</th><th>Product</th><th>ARR at risk</th><th>Reason</th></tr></thead><tbody>"
+    "<thead><tr><th>Account</th><th>Parent</th><th>Region</th><th>Product</th><th class='num'>ARR at risk</th><th>Reason</th></tr></thead><tbody>"
     +(DATA.termination_in_progress.length
       ? DATA.termination_in_progress.map(function(r) {
           return "<tr><td style='font-weight:600'>"+r.account+"</td>"
             +"<td style='font-size:11px;color:#9d9d9d'>"+(r.parent||dash())+"</td>"
             +"<td>"+mktSpan(r.market)+"</td><td>"+swTag(r.sw)+"</td>"
-            +"<td style='color:#c62828;font-weight:600'>"+(r.arr_k>0?eur(r.arr_k):dash())+"</td>"
+            +"<td class='num' style='color:#c62828;font-weight:600'>"+(r.arr_k>0?eur(r.arr_k):dash())+"</td>"
             +"<td style='font-size:11px;color:#6d6d6c'>"+(r.termination_reason||dash())+"</td></tr>";
         }).join('')
       : "<tr><td colspan='6' class='empty'>None</td></tr>")
     + "</tbody>";
 
   document.getElementById('sig-renewals').innerHTML =
-    "<thead><tr><th>Account</th><th>Parent</th><th>Region</th><th>Product</th><th>Due</th><th>End date</th><th>ARR</th><th>Extension?</th></tr></thead><tbody>"
+    "<thead><tr><th>Account</th><th>Parent</th><th>Region</th><th>Product</th><th>Due</th><th class='nowrap'>End date</th><th class='num'>ARR</th><th>Extension?</th></tr></thead><tbody>"
     +(DATA.renewals_due.length
       ? DATA.renewals_due.map(function(r) {
           var db = r.renewal_badge === '3M' ? "<span class='py'>3M</span>" : "<span class='badge-ok'>6M</span>";
@@ -632,17 +659,17 @@ function renderSignals() {
           return "<tr><td style='font-weight:600'>"+r.account+"</td>"
             +"<td style='font-size:11px;color:#9d9d9d'>"+(r.parent||dash())+"</td>"
             +"<td>"+mktSpan(r.market)+"</td><td>"+swTag(r.sw||'')+"</td>"
-            +"<td>"+db+"</td><td style='font-size:12px'>"+(r.end_date||dash())+"</td>"
-            +"<td>"+eur(r.arr_k)+"</td><td>"+ext+"</td></tr>";
+            +"<td>"+db+"</td><td class='nowrap' style='font-size:12px'>"+(r.end_date||dash())+"</td>"
+            +"<td class='num'>"+eur(r.arr_k)+"</td><td>"+ext+"</td></tr>";
         }).join('')
       : "<tr><td colspan='8' class='empty'>None</td></tr>")
     + "</tbody>";
 
   var xs = DATA.clients.filter(function(c){ return c.flag_upsell; }).sort(function(a,b){ return b.arr_k-a.arr_k; });
   document.getElementById('sig-upsell').innerHTML =
-    "<thead><tr><th>Account</th><th>Parent</th><th>Region</th><th>Product</th><th>ARR</th></tr></thead><tbody>"
+    "<thead><tr><th>Account</th><th>Parent</th><th>Region</th><th>Product</th><th class='num'>ARR</th></tr></thead><tbody>"
     +(xs.length
-      ? xs.map(function(c){ return "<tr><td style='font-weight:600'>"+c.account+"</td><td style='font-size:11px;color:#9d9d9d'>"+(c.parent||dash())+"</td><td>"+mktSpan(c.market)+"</td><td>"+c.products.map(swTag).join('')+"</td><td>"+eur(c.arr_k)+"</td></tr>"; }).join('')
+      ? xs.map(function(c){ return "<tr><td style='font-weight:600'>"+c.account+"</td><td style='font-size:11px;color:#9d9d9d'>"+(c.parent||dash())+"</td><td>"+mktSpan(c.market)+"</td><td>"+c.products.map(swTag).join('')+"</td><td class='num'>"+eur(c.arr_k)+"</td></tr>"; }).join('')
       : "<tr><td colspan='5' class='empty'>None</td></tr>")
     + "</tbody>";
 }
@@ -667,7 +694,7 @@ function renderClientList() {
   if (CLLmode === 'sw')   rows = rows.filter(function(r){ return r.sw_products&&r.sw_products.length>0; });
   if (CLLmode === 'nosw') rows = rows.filter(function(r){ return !r.sw_products||r.sw_products.length===0; });
 
-  var html = "<thead><tr><th>Account</th><th>Parent</th><th>Region</th><th>Tier</th><th>SW Products</th><th>SW ARR</th><th class='sep'>Subscriptions</th><th>Sub ARR</th></tr></thead><tbody>";
+  var html = "<thead><tr><th>Account</th><th>Parent</th><th>Region</th><th>Tier</th><th>SW Products</th><th class='num'>SW ARR</th><th class='sep'>Subscriptions</th><th class='num'>Sub ARR</th></tr></thead><tbody>";
   if (!rows.length) html += "<tr><td colspan='8' class='empty'>No matching accounts</td></tr>";
   rows.forEach(function(r) {
     var sw  = r.sw_products&&r.sw_products.length  ? r.sw_products.map(swTag).join('') : "<span style='color:#d0d0d0'>—</span>";
@@ -679,8 +706,8 @@ function renderClientList() {
       +"<td style='font-size:11px;color:#9d9d9d'>"+(r.parent||dash())+"</td>"
       +"<td>"+mktSpan(r.market)+"</td>"
       +"<td style='font-size:11px;color:#9d9d9d'>"+(r.tier||dash())+"</td>"
-      +"<td>"+sw+"</td><td>"+sa+"</td>"
-      +"<td class='sep'>"+sub+"</td><td>"+sba+"</td></tr>";
+      +"<td>"+sw+"</td><td class='num'>"+sa+"</td>"
+      +"<td class='sep'>"+sub+"</td><td class='num'>"+sba+"</td></tr>";
   });
   html += "</tbody><tfoot><tr><td colspan='8'>"+rows.length+" accounts</td></tr></tfoot>";
   document.getElementById('cll-table').innerHTML = html;
@@ -719,22 +746,31 @@ if (new URLSearchParams(location.search).get('embed') === '1') {
   };
 })();
 
-async function loadData() {
+async function loadData(currency) {
   const isMock = new URLSearchParams(location.search).has('mock');
+  const curr = currency || 'eur';
+  const url = '/api/sw-intelligence?currency=' + curr;
+  const isInitial = !currency;
   try {
-    const resp = await fetch('/api/sw-intelligence');
+    const resp = await fetch(url);
     if (!resp.ok) throw new Error('HTTP ' + resp.status);
     DATA = await resp.json();
+    DATA_CACHE[curr] = DATA;
     if (DATA.mkt_col) MKT_COL = DATA.mkt_col;
     var swNames = [...new Set((DATA.arr_vs_target||[]).map(function(r){ return r.sw; }))].sort();
     if (DATA.regions && DATA.regions.length) populateSelects(DATA.regions, swNames);
-    document.getElementById('loading').style.display = 'none';
-    document.getElementById('main-content').style.display = 'block';
-    document.getElementById(isMock ? 'demo-dot' : 'live-dot').style.display = '';
-    renderExec();
+    if (isInitial) {
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('main-content').style.display = 'block';
+      document.getElementById(isMock ? 'demo-dot' : 'live-dot').style.display = '';
+    }
+    var active = document.querySelector('section.active');
+    if (active) showTab(active.id); else renderExec();
   } catch(e) {
-    document.getElementById('loading').innerHTML =
-      '<p style="color:#c62828;font-size:13px">Failed to load SW data: '+e.message+'</p>';
+    if (isInitial) {
+      document.getElementById('loading').innerHTML =
+        '<p style="color:#c62828;font-size:13px">Failed to load SW data: '+e.message+'</p>';
+    }
   }
 }
 loadData();

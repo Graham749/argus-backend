@@ -1,8 +1,9 @@
 const { query } = require('../lib/db');
 
-let _cache = null;
-let _cacheTs = 0;
+const CACHE = {};
+const CACHE_TS = {};
 const CACHE_TTL = 15 * 60 * 1000;
+const EUR_GBP_RATE = 0.8557;
 
 const SW_ORDER  = ['Chronos', 'Amun', 'Origin', 'Lumus', 'Solaris'];
 const SUB_ORDER = ['PRMF', 'Flex', 'Granular Data', 'Grid', 'Non-Standard'];
@@ -44,7 +45,16 @@ function mapSub(name) {
 
 function kEur(eur) { return Math.round((eur / 1000) * 10) / 10; }
 
-function process(rows) {
+function getTargets(currency) {
+  if (currency !== 'gbp') return TARGETS;
+  const t = {};
+  Object.keys(TARGETS).forEach(k => { t[k] = Math.round(TARGETS[k] * EUR_GBP_RATE * 10) / 10; });
+  return t;
+}
+
+function process(rows, currency) {
+  const arrF = r => currency === 'gbp' ? (r.arr_gbp || 0) : (r.arr_eur || 0);
+  const T = getTargets(currency);
   const TODAY  = new Date();
   const THREE_M = new Date(TODAY); THREE_M.setMonth(THREE_M.getMonth() + 3);
   const SIX_M   = new Date(TODAY); SIX_M.setMonth(SIX_M.getMonth() + 6);
@@ -64,13 +74,13 @@ function process(rows) {
       market:  r.market,
       sw, arr: 0,
     };
-    swSnap[key].arr += (r.arr_eur || 0);
+    swSnap[key].arr += arrF(r);
   }
   const swSnapList = Object.values(swSnap);
 
   // ── Derive regions from data + any with defined targets ───────────────────
   const regionSet = new Set(swSnapList.map(r => r.market));
-  Object.keys(TARGETS).forEach(k => regionSet.add(k.split(':')[0]));
+  Object.keys(T).forEach(k => regionSet.add(k.split(':')[0]));
   const allRegions = [...regionSet].sort();
   const mktCol = Object.fromEntries(allRegions.map((m, i) => [m, MKT_PALETTE[i % MKT_PALETTE.length]]));
 
@@ -80,11 +90,11 @@ function process(rows) {
   // All (market, sw) pairs: ones with actual data + ones with defined targets
   const pairSet = new Set();
   swSnapList.forEach(r => pairSet.add(`${r.market}:${r.sw}`));
-  Object.keys(TARGETS).forEach(k => pairSet.add(k));
+  Object.keys(T).forEach(k => pairSet.add(k));
 
   const arr_vs_target = [...pairSet].map(key => {
     const [mkt, sw_name] = key.split(':');
-    const tgt     = TARGETS[key] !== undefined ? TARGETS[key] : null;
+    const tgt     = T[key] !== undefined ? T[key] : null;
     const matching = swSnapList.filter(r => r.market === mkt && r.sw === sw_name);
     const totalEur  = matching.reduce((s, r) => s + r.arr, 0);
     const byAcct = {};
@@ -146,7 +156,7 @@ function process(rows) {
     renewals_due.push({
       account: r.account, market: r.market, sw,
       end_date: r.end_date,
-      arr_k: kEur(r.arr_eur || 0),
+      arr_k: kEur(arrF(r)),
       extension: r.contract_extension_negotiated === 'true' ? 'Yes' : 'No',
       renewal_badge: endDate <= THREE_M ? '3M' : '6M',
       parent: r.top_account !== r.account ? r.top_account : null,
@@ -212,8 +222,8 @@ function process(rows) {
       sw_products: new Set(), sub_products: new Set(),
       sw_arr_k: 0, sub_arr_k: 0,
     };
-    if (sw)  { clMap[key].sw_products.add(sw);  clMap[key].sw_arr_k  += (r.arr_eur || 0) / 1000; }
-    if (sub) { clMap[key].sub_products.add(sub); clMap[key].sub_arr_k += (r.arr_eur || 0) / 1000; }
+    if (sw)  { clMap[key].sw_products.add(sw);  clMap[key].sw_arr_k  += arrF(r) / 1000; }
+    if (sub) { clMap[key].sub_products.add(sub); clMap[key].sub_arr_k += arrF(r) / 1000; }
   }
   const client_list = Object.values(clMap)
     .map(r => ({
@@ -246,25 +256,29 @@ function process(rows) {
 }
 
 async function handler(req, res) {
+  const currency = req.query.currency === 'gbp' ? 'gbp' : 'eur';
   try {
-    if (_cache && Date.now() - _cacheTs < CACHE_TTL) return res.json(_cache);
+    if (CACHE[currency] && Date.now() - CACHE_TS[currency] < CACHE_TTL) return res.json(CACHE[currency]);
 
     const rows = await query(`
       SELECT
-        subscription_id, top_account, account, market, tier,
-        product_name, stage, currency,
-        CAST(arr_native AS float) AS arr_native,
-        CAST(arr_eur    AS float) AS arr_eur,
-        CONVERT(varchar(10), end_date,     120) AS end_date,
-        CONVERT(varchar(10), renewal_date, 120) AS renewal_date,
-        termination_reason,
-        contract_extension_negotiated
-      FROM dbo.gold_sf_sw_subscriptions
+        s.subscription_id, s.top_account, s.account, s.market, s.tier,
+        s.product_name, s.stage, s.currency,
+        CAST(s.arr_native AS float) AS arr_native,
+        CAST(s.arr_eur    AS float) AS arr_eur,
+        CAST(s.arr_native * COALESCE(fx.gbp_rate, ${EUR_GBP_RATE}) AS float) AS arr_gbp,
+        CONVERT(varchar(10), s.end_date,     120) AS end_date,
+        CONVERT(varchar(10), s.renewal_date, 120) AS renewal_date,
+        s.termination_reason,
+        s.contract_extension_negotiated
+      FROM dbo.gold_sf_sw_subscriptions s
+      LEFT JOIN dbo.v_gold_lookup_fxrates fx ON fx.currency_iso_code = s.currency
     `);
 
-    const data = process(rows);
-    _cache  = data;
-    _cacheTs = Date.now();
+    const data = process(rows, currency);
+    data.currency = currency;
+    CACHE[currency]    = data;
+    CACHE_TS[currency] = Date.now();
     res.json(data);
   } catch (err) {
     console.error('[sw-intelligence] error:', err.message);
