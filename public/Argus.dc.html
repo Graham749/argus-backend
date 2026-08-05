@@ -1667,11 +1667,11 @@ window.__epRender = function(container, data) {
 
   // Row order: SF Opps (with its own axis) → SF Cases → ZD Support → PH Usage → PB Product
   const ROWS = [
-    { key:'opportunities',label:'Opportunities', source:'Salesforce',   color:'#e65100', nullBg:'#f5f5f5', positive:true,  bench:(data.benchmark||{}).opps    || {p25:0,p50:0.3,p75:1,p90:3}    },
-    { key:'cases',        label:'Cases',    source:'Salesforce',   color:'#c62828', nullBg:'#f5f5f5', positive:false, bench:(data.benchmark||{}).cases   || {p25:0,p50:0.5,p75:1.5,p90:4}  },
-    { key:'support',      label:'Tickets',  source:'Zendesk',      color:'#c2600f', nullBg:'#f5f5f5', positive:false, bench:(data.benchmark||{}).support || {p25:0,p50:1,p75:3,p90:8}      },
-    { key:'usage',        label:'Usage',    source:'PostHog',      color:'#1565c0', nullBg:'#f5f5f5', positive:true,  bench:(data.benchmark||{}).usage   || {p25:2,p50:8,p75:22,p90:55}    },
-    { key:'product',      label:'Notes',    source:'ProductBoard', color:'#7030a0', nullBg:'#f5f5f5', positive:true,  bench:(data.benchmark||{}).product || {p25:0,p50:0.3,p75:1.2,p90:4}  },
+    { key:'opportunities',label:'Opportunities', source:'Salesforce',   color:'#288184', nullBg:'#f5f5f5', positive:true,  bench:(data.benchmark||{}).opps    || {p25:0,p50:0.3,p75:1,p90:3}    },
+    { key:'cases',        label:'Cases',    source:'Salesforce',   color:'#288184', nullBg:'#f5f5f5', positive:false, bench:(data.benchmark||{}).cases   || {p25:0,p50:0.5,p75:1.5,p90:4}  },
+    { key:'support',      label:'Tickets',  source:'Zendesk',      color:'#288184', nullBg:'#f5f5f5', positive:false, bench:(data.benchmark||{}).support || {p25:0,p50:1,p75:3,p90:8}      },
+    { key:'usage',        label:'Usage',    source:'PostHog',      color:'#288184', nullBg:'#f5f5f5', positive:true,  bench:(data.benchmark||{}).usage   || {p25:2,p50:8,p75:22,p90:55}    },
+    { key:'product',      label:'Notes',    source:'ProductBoard', color:'#288184', nullBg:'#f5f5f5', positive:true,  bench:(data.benchmark||{}).product || {p25:0,p50:0.3,p75:1.2,p90:4}  },
   ];
 
   function s(tag, a, txt) {
@@ -2837,7 +2837,7 @@ class Component extends DCLogic {
             container: zdWrap,
             values: window.__epLastTimeline.support,
             months: window.__epLastTimeline.months,
-            color: '#c2600f',
+            color: '#288184',
             nullBg: '#f5f5f5',
             selectedMonth: window.__zdMo,
             segments: function(mo) {
@@ -3235,7 +3235,7 @@ class Component extends DCLogic {
             container: pbWrap,
             values: window.__epLastTimeline.product,
             months: window.__epLastTimeline.months,
-            color: '#7030a0',
+            color: '#288184',
             nullBg: '#f5f5f5',
             selectedMonth: window.__pbMo,
             onMonthClick: function(mo) {
@@ -5043,7 +5043,7 @@ class Component extends DCLogic {
           var casesWrap2 = document.getElementById('casesTimelineWrap');
           if (casesWrap2 && window.__epLastTimeline) {
             window.__renderWidgetTimeline({ container:casesWrap2, values:window.__epLastTimeline.cases,
-              months:window.__epLastTimeline.months, color:'#c62828', nullBg:'#f5f5f5', selectedMonth:null, onMonthClick:function(){} });
+              months:window.__epLastTimeline.months, color:'#288184', nullBg:'#f5f5f5', selectedMonth:null, onMonthClick:function(){} });
           }
         };
 
@@ -5291,7 +5291,7 @@ class Component extends DCLogic {
             container: oppsWrap,
             values: window.__epLastTimeline.opportunities,
             months: window.__epLastTimeline.months,
-            color: '#e65100',
+            color: '#288184',
             nullBg: '#f5f5f5',
             selectedMonth: window.__oppsMo,
             segments: function(mo) {
