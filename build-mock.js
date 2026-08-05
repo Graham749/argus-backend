@@ -100,16 +100,13 @@ mockJs = mockJs.replace(
 // 1. Inline React then support.js — React must already exist so support.js skips CDN fetch
 // Escape "<script" literal inside support.js string to prevent HTML parser confusion
 const supportJsSafe = supportJs.replace(/<script/g, '\\x3Cscript');
-html = html.replace(
-  '<script src="./support.js"></script>',
-  `${reactInline}\n<script>\n${supportJsSafe}\n</script>`
-);
+// Use a function replacement to prevent $ pattern expansion (e.g. $' in React bundle)
+const reactBlock = `${reactInline}\n<script>\n${supportJsSafe}\n</script>`;
+html = html.replace('<script src="./support.js"></script>', () => reactBlock);
 
 // 2. Inline mock-data.js
-html = html.replace(
-  '<script src="./mock-data.js"></script>',
-  `<script>\n${mockJs}\n</script>`
-);
+const mockBlock = `<script>\n${mockJs}\n</script>`;
+html = html.replace('<script src="./mock-data.js"></script>', () => mockBlock);
 
 // 3. Base64-encode images — deduplicate isotope.png (used 3× in template)
 function dataUri(filename) {
@@ -144,17 +141,21 @@ for (const [ref, filename] of imageReplacements) {
 
 // 5. SW Intelligence — inline as srcdoc with mock always active.
 // sw-intelligence.html has its own self-contained mock mode (inline fixture data).
-// Remove the ?mock URL guard so it activates unconditionally in the bundle.
+// SW Intelligence — Blob URL approach.
+// srcdoc scripts don't execute in Chrome for file:// URLs, so we base64-encode
+// the HTML and create a Blob URL at runtime instead.
 let swHtml = fs.readFileSync(path.join(PUBLIC, 'sw-intelligence.html'), 'utf8');
 swHtml = swHtml.replace(
   "if (!new URLSearchParams(location.search).has('mock')) return;",
   '// standalone build — mock always active'
 );
-// Encode for srcdoc attribute (& and " must be escaped in HTML attributes)
-const swSrcdoc = swHtml.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+const swBase64 = Buffer.from(swHtml, 'utf8').toString('base64');
+// Break into 76-char lines so the script block isn't one giant string literal
+const swB64Lines = swBase64.match(/.{1,76}/g).map(c => `'${c}'`).join('+\n');
+const swBlobScript = `<script>\n(function(){\nvar b64=\n${swB64Lines};\nvar bin=atob(b64),bytes=new Uint8Array(bin.length);\nfor(var i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);\nvar blob=new Blob([bytes],{type:'text/html;charset=utf-8'});\ndocument.getElementById('sw-intel-frame').src=URL.createObjectURL(blob);\n})();\n</script>`;
 html = html.replace(
   '<iframe src="/sw-intelligence?embed=1" style="width:100%;height:100%;border:none;" title="SW Revenue Intelligence"></iframe>',
-  `<iframe srcdoc="${swSrcdoc}" style="width:100%;height:100%;border:none;" title="SW Revenue Intelligence"></iframe>`
+  () => `<iframe id="sw-intel-frame" style="width:100%;height:100%;border:none;" title="SW Revenue Intelligence"></iframe>\n${swBlobScript}`
 );
 
 // 6. Version comment at top
