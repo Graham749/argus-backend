@@ -300,7 +300,7 @@ input{font-family:inherit;}
                     <thead><tr style="border-bottom:1px solid #e6e6e5;color:#9d9d9d;text-align:left;">
                       <th style="padding:4px 8px;">Name</th>
                       <th style="padding:4px 8px;">Stage / Reason</th>
-                      <th style="padding:4px 8px;">Amount</th>
+                      <th style="padding:4px 8px;text-align:right;">Amount</th>
                       <th style="padding:4px 8px;">Opp Type</th>
                       <th style="padding:4px 8px;">Close Date</th>
                       <th style="padding:4px 8px;">Created</th>
@@ -1533,7 +1533,7 @@ window.__renderWidgetTimeline = function(opts) {
     var isNull = v === null;
     var isSel  = !!(selMo && col.key && col.key === selMo);
     var isCurr = !!(col.isCurrent);
-    var bg     = isNull ? nullBg : (isCurr ? '#e8edf5' : '#f5f5f5');
+    var bg     = isNull ? nullBg : (isCurr ? '#c0d4e8' : '#f5f5f5');
     var dimmed = !!(selMo && !isSel && col.key !== 'pre');
 
     var bgRect = s2('rect', { x:colX+1, y:0, width:BAR_W, height:ROW_H, fill:bg, rx:2,
@@ -1653,10 +1653,10 @@ window.__epRender = function(container, data) {
   const GAP        = 4;
   const PAD_T      = 6;
   const SUB_H      = 68;   // renewal calendar height
-  const SEP_H      = 6;    // gap below calendar to opps section
-  const SECT_HDR   = 13;   // section label height
+  const SEP_H      = 14;   // gap below calendar to opps section
+  const SECT_HDR   = 16;   // section label height
   const OPPS_AX_H  = 20;   // month axis below opps bars
-  const OPPS_SEP   = 10;   // gap below opps axis to engagement section
+  const OPPS_SEP   = 14;   // gap below opps axis to engagement section
   const N_ROWS     = 4;    // cases, tickets, usage, notes
   const AX_H       = 18;
 
@@ -1786,13 +1786,13 @@ window.__epRender = function(container, data) {
   for (var pm2=9; pm2>=1; pm2--) {
     var pmD = new Date(calToday.getFullYear(), calToday.getMonth()-pm2, 1);
     var pmK = pmD.getFullYear()+'-'+String(pmD.getMonth()+1).padStart(2,'0');
-    oppCols.push({ label:MABBR[pmD.getMonth()], yearLbl:pmD.getMonth()===0?"'"+String(pmD.getFullYear()).slice(2):'', key:pmK, oppWon:0, oppPipe:0 });
+    oppCols.push({ label:pmD.toLocaleDateString('en-GB',{month:'short'}), yearLbl:pmD.getMonth()===0?"'"+String(pmD.getFullYear()).slice(2):'', key:pmK, oppWon:0, oppPipe:0 });
   }
-  oppCols.push({ label:MABBR[calToday.getMonth()], yearLbl:'', key:currMoKey, isCurrent:true, oppWon:0, oppPipe:0 });
+  oppCols.push({ label:calToday.toLocaleDateString('en-GB',{month:'short'}), yearLbl:'', key:currMoKey, isCurrent:true, oppWon:0, oppPipe:0 });
   for (var fm2=1; fm2<=9; fm2++) {
     var fmD = new Date(calToday.getFullYear(), calToday.getMonth()+fm2, 1);
     var fmK = fmD.getFullYear()+'-'+String(fmD.getMonth()+1).padStart(2,'0');
-    oppCols.push({ label:MABBR[fmD.getMonth()], yearLbl:fmD.getMonth()===0?"'"+String(fmD.getFullYear()).slice(2):'', key:fmK, isFuture:true, oppWon:0, oppPipe:0 });
+    oppCols.push({ label:fmD.toLocaleDateString('en-GB',{month:'short'}), yearLbl:fmD.getMonth()===0?"'"+String(fmD.getFullYear()).slice(2):'', key:fmK, isFuture:true, oppWon:0, oppPipe:0 });
   }
   Object.keys(oppByClose).forEach(function(mo) {
     var ow = oppByClose[mo].won_value      || 0;
@@ -1859,7 +1859,7 @@ window.__epRender = function(container, data) {
     var barH = col.subs.length ? Math.max(6, Math.round((col.arr/maxCalArr)*BAR_MAX_CAL)) : 0;
     var barY = subY + CAL_H - barH;
 
-    svg.appendChild(s('rect',{ x:cx+1, y:subY, width:CAL_BAR_W, height:CAL_H, fill:ci===1?'#e8edf5':'#f5f5f5', rx:2 }));
+    svg.appendChild(s('rect',{ x:cx+1, y:subY, width:CAL_BAR_W, height:CAL_H, fill:ci===1?'#c0d4e8':'#f5f5f5', rx:2 }));
     if (barH) {
       svg.appendChild(s('rect',{ x:cx+1, y:barY, width:CAL_BAR_W, height:barH,
         fill:col.color, rx:2, opacity:0.85 }));
@@ -1918,7 +1918,7 @@ window.__epRender = function(container, data) {
   }));
 
   var oppMaxV = 1;
-  oppCols.forEach(function(col){ var t=(col.oppWon||0)+(col.oppPipe||0); if(t>oppMaxV) oppMaxV=t; });
+  oppCols.forEach(function(col,ci){ if(ci===0) return; var t=(col.oppWon||0)+(col.oppPipe||0); if(t>oppMaxV) oppMaxV=t; });
   var OPP_BAR_MAX = ROW_H - 12;
 
   oppCols.forEach(function(col, ci) {
@@ -1928,7 +1928,7 @@ window.__epRender = function(container, data) {
     var pipeV = col.oppPipe || 0;
     var total = wonV + pipeV;
     svg.appendChild(s('rect', { x:colX+1, y:OPPS_ROW_Y, width:CAL_BAR_W, height:ROW_H,
-      fill:col.isCurrent?'#e8edf5':'#f5f5f5', rx:2 }));
+      fill:col.isCurrent?'#c0d4e8':'#f5f5f5', rx:2 }));
     if (total > 0 && oppMaxV > 0) {
       var totalH = Math.max(4, Math.round((total/oppMaxV)*OPP_BAR_MAX));
       var barBase = OPPS_ROW_Y + ROW_H;
@@ -2011,7 +2011,7 @@ window.__epRender = function(container, data) {
 
       svg.appendChild(s('rect', {
         x:colX+1, y:rowY, width:CAL_BAR_W, height:ROW_H,
-        fill:isNull ? row.nullBg : (ci===19?'#e8edf5':'#f5f5f5'), rx:2
+        fill:isNull ? row.nullBg : (ci===19?'#c0d4e8':'#f5f5f5'), rx:2
       }));
 
       if (!isNull && v > 0 && maxV > 0) {
@@ -5335,7 +5335,7 @@ class Component extends DCLogic {
                     || (window.__epLastTimeline && window.__epLastTimeline.opp_by_close_date)
                     || {};
           var today2 = new Date(); today2.setHours(0,0,0,0);
-          var MABBR2 = ['J','F','M','A','M','J','J','A','S','O','N','D'];
+          var mFmt2  = function(d){ return d.toLocaleDateString('en-GB',{month:'short'}); };
           var wW     = oppsWrap.offsetWidth || 280;
           var wCELL  = Math.max(12, Math.floor(wW / 20));
           var wCW    = 20 * wCELL;
@@ -5350,13 +5350,13 @@ class Component extends DCLogic {
           for (var pm3=9; pm3>=1; pm3--) {
             var pmD2 = new Date(today2.getFullYear(), today2.getMonth()-pm3, 1);
             var pmK2 = pmD2.getFullYear()+'-'+String(pmD2.getMonth()+1).padStart(2,'0');
-            wCols.push({ label:MABBR2[pmD2.getMonth()], key:pmK2, oppWon:0, oppPipe:0 });
+            wCols.push({ label:mFmt2(pmD2), key:pmK2, oppWon:0, oppPipe:0 });
           }
-          wCols.push({ label:MABBR2[today2.getMonth()], key:currMo2, isCurrent:true, oppWon:0, oppPipe:0 });
+          wCols.push({ label:mFmt2(today2), key:currMo2, isCurrent:true, oppWon:0, oppPipe:0 });
           for (var fm3=1; fm3<=9; fm3++) {
             var fmD2 = new Date(today2.getFullYear(), today2.getMonth()+fm3, 1);
             var fmK2 = fmD2.getFullYear()+'-'+String(fmD2.getMonth()+1).padStart(2,'0');
-            wCols.push({ label:MABBR2[fmD2.getMonth()], key:fmK2, isFuture:true, oppWon:0, oppPipe:0 });
+            wCols.push({ label:mFmt2(fmD2), key:fmK2, isFuture:true, oppWon:0, oppPipe:0 });
           }
           Object.keys(obc).forEach(function(mo) {
             var ow = obc[mo].won_value || 0, op2 = obc[mo].pipeline_value || 0;
@@ -5368,7 +5368,7 @@ class Component extends DCLogic {
           });
 
           var wMaxV = 1;
-          wCols.forEach(function(c){ var t=(c.oppWon||0)+(c.oppPipe||0); if(t>wMaxV) wMaxV=t; });
+          wCols.forEach(function(c,ci2){ if(ci2===0) return; var t=(c.oppWon||0)+(c.oppPipe||0); if(t>wMaxV) wMaxV=t; });
           var wBarMax = wROW - 8;
 
           oppsWrap.innerHTML = '';
@@ -5392,7 +5392,7 @@ class Component extends DCLogic {
 
             var bg = document.createElementNS('http://www.w3.org/2000/svg','rect');
             bg.setAttribute('x',cx); bg.setAttribute('y',0); bg.setAttribute('width',wCELL); bg.setAttribute('height',wROW);
-            bg.setAttribute('fill', isSel?'#dde8f0' : wCol.isCurrent?'#e8edf5':'#f9f9f9'); bg.setAttribute('rx','2');
+            bg.setAttribute('fill', isSel?'#a8c4de' : wCol.isCurrent?'#c0d4e8':'#f9f9f9'); bg.setAttribute('rx','2');
             wSvg.appendChild(bg);
 
             if (tot2 > 0 && wMaxV > 0) {
