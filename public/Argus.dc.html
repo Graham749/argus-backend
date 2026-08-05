@@ -2145,14 +2145,36 @@ class Component extends DCLogic {
     window.__healthRepairInterval = setInterval(() => {
       if(!this.state || this.state.view !== 'health') return;
       const s = document.getElementById('sfAccountSelector');
-      if(!s || s.options.length > 1) return;
-      const accounts = window.__argusAccountsList || this.cachedAccounts;
-      if(!accounts || !accounts.length) return;
-      s.innerHTML = '';
-      const ph = document.createElement('option'); ph.value = ''; ph.textContent = '-- Select Account --'; s.appendChild(ph);
-      accounts.forEach(a => { const o = document.createElement('option'); o.value = a.name; o.textContent = a.name; s.appendChild(o); });
-      const saved = localStorage.getItem('argusHealthAccount');
-      if(saved) s.value = saved;
+      if(!s) return;
+      // Repopulate options if wiped by setState re-render
+      if(s.options.length <= 1) {
+        const accounts = window.__argusAccountsList || this.cachedAccounts;
+        if(!accounts || !accounts.length) return;
+        s.innerHTML = '';
+        const ph = document.createElement('option'); ph.value = ''; ph.textContent = '-- Select Account --'; s.appendChild(ph);
+        accounts.forEach(a => { const o = document.createElement('option'); o.value = a.name; o.textContent = a.name; s.appendChild(o); });
+        const saved = localStorage.getItem('argusHealthAccount');
+        if(saved) s.value = saved;
+      }
+      // Reattach change listener if this is a fresh element (navigation remount creates a new one)
+      if(!s.__argusWired) {
+        s.__argusWired = true;
+        s.addEventListener('change', (e) => {
+          const accountName = e.target.value;
+          if(!accountName) return;
+          try{ localStorage.setItem('argusHealthAccount', accountName); }catch(err){}
+          this.updateAccountTitles(accountName);
+          this.currentServiceTypeFilter = 'all';
+          document.querySelectorAll('.sfServiceTypeFilter').forEach(b => {
+            const active = b.dataset.type === 'all';
+            b.style.background = active ? '#288184' : '#fff';
+            b.style.color      = active ? '#fff'    : '#288184';
+            b.style.border     = active ? '1px solid #288184' : '1px solid #e6e6e5';
+          });
+          window.__healthLoadStarted = null;
+          this.loadAccountWithMatchCheck(accountName);
+        });
+      }
     }, 100);
 
     // Wire card collapse/expand headers (runs after x-dc renders the DOM)
@@ -2340,8 +2362,8 @@ class Component extends DCLogic {
         this.loadAccountsList();
       }
 
-      // Add change listener
-      select.addEventListener('change', (e) => {
+      // Add change listener (guard against repair interval having already wired it)
+      if(!select.__argusWired) { select.__argusWired = true; select.addEventListener('change', (e) => {
         const accountName = e.target.value;
         if(accountName) {
           try{ localStorage.setItem('argusHealthAccount', accountName); }catch(e){}
@@ -2362,7 +2384,7 @@ class Component extends DCLogic {
           window.__healthLoadStarted = null; // allow _triggerHealthLoad for new account selection
           this.loadAccountWithMatchCheck(accountName);
         }
-      });
+      }); }
 
       // Remount fix: if accounts already cached and a target is pending, apply it now
       const pendingTarget = window.__argusTargetAccount;
