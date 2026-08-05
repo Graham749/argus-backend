@@ -259,7 +259,7 @@ async function handler(req, res) {
         CONVERT(varchar(10), renewal_date, 120) AS renewal_date,
         termination_reason,
         contract_extension_negotiated
-      FROM dbo.v_silver_sf_sw_subscriptions
+      FROM dbo.gold_sf_sw_subscriptions
     `);
 
     const data = process(rows);
