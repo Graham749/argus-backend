@@ -1652,26 +1652,32 @@ window.__epRender = function(container, data) {
   const ROW_H      = 38;
   const GAP        = 4;
   const PAD_T      = 6;
-  const SUB_H      = 68;   // renewal calendar: 48px bar area + 20px month/year labels
-  const SEP_H      = 6;    // gap between calendar and opps row
-  const ROWS_Y     = PAD_T + SUB_H + SEP_H;
-  const OPPS_AX_H  = 24;   // month axis below opps row
-  const SEP_OPPS   = 28;   // gap between opps axis and cases row (space for section labels)
-  const N_ROWS     = 5;
+  const SUB_H      = 68;   // renewal calendar height
+  const SEP_H      = 6;    // gap below calendar to opps section
+  const SECT_HDR   = 13;   // section label height
+  const OPPS_AX_H  = 20;   // month axis below opps bars
+  const OPPS_SEP   = 10;   // gap below opps axis to engagement section
+  const N_ROWS     = 4;    // cases, tickets, usage, notes
   const AX_H       = 18;
-  const TOTAL      = ROWS_Y + N_ROWS*(ROW_H+GAP) - GAP + OPPS_AX_H + SEP_OPPS + 6 + AX_H + 4;
+
+  const RNEW_SECT_Y = PAD_T;
+  const RNEW_Y      = RNEW_SECT_Y + SECT_HDR;
+  const OPPS_SECT_Y = RNEW_Y + SUB_H + SEP_H;
+  const OPPS_ROW_Y  = OPPS_SECT_Y + SECT_HDR;
+  const HIST_SECT_Y = OPPS_ROW_Y + ROW_H + OPPS_AX_H + OPPS_SEP;
+  const HIST_Y      = HIST_SECT_Y + SECT_HDR;
+  const TOTAL       = HIST_Y + N_ROWS*(ROW_H+GAP) - GAP + 6 + AX_H + 4;
 
   const PH_START  = '2026-04';
   const MABBR     = ['J','F','M','A','M','J','J','A','S','O','N','D'];
   const TYPE_COLS = ['#1565c0','#388e3c','#f57c00','#6a1b9a','#00838f','#c62828','#546e7a','#ad1457'];
 
-  // Row order: SF Opps (with its own axis) → SF Cases → ZD Support → PH Usage → PB Product
+  // Engagement rows only — Opportunities is its own centred section between Renewals and Engagement.
   const ROWS = [
-    { key:'opportunities',label:'Opportunities', source:'Salesforce',   color:'#288184', nullBg:'#f5f5f5', positive:true,  bench:(data.benchmark||{}).opps    || {p25:0,p50:0.3,p75:1,p90:3}    },
-    { key:'cases',        label:'Cases',    source:'Salesforce',   color:'#288184', nullBg:'#f5f5f5', positive:false, bench:(data.benchmark||{}).cases   || {p25:0,p50:0.5,p75:1.5,p90:4}  },
-    { key:'support',      label:'Tickets',  source:'Zendesk',      color:'#288184', nullBg:'#f5f5f5', positive:false, bench:(data.benchmark||{}).support || {p25:0,p50:1,p75:3,p90:8}      },
-    { key:'usage',        label:'Usage',    source:'PostHog',      color:'#288184', nullBg:'#f5f5f5', positive:true,  bench:(data.benchmark||{}).usage   || {p25:2,p50:8,p75:22,p90:55}    },
-    { key:'product',      label:'Notes',    source:'ProductBoard', color:'#288184', nullBg:'#f5f5f5', positive:true,  bench:(data.benchmark||{}).product || {p25:0,p50:0.3,p75:1.2,p90:4}  },
+    { key:'cases',   label:'Cases',   source:'Salesforce',   color:'#288184', nullBg:'#f5f5f5', positive:false, bench:(data.benchmark||{}).cases   || {p25:0,p50:0.5,p75:1.5,p90:4}  },
+    { key:'support', label:'Tickets', source:'Zendesk',      color:'#288184', nullBg:'#f5f5f5', positive:false, bench:(data.benchmark||{}).support || {p25:0,p50:1,p75:3,p90:8}      },
+    { key:'usage',   label:'Usage',   source:'PostHog',      color:'#288184', nullBg:'#f5f5f5', positive:true,  bench:(data.benchmark||{}).usage   || {p25:2,p50:8,p75:22,p90:55}    },
+    { key:'product', label:'Notes',   source:'ProductBoard', color:'#288184', nullBg:'#f5f5f5', positive:true,  bench:(data.benchmark||{}).product || {p25:0,p50:0.3,p75:1.2,p90:4}  },
   ];
 
   function s(tag, a, txt) {
@@ -1773,6 +1779,31 @@ window.__epRender = function(container, data) {
   // Fixed 20-column array: [past, m0..m17, beyond]
   var calCols = [pastBucket].concat(calBuckets).concat([beyondBucket]);
 
+  // ── Centered 20-col grid for Opportunities: Hist · 9 past · current · 9 future ──
+  var currMoKey = calToday.getFullYear()+'-'+String(calToday.getMonth()+1).padStart(2,'0');
+  var oppCols   = [];
+  oppCols.push({ label:'Hist', yearLbl:'', key:'hist', oppWon:0, oppPipe:0 });
+  for (var pm2=9; pm2>=1; pm2--) {
+    var pmD = new Date(calToday.getFullYear(), calToday.getMonth()-pm2, 1);
+    var pmK = pmD.getFullYear()+'-'+String(pmD.getMonth()+1).padStart(2,'0');
+    oppCols.push({ label:MABBR[pmD.getMonth()], yearLbl:pmD.getMonth()===0?"'"+String(pmD.getFullYear()).slice(2):'', key:pmK, oppWon:0, oppPipe:0 });
+  }
+  oppCols.push({ label:MABBR[calToday.getMonth()], yearLbl:'', key:currMoKey, isCurrent:true, oppWon:0, oppPipe:0 });
+  for (var fm2=1; fm2<=9; fm2++) {
+    var fmD = new Date(calToday.getFullYear(), calToday.getMonth()+fm2, 1);
+    var fmK = fmD.getFullYear()+'-'+String(fmD.getMonth()+1).padStart(2,'0');
+    oppCols.push({ label:MABBR[fmD.getMonth()], yearLbl:fmD.getMonth()===0?"'"+String(fmD.getFullYear()).slice(2):'', key:fmK, isFuture:true, oppWon:0, oppPipe:0 });
+  }
+  Object.keys(oppByClose).forEach(function(mo) {
+    var ow = oppByClose[mo].won_value      || 0;
+    var op = oppByClose[mo].pipeline_value || 0;
+    var matched = false;
+    for (var oi=1; oi<oppCols.length; oi++) {
+      if (oppCols[oi].key === mo) { oppCols[oi].oppWon += ow; oppCols[oi].oppPipe += op; matched=true; break; }
+    }
+    if (!matched) { oppCols[0].oppWon += ow; oppCols[0].oppPipe += op; }
+  });
+
   // ── Backward 20-column grid (18m- · 18 past months · now) ───────────────────
   // Used by Cases, Tickets, Usage, Notes rows — mirrors forward grid structure.
   var backCols = [];
@@ -1795,17 +1826,21 @@ window.__epRender = function(container, data) {
     key: currMo2, isCurrent: true
   });
 
-  // Today marker (spans renewals + opps rows)
-  var oppsRowY  = ROWS_Y;  // opps is first row (ri=0), no offset
+  // Today marker within renewal calendar only
   var daysInMo2 = new Date(calToday.getFullYear(), calToday.getMonth()+1, 0).getDate();
   var todayFrac2= calToday.getDate() / daysInMo2;
   var todayCalX = LBL_W + 1*CAL_COL_W + Math.round(todayFrac2 * CAL_COL_W);
-  var todayBotY = oppsRowY + ROW_H;
-  svg.appendChild(s('line',{ x1:todayCalX, y1:PAD_T, x2:todayCalX, y2:todayBotY,
+  svg.appendChild(s('line',{ x1:todayCalX, y1:RNEW_Y, x2:todayCalX, y2:RNEW_Y+SUB_H,
     stroke:'#c0c0c0','stroke-width':1,'stroke-dasharray':'3,2' }));
 
-  // ── Renewal calendar row ─────────────────────────────────────────────────────
-  var subY = PAD_T;
+  // ── Section A: Renewals (Future) ─────────────────────────────────────────────
+  svg.appendChild(s('text', {
+    x:LBL_W, y:RNEW_SECT_Y+9, 'text-anchor':'start',
+    'font-size':8, 'font-weight':700, 'font-family':'Lato,Helvetica Neue,Arial,sans-serif', fill:'#b0b0b0'
+  }, 'RENEWALS · Future'));
+  svg.appendChild(s('line', { x1:LBL_W+84, y1:RNEW_SECT_Y+5, x2:LBL_W+CW, y2:RNEW_SECT_Y+5, stroke:'#e8e8e7', 'stroke-width':0.5 }));
+
+  var subY = RNEW_Y;
   svg.appendChild(s('text', {
     x:LBL_W-6, y:subY+7, 'text-anchor':'end', 'dominant-baseline':'middle',
     'font-size':11, 'font-weight':700, 'font-family':'Lato,Helvetica Neue,Arial,sans-serif', fill:'#6d6d6c'
@@ -1859,20 +1894,94 @@ window.__epRender = function(container, data) {
     }, fmtArrCal(totalCalArr)));
   }
 
-  // Separator line between subscription track and data rows
+  // ── Section B: Opportunities (Historic & Future, centred on today) ────────────
+  svg.appendChild(s('text', {
+    x:LBL_W, y:OPPS_SECT_Y+9, 'text-anchor':'start',
+    'font-size':8, 'font-weight':700, 'font-family':'Lato,Helvetica Neue,Arial,sans-serif', fill:'#b0b0b0'
+  }, 'OPPORTUNITIES · Historic & Future'));
+  svg.appendChild(s('line', { x1:LBL_W+142, y1:OPPS_SECT_Y+5, x2:LBL_W+CW, y2:OPPS_SECT_Y+5, stroke:'#e8e8e7', 'stroke-width':0.5 }));
+
+  svg.appendChild(s('text', {
+    x:LBL_W-6, y:OPPS_ROW_Y+ROW_H/2-4, 'text-anchor':'end', 'dominant-baseline':'middle',
+    'font-size':10, 'font-weight':700, 'font-family':'Lato,Helvetica Neue,Arial,sans-serif', fill:'#6d6d6c'
+  }, 'Opps'));
+  svg.appendChild(s('text', {
+    x:LBL_W-6, y:OPPS_ROW_Y+ROW_H/2+6, 'text-anchor':'end', 'dominant-baseline':'middle',
+    'font-size':7.5, 'font-family':'Lato,Helvetica Neue,Arial,sans-serif', fill:'#b8b8b8'
+  }, 'Salesforce'));
+
+  // Dashed today divider at right edge of col 10 (current month | future)
   svg.appendChild(s('line', {
-    x1:LBL_W, y1:ROWS_Y-3, x2:LBL_W+CW, y2:ROWS_Y-3,
-    stroke:'#e0e0de', 'stroke-width':0.5
+    x1:LBL_W+11*CELL, y1:OPPS_ROW_Y, x2:LBL_W+11*CELL, y2:OPPS_ROW_Y+ROW_H,
+    stroke:'#b0b0b0', 'stroke-width':1, 'stroke-dasharray':'3,2', opacity:0.5
   }));
 
-  // ── Data rows ────────────────────────────────────────────────────────────────
+  var oppMaxV = 1;
+  oppCols.forEach(function(col){ var t=(col.oppWon||0)+(col.oppPipe||0); if(t>oppMaxV) oppMaxV=t; });
+  var OPP_BAR_MAX = ROW_H - 12;
+
+  oppCols.forEach(function(col, ci) {
+    var colX = LBL_W + ci * CELL;
+    var mid  = colX + CELL / 2;
+    var wonV  = col.oppWon  || 0;
+    var pipeV = col.oppPipe || 0;
+    var total = wonV + pipeV;
+    svg.appendChild(s('rect', { x:colX+1, y:OPPS_ROW_Y, width:CAL_BAR_W, height:ROW_H,
+      fill:col.isCurrent?'#e8edf5':'#f5f5f5', rx:2 }));
+    if (total > 0 && oppMaxV > 0) {
+      var totalH = Math.max(4, Math.round((total/oppMaxV)*OPP_BAR_MAX));
+      var barBase = OPPS_ROW_Y + ROW_H;
+      if (pipeV > 0) {
+        var pH = Math.round((pipeV/total)*totalH); if (pH<2) pH=2;
+        svg.appendChild(s('rect',{ x:colX+1, y:barBase-pH, width:CAL_BAR_W, height:pH, fill:'#e65100', rx:2, opacity:0.85 }));
+      }
+      if (wonV > 0) {
+        var wH = totalH - (pipeV>0 ? Math.round((pipeV/total)*totalH) : 0); if (wH<2) wH=2;
+        svg.appendChild(s('rect',{ x:colX+1, y:barBase-totalH, width:CAL_BAR_W, height:wH, fill:'#2e7d32', rx:2, opacity:0.85 }));
+      }
+      var fmtV = function(n){ return n>=1e6?(n/1e6).toFixed(1)+'M':n>=1000?Math.round(n/1000)+'k':''; };
+      var topLbl = total>=1000 ? fmtV(total) : '';
+      if (topLbl) {
+        var topY = OPPS_ROW_Y+ROW_H-totalH-2; if(topY<OPPS_ROW_Y+2) topY=OPPS_ROW_Y+2;
+        svg.appendChild(s('text',{ x:mid, y:topY, 'text-anchor':'middle',
+          'font-size':7, fill:'#3c3c3b', 'font-family':'Lato,Helvetica Neue,Arial,sans-serif' }, topLbl));
+      }
+    }
+  });
+
+  svg.appendChild(s('text', { x:LBL_W+CW+6, y:OPPS_ROW_Y+11,
+    'font-size':8, fill:'#2e7d32', 'font-family':'Lato,Helvetica Neue,Arial,sans-serif' }, '■ Won'));
+  svg.appendChild(s('text', { x:LBL_W+CW+6, y:OPPS_ROW_Y+22,
+    'font-size':8, fill:'#e65100', 'font-family':'Lato,Helvetica Neue,Arial,sans-serif' }, '■ Pipe'));
+
+  // Opps axis labels (centred grid)
+  var oppsAxY = OPPS_ROW_Y + ROW_H + 4;
+  oppCols.forEach(function(col, ci) {
+    var mid = LBL_W + ci*CELL + CELL/2;
+    var axEl = s('text', { x:mid, y:oppsAxY+9, 'text-anchor':'middle',
+      'font-size':8, fill:(col.isCurrent||col.oppWon||col.oppPipe)?'#3c3c3b':'#d0d0d0',
+      'font-family':'Lato,Helvetica Neue,Arial,sans-serif'
+    }, col.label);
+    if (col.isCurrent) axEl.setAttribute('font-weight','600');
+    svg.appendChild(axEl);
+    if (col.yearLbl) svg.appendChild(s('text', { x:mid, y:oppsAxY+18, 'text-anchor':'middle',
+      'font-size':9, 'font-weight':600, fill:'#555', 'font-family':'Lato,Helvetica Neue,Arial,sans-serif'
+    }, col.yearLbl));
+  });
+
+  // ── Section C: Engagement (Historic) ─────────────────────────────────────────
+  svg.appendChild(s('text', {
+    x:LBL_W, y:HIST_SECT_Y+9, 'text-anchor':'start',
+    'font-size':8, 'font-weight':700, 'font-family':'Lato,Helvetica Neue,Arial,sans-serif', fill:'#b0b0b0'
+  }, 'ENGAGEMENT · Historic'));
+  svg.appendChild(s('line', { x1:LBL_W+104, y1:HIST_SECT_Y+5, x2:LBL_W+CW, y2:HIST_SECT_Y+5, stroke:'#e8e8e7', 'stroke-width':0.5 }));
+
+  // ── Data rows (Cases, Tickets, Usage, Notes) ──────────────────────────────────
   ROWS.forEach(function(row, ri) {
     var vals = data[row.key] || [];
-    // ri=0 is opps row; ri>0 rows shift down past the opps-specific month axis
-    var rowY = ROWS_Y + ri*(ROW_H+GAP) + (ri > 0 ? OPPS_AX_H + SEP_OPPS : 0);
+    var rowY = HIST_Y + ri*(ROW_H+GAP);
     var maxV = Math.max(row.bench.p90||0.01, Math.max.apply(null, vals.filter(function(v){return v!==null;})||[0]));
 
-    // Two-line label: name + source
     svg.appendChild(s('text', {
       x:LBL_W-6, y:rowY+ROW_H/2-4, 'text-anchor':'end', 'dominant-baseline':'middle',
       'font-size':10, 'font-weight':700, 'font-family':'Lato,Helvetica Neue,Arial,sans-serif', fill:'#6d6d6c'
@@ -1882,101 +1991,50 @@ window.__epRender = function(container, data) {
       'font-size':7.5, 'font-family':'Lato,Helvetica Neue,Arial,sans-serif', fill:'#b8b8b8'
     }, row.source));
 
-    var BAR_MAX = ROW_H - 12;  // reserve 12px at top for count labels
+    var BAR_MAX = ROW_H - 12;
 
-    if (row.key === 'opportunities') {
-      // Uses same calCols/CAL_COL_W as renewal calendar — perfect column alignment
-      var oppMaxV = 1;
-      calCols.forEach(function(col){ var t=(col.oppWon||0)+(col.oppPipe||0); if(t>oppMaxV) oppMaxV=t; });
-      var OPP_BAR_MAX = ROW_H - 12;
+    var monthMap = {};
+    data.months.forEach(function(m, i) { monthMap[m] = (data[row.key]||[])[i]; });
 
-      calCols.forEach(function(col, ci) {
-        var colX = LBL_W + ci * CAL_COL_W;
-        var mid  = colX + CAL_COL_W / 2;
-        var wonV  = col.oppWon  || 0;
-        var pipeV = col.oppPipe || 0;
-        var total = wonV + pipeV;
+    backCols.forEach(function(col, ci) {
+      var colX = LBL_W + ci * CELL;
+      var mid  = colX + CELL / 2;
+      var v = col.key !== 'pre' ? (monthMap[col.key] !== undefined ? monthMap[col.key] : 0) : null;
+      var isNull = v === null;
 
-        svg.appendChild(s('rect', { x:colX+1, y:rowY, width:CAL_BAR_W, height:ROW_H, fill:ci===1?'#e8edf5':'#f5f5f5', rx:2 }));
+      svg.appendChild(s('rect', {
+        x:colX+1, y:rowY, width:CAL_BAR_W, height:ROW_H,
+        fill:isNull ? row.nullBg : (ci===19?'#e8edf5':'#f5f5f5'), rx:2
+      }));
 
-        if (total > 0 && oppMaxV > 0) {
-          var totalH = Math.max(4, Math.round((total/oppMaxV)*OPP_BAR_MAX));
-          var barBase = rowY + ROW_H;
-          // Pipeline (bottom, orange)
-          if (pipeV > 0) {
-            var pH = Math.round((pipeV/total)*totalH); if (pH<2) pH=2;
-            svg.appendChild(s('rect',{ x:colX+1, y:barBase-pH, width:CAL_BAR_W, height:pH, fill:'#e65100', rx:2, opacity:0.85 }));
-          }
-          // Won (top, green)
-          if (wonV > 0) {
-            var wH = totalH - (pipeV>0 ? Math.round((pipeV/total)*totalH) : 0); if (wH<2) wH=2;
-            svg.appendChild(s('rect',{ x:colX+1, y:barBase-totalH, width:CAL_BAR_W, height:wH, fill:'#2e7d32', rx:2, opacity:0.85 }));
-          }
-          // Value label above bar
-          var fmtV = function(n){ return n>=1e6?(n/1e6).toFixed(1)+'M':n>=1000?Math.round(n/1000)+'k':''; };
-          var topLbl = total>=1000 ? fmtV(total) : '';
-          if (topLbl) {
-            var topY = rowY+ROW_H-totalH-2; if(topY<rowY+2) topY=rowY+2;
-            svg.appendChild(s('text',{ x:mid, y:topY, 'text-anchor':'middle',
-              'font-size':7, fill:'#3c3c3b', 'font-family':'Lato,Helvetica Neue,Arial,sans-serif' }, topLbl));
-          }
-        }
-      });
+      if (!isNull && v > 0 && maxV > 0) {
+        var barH2 = Math.max(4, Math.round((v/maxV)*BAR_MAX));
+        var barY2 = rowY + ROW_H - barH2;
+        var unitLabel = row.key==='support'?' tickets':row.key==='cases'?' cases':row.key==='usage'?' users':' notes';
+        var bar = s('rect', { x:colX+1, y:barY2, width:CAL_BAR_W, height:barH2, fill:row.color, rx:2, opacity:0.85 });
+        var t = s('title');
+        t.textContent = col.key + ': ' + v + unitLabel + ' · median ' + (row.bench.p50||0).toFixed(1);
+        bar.appendChild(t);
+        svg.appendChild(bar);
 
-      // Won/pipeline legend
-      svg.appendChild(s('text', { x:LBL_W+CW+6, y:rowY+11,
-        'font-size':8, fill:'#2e7d32', 'font-family':'Lato,Helvetica Neue,Arial,sans-serif' }, '■ Won'));
-      svg.appendChild(s('text', { x:LBL_W+CW+6, y:rowY+22,
-        'font-size':8, fill:'#e65100', 'font-family':'Lato,Helvetica Neue,Arial,sans-serif' }, '■ Pipeline'));
-
-    } else {
-      // Backward 20-column grid: 18m- · 18 past months · now (mirrors forward grid)
-      var monthMap = {};
-      data.months.forEach(function(m, i) { monthMap[m] = (data[row.key]||[])[i]; });
-
-      backCols.forEach(function(col, ci) {
-        var colX = LBL_W + ci * CELL;
-        var mid  = colX + CELL / 2;
-        var v = col.key !== 'pre' ? (monthMap[col.key] !== undefined ? monthMap[col.key] : 0) : null;
-        var isNull = v === null;
-
-        svg.appendChild(s('rect', {
-          x:colX+1, y:rowY, width:CAL_BAR_W, height:ROW_H,
-          fill:isNull ? row.nullBg : (ci===19?'#e8edf5':'#f5f5f5'), rx:2
-        }));
-
-        if (!isNull && v > 0 && maxV > 0) {
-          var barH2 = Math.max(4, Math.round((v/maxV)*BAR_MAX));
-          var barY2 = rowY + ROW_H - barH2;
-          var unitLabel = row.key==='support'?' tickets':row.key==='cases'?' cases':row.key==='usage'?' users':' notes';
-          var bar = s('rect', { x:colX+1, y:barY2, width:CAL_BAR_W, height:barH2, fill:row.color, rx:2, opacity:0.85 });
-          var t = s('title');
-          t.textContent = col.key + ': ' + v + unitLabel + ' · median ' + (row.bench.p50||0).toFixed(1);
-          bar.appendChild(t);
-          svg.appendChild(bar);
-
-          var countLbl = v >= 1000 ? (v/1000).toFixed(1)+'k' : String(v);
-          var lblY2    = barH2 >= 14 ? barY2 + 9 : barY2 - 2;
-          var lblFill2 = barH2 >= 14 ? '#fff'     : '#3c3c3b';
-          svg.appendChild(s('text', {
-            x:mid, y:lblY2, 'text-anchor':'middle',
-            'font-size':8, fill:lblFill2, 'font-family':'Lato,Helvetica Neue,Arial,sans-serif'
-          }, countLbl));
-        }
-      });
-
-      // P50 benchmark dashed line
-      if (row.bench.p50 > 0 && maxV > 0) {
-        var ly = rowY + ROW_H - Math.min(BAR_MAX, Math.round((row.bench.p50/maxV)*BAR_MAX));
-        svg.appendChild(s('line', {
-          x1:LBL_W, y1:ly, x2:LBL_W+CW, y2:ly,
-          stroke:'#9d9d9d', 'stroke-width':1, 'stroke-dasharray':'3,3', opacity:0.6
-        }));
+        var countLbl = v >= 1000 ? (v/1000).toFixed(1)+'k' : String(v);
+        var lblY2    = barH2 >= 14 ? barY2 + 9 : barY2 - 2;
+        var lblFill2 = barH2 >= 14 ? '#fff'     : '#3c3c3b';
+        svg.appendChild(s('text', {
+          x:mid, y:lblY2, 'text-anchor':'middle',
+          'font-size':8, fill:lblFill2, 'font-family':'Lato,Helvetica Neue,Arial,sans-serif'
+        }, countLbl));
       }
+    });
+
+    if (row.bench.p50 > 0 && maxV > 0) {
+      var ly = rowY + ROW_H - Math.min(BAR_MAX, Math.round((row.bench.p50/maxV)*BAR_MAX));
+      svg.appendChild(s('line', {
+        x1:LBL_W, y1:ly, x2:LBL_W+CW, y2:ly,
+        stroke:'#9d9d9d', 'stroke-width':1, 'stroke-dasharray':'3,3', opacity:0.6
+      }));
     }
 
-    // RHS: percentile badge + avg sub-label (opps row uses legend instead)
-    if (row.key === 'opportunities') return;
     var recent = vals.slice(-3).filter(function(v){return v!==null;});
     var avg3   = recent.length ? recent.reduce(function(a,v){return a+v;},0)/recent.length : 0;
     var rawP   = bPct(avg3, row.bench);
@@ -1996,7 +2054,7 @@ window.__epRender = function(container, data) {
     });
     badgeEl.textContent = pctLabel;
     var dimName = row.key==='usage' ? 'PostHog usage' : row.key==='support' ? 'Zendesk tickets'
-      : row.key==='cases' ? 'Salesforce cases' : row.key==='opportunities' ? 'Salesforce opps' : 'ProductBoard notes';
+      : row.key==='cases' ? 'Salesforce cases' : 'ProductBoard notes';
     var tipTxt = avg3 > 0
       ? '<strong style="font-size:12px;display:block;margin-bottom:3px;">Engagement Percentile</strong>'
         + 'This account is in the <strong>' + ordSuffix(rawP) + ' percentile</strong> across Aurora clients<br>'
@@ -2006,21 +2064,18 @@ window.__epRender = function(container, data) {
         + (row.positive ? '' : '<br><em style="color:#e65100;">Lower is healthier for this metric</em>')
       : '<strong style="font-size:12px;display:block;margin-bottom:3px;">Engagement Percentile</strong>'
         + 'No ' + dimName + ' in the last 3 months';
-    // Native title for fallback
     var titleEl = document.createElementNS('http://www.w3.org/2000/svg', 'title');
     titleEl.textContent = tipTxt.replace(/<[^>]+>/g, '');
     badgeEl.appendChild(titleEl);
-    // Rich hover tooltip
     badgeEl.style.cursor = 'help';
     badgeEl.addEventListener('mouseenter', function(e) { window.__showTextTip && window.__showTextTip(e, tipTxt); });
     badgeEl.addEventListener('mousemove',  function(e) { window.engMoveTip  && window.engMoveTip(e); });
     badgeEl.addEventListener('mouseleave', function()   { window.engHideTip  && window.engHideTip(); });
     svg.appendChild(badgeEl);
 
-    // 3-month avg sub-label (makes "3 tickets" read as "avg 1/mo" — clearer than raw last-value)
     if (avg3 > 0) {
       var units = row.key==='usage' ? ' users' : row.key==='support' ? ' tickets'
-        : row.key==='cases' ? ' cases' : row.key==='opportunities' ? ' opps' : ' notes';
+        : row.key==='cases' ? ' cases' : ' notes';
       var avgDisp = avg3 >= 10 ? Math.round(avg3) : avg3.toFixed(1).replace(/\.0$/,'');
       svg.appendChild(s('text', {
         x:LBL_W+CW+6, y:rowY+21, 'dominant-baseline':'middle',
@@ -2029,26 +2084,8 @@ window.__epRender = function(container, data) {
     }
   });
 
-  // ── Opps axis — same columns as calCols for alignment with renewals ──────────
-  var oppsAxY = ROWS_Y + ROW_H + 4;
-  calCols.forEach(function(col, ci) {
-    var mid = LBL_W + ci*CAL_COL_W + CAL_COL_W/2;
-    var lbl0 = col.label.split('\n')[0];
-    svg.appendChild(s('text', { x:mid, y:oppsAxY+9, 'text-anchor':'middle',
-      'font-size':8, fill:(col.oppWon||col.oppPipe)?'#3c3c3b':'#d0d0d0',
-      'font-family':'Lato,Helvetica Neue,Arial,sans-serif'
-    }, lbl0));
-    if (col.yearLbl) svg.appendChild(s('text', { x:mid, y:oppsAxY+18, 'text-anchor':'middle',
-      'font-size':9, 'font-weight':600, fill:'#555', 'font-family':'Lato,Helvetica Neue,Arial,sans-serif'
-    }, col.yearLbl));
-  });
-
-  // ── Section divider — white space only, no labels ────────────────────────────
-  var divY = ROWS_Y + ROW_H + OPPS_AX_H + 2;
-  svg.appendChild(s('line', { x1:LBL_W, y1:divY, x2:LBL_W+CW, y2:divY, stroke:'#e8e8e7', 'stroke-width':1 }));
-
   // ── Bottom month axis (backward grid: 18m- · 18 past months · now) ───────────
-  var axY = ROWS_Y + N_ROWS*(ROW_H+GAP) - GAP + OPPS_AX_H + SEP_OPPS + 6;
+  var axY = HIST_Y + N_ROWS*(ROW_H+GAP) - GAP + 6;
   backCols.forEach(function(col, ci) {
     var mid = LBL_W + ci*CELL + CELL/2;
     svg.appendChild(s('text', {
@@ -5282,62 +5319,138 @@ class Component extends DCLogic {
         window.__oppsData = data;
         const _oppsSelf = this;
 
-        // Render backward timeline graph (by created date) — defined outside guard so timeline can trigger later
+        // Render centred timeline (by close date: 9 past · current · 9 future)
         var oppsWrap = document.getElementById('oppsTimelineWrap');
         window.__oppsMo = null;
         var renderOppsGraph = function() {
           if (!oppsWrap || !window.__epLastTimeline) return;
-          window.__renderWidgetTimeline({
-            container: oppsWrap,
-            values: window.__epLastTimeline.opportunities,
-            months: window.__epLastTimeline.months,
-            color: '#288184',
-            nullBg: '#f5f5f5',
-            selectedMonth: window.__oppsMo,
-            segments: function(mo) {
-              var all = (window.__oppsData||{}).opportunities || [];
-              var won  = 0, open = 0, lost = 0;
-              all.forEach(function(o) {
-                if (String(o.createdDate||'').substring(0,7) !== mo) return;
-                if (o.isWon)                    won++;
-                else if (!o.isClosed)           open++;
-                else                            lost++;
-              });
-              return [
-                { value: won,  color: '#2e7d32' },
-                { value: open, color: '#1565c0' },
-                { value: lost, color: '#6d6d6c' },
-              ].filter(function(s){ return s.value > 0; });
-            },
-            onMonthClick: function(mo) {
-              window.__oppsMo = window.__oppsMo === mo ? null : mo;
-              renderOppsGraph();
-              var allO = window.__oppsData ? window.__oppsData.opportunities : [];
-              var pool = window.__oppsMo
-                ? allO.filter(function(o){ return String(o.createdDate||'').substring(0,7) === window.__oppsMo; })
-                : allO;
-              var moOpen = pool.filter(function(o){ return !o.isClosed && !o.isWon; }).length;
-              var moWon  = pool.filter(function(o){ return o.isWon; }).length;
-              var moLost = pool.filter(function(o){ return o.isClosed && !o.isWon; }).length;
-              var moPipe = pool.filter(function(o){ return !o.isClosed && !o.isWon; }).reduce(function(sum,o){ return sum+(Number(o.amount)||0); }, 0);
-              document.getElementById('oppsOpenCount').textContent = moOpen;
-              document.getElementById('oppsWonCount').textContent  = moWon;
-              document.getElementById('oppsLostCount').textContent = moLost;
-              document.getElementById('oppsPipeline').textContent  = fmtGbp(moPipe);
-              var wonValEl = document.getElementById('oppsWonVal');
-              if (wonValEl) wonValEl.textContent = window.__oppsMo ? '' : (s.wonValue ? fmtGbp(s.wonValue)+' total' : '');
-              window.__renderOppsStageBar && window.__renderOppsStageBar(pool);
-              if (window.__oppsMo) {
-                document.querySelectorAll('[data-opps-filter]').forEach(function(t){ t.style.outline = ''; });
-                window.__oppsActiveDrilldown = 'month_' + mo;
-                _oppsSelf._showOppsDrill(pool, window.__oppsMo + ' — ' + pool.length + ' opp' + (pool.length !== 1 ? 's' : ''));
-              } else {
-                document.getElementById('oppsDrilldown').style.display = 'none';
-                window.__oppsActiveDrilldown = null;
-                document.querySelectorAll('[data-opps-filter]').forEach(function(t){ t.style.outline = ''; });
+          var obc    = window.__epLastTimeline.opp_by_close_date || {};
+          var today2 = new Date(); today2.setHours(0,0,0,0);
+          var MABBR2 = ['J','F','M','A','M','J','J','A','S','O','N','D'];
+          var wW     = oppsWrap.offsetWidth || 280;
+          var wCELL  = Math.max(12, Math.floor(wW / 20));
+          var wCW    = 20 * wCELL;
+          var wROW   = 38;
+          var wAX    = 16;
+          var wTOT   = wROW + wAX + 2;
+          var wBARW  = Math.max(wCELL - 2, 2);
+
+          var currMo2 = today2.getFullYear()+'-'+String(today2.getMonth()+1).padStart(2,'0');
+          var wCols   = [];
+          wCols.push({ label:'Hist', key:'hist', oppWon:0, oppPipe:0 });
+          for (var pm3=9; pm3>=1; pm3--) {
+            var pmD2 = new Date(today2.getFullYear(), today2.getMonth()-pm3, 1);
+            var pmK2 = pmD2.getFullYear()+'-'+String(pmD2.getMonth()+1).padStart(2,'0');
+            wCols.push({ label:MABBR2[pmD2.getMonth()], key:pmK2, oppWon:0, oppPipe:0 });
+          }
+          wCols.push({ label:MABBR2[today2.getMonth()], key:currMo2, isCurrent:true, oppWon:0, oppPipe:0 });
+          for (var fm3=1; fm3<=9; fm3++) {
+            var fmD2 = new Date(today2.getFullYear(), today2.getMonth()+fm3, 1);
+            var fmK2 = fmD2.getFullYear()+'-'+String(fmD2.getMonth()+1).padStart(2,'0');
+            wCols.push({ label:MABBR2[fmD2.getMonth()], key:fmK2, isFuture:true, oppWon:0, oppPipe:0 });
+          }
+          Object.keys(obc).forEach(function(mo) {
+            var ow = obc[mo].won_value || 0, op2 = obc[mo].pipeline_value || 0;
+            var matched2 = false;
+            for (var oi2=1; oi2<wCols.length; oi2++) {
+              if (wCols[oi2].key === mo) { wCols[oi2].oppWon += ow; wCols[oi2].oppPipe += op2; matched2=true; break; }
+            }
+            if (!matched2) { wCols[0].oppWon += ow; wCols[0].oppPipe += op2; }
+          });
+
+          var wMaxV = 1;
+          wCols.forEach(function(c){ var t=(c.oppWon||0)+(c.oppPipe||0); if(t>wMaxV) wMaxV=t; });
+          var wBarMax = wROW - 8;
+
+          oppsWrap.innerHTML = '';
+          var wSvg = document.createElementNS('http://www.w3.org/2000/svg','svg');
+          wSvg.setAttribute('viewBox','0 0 '+wCW+' '+wTOT);
+          wSvg.setAttribute('width','100%'); wSvg.style.display='block';
+
+          var wDiv = document.createElementNS('http://www.w3.org/2000/svg','line');
+          wDiv.setAttribute('x1',11*wCELL); wDiv.setAttribute('y1',0);
+          wDiv.setAttribute('x2',11*wCELL); wDiv.setAttribute('y2',wROW);
+          wDiv.setAttribute('stroke','#b0b0b0'); wDiv.setAttribute('stroke-width','1');
+          wDiv.setAttribute('stroke-dasharray','3,2'); wDiv.setAttribute('opacity','0.5');
+          wSvg.appendChild(wDiv);
+
+          wCols.forEach(function(wCol, ci) {
+            var cx  = ci * wCELL;
+            var mid = cx + wCELL / 2;
+            var wonV2 = wCol.oppWon || 0, pipeV2 = wCol.oppPipe || 0, tot2 = wonV2 + pipeV2;
+            var isSel = window.__oppsMo === wCol.key;
+
+            var bg = document.createElementNS('http://www.w3.org/2000/svg','rect');
+            bg.setAttribute('x',cx); bg.setAttribute('y',0); bg.setAttribute('width',wCELL); bg.setAttribute('height',wROW);
+            bg.setAttribute('fill', isSel?'#dde8f0' : wCol.isCurrent?'#e8edf5':'#f9f9f9'); bg.setAttribute('rx','2');
+            wSvg.appendChild(bg);
+
+            if (tot2 > 0 && wMaxV > 0) {
+              var totH = Math.max(3, Math.round((tot2/wMaxV)*wBarMax));
+              if (pipeV2 > 0) {
+                var pH2 = Math.round((pipeV2/tot2)*totH); if(pH2<2)pH2=2;
+                var pr = document.createElementNS('http://www.w3.org/2000/svg','rect');
+                pr.setAttribute('x',cx+1); pr.setAttribute('y',wROW-pH2); pr.setAttribute('width',wBARW); pr.setAttribute('height',pH2);
+                pr.setAttribute('fill','#e65100'); pr.setAttribute('rx','2'); pr.setAttribute('opacity','0.85');
+                wSvg.appendChild(pr);
+              }
+              if (wonV2 > 0) {
+                var wH2 = totH - (pipeV2>0?Math.round((pipeV2/tot2)*totH):0); if(wH2<2)wH2=2;
+                var wr = document.createElementNS('http://www.w3.org/2000/svg','rect');
+                wr.setAttribute('x',cx+1); wr.setAttribute('y',wROW-totH); wr.setAttribute('width',wBARW); wr.setAttribute('height',wH2);
+                wr.setAttribute('fill','#2e7d32'); wr.setAttribute('rx','2'); wr.setAttribute('opacity','0.85');
+                wSvg.appendChild(wr);
               }
             }
+
+            var lbl = document.createElementNS('http://www.w3.org/2000/svg','text');
+            lbl.setAttribute('x',mid); lbl.setAttribute('y',wROW+wAX/2+4);
+            lbl.setAttribute('text-anchor','middle'); lbl.setAttribute('font-size','8');
+            lbl.setAttribute('font-family','Lato,Helvetica Neue,Arial,sans-serif');
+            lbl.setAttribute('fill',tot2>0||wCol.isCurrent?'#3c3c3b':'#d0d0d0');
+            if (wCol.isCurrent) lbl.setAttribute('font-weight','600');
+            lbl.textContent = wCol.label;
+            wSvg.appendChild(lbl);
+
+            if (wCol.key !== 'hist') {
+              var hit = document.createElementNS('http://www.w3.org/2000/svg','rect');
+              hit.setAttribute('x',cx); hit.setAttribute('y',0); hit.setAttribute('width',wCELL); hit.setAttribute('height',wTOT);
+              hit.setAttribute('fill','transparent'); hit.style.cursor='pointer';
+              (function(colKey){
+                hit.addEventListener('click', function() {
+                  window.__oppsMo = window.__oppsMo === colKey ? null : colKey;
+                  renderOppsGraph();
+                  var allO = window.__oppsData ? window.__oppsData.opportunities : [];
+                  var pool = window.__oppsMo
+                    ? allO.filter(function(o){ return String(o.closeDate||'').substring(0,7) === window.__oppsMo; })
+                    : allO;
+                  var moOpen = pool.filter(function(o){ return !o.isClosed && !o.isWon; }).length;
+                  var moWon  = pool.filter(function(o){ return o.isWon; }).length;
+                  var moLost = pool.filter(function(o){ return o.isClosed && !o.isWon; }).length;
+                  var moPipe = pool.filter(function(o){ return !o.isClosed && !o.isWon; }).reduce(function(sum,o){ return sum+(Number(o.amount)||0); }, 0);
+                  document.getElementById('oppsOpenCount').textContent = moOpen;
+                  document.getElementById('oppsWonCount').textContent  = moWon;
+                  document.getElementById('oppsLostCount').textContent = moLost;
+                  document.getElementById('oppsPipeline').textContent  = fmtGbp(moPipe);
+                  var wonValEl = document.getElementById('oppsWonVal');
+                  if (wonValEl) wonValEl.textContent = window.__oppsMo ? '' : (s.wonValue ? fmtGbp(s.wonValue)+' total' : '');
+                  window.__renderOppsStageBar && window.__renderOppsStageBar(pool);
+                  if (window.__oppsMo) {
+                    document.querySelectorAll('[data-opps-filter]').forEach(function(t){ t.style.outline = ''; });
+                    window.__oppsActiveDrilldown = 'month_' + colKey;
+                    _oppsSelf._showOppsDrill(pool, window.__oppsMo + ' — ' + pool.length + ' opp' + (pool.length !== 1 ? 's' : ''));
+                  } else {
+                    document.getElementById('oppsDrilldown').style.display = 'none';
+                    window.__oppsActiveDrilldown = null;
+                    document.querySelectorAll('[data-opps-filter]').forEach(function(t){ t.style.outline = ''; });
+                  }
+                });
+              })(wCol.key);
+              wSvg.appendChild(hit);
+            }
           });
+
+          oppsWrap.appendChild(wSvg);
         };
         window.__renderOppsGraph = renderOppsGraph;
         renderOppsGraph();
