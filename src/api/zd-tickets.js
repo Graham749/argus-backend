@@ -62,7 +62,11 @@ async function zdTickets(req, res) {
     `);
 
     if (!ticketRows || ticketRows.length === 0) {
-      return res.json({ zdOrgId, zdOrgName, summary: null, tickets: [], closed: null });
+      return res.json({
+        zdOrgId, zdOrgName,
+        summary: { open: 0, pending: 0, solved: 0, closed: 0, total: 0 },
+        tickets: [], avgResolutionDays: null, avgReplyHours: null
+      });
     }
 
     const open    = ticketRows.filter(t => t.status === 'open' || t.status === 'new');
