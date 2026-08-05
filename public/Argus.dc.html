@@ -1935,7 +1935,7 @@ window.__epRender = function(container, data) {
     svg.appendChild(s('rect', { x:colX+1, y:OPPS_ROW_Y, width:CAL_BAR_W, height:ROW_H,
       fill:col.isCurrent?'#c0d4e8':'#f5f5f5', rx:2 }));
     if (total > 0 && oppMaxV > 0) {
-      var totalH = Math.max(4, Math.round((total/oppMaxV)*OPP_BAR_MAX));
+      var totalH = Math.min(OPP_BAR_MAX, Math.max(4, Math.round((total/oppMaxV)*OPP_BAR_MAX)));
       var barBase = OPPS_ROW_Y + ROW_H;
       if (pipeV > 0) {
         var pH = Math.round((pipeV/total)*totalH); if (pH<2) pH=2;
@@ -5410,7 +5410,7 @@ class Component extends DCLogic {
             g.appendChild(mk('rect', { x:cx+2, y:COUNT_H, width:BAR_W, height:BAR_AREA, fill:bgFill, rx:3 }));
 
             if (tot2 > 0 && wMaxV > 0) {
-              var totH = Math.max(4, Math.round((tot2/wMaxV)*BAR_MAX));
+              var totH = Math.min(BAR_MAX, Math.max(4, Math.round((tot2/wMaxV)*BAR_MAX)));
               var barBaseY = COUNT_H + BAR_AREA;
 
               if (pipeV2 > 0) {
