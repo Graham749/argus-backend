@@ -278,7 +278,7 @@ input{font-family:inherit;}
               <!-- Hidden spans kept for JS compat -->
               <span id="oppsWonReasons" style="display:none;"></span>
               <span id="oppsLostReasons" style="display:none;"></span>
-              <!-- Backward timeline graph (created date, 18m ago → now) -->
+              <!-- Centred timeline (close date: 9 past · current · 9 future) — shown by JS -->
               <div id="oppsTimelineWrap" style="margin-bottom:12px;display:none;"></div>
               <!-- Compact status pills -->
               <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:10px;">
@@ -5372,6 +5372,7 @@ class Component extends DCLogic {
           var wBarMax = wROW - 8;
 
           oppsWrap.innerHTML = '';
+          oppsWrap.style.display = 'block';
           var wSvg = document.createElementNS('http://www.w3.org/2000/svg','svg');
           wSvg.setAttribute('viewBox','0 0 '+wCW+' '+wTOT);
           wSvg.setAttribute('width','100%'); wSvg.style.display='block';
