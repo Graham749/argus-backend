@@ -1910,10 +1910,11 @@ window.__epRender = function(container, data) {
     'font-size':7.5, 'font-family':'Lato,Helvetica Neue,Arial,sans-serif', fill:'#b8b8b8'
   }, 'Salesforce'));
 
-  // Dashed today divider at right edge of col 10 (current month | future)
+  // Solid today marker at right edge of col 10 (current month | future)
+  var nowLineX = LBL_W + 11*CELL;
   svg.appendChild(s('line', {
-    x1:LBL_W+11*CELL, y1:OPPS_ROW_Y, x2:LBL_W+11*CELL, y2:OPPS_ROW_Y+ROW_H,
-    stroke:'#b0b0b0', 'stroke-width':1, 'stroke-dasharray':'3,2', opacity:0.5
+    x1:nowLineX, y1:OPPS_ROW_Y, x2:nowLineX, y2:OPPS_ROW_Y+ROW_H,
+    stroke:'#555', 'stroke-width':1.5
   }));
 
   var oppMaxV = 1;
@@ -1959,14 +1960,20 @@ window.__epRender = function(container, data) {
   oppCols.forEach(function(col, ci) {
     var mid = LBL_W + ci*CELL + CELL/2;
     var axEl = s('text', { x:mid, y:oppsAxY+9, 'text-anchor':'middle',
-      'font-size':8, fill:(col.isCurrent||col.oppWon||col.oppPipe)?'#3c3c3b':'#d0d0d0',
+      'font-size':8, fill:col.isCurrent?'#288184':(col.oppWon||col.oppPipe)?'#3c3c3b':'#d0d0d0',
       'font-family':'Lato,Helvetica Neue,Arial,sans-serif'
     }, col.label);
-    if (col.isCurrent) axEl.setAttribute('font-weight','600');
+    if (col.isCurrent) axEl.setAttribute('font-weight','700');
     svg.appendChild(axEl);
-    if (col.yearLbl) svg.appendChild(s('text', { x:mid, y:oppsAxY+18, 'text-anchor':'middle',
-      'font-size':9, 'font-weight':600, fill:'#555', 'font-family':'Lato,Helvetica Neue,Arial,sans-serif'
-    }, col.yearLbl));
+    if (col.isCurrent) {
+      svg.appendChild(s('text', { x:mid, y:oppsAxY+18, 'text-anchor':'middle',
+        'font-size':7, 'font-weight':700, fill:'#288184', 'font-family':'Lato,Helvetica Neue,Arial,sans-serif'
+      }, 'Now'));
+    } else if (col.yearLbl) {
+      svg.appendChild(s('text', { x:mid, y:oppsAxY+18, 'text-anchor':'middle',
+        'font-size':9, 'font-weight':600, fill:'#555', 'font-family':'Lato,Helvetica Neue,Arial,sans-serif'
+      }, col.yearLbl));
+    }
   });
 
   // ── Section C: Engagement (Historic) ─────────────────────────────────────────
@@ -5324,14 +5331,16 @@ class Component extends DCLogic {
         window.__oppsMo = null;
         var renderOppsGraph = function() {
           if (!oppsWrap || !window.__epLastTimeline) return;
-          var obc    = window.__epLastTimeline.opp_by_close_date || {};
+          var obc    = (window.__epLastData && window.__epLastData.opp_by_close_date)
+                    || (window.__epLastTimeline && window.__epLastTimeline.opp_by_close_date)
+                    || {};
           var today2 = new Date(); today2.setHours(0,0,0,0);
           var MABBR2 = ['J','F','M','A','M','J','J','A','S','O','N','D'];
           var wW     = oppsWrap.offsetWidth || 280;
           var wCELL  = Math.max(12, Math.floor(wW / 20));
           var wCW    = 20 * wCELL;
           var wROW   = 38;
-          var wAX    = 16;
+          var wAX    = 20;
           var wTOT   = wROW + wAX + 2;
           var wBARW  = Math.max(wCELL - 2, 2);
 
@@ -5367,11 +5376,11 @@ class Component extends DCLogic {
           wSvg.setAttribute('viewBox','0 0 '+wCW+' '+wTOT);
           wSvg.setAttribute('width','100%'); wSvg.style.display='block';
 
+          var nowX2 = 11*wCELL;
           var wDiv = document.createElementNS('http://www.w3.org/2000/svg','line');
-          wDiv.setAttribute('x1',11*wCELL); wDiv.setAttribute('y1',0);
-          wDiv.setAttribute('x2',11*wCELL); wDiv.setAttribute('y2',wROW);
-          wDiv.setAttribute('stroke','#b0b0b0'); wDiv.setAttribute('stroke-width','1');
-          wDiv.setAttribute('stroke-dasharray','3,2'); wDiv.setAttribute('opacity','0.5');
+          wDiv.setAttribute('x1',nowX2); wDiv.setAttribute('y1',0);
+          wDiv.setAttribute('x2',nowX2); wDiv.setAttribute('y2',wROW);
+          wDiv.setAttribute('stroke','#555'); wDiv.setAttribute('stroke-width','1.5');
           wSvg.appendChild(wDiv);
 
           wCols.forEach(function(wCol, ci) {
@@ -5404,13 +5413,22 @@ class Component extends DCLogic {
             }
 
             var lbl = document.createElementNS('http://www.w3.org/2000/svg','text');
-            lbl.setAttribute('x',mid); lbl.setAttribute('y',wROW+wAX/2+4);
+            lbl.setAttribute('x',mid); lbl.setAttribute('y',wROW+4);
             lbl.setAttribute('text-anchor','middle'); lbl.setAttribute('font-size','8');
             lbl.setAttribute('font-family','Lato,Helvetica Neue,Arial,sans-serif');
-            lbl.setAttribute('fill',tot2>0||wCol.isCurrent?'#3c3c3b':'#d0d0d0');
-            if (wCol.isCurrent) lbl.setAttribute('font-weight','600');
+            lbl.setAttribute('fill',wCol.isCurrent?'#288184':(tot2>0?'#3c3c3b':'#d0d0d0'));
+            if (wCol.isCurrent) { lbl.setAttribute('font-weight','700'); }
             lbl.textContent = wCol.label;
             wSvg.appendChild(lbl);
+            if (wCol.isCurrent) {
+              var nowLbl = document.createElementNS('http://www.w3.org/2000/svg','text');
+              nowLbl.setAttribute('x',mid); nowLbl.setAttribute('y',wROW+13);
+              nowLbl.setAttribute('text-anchor','middle'); nowLbl.setAttribute('font-size','7');
+              nowLbl.setAttribute('font-weight','700'); nowLbl.setAttribute('fill','#288184');
+              nowLbl.setAttribute('font-family','Lato,Helvetica Neue,Arial,sans-serif');
+              nowLbl.textContent = 'Now';
+              wSvg.appendChild(nowLbl);
+            }
 
             if (wCol.key !== 'hist') {
               var hit = document.createElementNS('http://www.w3.org/2000/svg','rect');
