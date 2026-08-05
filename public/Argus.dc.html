@@ -1934,7 +1934,7 @@ window.__epRender = function(container, data) {
       var barBase = OPPS_ROW_Y + ROW_H;
       if (pipeV > 0) {
         var pH = Math.round((pipeV/total)*totalH); if (pH<2) pH=2;
-        svg.appendChild(s('rect',{ x:colX+1, y:barBase-pH, width:CAL_BAR_W, height:pH, fill:'#e65100', rx:2, opacity:0.85 }));
+        svg.appendChild(s('rect',{ x:colX+1, y:barBase-pH, width:CAL_BAR_W, height:pH, fill:'#1565c0', rx:2, opacity:0.85 }));
       }
       if (wonV > 0) {
         var wH = totalH - (pipeV>0 ? Math.round((pipeV/total)*totalH) : 0); if (wH<2) wH=2;
@@ -1953,7 +1953,7 @@ window.__epRender = function(container, data) {
   svg.appendChild(s('text', { x:LBL_W+CW+6, y:OPPS_ROW_Y+11,
     'font-size':8, fill:'#2e7d32', 'font-family':'Lato,Helvetica Neue,Arial,sans-serif' }, '■ Won'));
   svg.appendChild(s('text', { x:LBL_W+CW+6, y:OPPS_ROW_Y+22,
-    'font-size':8, fill:'#e65100', 'font-family':'Lato,Helvetica Neue,Arial,sans-serif' }, '■ Pipe'));
+    'font-size':8, fill:'#1565c0', 'font-family':'Lato,Helvetica Neue,Arial,sans-serif' }, '■ Open'));
 
   // Opps axis labels (centred grid)
   var oppsAxY = OPPS_ROW_Y + ROW_H + 4;
@@ -5401,7 +5401,7 @@ class Component extends DCLogic {
                 var pH2 = Math.round((pipeV2/tot2)*totH); if(pH2<2)pH2=2;
                 var pr = document.createElementNS('http://www.w3.org/2000/svg','rect');
                 pr.setAttribute('x',cx+1); pr.setAttribute('y',wROW-pH2); pr.setAttribute('width',wBARW); pr.setAttribute('height',pH2);
-                pr.setAttribute('fill','#e65100'); pr.setAttribute('rx','2'); pr.setAttribute('opacity','0.85');
+                pr.setAttribute('fill','#1565c0'); pr.setAttribute('rx','2'); pr.setAttribute('opacity','0.85');
                 wSvg.appendChild(pr);
               }
               if (wonV2 > 0) {
