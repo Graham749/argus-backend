@@ -1,4 +1,5 @@
 const { query, cacheGet, cacheSet } = require('../lib/db');
+const { getMdmRow } = require('../lib/mdm-cache');
 
 const resultCache = {};
 const CACHE_TTL   = 10 * 60 * 1000;
@@ -30,17 +31,8 @@ async function resolveTenants(account) {
   const cached = cacheGet(cacheKey);
   if (cached) return cached;
 
-  const escaped = account.replace(/'/g, "''");
-  const mdmRows = await query(`
-    SELECT TOP 1
-      sf_website_domain, sf_eos_access_domains, sf_eos_access_domains_2,
-      zd_primary_email_domain, sf_account_code
-    FROM dbo.v_silver_mdm_account
-    WHERE sf_account_name = '${escaped}'
-  `);
-  if (!mdmRows.length) return null;
-
-  const mdm = mdmRows[0];
+  const mdm = await getMdmRow(account);
+  if (!mdm) return null;
   const domains = buildDomainSet(mdm);
   if (!domains.size) return null;
 
@@ -51,7 +43,7 @@ async function resolveTenants(account) {
       ph_first_seen, ph_last_seen,
       ph_events_last_30d, ph_events_last_7d,
       ph_investment_cases, ph_leaderboards, ph_benchmarks
-    FROM dbo.v_silver_posthog_account_activity
+    FROM dbo.gold_posthog_account_activity
     WHERE ph_tenant IN (${inList})
   `);
   if (!summaryRows || !summaryRows.length) return null;
@@ -168,7 +160,7 @@ async function phTrends(req, res) {
     const tenantInList = tenants.map(t => `'${t.replace(/'/g, "''")}'`).join(',');
 
     const tenantsCte = `WITH tenants AS (
-      SELECT ph_tenant FROM dbo.v_silver_posthog_account_activity
+      SELECT ph_tenant FROM dbo.gold_posthog_account_activity
       WHERE ph_tenant IN (${tenantInList})
     )`;
 

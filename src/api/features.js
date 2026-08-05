@@ -53,8 +53,8 @@ SELECT
     sub_efficiency          AS subEfficiency,
     sub_region_text         AS subRegionText,
     sf.[Status]             AS pbStatus
-FROM dbo.v_gold_pb_feature_prioritization_final g
-LEFT JOIN dbo.v_silver_pb_features sf ON sf.feature_id = g.feature_id
+FROM dbo.gold_pb_feature_prioritization_final g
+LEFT JOIN dbo.gold_pb_features sf ON sf.feature_id = g.feature_id
 ORDER BY prioritization_score DESC
     `;
 
@@ -76,7 +76,7 @@ ORDER BY prioritization_score DESC
              AND LOWER(pc.company_name) NOT LIKE '%aurora%'
             THEN NULLIF(n.pb_company_id, '') END) AS ext_company_count,
           MAX(n.note_created_at) AS latest_note_at
-        FROM v_gold_pb_note_company_feature n
+        FROM gold_pb_note_company_feature n
         LEFT JOIN v_silver_pb_companies pc ON pc.pb_company_id = NULLIF(n.pb_company_id, '')
         WHERE n.is_archived = 0
         GROUP BY n.feature_id

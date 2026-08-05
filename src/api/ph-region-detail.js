@@ -17,7 +17,7 @@ module.exports = async function phRegionDetail(req, res) {
   const sa = account.replace(/'/g, "''");
   const sr = region.replace(/'/g, "''");
   const join = `FROM dbo.posthog_notebook_events e
-    INNER JOIN dbo.v_gold_mdm_posthog g ON g.ph_tenant = e.tenant
+    INNER JOIN dbo.gold_mdm_posthog g ON g.ph_tenant = e.tenant
     WHERE g.sf_account_name = '${sa}' AND e.region = '${sr}' ${pf}`;
 
   try {

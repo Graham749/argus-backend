@@ -1,16 +1,16 @@
 const { query } = require('../lib/db');
+const { getMdmRow } = require('../lib/mdm-cache');
 
 const resultCache  = {};
-const RESULT_TTL   = 5 * 60 * 1000;  // 5 min full-response cache
+const RESULT_TTL   = 5 * 60 * 1000;
 const accountCache = {};
-const ACCOUNT_TTL  = 5 * 60 * 1000;  // 5 min lookup sub-cache
+const ACCOUNT_TTL  = 5 * 60 * 1000;
 
 async function getAccountSubscriptions(req, res) {
   try {
     const { accountName } = req.params;
     if (!accountName) return res.status(400).json({ error: 'accountName parameter required' });
 
-    // Full-response cache
     const cached = resultCache[accountName];
     if (cached && Date.now() - cached.ts < RESULT_TTL) {
       return res.json(cached.data);
@@ -22,16 +22,16 @@ async function getAccountSubscriptions(req, res) {
     if (!accountLookup || now - accountLookup.cachedAt >= ACCOUNT_TTL) {
       const esc = accountName.replace(/'/g, "''");
 
-      // 1. Try exact name match in customer accounts
+      // 1. Try exact name match in gold customer accounts
       let baseRows = await query(`
         WITH account_info AS (
           SELECT TOP 1 account_id, account_name, parent_account_id
-          FROM [dbo].[v_silver_sf_customer_accounts]
+          FROM dbo.gold_sf_customer_accounts
           WHERE account_name = '${esc}'
         ),
         parent_info AS (
           SELECT TOP 1 account_id, account_name
-          FROM [dbo].[v_silver_sf_customer_accounts]
+          FROM dbo.gold_sf_customer_accounts
           WHERE account_id = (SELECT parent_account_id FROM account_info WHERE parent_account_id IS NOT NULL)
         )
         SELECT
@@ -41,23 +41,21 @@ async function getAccountSubscriptions(req, res) {
           (SELECT account_name      FROM parent_info)  as parent_account_name
       `);
 
-      // 2. If not found by name, resolve via MDM sf_account_id (handles dropdown name vs SF name mismatch)
+      // 2. If not found by name, resolve via MDM sf_account_id
       if (!baseRows?.[0]?.account_id) {
-        const mdm = await query(`
-          SELECT TOP 1 sf_account_id FROM v_silver_mdm_account WHERE sf_account_name = '${esc}'
-        `);
-        const sfId = mdm?.[0]?.sf_account_id;
+        const mdm = await getMdmRow(accountName);
+        const sfId = mdm?.sf_account_id;
         if (sfId) {
           const sfEsc = sfId.replace(/'/g, "''");
           baseRows = await query(`
             WITH account_info AS (
               SELECT TOP 1 account_id, account_name, parent_account_id
-              FROM [dbo].[v_silver_sf_customer_accounts]
+              FROM dbo.gold_sf_customer_accounts
               WHERE account_id = '${sfEsc}'
             ),
             parent_info AS (
               SELECT TOP 1 account_id, account_name
-              FROM [dbo].[v_silver_sf_customer_accounts]
+              FROM dbo.gold_sf_customer_accounts
               WHERE account_id = (SELECT parent_account_id FROM account_info WHERE parent_account_id IS NOT NULL)
             )
             SELECT
@@ -69,10 +67,7 @@ async function getAccountSubscriptions(req, res) {
         }
       }
 
-      const rows = baseRows;
-      if (!rows || rows.length === 0 || !rows[0].account_id) {
-        // Account is in the MDM dropdown but not in SF customer accounts — return empty data
-        // rather than an error so the UI shows "No subscriptions" cleanly
+      if (!baseRows || baseRows.length === 0 || !baseRows[0].account_id) {
         return res.json({
           account: accountName,
           summary: { total_subscriptions:0, active_subscriptions:0, total_arr_gbp:0,
@@ -82,9 +77,9 @@ async function getAccountSubscriptions(req, res) {
         });
       }
       accountLookup = {
-        accountId:         rows[0].account_id,
-        parentAccountId:   rows[0].parent_account_id,
-        parentAccountName: rows[0].parent_account_name,
+        accountId:         baseRows[0].account_id,
+        parentAccountId:   baseRows[0].parent_account_id,
+        parentAccountName: baseRows[0].parent_account_name,
         cachedAt: now,
       };
       accountCache[accountName] = accountLookup;
@@ -115,9 +110,9 @@ async function getAccountSubscriptions(req, res) {
           WHEN DATEDIFF(DAY, GETDATE(), s.renewal_date) < 90 THEN 'TO_WATCH'
           ELSE 'HEALTHY'
         END as renewal_status
-      FROM [dbo].[v_silver_sf_subscriptions] s
+      FROM dbo.gold_sf_subscriptions s
       WHERE s.account_id IN (
-        SELECT account_id FROM [dbo].[v_silver_sf_customer_accounts]
+        SELECT account_id FROM dbo.gold_sf_customer_accounts
         WHERE account_id = '${reportingAccountId.replace(/'/g, "''")}'
            OR parent_account_id = '${reportingAccountId.replace(/'/g, "''")}'
       )

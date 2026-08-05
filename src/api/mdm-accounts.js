@@ -38,7 +38,7 @@ async function mdmAccounts(req, res) {
           SUM(sf_name_collision)                                                AS nameCollisions,
           (SELECT COUNT(*) FROM v_silver_pb_companies)                                                   AS pbTotalAll,
           (SELECT COUNT(*) FROM v_silver_pb_companies WHERE silver_entity_classification = 'External')  AS pbTotal
-        FROM v_silver_mdm_account
+        FROM gold_mdm_account
       `),
       // Simple flat query — no JOINs, returns all 12k accounts reliably
       query(`
@@ -49,21 +49,21 @@ async function mdmAccounts(req, res) {
           zd_match_confidence, zd_domain_confirmed, has_zd_org,
           pb_company_id, pb_company_name, pb_company_domain, pb_match_method, has_pb_company,
           sf_name_collision
-        FROM v_silver_mdm_account
+        FROM gold_mdm_account
         WHERE sf_account_name IS NOT NULL
         ORDER BY COALESCE(TRY_CAST(sf_account_arr AS FLOAT), 0) DESC
       `),
       // Hierarchy lookup — small table, fast
       query(`
         SELECT account_id, parent_account_id, account_name
-        FROM v_silver_sf_customer_accounts
+        FROM gold_sf_customer_accounts
         WHERE account_id IS NOT NULL AND LEN(TRIM(account_id)) > 0
       `),
       query(`
         SELECT
           sf_account_id, sf_account_name, sf_account_status, sf_website_domain,
           zd_match_confidence, zd_domain_confirmed, pb_company_name, pb_match_method
-        FROM v_silver_mdm_account
+        FROM gold_mdm_account
         WHERE sf_name_collision = 1 AND sf_account_name IS NOT NULL
         ORDER BY sf_account_name,
                  CASE WHEN sf_website_domain IS NOT NULL THEN 0 ELSE 1 END,
@@ -75,7 +75,7 @@ async function mdmAccounts(req, res) {
         FROM v_silver_pb_companies
         WHERE silver_entity_classification = 'External'
         AND pb_company_id NOT IN (
-          SELECT DISTINCT pb_company_id FROM v_silver_mdm_account WHERE pb_company_id IS NOT NULL
+          SELECT DISTINCT pb_company_id FROM gold_mdm_account WHERE pb_company_id IS NOT NULL
         )
         ORDER BY company_name
       `),
@@ -129,7 +129,7 @@ async function mdmAccounts(req, res) {
       // SF subscription counts per account (matches subscription widget: Active + Termination in Progress)
       query(`
         SELECT account_id, COUNT(*) AS sub_count
-        FROM v_silver_sf_subscriptions
+        FROM gold_sf_subscriptions
         GROUP BY account_id
       `),
       // PostHog tenant → SF match coverage — uses v_gold_mdm_posthog which has the
@@ -145,8 +145,8 @@ async function mdmAccounts(req, res) {
             MAX(CASE WHEN g.match_method = 'ZD Domain'      THEN 1 ELSE 0 END) AS is_zd_match,
             MAX(CASE WHEN g.match_method = 'Wildcard'       THEN 1 ELSE 0 END) AS is_wildcard_match,
             MAX(CASE WHEN g.ph_tenant IS NOT NULL           THEN 1 ELSE 0 END) AS is_any_match
-          FROM dbo.v_silver_posthog_account_activity ph
-          LEFT JOIN dbo.v_gold_mdm_posthog g ON g.ph_tenant = ph.ph_tenant
+          FROM dbo.gold_posthog_account_activity ph
+          LEFT JOIN dbo.gold_mdm_posthog g ON g.ph_tenant = ph.ph_tenant
           GROUP BY ph.ph_tenant, ph.ph_tenant_format
         )
         SELECT
@@ -178,7 +178,7 @@ async function mdmAccounts(req, res) {
           SUM(ph_benchmarks)       AS ph_benchmarks,
           STRING_AGG(ph_tenant, '; ') AS ph_tenants,
           MAX(match_method)        AS ph_match_method
-        FROM dbo.v_gold_mdm_posthog
+        FROM dbo.gold_mdm_posthog
         GROUP BY sf_account_id
       `),
       // All domain-format PostHog tenants (unfiltered) — matched/unmatched split in JS
@@ -190,7 +190,7 @@ async function mdmAccounts(req, res) {
           ph.ph_last_seen,
           ph.ph_events_last_30d,
           ph.ph_top_feature
-        FROM dbo.v_silver_posthog_account_activity ph
+        FROM dbo.gold_posthog_account_activity ph
         WHERE ph.ph_tenant_format = 'domain'
         ORDER BY ph.ph_total_events DESC
       `),
@@ -198,20 +198,20 @@ async function mdmAccounts(req, res) {
       // Enumerates website domain, ZD domain, and all EOS entries as flat domain rows.
       query(`
         SELECT LOWER(sf_website_domain) AS domain
-        FROM dbo.v_silver_mdm_account
+        FROM dbo.gold_mdm_account
         WHERE sf_website_domain IS NOT NULL AND sf_website_domain != ''
         UNION
         SELECT LOWER(zd_primary_email_domain)
-        FROM dbo.v_silver_mdm_account
+        FROM dbo.gold_mdm_account
         WHERE zd_primary_email_domain IS NOT NULL AND zd_primary_email_domain != ''
         UNION
         SELECT LOWER(TRIM(s.value))
-        FROM dbo.v_silver_mdm_account
+        FROM dbo.gold_mdm_account
         CROSS APPLY STRING_SPLIT(REPLACE(COALESCE(sf_eos_access_domains,''), '; ', ';'), ';') s
         WHERE TRIM(s.value) != ''
         UNION
         SELECT LOWER(TRIM(s.value))
-        FROM dbo.v_silver_mdm_account
+        FROM dbo.gold_mdm_account
         CROSS APPLY STRING_SPLIT(REPLACE(COALESCE(sf_eos_access_domains_2,''), '; ', ';'), ';') s
         WHERE TRIM(s.value) != ''
       `)

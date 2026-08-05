@@ -21,8 +21,8 @@ async function companyFeatures(req, res) {
         n.feature_id,
         COALESCE(f.feature_name, n.feature_id) AS feature_name,
         COUNT(DISTINCT n.note_id) AS note_count
-      FROM v_gold_pb_note_company_feature n
-      LEFT JOIN v_silver_pb_features f ON f.feature_id = n.feature_id
+      FROM gold_pb_note_company_feature n
+      LEFT JOIN gold_pb_features f ON f.feature_id = n.feature_id
       WHERE n.pb_company_id = '${esc}'
         AND n.is_archived = 0
         ${escExclude ? `AND n.feature_id != '${escExclude}'` : ''}

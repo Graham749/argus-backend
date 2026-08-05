@@ -32,7 +32,7 @@ async function accountMatches(req, res) {
         has_zd_org, has_pb_company,
         sf_website_domain, sf_eos_access_domains, sf_eos_access_domains_2,
         zd_primary_email_domain, sf_account_code
-      FROM dbo.v_silver_mdm_account
+      FROM dbo.gold_mdm_account
       WHERE sf_account_name = '${escaped}'
     `);
 
@@ -50,7 +50,7 @@ async function accountMatches(req, res) {
       const inList = [...domains].map(d => `'${d.replace(/'/g, "''")}'`).join(',');
       const phRows = await query(`
         SELECT TOP 1 ph_tenant
-        FROM dbo.v_silver_posthog_account_activity
+        FROM dbo.gold_posthog_account_activity
         WHERE ph_tenant IN (${inList})
       `);
       hasPh = phRows.length > 0;

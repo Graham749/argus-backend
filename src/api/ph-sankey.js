@@ -35,7 +35,7 @@ module.exports = async function phSankey(req, res) {
           e.region,
           COUNT(*) AS runs
         FROM dbo.posthog_notebook_events e
-        INNER JOIN dbo.v_gold_mdm_posthog g ON g.ph_tenant = e.tenant
+        INNER JOIN dbo.gold_mdm_posthog g ON g.ph_tenant = e.tenant
         WHERE g.sf_account_name = '${sa}'
           AND e.event = 'url_state_change'
           AND e.region IS NOT NULL AND e.region != ''
@@ -52,7 +52,7 @@ module.exports = async function phSankey(req, res) {
           COALESCE(NULLIF(e.geo_country_name,''), e.geo_country_code, 'Unknown') AS country,
           COUNT(*) AS runs
         FROM dbo.posthog_notebook_events e
-        INNER JOIN dbo.v_gold_mdm_posthog g ON g.ph_tenant = e.tenant
+        INNER JOIN dbo.gold_mdm_posthog g ON g.ph_tenant = e.tenant
         WHERE g.sf_account_name = '${sa}'
           AND e.event = 'url_state_change'
           AND e.region = '${sr}'

@@ -1,4 +1,5 @@
 const { query } = require('../lib/db');
+const { getMdmRow } = require('../lib/mdm-cache');
 
 const cache = {};
 const CACHE_TTL = 10 * 60 * 1000;
@@ -11,32 +12,26 @@ module.exports = async function sfOpportunities(req, res) {
   if (cached && Date.now() - cached.ts < CACHE_TTL) return res.json(cached.data);
 
   try {
-    const esc = account.replace(/'/g, "''");
-
-    const sfIdRows = await query(`
-      SELECT TOP 1 sf_account_id FROM v_silver_mdm_account WHERE sf_account_name = '${esc}'
-    `);
-    const sfId = sfIdRows?.[0]?.sf_account_id;
+    const mdm = await getMdmRow(account);
+    const sfId = mdm?.sf_account_id;
     if (!sfId) return res.json({ matched: false, summary: null, opportunities: [] });
 
     const sfEsc = sfId.replace(/'/g, "''");
 
     const rows = await query(`
       SELECT
-        Id, Name, StageName, Type,
-        TRY_CAST(NULLIF(TRIM(Amount), '') AS float) AS amount,
-        IsWon, IsClosed,
-        CreatedDate, CloseDate
-      FROM bronze_sfapi_opportunity
-      WHERE AccountId = '${sfEsc}'
-        AND IsDeleted = 'false'
-      ORDER BY TRY_CAST(CreatedDate AS datetime2) DESC
+        opportunity_id, opportunity_name, stage, opportunity_type,
+        amount, is_won, is_closed, currency,
+        created_date, close_date
+      FROM dbo.gold_sf_opportunities
+      WHERE account_id = '${sfEsc}'
+      ORDER BY created_date DESC
     `);
 
     if (!rows.length) return res.json({ matched: true, summary: null, opportunities: [] });
 
-    const isClosed = r => r.IsClosed === 'true' || r.IsClosed === true || r.IsClosed === 1;
-    const isWon    = r => r.IsWon   === 'true' || r.IsWon   === true  || r.IsWon   === 1;
+    const isClosed = r => r.is_closed === 1 || r.is_closed === true;
+    const isWon    = r => r.is_won    === 1 || r.is_won    === true;
     const open = rows.filter(r => !isClosed(r) && !isWon(r));
     const won  = rows.filter(r => isWon(r));
     const lost = rows.filter(r => isClosed(r) && !isWon(r));
@@ -44,9 +39,8 @@ module.exports = async function sfOpportunities(req, res) {
     const pipeline = open.reduce((s, r) => s + (Number(r.amount) || 0), 0);
     const wonVal   = won.reduce((s, r)  => s + (Number(r.amount) || 0), 0);
 
-    // Stage breakdown (open only)
     const byStage = {};
-    open.forEach(r => { const st = r.StageName || 'Unknown'; byStage[st] = (byStage[st] || 0) + 1; });
+    open.forEach(r => { const st = r.stage || 'Unknown'; byStage[st] = (byStage[st] || 0) + 1; });
     const stageBreakdown = Object.entries(byStage)
       .sort((a, b) => b[1] - a[1])
       .map(([stage, cnt]) => ({ stage, cnt }));
@@ -54,24 +48,24 @@ module.exports = async function sfOpportunities(req, res) {
     const payload = {
       matched: true,
       summary: {
-        total:     rows.length,
-        open:      open.length,
-        won:       won.length,
-        lost:      lost.length,
-        pipeline:  Math.round(pipeline),
-        wonValue:  Math.round(wonVal),
+        total:    rows.length,
+        open:     open.length,
+        won:      won.length,
+        lost:     lost.length,
+        pipeline: Math.round(pipeline),
+        wonValue: Math.round(wonVal),
         stageBreakdown,
       },
       opportunities: rows.map(r => ({
-        id:          r.Id,
-        name:        r.Name,
-        stage:       r.StageName,
-        type:        r.Type,
+        id:          r.opportunity_id,
+        name:        r.opportunity_name,
+        stage:       r.stage,
+        type:        r.opportunity_type,
         amount:      Number(r.amount) || 0,
-        isWon:       r.IsWon  === 'true'  || r.IsWon  === true,
-        isClosed:    r.IsClosed === 'true' || r.IsClosed === true,
-        createdDate: r.CreatedDate,
-        closeDate:   r.CloseDate,
+        isWon:       r.is_won    === 1 || r.is_won    === true,
+        isClosed:    r.is_closed === 1 || r.is_closed === true,
+        createdDate: r.created_date,
+        closeDate:   r.close_date,
       })),
     };
 

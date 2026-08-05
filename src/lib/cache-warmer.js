@@ -1,11 +1,11 @@
-// Pre-warms ph-trends and ph-regions caches for the top N most-active PostHog accounts.
-// Runs once after server startup, staggered so Fabric isn't hit with concurrent queries.
+// Pre-warms caches for the top N most-active PostHog accounts at server startup.
+// Staggered so Fabric isn't hit with concurrent queries.
 const http = require('http');
 const { query } = require('./db');
 
-const TOP_N        = 30;    // accounts to pre-warm
-const STAGGER_MS   = 2500;  // delay between each account
-const START_DELAY  = 5000;  // wait for server to be fully ready
+const TOP_N        = 30;
+const STAGGER_MS   = 2500;
+const START_DELAY  = 5000;
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
@@ -25,8 +25,8 @@ async function getTopAccounts() {
     SELECT TOP ${TOP_N}
       g.sf_account_name,
       SUM(a.ph_total_events) AS total_events
-    FROM dbo.v_silver_posthog_account_activity a
-    INNER JOIN dbo.v_gold_mdm_posthog g ON g.ph_tenant = a.ph_tenant
+    FROM dbo.gold_posthog_account_activity a
+    INNER JOIN dbo.gold_mdm_posthog g ON g.ph_tenant = a.ph_tenant
     WHERE g.sf_account_name IS NOT NULL AND g.sf_account_name != ''
     GROUP BY g.sf_account_name
     ORDER BY total_events DESC
@@ -36,14 +36,17 @@ async function getTopAccounts() {
 
 async function warmAccount(port, account, idx, total) {
   const enc = encodeURIComponent(account);
-  const [t, r, z, p] = await Promise.all([
+  const [t, r, z, p, c, o, tl] = await Promise.all([
     fetchLocal(port, `/api/ph-trends?account=${enc}`),
     fetchLocal(port, `/api/ph-regions?account=${enc}`),
     fetchLocal(port, `/api/zd-tickets?account=${enc}`),
     fetchLocal(port, `/api/pb-insights?account=${enc}`),
+    fetchLocal(port, `/api/sf-cases?account=${enc}`),
+    fetchLocal(port, `/api/sf-opportunities?account=${enc}`),
+    fetchLocal(port, `/api/client-timeline?account=${enc}`),
   ]);
   const ok = t === 200 && r === 200;
-  console.log(`[cache-warmer] (${idx}/${total}) ${account} — trends:${t} regions:${r} zd:${z} pb:${p} ${ok ? '✓' : '✗'}`);
+  console.log(`[cache-warmer] (${idx}/${total}) ${account} — trends:${t} regions:${r} zd:${z} pb:${p} cases:${c} opps:${o} timeline:${tl} ${ok ? '✓' : '✗'}`);
 }
 
 async function run(port) {

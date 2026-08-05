@@ -19,7 +19,7 @@ module.exports = async function phBenchmark(req, res) {
           SUM(CASE WHEN e.pathname LIKE '%/leaderboards%'     THEN 1 ELSE 0 END)            AS leaderboards,
           SUM(CASE WHEN e.pathname LIKE '%/benchmarks%'       THEN 1 ELSE 0 END)            AS benchmarks
         FROM dbo.posthog_notebook_events e
-        INNER JOIN dbo.v_gold_mdm_posthog g
+        INNER JOIN dbo.gold_mdm_posthog g
           ON LOWER(LTRIM(RTRIM(e.tenant))) = g.ph_tenant
         WHERE e.event = '$pageview'
           AND g.sf_account_name IS NOT NULL

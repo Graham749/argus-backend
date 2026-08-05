@@ -12,8 +12,8 @@ async function getAccountsList(req, res) {
 
     const results = await query(`
       SELECT DISTINCT ca.account_name
-      FROM [dbo].[v_silver_sf_subscriptions] s
-      INNER JOIN [dbo].[v_silver_sf_customer_accounts] ca ON s.account_id = ca.account_id
+      FROM [dbo].[gold_sf_subscriptions] s
+      INNER JOIN [dbo].[gold_sf_customer_accounts] ca ON s.account_id = ca.account_id
       WHERE ca.parent_account_id IS NULL
         AND s.account_name IS NOT NULL
       ORDER BY ca.account_name ASC

@@ -1,4 +1,5 @@
 const { query } = require('../lib/db');
+const { getMdmRow } = require('../lib/mdm-cache');
 
 const cache = {};
 const CACHE_TTL = 10 * 60 * 1000;
@@ -11,12 +12,8 @@ module.exports = async function sfCases(req, res) {
   if (cached && Date.now() - cached.ts < CACHE_TTL) return res.json(cached.data);
 
   try {
-    const esc = account.replace(/'/g, "''");
-
-    const sfIdRows = await query(`
-      SELECT TOP 1 sf_account_id FROM v_silver_mdm_account WHERE sf_account_name = '${esc}'
-    `);
-    const sfId = sfIdRows?.[0]?.sf_account_id;
+    const mdm = await getMdmRow(account);
+    const sfId = mdm?.sf_account_id;
     if (!sfId) return res.json({ matched: false, summary: null, cases: [] });
 
     const sfEsc = sfId.replace(/'/g, "''");
@@ -29,24 +26,22 @@ module.exports = async function sfCases(req, res) {
         TRY_CAST(aurora_hours   AS float) AS aurora_hours,
         TRY_CAST(case_duration  AS float) AS case_duration,
         person_responsible
-      FROM v_silver_sf_cases
+      FROM dbo.gold_sf_cases
       WHERE account_id = '${sfEsc}'
       ORDER BY TRY_CAST(created_date AS datetime2) DESC
     `);
 
     if (!rows.length) return res.json({ matched: true, summary: null, cases: [] });
 
-    const open      = rows.filter(r => r.is_closed === 'False' || r.is_closed === false);
-    const closed    = rows.filter(r => r.is_closed === 'True'  || r.is_closed === true);
-    const escalated = rows.filter(r => r.is_escalated === 'True' || r.is_escalated === true);
+    const open      = rows.filter(r => r.is_closed === false || r.is_closed === 0);
+    const closed    = rows.filter(r => r.is_closed === true  || r.is_closed === 1);
+    const escalated = rows.filter(r => r.is_escalated === true || r.is_escalated === 1);
 
-    // Avg hours on closed cases that have aurora_hours logged
     const withHours = closed.filter(r => Number(r.aurora_hours) > 0);
     const avgHours  = withHours.length
       ? Math.round(withHours.reduce((s, r) => s + Number(r.aurora_hours), 0) / withHours.length * 10) / 10
       : null;
 
-    // Case type breakdown
     const byType = {};
     rows.forEach(r => {
       const t = r.case_type || 'Other';
@@ -67,17 +62,17 @@ module.exports = async function sfCases(req, res) {
         typeBreakdown,
       },
       cases: rows.map(r => ({
-        caseNumber:  r.case_number,
-        subject:     r.subject,
-        type:        r.case_type || 'Other',
-        status:      r.status,
-        isClosed:    r.is_closed    === 'True' || r.is_closed    === true,
-        isEscalated: r.is_escalated === 'True' || r.is_escalated === true,
-        isChargeable:r.is_chargeable === 'True' || r.is_chargeable === true,
-        createdDate: r.created_date,
-        closedDate:  r.closed_date,
-        auroraHours: Number(r.aurora_hours) || 0,
-        assignee:    r.person_responsible,
+        caseNumber:   r.case_number,
+        subject:      r.subject,
+        type:         r.case_type || 'Other',
+        status:       r.status,
+        isClosed:     r.is_closed    === true || r.is_closed    === 1,
+        isEscalated:  r.is_escalated === true || r.is_escalated === 1,
+        isChargeable: r.is_chargeable === true || r.is_chargeable === 1,
+        createdDate:  r.created_date,
+        closedDate:   r.closed_date,
+        auroraHours:  Number(r.aurora_hours) || 0,
+        assignee:     r.person_responsible,
       })),
     };
 

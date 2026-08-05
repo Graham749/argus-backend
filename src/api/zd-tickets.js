@@ -1,36 +1,29 @@
 const { query: queryLakehouse } = require('../lib/db');
+const { getMdmRow } = require('../lib/mdm-cache');
 
-// Per-account result cache — avoids repeated Fabric round-trips
 const resultCache = {};
-const CACHE_TTL = 10 * 60 * 1000; // 10 minutes
+const CACHE_TTL = 10 * 60 * 1000;
 
 async function zdTickets(req, res) {
   const account = (req.query.account || '').trim();
   if (!account) return res.status(400).json({ error: 'account query param required' });
 
-  // Serve from cache if fresh
   const cached = resultCache[account];
   if (cached && Date.now() - cached.ts < CACHE_TTL) {
     return res.json(cached.data);
   }
 
   try {
-    const escaped = account.replace(/'/g, "''");
+    const mdm = await getMdmRow(account);
+    if (!mdm || !mdm.has_zd_org || !mdm.zd_org_id) {
+      return res.json({ zdOrgId: null, zdOrgName: null, summary: null, tickets: [], closed: null });
+    }
 
-    // Single query: resolve org from MDM and fetch tickets in one round-trip
+    const zdOrgId   = String(Math.trunc(Number(mdm.zd_org_id)));
+    const zdOrgName = mdm.zd_org_name;
+
     const ticketRows = await queryLakehouse(`
-      WITH org AS (
-        SELECT TOP 1
-          CAST(TRY_CAST(zd_org_id AS BIGINT) AS VARCHAR(20)) AS zd_org_id,
-          zd_org_name
-        FROM v_silver_mdm_account
-        WHERE sf_account_name = '${escaped}'
-          AND has_zd_org = 1
-          AND zd_org_id IS NOT NULL
-      )
       SELECT
-        o.zd_org_id,
-        o.zd_org_name,
         t.id,
         t.subject,
         t.status,
@@ -47,9 +40,7 @@ async function zdTickets(req, res) {
         m.solved_at,
         TRY_CAST(ts.time_spent_value AS INT) AS time_spent_minutes,
         TRY_CAST(cr.num_credits_value AS INT) AS num_credits
-      FROM org o
-      JOIN zd_notebook_tickets t
-        ON CAST(TRY_CAST(t.organization_id AS BIGINT) AS VARCHAR(20)) = o.zd_org_id
+      FROM zd_notebook_tickets t
       LEFT JOIN zd_notebook_ticket_metrics m ON CAST(m.ticket_id AS BIGINT) = t.id
       OUTER APPLY (
         SELECT TOP 1 cf.[value] AS time_spent_value
@@ -65,35 +56,30 @@ async function zdTickets(req, res) {
         ) WITH (id BIGINT '$.id', [value] NVARCHAR(100) '$.value') cf
         WHERE cf.id = 5220732777631
       ) cr
-      WHERE t.status != 'deleted'
+      WHERE CAST(TRY_CAST(t.organization_id AS BIGINT) AS VARCHAR(20)) = '${zdOrgId}'
+        AND t.status != 'deleted'
       ORDER BY t.created_at DESC
     `);
 
     if (!ticketRows || ticketRows.length === 0) {
-      return res.json({ zdOrgId: null, zdOrgName: null, summary: null, tickets: [], closed: null });
+      return res.json({ zdOrgId, zdOrgName, summary: null, tickets: [], closed: null });
     }
-
-    const zdOrgId   = ticketRows[0].zd_org_id;
-    const zdOrgName = ticketRows[0].zd_org_name;
 
     const open    = ticketRows.filter(t => t.status === 'open' || t.status === 'new');
     const pending = ticketRows.filter(t => t.status === 'pending');
     const solved  = ticketRows.filter(t => t.status === 'solved');
     const closed  = ticketRows.filter(t => t.status === 'closed');
 
-    // Avg time spent (logged minutes) — closed tickets only
     const withTimeSpent = ticketRows.filter(t => t.status === 'closed' && Number(t.time_spent_minutes) > 0);
     const avgResolutionDays = withTimeSpent.length
       ? Math.round(withTimeSpent.reduce((s, t) => s + Number(t.time_spent_minutes), 0) / withTimeSpent.length)
       : null;
 
-    // Avg first reply — business hours, all tickets
     const withReply = ticketRows.filter(t => Number(t.reply_time_business) > 0);
     const avgReplyHours = withReply.length
       ? Math.round(withReply.reduce((s, t) => s + Number(t.reply_time_business), 0) / withReply.length / 60 * 10) / 10
       : null;
 
-    // All tickets for all statuses — drilldown needs the full list
     const activeTickets = [...open, ...pending, ...solved, ...closed]
       .sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
       .map(t => ({

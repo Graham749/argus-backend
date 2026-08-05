@@ -1,4 +1,5 @@
 const { query, cacheGet, cacheSet } = require('../lib/db');
+const { getMdmRow } = require('../lib/mdm-cache');
 
 const BENCH_TTL = 4 * 60 * 60 * 1000;
 
@@ -94,7 +95,7 @@ async function getBenchmark() {
           account_id,
           FORMAT(TRY_CAST(created_date AS datetime2), 'yyyy-MM') AS mo,
           COUNT(*) AS cnt
-        FROM v_silver_sf_cases
+        FROM dbo.gold_sf_cases
         WHERE TRY_CAST(created_date AS datetime2) >= DATEADD(month, -3, GETDATE())
           AND account_id IS NOT NULL
         GROUP BY account_id, FORMAT(TRY_CAST(created_date AS datetime2), 'yyyy-MM')
@@ -113,16 +114,15 @@ async function getBenchmark() {
     query(`
       WITH mo AS (
         SELECT
-          AccountId,
-          FORMAT(TRY_CAST(CreatedDate AS datetime2), 'yyyy-MM') AS mo,
+          account_id,
+          FORMAT(TRY_CAST(created_date AS datetime2), 'yyyy-MM') AS mo,
           COUNT(*) AS cnt
-        FROM bronze_sfapi_opportunity
-        WHERE TRY_CAST(CreatedDate AS datetime2) >= DATEADD(month, -3, GETDATE())
-          AND IsDeleted = 'false'
-          AND AccountId IS NOT NULL
-        GROUP BY AccountId, FORMAT(TRY_CAST(CreatedDate AS datetime2), 'yyyy-MM')
+        FROM dbo.gold_sf_opportunities
+        WHERE created_date >= DATEADD(month, -3, GETDATE())
+          AND account_id IS NOT NULL
+        GROUP BY account_id, FORMAT(TRY_CAST(created_date AS datetime2), 'yyyy-MM')
       ),
-      avg_mo AS (SELECT AccountId, AVG(CAST(cnt AS float)) AS avg_mo FROM mo GROUP BY AccountId),
+      avg_mo AS (SELECT account_id, AVG(CAST(cnt AS float)) AS avg_mo FROM mo GROUP BY account_id),
       pcts AS (
         SELECT
           PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY avg_mo) OVER () AS p25,
@@ -164,16 +164,8 @@ module.exports = async function clientTimeline(req, res) {
   const esc = accountName.replace(/'/g, "''");
 
   try {
-    // Step 1: MDM lookup
-    const mdmRows = await query(`
-      SELECT TOP 1
-        sf_account_id, zd_org_id, pb_company_id,
-        has_zd_org, has_pb_company
-      FROM v_silver_mdm_account
-      WHERE sf_account_name = '${esc}'
-    `);
-
-    const mdm = mdmRows?.[0];
+    // Step 1: MDM lookup (shared cache)
+    const mdm = await getMdmRow(accountName);
     if (!mdm) return res.status(404).json({ error: 'Account not found in MDM' });
 
     const { sf_account_id, zd_org_id, pb_company_id } = mdm;
@@ -183,7 +175,7 @@ module.exports = async function clientTimeline(req, res) {
 
     // Step 2: PH tenant lookup
     const phRows = await query(`
-      SELECT TOP 1 ph_tenant FROM v_gold_mdm_posthog WHERE sf_account_id = '${sfEsc}'
+      SELECT TOP 1 ph_tenant FROM dbo.gold_mdm_posthog WHERE sf_account_id = '${sfEsc}'
     `);
     const phTenant = phRows?.[0]?.ph_tenant || null;
     const phEsc = (phTenant || '').replace(/'/g, "''");
@@ -231,7 +223,7 @@ module.exports = async function clientTimeline(req, res) {
         SELECT
           FORMAT(TRY_CAST(created_date AS datetime2), 'yyyy-MM') AS mo,
           COUNT(*) AS cases
-        FROM v_silver_sf_cases
+        FROM dbo.gold_sf_cases
         WHERE account_id = '${sfEsc}'
           AND created_date IS NOT NULL
         GROUP BY FORMAT(TRY_CAST(created_date AS datetime2), 'yyyy-MM')
@@ -240,28 +232,26 @@ module.exports = async function clientTimeline(req, res) {
 
       sf_account_id ? query(`
         SELECT
-          FORMAT(TRY_CAST(CreatedDate AS datetime2), 'yyyy-MM') AS mo,
+          FORMAT(TRY_CAST(created_date AS datetime2), 'yyyy-MM') AS mo,
           COUNT(*) AS opps,
-          SUM(CASE WHEN IsWon = 'true' THEN COALESCE(TRY_CAST(NULLIF(TRIM(Amount),'') AS float),0) ELSE 0 END) AS won_value,
-          SUM(CASE WHEN IsClosed = 'false' THEN COALESCE(TRY_CAST(NULLIF(TRIM(Amount),'') AS float),0) ELSE 0 END) AS pipeline_value
-        FROM bronze_sfapi_opportunity
-        WHERE AccountId = '${sfEsc}'
-          AND IsDeleted = 'false'
-          AND CreatedDate IS NOT NULL
-        GROUP BY FORMAT(TRY_CAST(CreatedDate AS datetime2), 'yyyy-MM')
+          SUM(CASE WHEN is_won = 1 THEN COALESCE(CAST(amount AS float),0) ELSE 0 END) AS won_value,
+          SUM(CASE WHEN is_closed = 0 THEN COALESCE(CAST(amount AS float),0) ELSE 0 END) AS pipeline_value
+        FROM dbo.gold_sf_opportunities
+        WHERE account_id = '${sfEsc}'
+          AND created_date IS NOT NULL
+        GROUP BY FORMAT(TRY_CAST(created_date AS datetime2), 'yyyy-MM')
         ORDER BY mo
       `) : Promise.resolve([]),
 
       sf_account_id ? query(`
         SELECT
-          FORMAT(TRY_CAST(NULLIF(TRIM(CloseDate),'') AS datetime2), 'yyyy-MM') AS close_mo,
-          SUM(CASE WHEN IsClosed = 'false' THEN COALESCE(TRY_CAST(NULLIF(TRIM(Amount),'') AS float),0) ELSE 0 END) AS pipeline_value,
-          SUM(CASE WHEN IsWon = 'true'    THEN COALESCE(TRY_CAST(NULLIF(TRIM(Amount),'') AS float),0) ELSE 0 END) AS won_value
-        FROM bronze_sfapi_opportunity
-        WHERE AccountId = '${sfEsc}'
-          AND IsDeleted = 'false'
-          AND CloseDate IS NOT NULL
-        GROUP BY FORMAT(TRY_CAST(NULLIF(TRIM(CloseDate),'') AS datetime2), 'yyyy-MM')
+          FORMAT(TRY_CAST(close_date AS datetime2), 'yyyy-MM') AS close_mo,
+          SUM(CASE WHEN is_closed = 0 THEN COALESCE(CAST(amount AS float),0) ELSE 0 END) AS pipeline_value,
+          SUM(CASE WHEN is_won = 1    THEN COALESCE(CAST(amount AS float),0) ELSE 0 END) AS won_value
+        FROM dbo.gold_sf_opportunities
+        WHERE account_id = '${sfEsc}'
+          AND close_date IS NOT NULL
+        GROUP BY FORMAT(TRY_CAST(close_date AS datetime2), 'yyyy-MM')
       `) : Promise.resolve([]),
 
       query(`
@@ -283,7 +273,7 @@ module.exports = async function clientTimeline(req, res) {
           COALESCE(NULLIF(TRIM(Service_Type__c), ''), 'Other') AS service_type,
           COUNT(*) AS cnt,
           SUM(CAST(arr_gbp AS float)) AS arr_gbp
-        FROM v_silver_sf_subscriptions
+        FROM dbo.gold_sf_subscriptions
         WHERE account_id = '${sfEsc}'
         GROUP BY Service_Type__c
         ORDER BY SUM(CAST(arr_gbp AS float)) DESC

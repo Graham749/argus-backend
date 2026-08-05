@@ -58,7 +58,7 @@ async function featureInsights(req, res) {
                -- Prefer creator_email, fall back to note_user_email for domain inference
                NULLIF(COALESCE(NULLIF(n.creator_email,''), NULLIF(n.note_user_email,'')), '') AS note_email,
                LEFT(n.note_content, 1200)   AS note_excerpt
-        FROM v_gold_pb_note_company_feature n
+        FROM gold_pb_note_company_feature n
         WHERE n.feature_id = '${esc}' AND n.is_archived = 0
       ),
       resolved AS (
@@ -78,7 +78,7 @@ async function featureInsights(req, res) {
         SELECT n.pb_company_id,
           COUNT(DISTINCT n.note_id)    AS total_notes,
           COUNT(DISTINCT n.feature_id) AS total_features
-        FROM v_gold_pb_note_company_feature n
+        FROM gold_pb_note_company_feature n
         WHERE n.pb_company_id IN (SELECT DISTINCT pb_company_id FROM resolved WHERE pb_company_id IS NOT NULL)
           AND n.is_archived = 0
         GROUP BY n.pb_company_id

@@ -28,7 +28,7 @@ async function resolveTenantInList(account) {
     SELECT TOP 1
       sf_website_domain, sf_eos_access_domains, sf_eos_access_domains_2,
       zd_primary_email_domain, sf_account_code
-    FROM dbo.v_silver_mdm_account
+    FROM dbo.gold_mdm_account
     WHERE sf_account_name = '${escaped}'
   `);
   if (!mdmRows.length) return null;
@@ -39,7 +39,7 @@ async function resolveTenantInList(account) {
 
   const inList = [...domains].map(d => `'${d.replace(/'/g, "''")}'`).join(',');
   const tenantRows = await query(`
-    SELECT ph_tenant FROM dbo.v_silver_posthog_account_activity
+    SELECT ph_tenant FROM dbo.gold_posthog_account_activity
     WHERE ph_tenant IN (${inList})
   `);
   if (!tenantRows.length) return null;
