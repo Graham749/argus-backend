@@ -20,7 +20,7 @@ module.exports = async function sfCases(req, res) {
 
     const rows = await query(`
       SELECT
-        case_number, subject, case_type, status,
+        case_id, case_number, subject, case_type, status,
         is_closed, is_escalated, is_chargeable,
         created_date, closed_date,
         TRY_CAST(aurora_hours   AS float) AS aurora_hours,
@@ -62,6 +62,7 @@ module.exports = async function sfCases(req, res) {
         typeBreakdown,
       },
       cases: rows.map(r => ({
+        id:           r.case_id,
         caseNumber:   r.case_number,
         subject:      r.subject,
         type:         r.case_type || 'Other',

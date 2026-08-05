@@ -5190,7 +5190,7 @@ class Component extends DCLogic {
     const fmtDate = d => d ? String(d).substring(0,10) : '—';
     tbody.innerHTML = cases.map(c => `
       <tr style="border-bottom:1px solid #f0f0f0;">
-        <td style="padding:4px 8px;color:#9d9d9d;">${c.caseNumber||'—'}</td>
+        <td style="padding:4px 8px;color:#9d9d9d;">${c.id ? `<a href="https://auroraer.lightning.force.com/lightning/r/Case/${c.id}/view" target="_blank" style="color:#288184;text-decoration:underline;">${c.caseNumber||'—'}</a>` : (c.caseNumber||'—')}</td>
         <td style="padding:4px 8px;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${(c.subject||'').replace(/"/g,'&quot;')}">${c.subject||'—'}</td>
         <td style="padding:4px 8px;white-space:nowrap;">${(c.type||'').replace(/_/g,' ')}</td>
         <td style="padding:4px 8px;white-space:nowrap;">${c.isEscalated ? '<span style="color:#c62828;font-weight:700;">⚠ '+c.status+'</span>' : c.status}</td>
@@ -5532,7 +5532,7 @@ class Component extends DCLogic {
     const fmtAmt  = v => v >= 1000000 ? '£'+(v/1000000).toFixed(1)+'M' : v >= 1000 ? '£'+(v/1000).toFixed(0)+'k' : v > 0 ? '£'+v : '—';
     tbody.innerHTML = opps.map(o => `
       <tr style="border-bottom:1px solid #f0f0f0;">
-        <td style="padding:4px 8px;max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${(o.name||'').replace(/"/g,'&quot;')}">${o.name||'—'}</td>
+        <td style="padding:4px 8px;max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${(o.name||'').replace(/"/g,'&quot;')}">${o.id ? `<a href="https://auroraer.lightning.force.com/lightning/r/Opportunity/${o.id}/view" target="_blank" style="color:#288184;text-decoration:underline;">${o.name||'—'}</a>` : (o.name||'—')}</td>
         <td style="padding:4px 8px;white-space:nowrap;">${o.stage||'—'}</td>
         <td style="padding:4px 8px;text-align:right;white-space:nowrap;font-weight:600;">${fmtAmt(o.amount)}</td>
         <td style="padding:4px 8px;white-space:nowrap;">${o.isWon?'<span style="background:#e8f5e9;color:#2e7d32;border-radius:3px;padding:1px 6px;font-size:10px;font-weight:600;">Won</span>':o.isClosed?'<span style="background:#f5f5f5;color:#6d6d6c;border-radius:3px;padding:1px 6px;font-size:10px;font-weight:600;">Lost</span>':'<span style="background:#e3f2fd;color:#1565c0;border-radius:3px;padding:1px 6px;font-size:10px;font-weight:600;">Open</span>'}</td>
