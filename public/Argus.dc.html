@@ -1784,11 +1784,10 @@ window.__epRender = function(container, data) {
   // Fixed 20-column array: [past, m0..m17, beyond]
   var calCols = [pastBucket].concat(calBuckets).concat([beyondBucket]);
 
-  // ── Centered 20-col grid for Opportunities: Hist · 9 past · current · 9 future ──
+  // ── Centered 20-col grid for Opportunities: 10 past · current · 9 future ──
   var currMoKey = calToday.getFullYear()+'-'+String(calToday.getMonth()+1).padStart(2,'0');
   var oppCols   = [];
-  oppCols.push({ label:'Hist', yearLbl:'', key:'hist', oppWon:0, oppPipe:0 });
-  for (var pm2=9; pm2>=1; pm2--) {
+  for (var pm2=10; pm2>=1; pm2--) {
     var pmD = new Date(calToday.getFullYear(), calToday.getMonth()-pm2, 1);
     var pmK = pmD.getFullYear()+'-'+String(pmD.getMonth()+1).padStart(2,'0');
     oppCols.push({ label:pmD.toLocaleDateString('en-GB',{month:'short'}), yearLbl:pmD.getMonth()===0?"'"+String(pmD.getFullYear()).slice(2):'', key:pmK, oppWon:0, oppPipe:0 });
@@ -1802,11 +1801,9 @@ window.__epRender = function(container, data) {
   Object.keys(oppByClose).forEach(function(mo) {
     var ow = oppByClose[mo].won_value      || 0;
     var op = oppByClose[mo].pipeline_value || 0;
-    var matched = false;
-    for (var oi=1; oi<oppCols.length; oi++) {
-      if (oppCols[oi].key === mo) { oppCols[oi].oppWon += ow; oppCols[oi].oppPipe += op; matched=true; break; }
+    for (var oi=0; oi<oppCols.length; oi++) {
+      if (oppCols[oi].key === mo) { oppCols[oi].oppWon += ow; oppCols[oi].oppPipe += op; break; }
     }
-    if (!matched) { oppCols[0].oppWon += ow; oppCols[0].oppPipe += op; }
   });
 
   // ── Backward 20-column grid (18m- · 18 past months · now) ───────────────────
@@ -1915,15 +1912,15 @@ window.__epRender = function(container, data) {
     'font-size':7.5, 'font-family':'Lato,Helvetica Neue,Arial,sans-serif', fill:'#b8b8b8'
   }, 'Salesforce'));
 
-  // Solid today marker at right edge of col 10 (current month | future)
-  var nowLineX = LBL_W + 11*CELL;
+  // Solid today marker at left edge of current month col (between past col 9 and current col 10)
+  var nowLineX = LBL_W + 10*CELL;
   svg.appendChild(s('line', {
     x1:nowLineX, y1:OPPS_ROW_Y, x2:nowLineX, y2:OPPS_ROW_Y+ROW_H,
     stroke:'#555', 'stroke-width':1.5
   }));
 
   var oppMaxV = 1;
-  oppCols.forEach(function(col,ci){ if(ci===0) return; var t=(col.oppWon||0)+(col.oppPipe||0); if(t>oppMaxV) oppMaxV=t; });
+  oppCols.forEach(function(col){ var t=(col.oppWon||0)+(col.oppPipe||0); if(t>oppMaxV) oppMaxV=t; });
   var OPP_BAR_MAX = ROW_H - 12;
 
   oppCols.forEach(function(col, ci) {
@@ -5344,7 +5341,7 @@ class Component extends DCLogic {
           var svgNS  = 'http://www.w3.org/2000/svg';
 
           var wW       = oppsWrap.offsetWidth || 400;
-          var COLS     = 20;
+          var COLS     = 19;
           var COL_W    = Math.max(22, Math.floor(wW / COLS));
           var wCW      = COLS * COL_W;
           var COUNT_H  = 14;
@@ -5364,7 +5361,6 @@ class Component extends DCLogic {
 
           var currMo2 = today2.getFullYear()+'-'+String(today2.getMonth()+1).padStart(2,'0');
           var wCols   = [];
-          wCols.push({ label:'Hist', yearLbl:'', key:'hist', oppWon:0, oppPipe:0 });
           for (var pm3=9; pm3>=1; pm3--) {
             var pmD2 = new Date(today2.getFullYear(), today2.getMonth()-pm3, 1);
             var pmK2 = pmD2.getFullYear()+'-'+String(pmD2.getMonth()+1).padStart(2,'0');
@@ -5378,22 +5374,20 @@ class Component extends DCLogic {
           }
           Object.keys(obc).forEach(function(mo) {
             var ow = obc[mo].won_value || 0, op2 = obc[mo].pipeline_value || 0;
-            var matched2 = false;
-            for (var oi2=1; oi2<wCols.length; oi2++) {
-              if (wCols[oi2].key === mo) { wCols[oi2].oppWon += ow; wCols[oi2].oppPipe += op2; matched2=true; break; }
+            for (var oi2=0; oi2<wCols.length; oi2++) {
+              if (wCols[oi2].key === mo) { wCols[oi2].oppWon += ow; wCols[oi2].oppPipe += op2; break; }
             }
-            if (!matched2) { wCols[0].oppWon += ow; wCols[0].oppPipe += op2; }
           });
 
           var wMaxV = 1;
-          wCols.forEach(function(c,ci2){ if(ci2===0) return; var t=(c.oppWon||0)+(c.oppPipe||0); if(t>wMaxV) wMaxV=t; });
+          wCols.forEach(function(c){ var t=(c.oppWon||0)+(c.oppPipe||0); if(t>wMaxV) wMaxV=t; });
 
           oppsWrap.innerHTML = '';
           oppsWrap.style.display = 'block';
           var wSvg = mk('svg', { viewBox:'0 0 '+wCW+' '+H, width:'100%', style:'display:block;' });
 
-          // Now divider between col 10 (last past) and col 11 (current)
-          wSvg.appendChild(mk('line', { x1:11*COL_W, y1:COUNT_H, x2:11*COL_W, y2:COUNT_H+BAR_AREA,
+          // Now divider between col 8 (last past) and col 9 (current month)
+          wSvg.appendChild(mk('line', { x1:9*COL_W, y1:COUNT_H, x2:9*COL_W, y2:COUNT_H+BAR_AREA,
             stroke:'#555', 'stroke-width':1.5 }));
 
           wCols.forEach(function(wCol, ci) {
@@ -5456,42 +5450,40 @@ class Component extends DCLogic {
               g.appendChild(yEl);
             }
 
-            // Hit area for click
-            if (wCol.key !== 'hist') {
-              var hit = mk('rect', { x:cx, y:0, width:COL_W, height:H, fill:'transparent' });
-              hit.style.cursor = 'pointer';
-              (function(colKey){
-                hit.addEventListener('click', function() {
-                  window.__oppsMo = window.__oppsMo === colKey ? null : colKey;
-                  renderOppsGraph();
-                  var allO = window.__oppsData ? window.__oppsData.opportunities : [];
-                  var pool = window.__oppsMo
-                    ? allO.filter(function(o){ return String(o.closeDate||'').substring(0,7) === window.__oppsMo; })
-                    : allO;
-                  var moOpen = pool.filter(function(o){ return !o.isClosed && !o.isWon; }).length;
-                  var moWon  = pool.filter(function(o){ return o.isWon; }).length;
-                  var moLost = pool.filter(function(o){ return o.isClosed && !o.isWon; }).length;
-                  var moPipe = pool.filter(function(o){ return !o.isClosed && !o.isWon; }).reduce(function(sum,o){ return sum+(Number(o.amount)||0); }, 0);
-                  document.getElementById('oppsOpenCount').textContent = moOpen;
-                  document.getElementById('oppsWonCount').textContent  = moWon;
-                  document.getElementById('oppsLostCount').textContent = moLost;
-                  document.getElementById('oppsPipeline').textContent  = fmtGbp(moPipe);
-                  var wonValEl = document.getElementById('oppsWonVal');
-                  if (wonValEl) wonValEl.textContent = window.__oppsMo ? '' : (s.wonValue ? fmtGbp(s.wonValue)+' total' : '');
-                  window.__renderOppsStageBar && window.__renderOppsStageBar(pool);
-                  if (window.__oppsMo) {
-                    document.querySelectorAll('[data-opps-filter]').forEach(function(t){ t.style.outline = ''; });
-                    window.__oppsActiveDrilldown = 'month_' + colKey;
-                    _oppsSelf._showOppsDrill(pool, window.__oppsMo + ' — ' + pool.length + ' opp' + (pool.length !== 1 ? 's' : ''));
-                  } else {
-                    document.getElementById('oppsDrilldown').style.display = 'none';
-                    window.__oppsActiveDrilldown = null;
-                    document.querySelectorAll('[data-opps-filter]').forEach(function(t){ t.style.outline = ''; });
-                  }
-                });
-              })(wCol.key);
-              g.appendChild(hit);
-            }
+            // Hit area for click (all 19 columns are real month buckets)
+            var hit = mk('rect', { x:cx, y:0, width:COL_W, height:H, fill:'transparent' });
+            hit.style.cursor = 'pointer';
+            (function(colKey){
+              hit.addEventListener('click', function() {
+                window.__oppsMo = window.__oppsMo === colKey ? null : colKey;
+                renderOppsGraph();
+                var allO = window.__oppsData ? window.__oppsData.opportunities : [];
+                var pool = window.__oppsMo
+                  ? allO.filter(function(o){ return String(o.closeDate||'').substring(0,7) === window.__oppsMo; })
+                  : allO;
+                var moOpen = pool.filter(function(o){ return !o.isClosed && !o.isWon; }).length;
+                var moWon  = pool.filter(function(o){ return o.isWon; }).length;
+                var moLost = pool.filter(function(o){ return o.isClosed && !o.isWon; }).length;
+                var moPipe = pool.filter(function(o){ return !o.isClosed && !o.isWon; }).reduce(function(sum,o){ return sum+(Number(o.amount)||0); }, 0);
+                document.getElementById('oppsOpenCount').textContent = moOpen;
+                document.getElementById('oppsWonCount').textContent  = moWon;
+                document.getElementById('oppsLostCount').textContent = moLost;
+                document.getElementById('oppsPipeline').textContent  = fmtGbp(moPipe);
+                var wonValEl = document.getElementById('oppsWonVal');
+                if (wonValEl) wonValEl.textContent = window.__oppsMo ? '' : (s.wonValue ? fmtGbp(s.wonValue)+' total' : '');
+                window.__renderOppsStageBar && window.__renderOppsStageBar(pool);
+                if (window.__oppsMo) {
+                  document.querySelectorAll('[data-opps-filter]').forEach(function(t){ t.style.outline = ''; });
+                  window.__oppsActiveDrilldown = 'month_' + colKey;
+                  _oppsSelf._showOppsDrill(pool, window.__oppsMo + ' — ' + pool.length + ' opp' + (pool.length !== 1 ? 's' : ''));
+                } else {
+                  document.getElementById('oppsDrilldown').style.display = 'none';
+                  window.__oppsActiveDrilldown = null;
+                  document.querySelectorAll('[data-opps-filter]').forEach(function(t){ t.style.outline = ''; });
+                }
+              });
+            })(wCol.key);
+            g.appendChild(hit);
 
             wSvg.appendChild(g);
           });
