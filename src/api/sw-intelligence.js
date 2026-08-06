@@ -364,6 +364,10 @@ function process(rows) {
     }))
     .sort((a, b) => b.arr_k - a.arr_k);
 
+  const active_arr_k   = kGbp(active.reduce((s, r) => s + arrF(r), 0));
+  const tip_arr_k      = kGbp(tip.reduce((s, r) => s + arrF(r), 0));
+  const total_sub_count = rows.length;
+
   return {
     regions: allRegions,
     mkt_col: mktCol,
@@ -384,6 +388,9 @@ function process(rows) {
     renewals_6m_count,
     termination_count,
     termination_sub_count,
+    active_arr_k,
+    tip_arr_k,
+    total_sub_count,
     billing_clients,
   };
 }
@@ -419,6 +426,8 @@ async function handler(req, res) {
       WHERE sub.Service_Type__c = 'Software'
         AND sub.status IN ('Active', 'Termination in Progress')
         AND COALESCE(sub.is_deleted, 0) = 0
+        AND sub.arr > 0
+        AND (sub.status = 'Active' OR sub.renewal_date >= GETDATE())
     `),
       query(`SELECT currency_iso_code, CAST(1.0 / gbp_rate AS float) AS gbp_to_ccy FROM dbo.v_silver_lookup_fxrates`),
     ]);

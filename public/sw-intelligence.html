@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SW Intelligence · Client Health</title>
+<title>SW Intelligence · Software Health</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
 <style>
 @font-face{font-family:'Lato';src:url('assets/fonts/lato-regular.woff2') format('woff2');font-weight:400;font-style:normal;font-display:swap;}
@@ -106,7 +106,7 @@ tfoot td{font-size:11px;color:#9d9d9d;padding:6px 10px;border-top:1px solid #e6e
   <span class="nav-sep"></span>
   <div class="nav-brand"><i class="ti ti-chart-line" aria-hidden="true" style="margin-right:5px;color:#288184"></i>SW Intelligence</div>
   <div class="nav-tabs">
-    <div class="nav-tab">Region Health</div>
+    <div class="nav-tab">Software Health</div>
     <div style="margin-left:auto;display:flex;align-items:center;gap:10px;padding:0 14px;flex-shrink:0">
       <div id="curr-bar" style="display:flex;gap:4px;flex-wrap:wrap;align-items:center"></div>
       <span id="live-dot" style="display:none;font-size:10px;font-weight:700;letter-spacing:.06em;color:#2e7d32;white-space:nowrap">● LIVE</span>
@@ -127,7 +127,6 @@ tfoot td{font-size:11px;color:#9d9d9d;padding:6px 10px;border-top:1px solid #e6e
   <div id="health-bar" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:16px;">
     <span class="filter-label" style="font-size:11px;color:#9d9d9d;font-weight:700">Renewal Health:</span>
     <span class="hp hp-od sel" id="hp-all" onclick="setHealth('all')" style="background:#f5f5f5;color:#6d6d6c">All Accounts</span>
-    <span class="hp hp-od" id="hp-OVERDUE" onclick="setHealth('OVERDUE')">0 Overdue</span>
     <span class="hp hp-ar" id="hp-AT_RISK"  onclick="setHealth('AT_RISK')">0 At Risk</span>
     <span class="hp hp-tw" id="hp-TO_WATCH" onclick="setHealth('TO_WATCH')">0 To Watch</span>
     <span class="hp hp-ok" id="hp-HEALTHY"  onclick="setHealth('HEALTHY')">0 Healthy</span>
@@ -209,7 +208,7 @@ const CURR_ORDER = ['GBP','EUR','USD','AUD','CAD','SEK','NOK','PLN','JPY','BRL',
 let FP = 'ALL', SS = { col: 'arr_k', dir: -1 };
 let MKT_COL = {};
 let REGION = 'all', MKT = new Set(), GROUP_BY = 'energy';
-let HEALTH = 'all';
+let HEALTH = 'all', STAGE = 'all';
 
 const SW_COLORS = {
   Chronos: { bg:'#e3f0fb', fg:'#0c447c' },
@@ -274,7 +273,7 @@ function setFP(el, mode) {
 }
 
 function setRegion(el, r) {
-  REGION = r; MKT = new Set(); HEALTH = 'all';
+  REGION = r; MKT = new Set(); HEALTH = 'all'; STAGE = 'all';
   document.querySelectorAll('#region-bar .pill').forEach(function(p) { p.classList.remove('active'); });
   el.classList.add('active');
   populateMktPills();
@@ -357,12 +356,18 @@ function openClientHealth(acct) {
 
 function setGroupBy(el, gb) {
   GROUP_BY = gb;
-  REGION = 'all'; MKT = new Set(); HEALTH = 'all';
+  REGION = 'all'; MKT = new Set(); HEALTH = 'all'; STAGE = 'all';
   document.querySelectorAll('#groupby-toggle .toggle-btn').forEach(function(b) { b.classList.remove('active'); });
   el.classList.add('active');
   var mb = document.getElementById('mkt-bar');
   if (mb) mb.style.display = 'none';
   populateRegionPills(); // rebuild region pills for new mode (energy_region vs billing_region)
+  renderKPIs();
+  renderClients();
+}
+
+function setStage(s) {
+  STAGE = (STAGE === s) ? 'all' : s;
   renderKPIs();
   renderClients();
 }
@@ -377,7 +382,6 @@ function clientHealthBucket(client) {
     if (days < minDays) minDays = days;
   });
   if (minDays === Infinity) return client.flag_terminating ? 'AT_RISK' : 'HEALTHY';
-  if (minDays < 0)  return 'OVERDUE';
   if (minDays < 30) return 'AT_RISK';
   if (minDays < 90) return 'TO_WATCH';
   return 'HEALTHY';
@@ -407,7 +411,6 @@ function renderHealthBar() {
   }
   var fmtA = function(v) { var d = toDisp(v); return d >= 1000 ? currSym()+(d/1000).toFixed(1)+'m' : currSym()+Math.round(d)+'k'; };
   var DEFS = [
-    { key:'OVERDUE',  id:'hp-OVERDUE',  lbl:'Overdue'  },
     { key:'AT_RISK',  id:'hp-AT_RISK',  lbl:'At Risk'  },
     { key:'TO_WATCH', id:'hp-TO_WATCH', lbl:'To Watch' },
     { key:'HEALTHY',  id:'hp-HEALTHY',  lbl:'Healthy'  },
@@ -465,30 +468,44 @@ function toBillingClients(rows) {
 // ── KPI strip ──────────────────────────────────────────────────────────────
 function renderKPIs() {
   if (!DATA) return;
-  var fc = filteredClients();
-  var totalArr   = fc.reduce(function(s, c) { return s + c.arr_k; }, 0);
-  var uniqueAccts = new Set(fc.map(function(c) { return c.account; })).size;
-  var tipSubCount = 0, tipArr = 0;
-  fc.filter(function(c) { return c.flag_terminating; }).forEach(function(c) {
-    tipArr += c.arr_k;
-    (c.sw_lines || []).forEach(function(l) { if (l.terminating) tipSubCount += (l.tip_count || 1); });
-  });
-  var xsell = fc.filter(function(c) { return c.flag_upsell; }).length;
+  var activeArrK = DATA.active_arr_k || 0;
+  var tipArrK    = DATA.tip_arr_k    || 0;
+  var swArrK     = activeArrK + tipArrK;
+  var totalSubs  = DATA.total_sub_count || 0;
+  var tipSubs    = DATA.termination_sub_count || 0;
+
+  function fmtM(k) {
+    var v = toDisp(k);
+    return v >= 1000 ? currSym() + (v / 1000).toFixed(2) + 'M' : currSym() + Math.round(v).toLocaleString() + 'k';
+  }
 
   document.getElementById('ch-kpi-row').innerHTML =
-    kpi('SW Clients', uniqueAccts, '', 'unique accounts active', '')
-  + kpi('SW ARR', currSym() + Math.round(toDisp(totalArr)).toLocaleString() + 'k', 'teal', 'active subscriptions', '')
-  + kpi('Terminations', tipSubCount, 'warn',
-        tipSubCount > 0 ? currSym() + Math.round(toDisp(tipArr)) + 'k ARR at risk' : 'none in progress',
-        tipSubCount > 0 ? 'color:#c62828' : '')
-  + kpi('Cross-sell', xsell, 'blue', 'single product &gt;' + currSym() + '20k', '');
+    kpi('Software ARR', fmtM(swArrK), 'teal', 'active + termination in progress', '', 'all')
+  + kpi('Active ARR', fmtM(activeArrK), '', DATA.termination_count + ' accounts with active subscriptions', '', 'active')
+  + kpi('TIP ARR', fmtM(tipArrK), tipSubs > 0 ? 'warn' : '',
+        tipSubs > 0 ? tipSubs + ' terminations in progress' : 'none in progress',
+        tipSubs > 0 ? 'color:#c62828' : '', 'tip')
+  + kpi('Subscriptions', totalSubs, '', renewalSubLine(), '', '');
 }
 
-function kpi(label, val, cls, sub, subStyle) {
-  return "<div class='kpi'>"
-    + "<div class='kpi-label'>"+label+"</div>"
-    + "<div class='kpi-value"+(cls?' '+cls:'')+"'>"+val+"</div>"
-    + "<div class='kpi-sub'"+(subStyle?" style='"+subStyle+"'":"")+">"+sub+"</div>"
+function renewalSubLine() {
+  if (!DATA) return '';
+  var r3 = DATA.renewals_3m_count || 0;
+  var tip = DATA.termination_sub_count || 0;
+  return (tip > 0 ? tip + ' terminating' : 'none terminating')
+       + (r3 > 0 ? ' · ' + r3 + ' renew &lt;3m' : '');
+}
+
+function kpi(label, val, cls, sub, subStyle, stage) {
+  var active = stage && STAGE === stage;
+  var bg  = active ? 'background:#3c3c3b;border-color:#3c3c3b;' : '';
+  var tc  = active ? 'color:#fff!important;' : '';
+  var cur = stage ? 'cursor:pointer;' : '';
+  var oc  = stage ? ' onclick="setStage(\'' + stage + '\')"' : '';
+  return "<div class='kpi' style='" + bg + cur + "'" + oc + ">"
+    + "<div class='kpi-label' style='"+tc+"'>"+label+"</div>"
+    + "<div class='kpi-value"+(cls && !active?' '+cls:'')+"' style='"+tc+"'>"+val+"</div>"
+    + "<div class='kpi-sub' style='"+tc+(subStyle&&!active?subStyle:'')+"'>"+sub+"</div>"
     + "</div>";
 }
 
@@ -519,6 +536,8 @@ function filteredClients() {
         || (r.parent && r.parent.toLowerCase().indexOf(search) >= 0);
   });
   if (sw !== 'ALL') rows = rows.filter(function(r) { return (r.products || []).indexOf(sw) >= 0; });
+  if (STAGE === 'active') rows = rows.filter(function(r) { return !r.flag_terminating; });
+  if (STAGE === 'tip')    rows = rows.filter(function(r) { return r.flag_terminating; });
   if (FP === 'terminating') rows = rows.filter(function(r) { return r.flag_terminating; });
   if (FP === 'upsell') rows = rows.filter(function(r) { return r.flag_upsell; });
   if (HEALTH !== 'all') rows = rows.filter(function(r) { return clientHealthBucket(r) === HEALTH; });
