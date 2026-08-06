@@ -192,8 +192,8 @@ function process(rows) {
   // ── Billing maps (keyed by account||billing_market||sw) ───────────────────
   const billingRenewMap = {}, billingRenewCountMap = {};
   allRenewals.forEach(r => {
-    if (!r.billing_market) return;
-    const rk = `${r.account}||${r.billing_market}||${r.sw}`;
+    const bMkt = r.billing_market || 'Multi-Market';
+    const rk = `${r.account}||${bMkt}||${r.sw}`;
     billingRenewMap[rk] = { badge: r.renewal_badge, end_date: r.end_date };
     billingRenewCountMap[rk] = (billingRenewCountMap[rk] || 0) + 1;
   });
@@ -201,27 +201,29 @@ function process(rows) {
   const billingTipCountMap2 = {}, billingTipSet2 = new Set();
   const billingTipParentMap = {};
   for (const r of tip) {
-    if (!r.service || !r.billing_market) continue;
-    const key = `${r.account}||${r.billing_market}||${r.service}`;
+    if (!r.service) continue;
+    const bMkt = r.billing_market || 'Multi-Market';
+    const key = `${r.account}||${bMkt}||${r.service}`;
     billingTipCountMap2[key] = (billingTipCountMap2[key] || 0) + 1;
     billingTipSet2.add(key);
-    if (!billingTipParentMap[`${r.account}||${r.billing_market}`])
-      billingTipParentMap[`${r.account}||${r.billing_market}`] =
+    if (!billingTipParentMap[`${r.account}||${bMkt}`])
+      billingTipParentMap[`${r.account}||${bMkt}`] =
         r.top_account !== r.account ? r.top_account : null;
   }
 
   // ── Billing clients (all active SW subs, including null-energy-market) ────
   const billingRecs = {};
   for (const r of active) {
-    if (!r.service || !r.billing_market) continue;
-    const recKey = `${r.account}||${r.billing_market}`;
+    if (!r.service) continue;
+    const bMkt = r.billing_market || 'Multi-Market';
+    const recKey = `${r.account}||${bMkt}`;
     if (!billingRecs[recKey]) billingRecs[recKey] = {
       account: r.account, parent: r.top_account !== r.account ? r.top_account : null,
-      market: r.billing_market, billing_market: r.billing_market,
+      market: bMkt, billing_market: bMkt,
       sw_lines: {}, arr_k: 0,
     };
     const sw = r.service;
-    const bKey = `${r.account}||${r.billing_market}||${sw}`;
+    const bKey = `${r.account}||${bMkt}||${sw}`;
     if (!billingRecs[recKey].sw_lines[sw]) billingRecs[recKey].sw_lines[sw] = {
       sw, arr_k: 0, sub_count: 0,
       tip_count:     billingTipCountMap2[bKey] || 0,
