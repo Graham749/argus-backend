@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SW Revenue Intelligence</title>
+<title>SW Intelligence · Client Health</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
 <style>
 @font-face{font-family:'Lato';src:url('assets/fonts/lato-regular.woff2') format('woff2');font-weight:400;font-style:normal;font-display:swap;}
@@ -12,6 +12,8 @@
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Lato','Helvetica Neue',Arial,sans-serif;background:#f7f7f6;color:#3c3c3b;font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;}
 input,select,button,textarea{font-family:inherit;}
+
+/* ── Nav ── */
 nav{background:#fff;border-bottom:1px solid #e6e6e5;padding:0 24px;display:flex;align-items:center;position:sticky;top:0;z-index:100;height:48px}
 .embed-mode .nav-back,.embed-mode .nav-brand,.embed-mode .nav-meta,.embed-mode .nav-sep{display:none!important}
 .embed-mode nav{padding:0 20px;background:#fff;border-bottom:1px solid #e6e6e5}
@@ -19,107 +21,96 @@ nav{background:#fff;border-bottom:1px solid #e6e6e5;padding:0 24px;display:flex;
 .embed-mode main{padding:16px 20px 24px;}
 .embed-mode body{background:#f7f7f6}
 .nav-brand{font-size:14px;font-weight:700;margin-right:28px;white-space:nowrap;color:#3c3c3b;letter-spacing:-0.01em}
-.nav-tabs{display:flex;height:100%}
-.nav-tab{padding:0 14px;font-size:13px;cursor:pointer;border-bottom:2px solid transparent;color:#6d6d6c;white-space:nowrap;display:flex;align-items:center}
-.nav-tab:hover{color:#3c3c3b}
-.nav-tab.active{color:#3c3c3b;border-bottom-color:#288184;font-weight:600}
-.nav-meta{margin-left:auto;font-size:11px;color:#9d9d9d;display:flex;align-items:center;gap:6px;white-space:nowrap}
+.nav-tabs{display:flex;height:100%;flex:1}
+.nav-tab{padding:0 14px;font-size:13px;border-bottom:2px solid #288184;color:#3c3c3b;white-space:nowrap;display:flex;align-items:center;font-weight:600}
+.nav-meta{font-size:11px;color:#9d9d9d;display:flex;align-items:center;gap:6px;white-space:nowrap}
 .nav-back{font-size:12px;color:#6d6d6c;text-decoration:none;display:flex;align-items:center;gap:4px;padding:0;margin-right:16px}
 .nav-back:hover{color:#3c3c3b}
 .nav-sep{width:1px;height:20px;background:#e6e6e5;margin-right:16px;flex-shrink:0}
 main{max-width:1320px;margin:0 auto;padding:24px}
-section{display:none}
-section.active{display:block}
 
-/* ── Cards & layout ─────────────────────────────────────────────────────── */
+/* ── KPI strip ── */
 .kpi-row{display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap}
-.kpi{background:#fff;border:1px solid #e6e6e5;border-radius:10px;padding:14px 18px;min-width:160px;flex:1}
+.kpi{background:#fff;border:1px solid #e6e6e5;border-radius:10px;padding:14px 18px;min-width:150px;flex:1}
 .kpi-label{font-size:10px;color:#9d9d9d;margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em;font-weight:600}
 .kpi-value{font-size:26px;font-weight:600;line-height:1.2;color:#3c3c3b}
 .kpi-value.teal{color:#288184}
-.kpi-value.warn{color:#e65100}
-.kpi-value.ok{color:#2e7d32}
-.kpi-sub{font-size:12px;margin-top:4px;color:#9d9d9d}
-.card{background:#fff;border:1px solid #e6e6e5;border-radius:12px;padding:18px 20px;margin-bottom:16px}
-.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:12px;flex-wrap:wrap}
-.card-header.compact{margin-bottom:10px}
-.card-title{font-size:13px;font-weight:700;color:#3c3c3b;letter-spacing:-0.01em}
-.card-sub{font-size:11px;color:#9d9d9d;margin-top:2px}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-@media(max-width:900px){.grid2{grid-template-columns:1fr}}
-.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
-@media(max-width:1100px){.grid3{grid-template-columns:1fr 1fr}}
-@media(max-width:700px){.grid3{grid-template-columns:1fr}}
+.kpi-value.warn{color:#c62828}
+.kpi-value.amber{color:#e65100}
+.kpi-value.blue{color:#1565c0}
+.kpi-sub{font-size:11px;margin-top:4px;color:#9d9d9d}
 
-/* ── Filter / pill ──────────────────────────────────────────────────────── */
-.filter-bar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;align-items:center}
+/* ── Card ── */
+.card{background:#fff;border:1px solid #e6e6e5;border-radius:12px;padding:18px 20px;margin-bottom:16px}
+
+/* ── Filters ── */
+.filter-bar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;align-items:center}
 .filter-label{font-size:11px;color:#9d9d9d;font-weight:600}
-.pill{display:inline-flex;align-items:center;padding:0 10px;border-radius:100px;border:1px solid #e6e6e5;background:#fff;font-size:12px;cursor:pointer;color:#6d6d6c;height:30px}
+.pill{display:inline-flex;align-items:center;padding:0 10px;border-radius:100px;border:1px solid #e6e6e5;background:#fff;font-size:12px;cursor:pointer;color:#6d6d6c;height:30px;user-select:none}
 .pill:hover{border-color:#9d9d9d}
 .pill.active{background:#288184;color:#fff;border-color:#288184}
 select{padding:0 8px;border:1px solid #e6e6e5;border-radius:6px;font-size:12px;background:#fff;outline:none;cursor:pointer;color:#3c3c3b;height:30px}
-input[type=search]{padding:0 10px;border:1px solid #e6e6e5;border-radius:6px;font-size:13px;outline:none;color:#3c3c3b;height:30px}
-input[type=search]:focus{border-color:#288184}
+input[type=search]{padding:0 10px;border:1px solid #e6e6e5;border-radius:6px;font-size:13px;outline:none;color:#3c3c3b;height:30px;width:200px}
+input[type=search]:focus{border-color:#288184;outline:none}
 .toggle-group{display:flex;border:1px solid #e6e6e5;border-radius:6px;overflow:hidden}
 .toggle-btn{padding:5px 10px;font-size:12px;cursor:pointer;background:#fff;color:#6d6d6c;border:none;border-right:1px solid #e6e6e5}
 .toggle-btn:last-child{border-right:none}
 .toggle-btn.active{background:#3c3c3b;color:#fff}
 
-/* ── Tables ─────────────────────────────────────────────────────────────── */
+/* ── Table ── */
 table{width:100%;border-collapse:collapse;font-size:13px}
-th{text-align:left;padding:7px 10px;border-bottom:1px solid #e6e6e5;font-weight:600;font-size:10px;color:#9d9d9d;text-transform:uppercase;letter-spacing:.06em;white-space:nowrap}
+th{text-align:left;padding:8px 10px;border-bottom:1px solid #e6e6e5;font-weight:600;font-size:10px;color:#9d9d9d;text-transform:uppercase;letter-spacing:.06em;white-space:nowrap;background:#fff}
 th.sortable{cursor:pointer}
 th.sortable:hover{color:#3c3c3b}
 th.num{text-align:right}
-td{padding:7px 10px;border-bottom:1px solid rgba(230,230,229,.6);vertical-align:middle}
-td.num{text-align:right;white-space:nowrap}
-td.nowrap{white-space:nowrap}
+td{padding:9px 10px;border-bottom:1px solid rgba(230,230,229,.55);vertical-align:top}
+td.num{text-align:right;white-space:nowrap;vertical-align:middle}
 tr:last-child td{border-bottom:none}
-tr.hoverable:hover td{background:#fafaf8;cursor:pointer}
-td.rc{font-weight:600;border-right:1px solid #e6e6e5;background:#fafaf8;white-space:nowrap}
-.sep{border-left:2px solid #e6e6e5;background:#fafaf8}
+
+/* ── Expandable rows ── */
+tr.expandable{cursor:pointer}
+tr.expandable:hover td{background:#fafaf8}
+tr.expanded-row td{background:#f0fafb}
+tr.expand-detail td{background:#f4f8fb;padding:10px 16px 14px;border-bottom:1px solid #d6e8eb}
+tr.expand-detail.hidden{display:none}
 tfoot td{font-size:11px;color:#9d9d9d;padding:6px 10px;border-top:1px solid #e6e6e5}
 
-/* ── Badges ─────────────────────────────────────────────────────────────── */
-.pg{background:#e8f5e9;color:#2e7d32;padding:2px 8px;border-radius:100px;font-size:11px;font-weight:600;display:inline-block}
-.py{background:#fff3e0;color:#e65100;padding:2px 8px;border-radius:100px;font-size:11px;font-weight:600;display:inline-block}
-.pr{background:#ffebee;color:#c62828;padding:2px 8px;border-radius:100px;font-size:11px;font-weight:600;display:inline-block}
-.pn{background:#f5f5f5;color:#9d9d9d;padding:2px 8px;border-radius:100px;font-size:11px;font-weight:600;display:inline-block}
-.badge-ok{display:inline-flex;padding:2px 7px;border-radius:100px;font-size:11px;font-weight:600;background:#e8f5e9;color:#2e7d32}
-.badge-neu{display:inline-flex;padding:2px 7px;border-radius:100px;font-size:11px;font-weight:600;background:#f5f5f5;color:#9d9d9d}
-.badge-warn{display:inline-flex;padding:2px 7px;border-radius:100px;font-size:11px;font-weight:600;background:#fff3e0;color:#e65100}
+/* ── Badges ── */
+.pg{background:#e8f5e9;color:#2e7d32;padding:2px 8px;border-radius:100px;font-size:11px;font-weight:600;display:inline-block;white-space:nowrap}
+.py{background:#fff3e0;color:#e65100;padding:2px 8px;border-radius:100px;font-size:11px;font-weight:600;display:inline-block;white-space:nowrap}
+.pr{background:#ffebee;color:#c62828;padding:2px 8px;border-radius:100px;font-size:11px;font-weight:600;display:inline-block;white-space:nowrap}
+.pb{background:#e3f0fb;color:#1565c0;padding:2px 8px;border-radius:100px;font-size:11px;font-weight:600;display:inline-block;white-space:nowrap}
+.pn{background:#f5f5f5;color:#9d9d9d;padding:2px 8px;border-radius:100px;font-size:11px;font-weight:600;display:inline-block;white-space:nowrap}
 
-/* ── Progress bar ───────────────────────────────────────────────────────── */
-.prog-wrap{height:6px;background:#f0f0f0;border-radius:3px;overflow:hidden;min-width:60px}
-.prog-bar{height:100%;border-radius:3px;transition:width .3s}
+/* ── Health pills ── */
+.hp{display:inline-flex;align-items:center;padding:4px 12px;border-radius:6px;font-size:11px;font-weight:700;white-space:nowrap;cursor:pointer;border:2px solid transparent;transition:opacity .15s}
+.hp:hover{opacity:.8}
+.hp.dim{opacity:.35;pointer-events:none}
+.hp.sel{border-color:#3c3c3b}
+.hp-od{background:#fdeee0;color:#c2600f}
+.hp-ar{background:#fff3e0;color:#e65100}
+.hp-tw{background:#e3f2fd;color:#1565c0}
+.hp-ok{background:#e8f5e9;color:#2e7d32}
 
-/* ── Section heading (exec-style numbered) ──────────────────────────────── */
-.sec-label{font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#288184;margin-bottom:6px}
-.sec-title{font-size:14px;font-weight:700;color:#3c3c3b;line-height:1.3}
-
-/* ── Loading / empty ────────────────────────────────────────────────────── */
+/* ── Loading / empty ── */
 #loading{display:flex;align-items:center;justify-content:center;height:60vh;flex-direction:column;gap:16px;color:#9d9d9d;font-size:13px}
 .spinner{width:28px;height:28px;border:2px solid #e6e6e5;border-top-color:#288184;border-radius:50%;animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 .empty{text-align:center;padding:32px;color:#9d9d9d;font-size:13px}
-.tbc-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(247,247,246,0.88);border-radius:8px;font-size:11px;color:#9d9d9d;font-weight:600;letter-spacing:.04em;text-transform:uppercase;pointer-events:none}
 </style>
 </head>
 <body>
+
 <nav>
   <a href="/" class="nav-back"><i class="ti ti-arrow-left" aria-hidden="true"></i> Argus</a>
   <span class="nav-sep"></span>
   <div class="nav-brand"><i class="ti ti-chart-line" aria-hidden="true" style="margin-right:5px;color:#288184"></i>SW Intelligence</div>
   <div class="nav-tabs">
-    <div class="nav-tab active" onclick="showTab('exec')">Executive</div>
-    <div class="nav-tab" onclick="showTab('overview')">ARR Overview</div>
-    <div class="nav-tab" onclick="showTab('clients')">Account view</div>
-    <div class="nav-tab" onclick="showTab('signals')">Focus areas</div>
-    <div class="nav-tab" onclick="showTab('clientlist')">Client list</div>
+    <div class="nav-tab">Region Health</div>
     <div style="margin-left:auto;display:flex;align-items:center;gap:10px;padding:0 14px;flex-shrink:0">
       <div class="toggle-group" id="curr-toggle">
-        <div class="toggle-btn active" data-curr="eur" onclick="setCurr('eur')">€ EUR</div>
-        <div class="toggle-btn" data-curr="gbp" onclick="setCurr('gbp')">£ GBP</div>
+        <div class="toggle-btn" data-curr="eur" onclick="setCurr('eur')">€ EUR</div>
+        <div class="toggle-btn active" data-curr="gbp" onclick="setCurr('gbp')">£ GBP</div>
       </div>
       <span id="live-dot" style="display:none;font-size:10px;font-weight:700;letter-spacing:.06em;color:#2e7d32;white-space:nowrap">● LIVE</span>
       <span id="demo-dot" style="display:none;font-size:10px;font-weight:700;letter-spacing:.06em;color:#e65100;white-space:nowrap">● DEMO</span>
@@ -132,176 +123,84 @@ tfoot td{font-size:11px;color:#9d9d9d;padding:6px 10px;border-top:1px solid #e6e
 
 <main id="main-content" style="display:none">
 
-<!-- ══ EXECUTIVE ══════════════════════════════════════════════════════════ -->
-<section id="exec" class="active">
-  <div class="kpi-row" id="exec-kpi-row"></div>
-  <div class="grid2" style="margin-bottom:16px">
-    <!-- 01 ARR Leaderboard -->
-    <div class="card" style="margin-bottom:0">
-      <div class="card-header compact">
-        <div>
-          <div class="sec-label">01 — ARR Leaderboard</div>
-          <div class="sec-title">Revenue by Region</div>
-        </div>
-        <select id="exec-sw-filter" onchange="renderExec()"><option value="ALL">All products</option></select>
-      </div>
-      <table id="exec-lb-table"></table>
-    </div>
-    <!-- 02 + 03 stacked right -->
-    <div style="display:flex;flex-direction:column;gap:16px;min-height:0;overflow:hidden">
-      <!-- 02 ARR at Risk -->
-      <div class="card" style="margin-bottom:0;flex:1;min-height:0;overflow:auto">
-        <div class="card-header compact">
-          <div>
-            <div class="sec-label" style="color:#c62828">02 — At Risk</div>
-            <div class="sec-title">Terminations in Progress</div>
-          </div>
-          <span id="exec-tip-count" style="font-size:22px;font-weight:700;color:#c62828"></span>
-        </div>
-        <table id="exec-tip-table"></table>
-      </div>
-      <!-- 03 Renewals pipeline -->
-      <div class="card" style="margin-bottom:0;flex:1;min-height:0;overflow:auto">
-        <div class="card-header compact">
-          <div>
-            <div class="sec-label" style="color:#e65100">03 — Renewals</div>
-            <div class="sec-title">Due within 6 months</div>
-          </div>
-          <span id="exec-ren-count" style="font-size:22px;font-weight:700;color:#e65100"></span>
-        </div>
-        <table id="exec-ren-table"></table>
-      </div>
-    </div>
-  </div>
-  <!-- 04 Product breakdown -->
-  <div class="card">
-    <div class="card-header">
-      <div>
-        <div class="sec-label">04 — Product Breakdown</div>
-        <div class="sec-title">SW ARR by product</div>
-      </div>
-    </div>
-    <div id="exec-prod-bars" style="display:flex;flex-direction:column;gap:10px"></div>
-  </div>
-</section>
-
-<!-- ══ OVERVIEW ═══════════════════════════════════════════════════════════ -->
-<section id="overview">
-  <div class="kpi-row" id="kpi-row"></div>
-  <div class="card">
-    <div class="card-header"><span class="card-title">Region summary</span></div>
-    <table id="region-table"></table>
-  </div>
-  <div class="card">
-    <div class="card-header">
-      <span class="card-title">ARR by region &amp; product</span>
-      <div style="display:flex;gap:6px">
-        <select id="arr-mkt" onchange="renderARR()"><option value="ALL">All regions</option></select>
-        <select id="arr-sw"  onchange="renderARR()"><option value="ALL">All products</option></select>
-      </div>
-    </div>
-    <table id="arr-table"></table>
-  </div>
-  <div class="card">
-    <div class="card-header">
-      <span class="card-title">ARR trend</span>
-      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
-        <select id="trend-mkt" onchange="renderTrend()"><option value="ALL">All regions</option></select>
-        <select id="trend-sw"  onchange="renderTrend()"><option value="ALL">All products</option></select>
-        <div class="toggle-group">
-          <div class="toggle-btn active" id="tog-arr"     onclick="setMetric('arr')">ARR</div>
-          <div class="toggle-btn"        id="tog-clients" onclick="setMetric('clients')">Clients</div>
-          <div class="toggle-btn"        id="tog-avg"     onclick="setMetric('avg')">Avg ARR</div>
-        </div>
-      </div>
-    </div>
-    <div style="position:relative;height:280px"><canvas id="chart-trend"></canvas><div class="tbc-overlay">Historical trend — pending monthly snapshot data</div></div>
-  </div>
-</section>
-
-<!-- ══ ACCOUNT VIEW ════════════════════════════════════════════════════════ -->
+<!-- ══ REGION HEALTH ══════════════════════════════════════════════════════════ -->
 <section id="clients">
-  <div class="filter-bar">
-    <input type="search" id="cl-search" placeholder="Search account…" oninput="renderClients()">
-    <select id="cl-mkt" onchange="renderClients()"><option value="ALL">All regions</option></select>
-    <select id="cl-sw"  onchange="renderClients()"><option value="ALL">All products</option></select>
+
+  <!-- Health status filter bar -->
+  <div id="health-bar" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:16px;">
+    <span class="filter-label" style="font-size:11px;color:#9d9d9d;font-weight:700">Renewal Health:</span>
+    <span class="hp hp-od sel" id="hp-all" onclick="setHealth('all')" style="background:#f5f5f5;color:#6d6d6c">All Accounts</span>
+    <span class="hp hp-od" id="hp-OVERDUE" onclick="setHealth('OVERDUE')">0 Overdue</span>
+    <span class="hp hp-ar" id="hp-AT_RISK"  onclick="setHealth('AT_RISK')">0 At Risk</span>
+    <span class="hp hp-tw" id="hp-TO_WATCH" onclick="setHealth('TO_WATCH')">0 To Watch</span>
+    <span class="hp hp-ok" id="hp-HEALTHY"  onclick="setHealth('HEALTHY')">0 Healthy</span>
   </div>
+
+  <!-- KPI strip -->
+  <div class="kpi-row" id="ch-kpi-row"></div>
+
+  <!-- Filters row 1 — search + group-by -->
+  <div class="filter-bar">
+    <div style="display:flex;flex:1;min-width:220px;max-width:380px;border:1.5px solid #e6e6e5;border-radius:8px;overflow:hidden;background:#fff;">
+      <input type="text" id="cl-search" placeholder="Search account or parent…"
+        onkeydown="if(event.key==='Enter')renderClients()"
+        style="flex:1;padding:6px 12px;border:none;font-size:13px;font-family:inherit;outline:none;min-width:0;">
+      <button onclick="renderClients()"
+        style="padding:6px 14px;background:#288184;color:#fff;border:none;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;">Search</button>
+    </div>
+    <select id="cl-sw" onchange="renderClients()"><option value="ALL">All products</option></select>
+    <span style="margin-left:auto;display:flex;align-items:center;gap:6px;flex-shrink:0">
+      <span class="filter-label">Group by:</span>
+      <div class="toggle-group" id="groupby-toggle">
+        <div class="toggle-btn active" data-gb="energy"  onclick="setGroupBy(this,'energy')">Energy Market</div>
+        <div class="toggle-btn"        data-gb="billing" onclick="setGroupBy(this,'billing')">Billing Region</div>
+      </div>
+    </span>
+  </div>
+
+  <!-- Filters row 2 — region hierarchy (energy market mode only) -->
+  <div class="filter-bar" id="region-bar">
+    <span class="filter-label">Region:</span>
+    <div class="pill active" data-region="all" onclick="setRegion(this,'all')">All Markets</div>
+  </div>
+
+  <!-- Filters row 3 — sub-market pills (shown when EMEA/APAC selected in energy mode) -->
+  <div class="filter-bar" id="mkt-bar" style="display:none"></div>
+
+  <!-- Filters row 3 — signal pills -->
   <div class="filter-bar">
     <span class="filter-label">Signals:</span>
     <div class="pill active" id="fp-ALL"         onclick="setFP(this,'ALL')">All</div>
-    <div class="pill"        id="fp-upsell"      onclick="setFP(this,'upsell')">Cross-sell</div>
     <div class="pill"        id="fp-terminating" onclick="setFP(this,'terminating')">Termination</div>
-    <span class="filter-label" style="margin-left:8px">Renewal:</span>
-    <div class="pill" id="fp-r3m" onclick="setFP(this,'r3m')">≤ 3M</div>
-    <div class="pill" id="fp-r6m" onclick="setFP(this,'r6m')">≤ 6M</div>
+    <div class="pill"        id="fp-upsell"      onclick="setFP(this,'upsell')">Cross-sell</div>
   </div>
-  <div class="card" style="padding:0;overflow:hidden"><table id="client-table"></table></div>
-</section>
 
-<!-- ══ FOCUS AREAS ═════════════════════════════════════════════════════════ -->
-<section id="signals">
-  <div class="grid2">
-    <div class="card">
-      <div class="card-header">
-        <div>
-          <div class="card-title" style="color:#c62828"><i class="ti ti-alert-triangle" aria-hidden="true" style="margin-right:6px"></i>Termination in progress</div>
-          <div class="card-sub">SW subscriptions with active termination — sorted by ARR at risk</div>
-        </div>
-      </div>
-      <table id="sig-tip"></table>
-    </div>
-    <div class="card">
-      <div class="card-header">
-        <div>
-          <div class="card-title" style="color:#288184"><i class="ti ti-calendar-due" aria-hidden="true" style="margin-right:6px"></i>Renewals due — next 6 months</div>
-          <div class="card-sub">SW subscriptions expiring within 6 months — sorted by ARR</div>
-        </div>
-      </div>
-      <table id="sig-renewals"></table>
-    </div>
-    <div class="card">
-      <div class="card-header">
-        <div>
-          <div class="card-title" style="color:#1565c0"><i class="ti ti-arrows-maximize" aria-hidden="true" style="margin-right:6px"></i>Cross-sell — single product &gt;€20k</div>
-          <div class="card-sub">One SW product, ARR &gt; €20k — potential expansion</div>
-        </div>
-      </div>
-      <table id="sig-upsell"></table>
-    </div>
-    <div class="card">
-      <div class="card-header">
-        <div>
-          <div class="card-title" style="color:#9d9d9d"><i class="ti ti-moon" aria-hidden="true" style="margin-right:6px"></i>No usage — 90 days</div>
-          <div class="card-sub">Accounts with no SW runs in past 90 days</div>
-        </div>
-      </div>
-      <div style="padding:24px;text-align:center;color:#9d9d9d;font-size:12px;border:1px dashed #e6e6e5;border-radius:6px">Usage data pending Software Health integration</div>
-    </div>
+  <div class="card" style="padding:0;overflow:hidden;overflow-x:auto">
+    <table id="client-table"></table>
   </div>
-</section>
 
-<!-- ══ CLIENT LIST ══════════════════════════════════════════════════════════ -->
-<section id="clientlist">
-  <div class="filter-bar">
-    <input type="search" id="cll-search" placeholder="Search account…" oninput="renderClientList()">
-    <select id="cll-mkt"  onchange="renderClientList()"><option value="ALL">All regions</option></select>
-    <select id="cll-tier" onchange="renderClientList()"><option value="ALL">All tiers</option><option>Tier 1</option><option>Tier 2</option><option>Tier 3</option></select>
-    <div class="pill active" id="cll-all"    onclick="cllFilter(this,'ALL')">All</div>
-    <div class="pill"        id="cll-swonly" onclick="cllFilter(this,'sw')">SW clients only</div>
-    <div class="pill"        id="cll-nosw"   onclick="cllFilter(this,'nosw')">Subscription only</div>
-  </div>
-  <div class="card" style="padding:0;overflow:hidden"><table id="cll-table"></table></div>
 </section>
 
 </main>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
-let DATA = null;
-let CURR = 'eur';
-const DATA_CACHE = {};
+let DATA = null, CURR = 'gbp';
+const DATA_CACHE = {}, EXPANDED = new Set();
+let FP = 'ALL', SS = { col: 'arr_k', dir: -1 };
+let MKT_COL = {};
+let REGION = 'all', MKT = new Set(), GROUP_BY = 'energy';
+let HEALTH = 'all';
+
+const SW_COLORS = {
+  Chronos: { bg:'#e3f0fb', fg:'#0c447c' },
+  Amun:    { bg:'#e8f5e9', fg:'#2e7d32' },
+  Origin:  { bg:'#fff3e0', fg:'#e65100' },
+  Lumus:   { bg:'#e0f7f7', fg:'#00695c' },
+  Solaris: { bg:'#fce4ec', fg:'#880e4f' },
+};
 
 function currSym() { return CURR === 'gbp' ? '£' : '€'; }
+
 function setCurr(c) {
   CURR = c;
   document.querySelectorAll('#curr-toggle .toggle-btn').forEach(function(b) {
@@ -309,324 +208,458 @@ function setCurr(c) {
   });
   if (DATA_CACHE[c]) {
     DATA = DATA_CACHE[c];
-    var active = document.querySelector('section.active');
-    if (active) showTab(active.id);
+    renderKPIs();
+    renderClients();
   } else {
     loadData(c);
   }
 }
 
-const SW_COLORS = {
-  Chronos:  { bg:'#e3f0fb', fg:'#0c447c' },
-  Amun:     { bg:'#e8f5e9', fg:'#2e7d32' },
-  Origin:   { bg:'#fff3e0', fg:'#e65100' },
-  Lumus:    { bg:'#e0f7f7', fg:'#00695c' },
-  Solaris:  { bg:'#fce4ec', fg:'#880e4f' },
-};
-const SUB_COLORS = {
-  PRMF:           { bg:'#ede7f6', fg:'#4527a0' },
-  Flex:           { bg:'#e3f0fb', fg:'#1565c0' },
-  'Granular Data':{ bg:'#f5f5f5', fg:'#616161' },
-  Grid:           { bg:'#fff3e0', fg:'#e65100' },
-  'Non-Standard': { bg:'#ffebee', fg:'#c62828' },
-};
-let MKT_COL = {};
-let SS = { col:'arr_k', dir:-1 }, TC = null, CLLmode = 'ALL', FP = 'ALL';
-
-function showTab(id) {
-  const tabs = ['exec','overview','clients','signals','clientlist'];
-  document.querySelectorAll('.nav-tab').forEach((t,i) => t.classList.toggle('active', tabs[i] === id));
-  document.querySelectorAll('section').forEach(s => s.classList.toggle('active', s.id === id));
-  if (id === 'exec')       renderExec();
-  if (id === 'overview')   { renderOverview(); setTimeout(renderARR, 50); }
-  if (id === 'clients')    renderClients();
-  if (id === 'signals')    renderSignals();
-  if (id === 'clientlist') renderClientList();
-}
-
-function mktSpan(m) {
-  var c = MKT_COL[m] || '#288184';
-  return "<span style='color:"+c+";font-weight:600'>"+m+"</span>";
-}
-function swTag(s) {
-  var c = SW_COLORS[s] || { bg:'#f5f5f5', fg:'#616161' };
-  return "<span style='display:inline-flex;align-items:center;padding:1px 7px;border-radius:4px;font-size:11px;font-weight:600;margin:1px;background:"+c.bg+";color:"+c.fg+"'>"+s+"</span>";
-}
-function subTag(s) {
-  var c = SUB_COLORS[s] || { bg:'#f5f5f5', fg:'#616161' };
-  return "<span style='display:inline-flex;align-items:center;padding:1px 7px;border-radius:4px;font-size:11px;font-weight:600;margin:1px;background:"+c.bg+";color:"+c.fg+"'>"+s+"</span>";
-}
-function pctBadge(p, noTarget) {
-  if (noTarget || p === null || p === undefined) return "<span class='pn'>—</span>";
-  var cls = p >= 100 ? 'pg' : p >= 80 ? 'py' : 'pr';
-  return "<span class='"+cls+"'>"+(p >= 100 ? '✓ ' : '')+p.toFixed(0)+"%</span>";
+function esc(s) {
+  if (!s) return '';
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/'/g,'&#39;').replace(/"/g,'&quot;');
 }
 function dash() { return "<span style='color:#d0d0d0'>—</span>"; }
-function eur(k)  { return "<span style='font-weight:600'>"+currSym()+k.toFixed(0)+"k</span>"; }
-function progBar(pct, noTarget) {
-  if (noTarget || pct === null) return "<span style='font-size:11px;color:#9d9d9d'>no target</span>";
-  var w = Math.min(100, pct);
-  var c = pct >= 100 ? '#2e7d32' : pct >= 80 ? '#288184' : pct >= 50 ? '#e65100' : '#c62828';
-  return "<div class='prog-wrap'><div class='prog-bar' style='width:"+w+"%;background:"+c+"'></div></div>";
+function arrFmt(k) { return currSym() + Math.round(k).toLocaleString() + 'k'; }
+
+function mktDot(m) {
+  var c = MKT_COL[m] || '#288184';
+  return "<span style='display:inline-flex;align-items:center;gap:5px'>"
+    + "<span style='width:8px;height:8px;border-radius:50%;background:"+c+";flex-shrink:0;margin-top:1px'></span>"
+    + "<span style='font-weight:600;color:"+c+"'>"+esc(m)+"</span>"
+    + "</span>";
 }
 
-// ── Executive tab ──────────────────────────────────────────────────────────
-function renderExec() {
-  if (!DATA) return;
-
-  var swFilter = (document.getElementById('exec-sw-filter') || {}).value || 'ALL';
-
-  // Populate product filter
-  var swSel = document.getElementById('exec-sw-filter');
-  if (swSel && swSel.options.length <= 1) {
-    var swNames = [...new Set(DATA.arr_vs_target.map(r => r.sw))].sort();
-    swNames.forEach(function(s) { var o = document.createElement('option'); o.value = s; o.textContent = s; swSel.appendChild(o); });
-  }
-
-  // KPIs
-  var totalArr  = DATA.arr_vs_target
-    .filter(r => swFilter === 'ALL' || r.sw === swFilter)
-    .reduce((s, r) => s + r.actual_k, 0);
-  var totalTgt  = DATA.arr_vs_target
-    .filter(r => swFilter === 'ALL' || r.sw === swFilter)
-    .filter(r => !r.no_target)
-    .reduce((s, r) => s + r.target_k, 0);
-  var pct = totalTgt > 0 ? totalArr / totalTgt * 100 : null;
-  var pctC = pct === null ? '#9d9d9d' : pct >= 100 ? '#2e7d32' : pct >= 80 ? '#288184' : '#c62828';
-  var clients = new Set(DATA.clients.map(c => c.account)).size;
-
-  document.getElementById('exec-kpi-row').innerHTML =
-    "<div class='kpi'><div class='kpi-label'>Total SW ARR</div><div class='kpi-value teal'>"+currSym()+Math.round(totalArr).toLocaleString()+"k</div>"
-    +(pct !== null ? "<div class='kpi-sub' style='color:"+pctC+";font-weight:600'>"+pct.toFixed(0)+"% vs target</div>" : "<div class='kpi-sub'>no target set</div>")
-    +"</div>"
-    +"<div class='kpi'><div class='kpi-label'>SW Clients</div><div class='kpi-value'>"+clients+"</div><div class='kpi-sub'>active subscriptions</div></div>"
-    +"<div class='kpi'><div class='kpi-label'>Terminations</div><div class='kpi-value warn'>"+DATA.termination_count+"</div><div class='kpi-sub'>in progress</div></div>"
-    +"<div class='kpi'><div class='kpi-label'>Renewals ≤ 3M</div><div class='kpi-value' style='color:#e65100'>"+DATA.renewals_3m_count+"</div><div class='kpi-sub'>accounts · "+DATA.renewals_6m_count+" within 6M</div></div>";
-
-  // Leaderboard
-  var rs = DATA.region_summary.slice();
-  if (swFilter !== 'ALL') {
-    rs = rs.map(function(r) {
-      var pairs = DATA.arr_vs_target.filter(function(p) { return p.market === r.market && p.sw === swFilter; });
-      var at = pairs.reduce(function(s,p){return s+p.actual_k;},0);
-      var tt = pairs.filter(function(p){return !p.no_target;}).reduce(function(s,p){return s+p.target_k;},0);
-      var p  = tt > 0 ? Math.round(at/tt*1000)/10 : null;
-      return Object.assign({}, r, { arr_k: Math.round(at*10)/10, target_k: Math.round(tt*10)/10, pct: p });
-    });
-  }
-  rs.sort(function(a,b){ return b.arr_k - a.arr_k; });
-  var maxArr = Math.max.apply(null, rs.map(function(r){ return r.arr_k; })) || 1;
-
-  document.getElementById('exec-lb-table').innerHTML =
-    "<thead><tr><th>Region</th><th class='num'>ARR</th><th style='min-width:80px'>vs Target</th><th style='min-width:100px'></th></tr></thead><tbody>"
-    + rs.map(function(r) {
-        var p = r.pct;
-        var barC = p === null ? '#288184' : p >= 100 ? '#2e7d32' : p >= 80 ? '#288184' : p >= 50 ? '#e65100' : '#c62828';
-        var barW = Math.round(r.arr_k / maxArr * 100);
-        return "<tr>"
-          + "<td style='font-weight:600'>"+mktSpan(r.market)+"</td>"
-          + "<td class='num' style='font-weight:600'>"+currSym()+r.arr_k.toFixed(0)+"k</td>"
-          + "<td>"+pctBadge(p, p===null)+"</td>"
-          + "<td><div class='prog-wrap'><div class='prog-bar' style='width:"+barW+"%;background:"+barC+"'></div></div></td>"
-          + "</tr>";
-      }).join('')
-    + "</tbody>";
-
-  // TIP
-  var tips = DATA.termination_in_progress.slice(0, 6);
-  document.getElementById('exec-tip-count').textContent = DATA.termination_count;
-  document.getElementById('exec-tip-table').innerHTML = tips.length
-    ? "<thead><tr><th>Account</th><th>Region</th><th>Product</th><th class='num'>ARR at risk</th></tr></thead><tbody>"
-      + tips.map(function(r) {
-          return "<tr><td style='font-weight:600'>"+r.account+"</td><td>"+mktSpan(r.market)+"</td><td>"+swTag(r.sw)+"</td>"
-            +"<td class='num' style='color:#c62828;font-weight:600'>"+(r.arr_k > 0 ? currSym()+r.arr_k.toFixed(0)+"k" : dash())+"</td></tr>";
-        }).join('')
-      + "</tbody>"
-    : "<tr><td colspan='4' class='empty' style='padding:16px;'>No terminations in progress</td></tr>";
-
-  // Renewals
-  var rens = DATA.renewals_due.slice(0, 6);
-  document.getElementById('exec-ren-count').textContent = DATA.renewals_6m_count;
-  document.getElementById('exec-ren-table').innerHTML = rens.length
-    ? "<thead><tr><th>Account</th><th>Region</th><th>Product</th><th class='nowrap'>End date</th><th class='num'>ARR</th></tr></thead><tbody>"
-      + rens.map(function(r) {
-          var bc = r.renewal_badge === '3M' ? '<span class="py">3M</span>' : '<span class="badge-ok">6M</span>';
-          return "<tr><td style='font-weight:600'>"+r.account+"</td><td>"+mktSpan(r.market)+"</td><td>"+swTag(r.sw||'')+"</td>"
-            +"<td class='nowrap' style='font-size:12px'>"+bc+" "+r.end_date+"</td><td class='num'>"+eur(r.arr_k)+"</td></tr>";
-        }).join('')
-      + "</tbody>"
-    : "<tr><td colspan='5' class='empty' style='padding:16px;'>No renewals in next 6 months</td></tr>";
-
-  // Product bars
-  var byProd = {};
-  DATA.arr_vs_target.forEach(function(r) {
-    if (swFilter !== 'ALL' && r.sw !== swFilter) return;
-    byProd[r.sw] = (byProd[r.sw] || 0) + r.actual_k;
-  });
-  var prodList = Object.entries(byProd).sort(function(a,b){ return b[1]-a[1]; });
-  var maxProd  = prodList.length ? prodList[0][1] : 1;
-  document.getElementById('exec-prod-bars').innerHTML = prodList.map(function(p) {
-    var c = (SW_COLORS[p[0]] || { fg:'#288184' }).fg;
-    var w = Math.round(p[1] / maxProd * 100);
-    return "<div style='display:flex;align-items:center;gap:10px'>"
-      + "<div style='min-width:90px;font-size:12px;font-weight:600;color:#3c3c3b;text-align:right;flex-shrink:0'>"+p[0]+"</div>"
-      + "<div style='flex:1;height:20px;background:#f5f5f5;border-radius:4px;overflow:hidden'>"
-      +   "<div style='height:100%;width:"+w+"%;background:"+c+";border-radius:4px;display:flex;align-items:center;padding:0 8px'>"
-      +     (w > 15 ? "<span style='font-size:11px;font-weight:700;color:#fff'>"+currSym()+p[1].toFixed(0)+"k</span>" : "")
-      +   "</div></div>"
-      + (w <= 15 ? "<span style='font-size:12px;font-weight:600;color:#3c3c3b;flex-shrink:0'>"+currSym()+p[1].toFixed(0)+"k</span>" : "")
-      + "</div>";
-  }).join('');
+function swChip(s) {
+  var c = SW_COLORS[s] || { bg:'#f5f5f5', fg:'#6d6d6c' };
+  return "<span style='display:inline-flex;align-items:center;padding:1px 7px;border-radius:4px;font-size:11px;font-weight:700;background:"+c.bg+";color:"+c.fg+"'>"+esc(s)+"</span>";
 }
 
-// ── Overview tab ───────────────────────────────────────────────────────────
-function renderOverview() {
-  if (!DATA) return;
-  document.getElementById('arr-date').textContent = DATA.arr_as_of;
-
-  var tA = DATA.arr_vs_target.reduce(function(s,r){ return s+r.actual_k; }, 0);
-  var tT = DATA.arr_vs_target.filter(function(r){ return !r.no_target; }).reduce(function(s,r){ return s+r.target_k; }, 0);
-  var pct = tT > 0 ? tA/tT*100 : null;
-  var pc  = pct === null ? '#9d9d9d' : pct >= 100 ? '#2e7d32' : pct >= 80 ? '#288184' : '#c62828';
-
-  document.getElementById('kpi-row').innerHTML =
-    "<div class='kpi'><div class='kpi-label'>Total SW ARR</div><div class='kpi-value teal'>"+currSym()+Math.round(tA).toLocaleString()+"k</div>"
-    +(pct!==null?"<div class='kpi-sub' style='color:"+pc+";font-weight:600'>"+pct.toFixed(0)+"% vs target</div>":"<div class='kpi-sub'>no target set</div>")+"</div>"
-    +"<div class='kpi'><div class='kpi-label'>Renewals due (3M / 6M)</div>"
-    +"<div class='kpi-value'><span style='color:#e65100'>"+DATA.renewals_3m_count+"</span>"
-    +"<span style='color:#d0d0d0;padding:0 3px'>/</span>"
-    +"<span style='color:#2e7d32'>"+DATA.renewals_6m_count+"</span></div>"
-    +"<div class='kpi-sub'>accounts with upcoming renewals</div></div>"
-    +"<div class='kpi'><div class='kpi-label'>Terminations</div><div class='kpi-value warn'>"+DATA.termination_count+"</div><div class='kpi-sub'>in progress</div></div>";
-
-  document.getElementById('region-table').innerHTML =
-    "<thead><tr><th>Region</th><th class='num'>ARR</th><th class='num'>Target</th><th>%</th><th>Progress</th><th>Below 80%</th></tr></thead><tbody>"
-    + DATA.region_summary.map(function(r) {
-        var below = r.below80.map(function(x){
-          return "<span style='background:#ffebee;color:#c62828;padding:2px 7px;border-radius:100px;font-size:11px;font-weight:600'>"+x.sw+" "+x.pct+"%</span>";
-        }).join(' ');
-        return "<tr>"
-          +"<td style='font-weight:600'>"+mktSpan(r.market)+"</td>"
-          +"<td class='num' style='font-weight:600'>"+currSym()+r.arr_k.toFixed(0)+"k</td>"
-          +"<td class='num' style='color:#9d9d9d'>"+(r.target_k > 0 ? currSym()+r.target_k.toFixed(0)+"k" : dash())+"</td>"
-          +"<td>"+pctBadge(r.pct, r.pct===null)+"</td>"
-          +"<td style='min-width:100px'>"+progBar(r.pct, r.pct===null)+"</td>"
-          +"<td>"+(below || "<span style='color:#2e7d32;font-size:11px'>all ≥ 80%</span>")+"</td></tr>";
-      }).join('')
-    + "</tbody>";
-  renderARR();
-}
-
-function renderARR() {
-  if (!DATA) return;
-  var mkt = document.getElementById('arr-mkt').value;
-  var sw  = document.getElementById('arr-sw').value;
-  var rows = DATA.arr_vs_target.slice();
-  if (mkt !== 'ALL') rows = rows.filter(function(r){ return r.market === mkt; });
-  if (sw  !== 'ALL') rows = rows.filter(function(r){ return r.sw     === sw; });
-  var html = "<thead><tr><th>Region</th><th>Product</th><th class='num'>ARR</th><th class='num'>Target</th><th>%</th><th style='text-align:center'>Clients</th><th>Top contributors</th></tr></thead><tbody>";
-  var lm = '';
-  rows.forEach(function(r) {
-    var pct     = r.target_k > 0 ? r.actual_k/r.target_k*100 : null;
-    var contrib = r.top_clients.map(function(c){ return c.name.split(' ')[0]+' '+currSym()+c.arr_k+'k'; }).join(' · ');
-    var mc = r.market !== lm
-      ? "<td class='rc'>"+mktSpan(r.market)+"</td>"
-      : "<td class='rc' style='color:transparent;user-select:none'>"+r.market+"</td>";
-    lm = r.market;
-    html += "<tr>"+mc+"<td>"+swTag(r.sw)+"</td>"
-      +"<td class='num' style='font-weight:600'>"+currSym()+r.actual_k.toFixed(0)+"k</td>"
-      +"<td class='num' style='color:#9d9d9d'>"+(r.target_k>0?currSym()+r.target_k.toFixed(0)+"k":dash())+"</td>"
-      +"<td>"+pctBadge(pct, pct===null)+"</td>"
-      +"<td style='text-align:center;color:#9d9d9d'>"+(r.client_count>0?r.client_count+" client"+(r.client_count>1?'s':''):dash())+"</td>"
-      +"<td style='font-size:11px;color:#6d6d6c'>"+(contrib||dash())+"</td></tr>";
-  });
-  document.getElementById('arr-table').innerHTML = html + "</tbody>";
-}
-
-function renderTrend() {
-  if (TC) { TC.destroy(); TC = null; }
-}
-function setMetric(m) {
-  ['tog-arr','tog-clients','tog-avg'].forEach(function(id){ document.getElementById(id).classList.remove('active'); });
-  document.getElementById('tog-'+m).classList.add('active');
-}
-
-// ── Account view tab ───────────────────────────────────────────────────────
 function setFP(el, mode) {
   FP = mode;
-  document.querySelectorAll('#clients .pill').forEach(function(p){ p.classList.remove('active'); });
+  document.querySelectorAll('#clients .pill[id^="fp-"]').forEach(function(p) { p.classList.remove('active'); });
   el.classList.add('active');
   renderClients();
 }
 
+function setRegion(el, r) {
+  REGION = r; MKT = new Set(); HEALTH = 'all';
+  document.querySelectorAll('#region-bar .pill').forEach(function(p) { p.classList.remove('active'); });
+  el.classList.add('active');
+  populateMktPills();
+  renderKPIs();
+  renderClients();
+}
+
+function setMkt(el, m) {
+  if (!m) {
+    MKT = new Set();
+    document.querySelectorAll('#mkt-bar .pill').forEach(function(p) { p.classList.remove('active'); });
+    el.classList.add('active');
+  } else {
+    if (MKT.has(m)) { MKT.delete(m); el.classList.remove('active'); }
+    else             { MKT.add(m);    el.classList.add('active'); }
+    var allPill = document.querySelector('#mkt-bar .pill[data-mkt=""]');
+    if (allPill) allPill.classList.toggle('active', MKT.size === 0);
+  }
+  renderKPIs();
+  renderClients();
+}
+
+function populateMktPills() {
+  var bar = document.getElementById('mkt-bar');
+  if (!DATA || REGION === 'all') { bar.style.display = 'none'; return; }
+  var mkts, label;
+  if (GROUP_BY === 'billing') {
+    var bSet = new Set();
+    DATA.clients.forEach(function(r) {
+      if ((r.region || '').toLowerCase() === REGION && r.billing_market) bSet.add(r.billing_market);
+    });
+    mkts = [...bSet].sort();
+    label = 'Territory:';
+  } else {
+    var rm = DATA.region_map || {};
+    mkts = Object.keys(rm).filter(function(m) { return (rm[m] || '').toLowerCase() === REGION; }).sort();
+    label = 'Market:';
+  }
+  if (!mkts.length) { bar.style.display = 'none'; return; }
+  var html = '<span class="filter-label">' + label + '</span>'
+    + '<div class="pill active" data-mkt="" onclick="setMkt(this,\'\')">All ' + REGION.toUpperCase() + '</div>'
+    + mkts.map(function(m) {
+        return '<div class="pill" data-mkt="' + esc(m) + '" onclick="setMkt(this,\'' + esc(m).replace(/'/g,'\\&#39;') + '\')">' + esc(m) + '</div>';
+      }).join('');
+  bar.innerHTML = html;
+  bar.style.display = 'flex';
+}
+
+function populateRegionPills() {
+  var bar = document.getElementById('region-bar');
+  if (!DATA) return;
+  var rm = DATA.region_map || {};
+  var regions = [...new Set(Object.values(rm).filter(Boolean))].sort();
+  var html = '<span class="filter-label">Region:</span>'
+    + '<div class="pill active" data-region="all" onclick="setRegion(this,\'all\')">All Markets</div>'
+    + regions.map(function(r) {
+        var key = r.toLowerCase();
+        return '<div class="pill" data-region="' + key + '" onclick="setRegion(this,\'' + key + '\')">' + r + '</div>';
+      }).join('');
+  bar.innerHTML = html;
+}
+
+function openClientHealth(acct) {
+  try {
+    localStorage.setItem('argusHealthAccount', acct);
+    localStorage.setItem('argusInitView', 'health');
+  } catch(e) {}
+  window.open('/', '_blank');
+}
+
+function setGroupBy(el, gb) {
+  GROUP_BY = gb;
+  REGION = 'all'; MKT = new Set(); HEALTH = 'all';
+  document.querySelectorAll('#groupby-toggle .toggle-btn').forEach(function(b) { b.classList.remove('active'); });
+  el.classList.add('active');
+  var mb = document.getElementById('mkt-bar');
+  if (mb) mb.style.display = 'none';
+  // Reset region pills
+  document.querySelectorAll('#region-bar .pill').forEach(function(p) {
+    p.classList.toggle('active', p.getAttribute('data-region') === 'all');
+  });
+  renderKPIs();
+  renderClients();
+}
+
+function clientHealthBucket(client) {
+  var TODAY = new Date(); TODAY.setHours(0,0,0,0);
+  var minDays = Infinity;
+  (client.sw_lines || []).forEach(function(l) {
+    if (!l.end_date) return;
+    var d = new Date(l.end_date);
+    var days = Math.round((d - TODAY) / (1000*60*60*24));
+    if (days < minDays) minDays = days;
+  });
+  if (minDays === Infinity) return client.flag_terminating ? 'AT_RISK' : 'HEALTHY';
+  if (minDays < 0)  return 'OVERDUE';
+  if (minDays < 30) return 'AT_RISK';
+  if (minDays < 90) return 'TO_WATCH';
+  return 'HEALTHY';
+}
+
+function setHealth(key) {
+  HEALTH = key;
+  renderHealthBar();
+  renderKPIs();
+  renderClients();
+}
+
+function renderHealthBar() {
+  if (!DATA) return;
+  // Apply region/market filter but NOT health filter (bar shows full distribution in current scope)
+  var clients = DATA.clients.slice();
+  if (REGION !== 'all') clients = clients.filter(function(r) { return (r.region || '').toLowerCase() === REGION; });
+  if (GROUP_BY === 'energy' && MKT.size > 0) clients = clients.filter(function(r) { return MKT.has(r.market); });
+  if (GROUP_BY === 'billing') clients = toBillingClients(clients);
+  if (GROUP_BY === 'billing' && MKT.size > 0) clients = clients.filter(function(r) { return MKT.has(r.market); });
+  var ALL_CLIENTS = clients;
+  var fmtA = function(v) { return v >= 1000 ? currSym()+(v/1000).toFixed(1)+'m' : currSym()+Math.round(v)+'k'; };
+  var DEFS = [
+    { key:'OVERDUE',  id:'hp-OVERDUE',  lbl:'Overdue'  },
+    { key:'AT_RISK',  id:'hp-AT_RISK',  lbl:'At Risk'  },
+    { key:'TO_WATCH', id:'hp-TO_WATCH', lbl:'To Watch' },
+    { key:'HEALTHY',  id:'hp-HEALTHY',  lbl:'Healthy'  },
+  ];
+  // Update All button
+  var allBtn = document.getElementById('hp-all');
+  if (allBtn) {
+    allBtn.classList.toggle('sel', HEALTH === 'all');
+    allBtn.style.background = HEALTH === 'all' ? '#3c3c3b' : '#f5f5f5';
+    allBtn.style.color      = HEALTH === 'all' ? '#fff'    : '#6d6d6c';
+  }
+  DEFS.forEach(function(d) {
+    var btn = document.getElementById(d.id);
+    if (!btn) return;
+    var bucket = ALL_CLIENTS.filter(function(c) { return clientHealthBucket(c) === d.key; });
+    var cnt = bucket.length;
+    var arr = bucket.reduce(function(s, c) { return s + c.arr_k; }, 0);
+    btn.textContent = cnt > 0 ? cnt + ' ' + d.lbl + ' · ' + fmtA(arr) : '0 ' + d.lbl;
+    btn.classList.toggle('dim', cnt === 0);
+    btn.classList.toggle('sel', HEALTH === d.key);
+  });
+}
+
+// Re-aggregate energy-market clients into billing-region clients
+function toBillingClients(rows) {
+  var byKey = {};
+  rows.forEach(function(r) {
+    var key = r.account + '||' + (r.billing_market || '');
+    if (!byKey[key]) byKey[key] = {
+      account:        r.account,
+      parent:         r.parent,
+      market:         r.billing_market || r.market,
+      region:         r.region,
+      billing_market: r.billing_market,
+      sw_lines: [],
+      arr_k: 0,
+      flag_terminating: false,
+      flag_renewal:     false,
+      flag_upsell:      false,
+    };
+    byKey[key].sw_lines = byKey[key].sw_lines.concat(r.sw_lines || []);
+    byKey[key].arr_k += r.arr_k || 0;
+    byKey[key].flag_terminating = byKey[key].flag_terminating || r.flag_terminating;
+    byKey[key].flag_renewal     = byKey[key].flag_renewal     || r.flag_renewal;
+  });
+  return Object.values(byKey).map(function(r) {
+    r.arr_k    = Math.round(r.arr_k * 10) / 10;
+    r.products = [...new Set((r.sw_lines || []).map(function(l) { return l.sw; }))];
+    // Recompute cross-sell from merged distinct products — per-market flags are misleading in billing mode
+    r.flag_upsell = r.products.length === 1 && r.arr_k > 20;
+    return r;
+  }).sort(function(a, b) { return b.arr_k - a.arr_k; });
+}
+
+// ── KPI strip ──────────────────────────────────────────────────────────────
+function renderKPIs() {
+  if (!DATA) return;
+  var fc = filteredClients();
+  var totalArr   = fc.reduce(function(s, c) { return s + c.arr_k; }, 0);
+  var uniqueAccts = new Set(fc.map(function(c) { return c.account; })).size;
+  var tipSubCount = 0, tipArr = 0;
+  fc.filter(function(c) { return c.flag_terminating; }).forEach(function(c) {
+    tipArr += c.arr_k;
+    (c.sw_lines || []).forEach(function(l) { if (l.terminating) tipSubCount += (l.tip_count || 1); });
+  });
+  var xsell = fc.filter(function(c) { return c.flag_upsell; }).length;
+
+  document.getElementById('ch-kpi-row').innerHTML =
+    kpi('SW Clients', uniqueAccts, '', 'unique accounts active', '')
+  + kpi('SW ARR', currSym() + Math.round(totalArr).toLocaleString() + 'k', 'teal', 'active subscriptions', '')
+  + kpi('Terminations', tipSubCount, 'warn',
+        tipSubCount > 0 ? currSym() + Math.round(tipArr) + 'k ARR at risk' : 'none in progress',
+        tipSubCount > 0 ? 'color:#c62828' : '')
+  + kpi('Cross-sell', xsell, 'blue', 'single product &gt;' + currSym() + '20k', '');
+}
+
+function kpi(label, val, cls, sub, subStyle) {
+  return "<div class='kpi'>"
+    + "<div class='kpi-label'>"+label+"</div>"
+    + "<div class='kpi-value"+(cls?' '+cls:'')+"'>"+val+"</div>"
+    + "<div class='kpi-sub'"+(subStyle?" style='"+subStyle+"'":"")+">"+sub+"</div>"
+    + "</div>";
+}
+
+// ── Region Health table ────────────────────────────────────────────────────
+function filteredClients() {
+  if (!DATA) return [];
+  var search = (document.getElementById('cl-search') || {}).value || '';
+  search = search.toLowerCase();
+  var sw = (document.getElementById('cl-sw') || {}).value || 'ALL';
+  var rows = DATA.clients.slice();
+
+  // Region filter — applied before billing re-aggregation (both modes use r.region)
+  if (REGION !== 'all') rows = rows.filter(function(r) { return (r.region || '').toLowerCase() === REGION; });
+
+  // Energy market sub-filter (energy mode only)
+  if (GROUP_BY === 'energy' && MKT.size > 0) rows = rows.filter(function(r) { return MKT.has(r.market); });
+
+  // Re-aggregate into billing-region view if needed
+  if (GROUP_BY === 'billing') rows = toBillingClients(rows);
+
+  // Billing market sub-filter (billing mode — after aggregation, market = billing_market)
+  if (GROUP_BY === 'billing' && MKT.size > 0) rows = rows.filter(function(r) { return MKT.has(r.market); });
+
+  // Account search, product, signal filters
+  if (search) rows = rows.filter(function(r) {
+    return r.account.toLowerCase().indexOf(search) >= 0
+        || (r.parent && r.parent.toLowerCase().indexOf(search) >= 0);
+  });
+  if (sw !== 'ALL') rows = rows.filter(function(r) { return (r.products || []).indexOf(sw) >= 0; });
+  if (FP === 'terminating') rows = rows.filter(function(r) { return r.flag_terminating; });
+  if (FP === 'upsell') rows = rows.filter(function(r) { return r.flag_upsell; });
+  if (HEALTH !== 'all') rows = rows.filter(function(r) { return clientHealthBucket(r) === HEALTH; });
+  return rows;
+}
+
 function renderClients() {
   if (!DATA) return;
-  var search = document.getElementById('cl-search').value.toLowerCase();
-  var mkt    = document.getElementById('cl-mkt').value;
-  var sw     = document.getElementById('cl-sw').value;
-  var rows   = DATA.clients.slice();
-  if (search) rows = rows.filter(function(r){ return r.account.toLowerCase().indexOf(search)>=0||(r.parent&&r.parent.toLowerCase().indexOf(search)>=0); });
-  if (mkt !== 'ALL') rows = rows.filter(function(r){ return r.market === mkt; });
-  if (sw  !== 'ALL') rows = rows.filter(function(r){ return r.products.indexOf(sw) >= 0; });
-  if (FP === 'upsell')      rows = rows.filter(function(r){ return r.flag_upsell; });
-  if (FP === 'terminating') rows = rows.filter(function(r){ return r.flag_terminating; });
-  if (FP === 'r3m') rows = rows.filter(function(r){ return r.sw_lines&&r.sw_lines.some(function(l){ return l.renewal_badge==='3M'; }); });
-  if (FP === 'r6m') rows = rows.filter(function(r){ return r.flag_renewal; });
+  renderHealthBar();
+  var rows = filteredClients();
+  // Group by account, sort by max ARR desc
+  var ag = {}, am = {};
+  rows.forEach(function(r) { if (!ag[r.account]) ag[r.account] = []; ag[r.account].push(r); });
+  Object.keys(ag).forEach(function(a) {
+    am[a] = Math.max.apply(null, ag[a].map(function(r) { return r.arr_k || 0; }));
+  });
+  var sortedAccts = Object.keys(ag).sort(function(a, b) { return SS.dir * (am[a] - am[b]); });
 
-  function si(c){ return SS.col===c?(SS.dir===-1?'↓':'↑'):"<span style='color:#d0d0d0'>·</span>"; }
+  function si(c) { return SS.col === c ? (SS.dir === -1 ? ' ↓' : ' ↑') : ''; }
+
   var html = "<thead><tr>"
-    +"<th class='sortable' data-col='account'>Account "+si('account')+"</th>"
-    +"<th>Parent</th><th>Region</th><th>Products</th>"
-    +"<th class='sortable num' data-col='arr_k'>SW ARR "+si('arr_k')+"</th>"
-    +"<th>Signals</th><th>Renewal</th><th>Termination</th>"
-    +"</tr></thead><tbody>";
-
-  var acctGroups = {};
-  rows.forEach(function(r){ if(!acctGroups[r.account]) acctGroups[r.account]=[]; acctGroups[r.account].push(r); });
-  var acctMax = {};
-  Object.keys(acctGroups).forEach(function(a){ acctMax[a] = Math.max.apply(null, acctGroups[a].map(function(r){ return r[SS.col]!=null?r[SS.col]:-999; })); });
-  var sortedAccts = Object.keys(acctGroups).sort(function(a,b){ return SS.dir*(acctMax[b]-acctMax[a]); });
+    + "<th class='sortable' data-col='account' style='min-width:180px'>Account"+si('account')+"</th>"
+    + "<th style='min-width:90px'>"+(GROUP_BY==='energy'?'Energy Market':'Billing Region')+"</th>"
+    + "<th style='min-width:230px'>Products &amp; ARR</th>"
+    + "<th class='sortable num' data-col='arr_k' style='min-width:90px'>Total ARR"+si('arr_k')+"</th>"
+    + "<th style='min-width:150px'>Signals</th>"
+    + "<th style='min-width:100px'>Next renewal</th>"
+    + "<th style='width:100px'></th>"
+    + "</tr></thead><tbody>";
 
   var totalRows = 0;
   sortedAccts.forEach(function(acct) {
-    var la = null;
-    acctGroups[acct].forEach(function(r) {
+    var prevAcct = null;
+    ag[acct].forEach(function(r) {
       totalRows++;
-      var lines = r.sw_lines || [];
-      var pCell = "<div style='display:flex;flex-direction:column;gap:3px'>"+lines.map(function(l){ return swTag(l.sw); }).join('')+"</div>";
-      var sigs  = [];
-      if (r.flag_upsell)      sigs.push("<span style='background:#e3f0fb;color:#0c447c;display:inline-flex;padding:2px 7px;border-radius:100px;font-size:11px;font-weight:600'>cross-sell</span>");
-      if (r.flag_terminating) sigs.push("<span style='background:#ffebee;color:#c62828;display:inline-flex;padding:2px 7px;border-radius:100px;font-size:11px;font-weight:600'>termin.</span>");
-      var sCell = sigs.length ? "<div style='display:flex;flex-direction:column;gap:3px'>"+sigs.join('')+"</div>" : dash();
-      var rnLines = lines.map(function(l) {
-        if (!l.renewal_badge) return dash();
-        return l.renewal_badge==='3M'
-          ? "<span class='py'>3M</span>"
-          : "<span class='badge-ok'>6M</span>";
+      var key    = r.account + '||' + r.market;
+      var ekey   = esc(key);
+      var isExp  = EXPANDED.has(key);
+
+      // Account cell — suppress repeat if same parent account spans markets
+      var acctCell;
+      if (prevAcct !== r.account) {
+        acctCell = "<td style='vertical-align:top'>"
+          + "<div style='font-weight:600'>"+esc(r.account)+"</div>"
+          + (r.parent ? "<div style='font-size:11px;color:#9d9d9d;margin-top:1px'>"+esc(r.parent)+"</div>" : "")
+          + "</td>";
+      } else {
+        acctCell = "<td style='color:transparent;user-select:none;font-size:10px;vertical-align:top'>"+esc(r.account)+"</td>";
+      }
+      prevAcct = r.account;
+
+      // Products column: chip + sub-count pill + ARR
+      var prodLines = (r.sw_lines || []).map(function(l) {
+        var cnt = l.sub_count || 1;
+        var cntPill = "<span style='font-size:10px;font-weight:700;color:#288184;"
+          + "background:#e8f4f4;border-radius:10px;padding:1px 7px;white-space:nowrap'>"
+          + cnt + " sub" + (cnt !== 1 ? 's' : '') + "</span>";
+        return "<div style='display:flex;align-items:center;gap:5px;margin-bottom:3px'>"
+          + swChip(l.sw)
+          + cntPill
+          + "<span style='font-size:12px;color:#6d6d6c;font-weight:600'>"
+          + currSym() + l.arr_k.toFixed(0) + "k</span>"
+          + (l.terminating ? "<span style='font-size:10px;color:#c62828;font-weight:700'>●</span>" : "")
+          + "</div>";
+      }).join('');
+
+      // Signals column — Section 1: renewal timeline, Section 2: termination pill
+      var prodRenew = {};
+      (r.sw_lines || []).forEach(function(l) {
+        if (!l.renewal_badge) return;
+        if (!prodRenew[l.sw]) prodRenew[l.sw] = { renewing: 0, total: 0, badge: l.renewal_badge };
+        prodRenew[l.sw].renewing += l.renew_count || 1;
+        if (l.renewal_badge === '3M') prodRenew[l.sw].badge = '3M';
       });
-      var rnCell = lines.some(function(l){ return l.renewal_badge; })
-        ? "<div style='display:flex;flex-direction:column;gap:3px'>"+rnLines.join('')+"</div>" : dash();
-      var tLines = lines.map(function(l){ return l.terminating ? swTag(l.sw) : dash(); });
-      var tCell  = lines.some(function(l){ return l.terminating; })
-        ? "<div style='display:flex;flex-direction:column;gap:3px'>"+tLines.join('')+"</div>" : dash();
-      var ac = la !== r.account
-        ? "<td style='font-weight:600;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap' title='"+r.account.replace(/'/g,"&#39;")+"'>"+r.account+"</td>"
-        : "<td style='color:transparent;font-size:10px;max-width:160px'>"+r.account+"</td>";
-      la = r.account;
-      html += "<tr class='hoverable'>"+ac
-        +"<td style='font-size:11px;color:#9d9d9d'>"+(r.parent||dash())+"</td>"
-        +"<td>"+mktSpan(r.market)+"</td>"
-        +"<td>"+pCell+"</td>"
-        +"<td class='num' style='font-weight:600'>"+currSym()+r.arr_k.toFixed(0)+"k</td>"
-        +"<td>"+sCell+"</td>"
-        +"<td>"+rnCell+"</td>"
-        +"<td>"+tCell+"</td></tr>";
+      (r.sw_lines || []).forEach(function(l) {
+        if (prodRenew[l.sw]) prodRenew[l.sw].total = Math.max(prodRenew[l.sw].total || 0, l.sub_count || 1);
+      });
+
+      var renewHtml = Object.keys(prodRenew).sort().map(function(sw) {
+        var d   = prodRenew[sw];
+        var cls = d.badge === '3M' ? 'py' : 'pg';
+        return "<div style='display:flex;align-items:center;gap:4px;margin-bottom:2px'>"
+          + "<span class='" + cls + "' style='padding:1px 6px;font-size:10px'>" + d.badge + "</span>"
+          + "<span style='font-size:11px;font-weight:600;color:#3c3c3b'>" + esc(sw) + "</span>"
+          + "<span style='font-size:10px;color:#9d9d9d'>" + d.renewing + "/" + d.total + " subs</span>"
+          + "</div>";
+      }).join('');
+
+      var termHtml = '';
+      if (r.flag_terminating) {
+        var tSws = (r.sw_lines || []).filter(function(l) { return l.terminating; }).map(function(l) { return l.sw; });
+        termHtml = "<div style='margin-top:" + (renewHtml ? '5px' : '0') + "'>"
+          + "<div style='display:flex;align-items:center;gap:4px;flex-wrap:wrap'>"
+          + "<span class='pr' style='padding:1px 6px;font-size:10px'>⚠ Terminating</span>"
+          + tSws.map(function(s) {
+              return "<span style='font-size:10px;font-weight:700;color:#c62828'>" + esc(s) + "</span>";
+            }).join("<span style='color:#e0a0a0;font-size:10px'> · </span>")
+          + "</div>"
+          + "</div>";
+      }
+
+      var xsellHtml = r.flag_upsell
+        ? "<div style='margin-top:" + (renewHtml || termHtml ? '4px' : '0') + "'>"
+          + "<span class='pb' style='padding:1px 6px;font-size:10px'>↑ Cross-sell</span></div>"
+        : '';
+
+      var sigsCell = (renewHtml || termHtml || xsellHtml)
+        ? "<div>" + renewHtml + termHtml + xsellHtml + "</div>"
+        : dash();
+
+      // Nearest end date
+      var dates = (r.sw_lines || []).filter(function(l) { return l.end_date; })
+                                    .map(function(l) { return l.end_date; }).sort();
+      var rnCell = dates.length
+        ? "<span style='font-size:12px;color:#6d6d6c'>"+esc(dates[0])+"</span>"
+        : dash();
+
+      // Main row
+      html += "<tr class='expandable"+(isExp ? " expanded-row" : "")+"' data-ekey='"+ekey+"'>"
+        + acctCell
+        + "<td style='vertical-align:top;padding-top:10px'>"+mktDot(r.market)+"</td>"
+        + "<td style='vertical-align:top'>"+prodLines+"</td>"
+        + "<td class='num' style='font-weight:700;vertical-align:top;padding-top:10px'>"
+        +   currSym()+r.arr_k.toFixed(0)+"k"
+        + "</td>"
+        + "<td style='vertical-align:top'>"+sigsCell+"</td>"
+        + "<td style='vertical-align:top;padding-top:10px'>"+rnCell+"</td>"
+        + "<td style='vertical-align:top;padding-top:7px'>"
+        +   "<button class='ch-btn' data-acct='"+esc(r.account)+"' "
+        +     "style='font-size:11px;font-weight:700;color:#288184;cursor:pointer;padding:4px 10px;"
+        +     "border:1px solid #288184;border-radius:5px;background:#fff;white-space:nowrap'>"
+        +     "Client Health →"
+        +   "</button>"
+        + "</td>"
+        + "</tr>";
+
+      // Expand detail row
+      var detailRows = (r.sw_lines || []).map(function(l) {
+        var rb = l.renewal_badge === '3M' ? "<span class='py'>3M</span>"
+               : l.renewal_badge === '6M' ? "<span class='pg'>6M</span>"
+               : dash();
+        var status = l.terminating
+          ? "<span class='pr'>Terminating</span>"
+          : "<span style='font-size:12px;color:#2e7d32;font-weight:600'>Active</span>";
+        var mktCell = GROUP_BY === 'billing' && l.energy_market
+          ? "<td style='padding:5px 14px;border:none;font-size:11px;color:#9d9d9d;white-space:nowrap'>"+esc(l.energy_market)+"</td>"
+          : '';
+        return "<tr style='border-bottom:1px solid rgba(214,232,235,.6)'>"
+          + "<td style='padding:5px 14px 5px 0;border:none'>"+swChip(l.sw)+"</td>"
+          + mktCell
+          + "<td style='padding:5px 14px;border:none;text-align:right;font-weight:700;white-space:nowrap'>"+currSym()+l.arr_k.toFixed(0)+"k</td>"
+          + "<td style='padding:5px 14px;border:none;font-size:12px;color:#6d6d6c;white-space:nowrap'>"+(l.end_date ? esc(l.end_date) : dash())+"</td>"
+          + "<td style='padding:5px 14px;border:none'>"+rb+"</td>"
+          + "<td style='padding:5px 14px;border:none'>"+status+"</td>"
+          + "</tr>";
+      }).join('');
+
+      html += "<tr class='expand-detail"+(isExp ? "" : " hidden")+"'>"
+        + "<td colspan='7'>"
+        + "<div style='font-size:10px;color:#9d9d9d;font-weight:600;text-transform:uppercase;letter-spacing:.08em;margin-bottom:7px'>Subscription detail — click row to collapse</div>"
+        + "<table style='width:auto'>"
+        + "<thead><tr>"
+        + "<th style='padding:3px 14px 5px 0;font-size:10px;color:#9d9d9d;font-weight:600;text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid #d6e8eb;border-radius:0;background:transparent'>Product</th>"
+        + (GROUP_BY === 'billing' ? "<th style='padding:3px 14px 5px;font-size:10px;color:#9d9d9d;font-weight:600;text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid #d6e8eb;background:transparent'>Energy Market</th>" : '')
+        + "<th style='padding:3px 14px 5px;font-size:10px;color:#9d9d9d;font-weight:600;text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid #d6e8eb;text-align:right;background:transparent'>ARR</th>"
+        + "<th style='padding:3px 14px 5px;font-size:10px;color:#9d9d9d;font-weight:600;text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid #d6e8eb;background:transparent'>End date</th>"
+        + "<th style='padding:3px 14px 5px;font-size:10px;color:#9d9d9d;font-weight:600;text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid #d6e8eb;background:transparent'>Renewal</th>"
+        + "<th style='padding:3px 14px 5px;font-size:10px;color:#9d9d9d;font-weight:600;text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid #d6e8eb;background:transparent'>Status</th>"
+        + "</tr></thead>"
+        + "<tbody>"+detailRows+"</tbody>"
+        + "</table>"
+        + "</td></tr>";
     });
   });
-  html += "</tbody><tfoot><tr><td colspan='8'>"+totalRows+" account lines</td></tr></tfoot>";
+
+  var uniqueAcctCount = new Set(rows.map(function(r) { return r.account; })).size;
+  html += "</tbody><tfoot><tr><td colspan='7'>"
+    + totalRows + " subscription lines · " + uniqueAcctCount + " accounts"
+    + "</td></tr></tfoot>";
+
   document.getElementById('client-table').innerHTML = html;
+
+  // Sortable column click handlers (re-attach after innerHTML update)
   document.querySelectorAll('#client-table th.sortable').forEach(function(th) {
-    th.addEventListener('click', function() {
+    th.addEventListener('click', function(e) {
+      e.stopPropagation();
       var col = th.getAttribute('data-col');
       if (SS.col === col) SS.dir *= -1; else { SS.col = col; SS.dir = -1; }
       renderClients();
@@ -634,111 +667,35 @@ function renderClients() {
   });
 }
 
-// ── Focus areas tab ────────────────────────────────────────────────────────
-function renderSignals() {
-  if (!DATA) return;
-  document.getElementById('sig-tip').innerHTML =
-    "<thead><tr><th>Account</th><th>Parent</th><th>Region</th><th>Product</th><th class='num'>ARR at risk</th><th>Reason</th></tr></thead><tbody>"
-    +(DATA.termination_in_progress.length
-      ? DATA.termination_in_progress.map(function(r) {
-          return "<tr><td style='font-weight:600'>"+r.account+"</td>"
-            +"<td style='font-size:11px;color:#9d9d9d'>"+(r.parent||dash())+"</td>"
-            +"<td>"+mktSpan(r.market)+"</td><td>"+swTag(r.sw)+"</td>"
-            +"<td class='num' style='color:#c62828;font-weight:600'>"+(r.arr_k>0?eur(r.arr_k):dash())+"</td>"
-            +"<td style='font-size:11px;color:#6d6d6c'>"+(r.termination_reason||dash())+"</td></tr>";
-        }).join('')
-      : "<tr><td colspan='6' class='empty'>None</td></tr>")
-    + "</tbody>";
+// ── Expand / collapse + Client Health button (event delegation on the table) ──
+document.getElementById('client-table').addEventListener('click', function(e) {
+  var chBtn = e.target.closest('.ch-btn');
+  if (chBtn) { e.stopPropagation(); openClientHealth(chBtn.getAttribute('data-acct')); return; }
+  if (e.target.closest('th')) return;
+  var tr = e.target.closest('tr.expandable');
+  if (!tr) return;
+  var key = tr.getAttribute('data-ekey');
+  if (!key) return;
+  if (EXPANDED.has(key)) EXPANDED.delete(key);
+  else EXPANDED.add(key);
+  renderClients();
+});
 
-  document.getElementById('sig-renewals').innerHTML =
-    "<thead><tr><th>Account</th><th>Parent</th><th>Region</th><th>Product</th><th>Due</th><th class='nowrap'>End date</th><th class='num'>ARR</th><th>Extension?</th></tr></thead><tbody>"
-    +(DATA.renewals_due.length
-      ? DATA.renewals_due.map(function(r) {
-          var db = r.renewal_badge === '3M' ? "<span class='py'>3M</span>" : "<span class='badge-ok'>6M</span>";
-          var ext = r.extension === 'Yes' ? "<span class='badge-ok'>Yes</span>" : "<span class='badge-neu'>No</span>";
-          return "<tr><td style='font-weight:600'>"+r.account+"</td>"
-            +"<td style='font-size:11px;color:#9d9d9d'>"+(r.parent||dash())+"</td>"
-            +"<td>"+mktSpan(r.market)+"</td><td>"+swTag(r.sw||'')+"</td>"
-            +"<td>"+db+"</td><td class='nowrap' style='font-size:12px'>"+(r.end_date||dash())+"</td>"
-            +"<td class='num'>"+eur(r.arr_k)+"</td><td>"+ext+"</td></tr>";
-        }).join('')
-      : "<tr><td colspan='8' class='empty'>None</td></tr>")
-    + "</tbody>";
-
-  var xs = DATA.clients.filter(function(c){ return c.flag_upsell; }).sort(function(a,b){ return b.arr_k-a.arr_k; });
-  document.getElementById('sig-upsell').innerHTML =
-    "<thead><tr><th>Account</th><th>Parent</th><th>Region</th><th>Product</th><th class='num'>ARR</th></tr></thead><tbody>"
-    +(xs.length
-      ? xs.map(function(c){ return "<tr><td style='font-weight:600'>"+c.account+"</td><td style='font-size:11px;color:#9d9d9d'>"+(c.parent||dash())+"</td><td>"+mktSpan(c.market)+"</td><td>"+c.products.map(swTag).join('')+"</td><td class='num'>"+eur(c.arr_k)+"</td></tr>"; }).join('')
-      : "<tr><td colspan='5' class='empty'>None</td></tr>")
-    + "</tbody>";
-}
-
-// ── Client list tab ────────────────────────────────────────────────────────
-function cllFilter(el, mode) {
-  CLLmode = mode;
-  ['cll-all','cll-swonly','cll-nosw'].forEach(function(id){ document.getElementById(id).classList.remove('active'); });
-  el.classList.add('active');
-  renderClientList();
-}
-
-function renderClientList() {
-  if (!DATA) return;
-  var search = document.getElementById('cll-search').value.toLowerCase();
-  var mkt    = document.getElementById('cll-mkt').value;
-  var tier   = document.getElementById('cll-tier').value;
-  var rows   = DATA.client_list.slice();
-  if (search) rows = rows.filter(function(r){ return r.account.toLowerCase().indexOf(search)>=0||(r.parent&&r.parent.toLowerCase().indexOf(search)>=0); });
-  if (mkt  !== 'ALL') rows = rows.filter(function(r){ return r.market === mkt; });
-  if (tier !== 'ALL') rows = rows.filter(function(r){ return r.tier === tier; });
-  if (CLLmode === 'sw')   rows = rows.filter(function(r){ return r.sw_products&&r.sw_products.length>0; });
-  if (CLLmode === 'nosw') rows = rows.filter(function(r){ return !r.sw_products||r.sw_products.length===0; });
-
-  var html = "<thead><tr><th>Account</th><th>Parent</th><th>Region</th><th>Tier</th><th>SW Products</th><th class='num'>SW ARR</th><th class='sep'>Subscriptions</th><th class='num'>Sub ARR</th></tr></thead><tbody>";
-  if (!rows.length) html += "<tr><td colspan='8' class='empty'>No matching accounts</td></tr>";
-  rows.forEach(function(r) {
-    var sw  = r.sw_products&&r.sw_products.length  ? r.sw_products.map(swTag).join('') : "<span style='color:#d0d0d0'>—</span>";
-    var sub = r.sub_products&&r.sub_products.length ? r.sub_products.map(subTag).join('') : "<span style='color:#d0d0d0'>—</span>";
-    var sa  = r.sw_arr_k  > 0 ? eur(r.sw_arr_k)  : "<span style='color:#d0d0d0'>—</span>";
-    var sba = r.sub_arr_k > 0 ? eur(r.sub_arr_k) : "<span style='color:#d0d0d0'>—</span>";
-    html += "<tr class='hoverable'>"
-      +"<td style='font-weight:600;white-space:nowrap'>"+r.account+"</td>"
-      +"<td style='font-size:11px;color:#9d9d9d'>"+(r.parent||dash())+"</td>"
-      +"<td>"+mktSpan(r.market)+"</td>"
-      +"<td style='font-size:11px;color:#9d9d9d'>"+(r.tier||dash())+"</td>"
-      +"<td>"+sw+"</td><td class='num'>"+sa+"</td>"
-      +"<td class='sep'>"+sub+"</td><td class='num'>"+sba+"</td></tr>";
-  });
-  html += "</tbody><tfoot><tr><td colspan='8'>"+rows.length+" accounts</td></tr></tfoot>";
-  document.getElementById('cll-table').innerHTML = html;
-}
-
-// ── Shared helpers ─────────────────────────────────────────────────────────
+// ── Populate product dropdown ─────────────────────────────────────────────
 function populateSelects(regions, swNames) {
-  var regIds = ['arr-mkt','trend-mkt','cl-mkt','cll-mkt'];
-  regIds.forEach(function(id) {
-    var sel = document.getElementById(id);
-    if (!sel) return;
+  var sel = document.getElementById('cl-sw');
+  if (sel) {
     while (sel.options.length > 1) sel.remove(1);
-    regions.forEach(function(r){ var o=document.createElement('option'); o.value=r; o.textContent=r; sel.appendChild(o); });
-  });
-  var swIds = ['arr-sw','cl-sw'];
-  swIds.forEach(function(id) {
-    var sel = document.getElementById(id);
-    if (!sel) return;
-    while (sel.options.length > 1) sel.remove(1);
-    swNames.forEach(function(s){ var o=document.createElement('option'); o.value=s; o.textContent=s; sel.appendChild(o); });
-  });
+    swNames.forEach(function(s) {
+      var o = document.createElement('option'); o.value = s; o.textContent = s; sel.appendChild(o);
+    });
+  }
 }
 
-if (new URLSearchParams(location.search).get('embed') === '1') {
-  document.documentElement.classList.add('embed-mode');
-}
-
-// Mock support
+// ── Mock data (append ?mock to URL for offline testing) ───────────────────
 (function(){
   if (!new URLSearchParams(location.search).has('mock')) return;
-  const INLINE = {"regions":["France","Germany","Italy","Iberia","GBR","Nordics"],"mkt_col":{"France":"#1e40af","Germany":"#7c3aed","Italy":"#059669","Iberia":"#d97706","GBR":"#dc2626","Nordics":"#0891b2"},"arr_as_of":"2026-08","usage_as_of":"TBC","arr_vs_target":[{"market":"France","sw":"Amun","actual_k":210.5,"target_k":245.0,"no_target":false,"client_count":3,"top_clients":[{"name":"EDF","arr_k":110.0},{"name":"TotalEnergies","arr_k":65.0}]},{"market":"Germany","sw":"Amun","actual_k":320.0,"target_k":300.0,"no_target":false,"client_count":2,"top_clients":[{"name":"RWE","arr_k":190.0}]},{"market":"GBR","sw":"Amun","actual_k":280.0,"target_k":260.0,"no_target":false,"client_count":3,"top_clients":[{"name":"SSE","arr_k":120.0},{"name":"National Grid","arr_k":95.0}]},{"market":"Italy","sw":"Amun","actual_k":195.0,"target_k":200.0,"no_target":false,"client_count":2,"top_clients":[{"name":"Enel","arr_k":130.0}]},{"market":"Iberia","sw":"Origin","actual_k":110.0,"target_k":150.0,"no_target":false,"client_count":2,"top_clients":[{"name":"Iberdrola","arr_k":85.0}]},{"market":"Nordics","sw":"Amun","actual_k":175.0,"target_k":190.0,"no_target":false,"client_count":2,"top_clients":[{"name":"Vattenfall","arr_k":120.0}]}],"region_summary":[{"market":"France","arr_k":390.5,"target_k":425.0,"pct":91.9,"above":["Origin"],"below80":[]},{"market":"Germany","arr_k":465.0,"target_k":460.0,"pct":101.1,"above":["Amun"],"below80":[]},{"market":"Italy","arr_k":195.0,"target_k":200.0,"pct":97.5,"above":[],"below80":[]},{"market":"Iberia","arr_k":110.0,"target_k":150.0,"pct":73.3,"above":[],"below80":[{"sw":"Origin","pct":73.3}]},{"market":"GBR","arr_k":280.0,"target_k":260.0,"pct":107.7,"above":["Amun"],"below80":[]},{"market":"Nordics","arr_k":175.0,"target_k":190.0,"pct":92.1,"above":[],"below80":[]}],"arr_trend":[],"clients":[{"account":"EDF","parent":null,"market":"France","sw_lines":[{"sw":"Amun","arr_k":110.0,"terminating":false,"renewal_badge":"5M","end_date":"2027-01-15"}],"arr_k":110.0,"products":["Amun"],"flag_upsell":false,"flag_terminating":false,"flag_renewal":false},{"account":"TotalEnergies","parent":null,"market":"France","sw_lines":[{"sw":"Amun","arr_k":65.0,"terminating":false,"renewal_badge":"2M","end_date":"2026-10-01"},{"sw":"Origin","arr_k":95.0,"terminating":false,"renewal_badge":"2M","end_date":"2026-10-01"}],"arr_k":160.0,"products":["Amun","Origin"],"flag_upsell":false,"flag_terminating":false,"flag_renewal":true},{"account":"RWE","parent":null,"market":"Germany","sw_lines":[{"sw":"Amun","arr_k":190.0,"terminating":false,"renewal_badge":"8M","end_date":"2027-04-30"},{"sw":"Chronos","arr_k":90.0,"terminating":false,"renewal_badge":"8M","end_date":"2027-04-30"}],"arr_k":280.0,"products":["Amun","Chronos"],"flag_upsell":false,"flag_terminating":false,"flag_renewal":false},{"account":"Vattenfall","parent":null,"market":"Nordics","sw_lines":[{"sw":"Amun","arr_k":120.0,"terminating":false,"renewal_badge":"6M","end_date":"2027-02-28"}],"arr_k":120.0,"products":["Amun"],"flag_upsell":true,"flag_terminating":false,"flag_renewal":false},{"account":"National Grid","parent":null,"market":"GBR","sw_lines":[{"sw":"Amun","arr_k":95.0,"terminating":true,"renewal_badge":null,"end_date":"2025-07-31"}],"arr_k":95.0,"products":["Amun"],"flag_upsell":false,"flag_terminating":true,"flag_renewal":false}],"client_list":[{"account":"EDF","parent":null,"market":"France","tier":"Tier 1","sw_products":["Amun"],"sw_arr_k":110.0,"sub_products":["PRMF","Granular Data"],"sub_arr_k":55.0},{"account":"TotalEnergies","parent":null,"market":"France","tier":"Tier 1","sw_products":["Amun","Origin"],"sw_arr_k":160.0,"sub_products":["PRMF"],"sub_arr_k":32.0},{"account":"RWE","parent":null,"market":"Germany","tier":"Tier 1","sw_products":["Amun","Chronos"],"sw_arr_k":280.0,"sub_products":["Grid","PRMF"],"sub_arr_k":48.0},{"account":"Vattenfall","parent":null,"market":"Nordics","tier":"Tier 1","sw_products":["Amun"],"sw_arr_k":120.0,"sub_products":[],"sub_arr_k":0.0},{"account":"National Grid","parent":null,"market":"GBR","tier":"Tier 2","sw_products":["Amun"],"sw_arr_k":95.0,"sub_products":[],"sub_arr_k":0.0}],"dormant_detail":[],"dormant_client_count":0,"termination_in_progress":[{"account":"National Grid","market":"GBR","sw":"Amun","parent":null,"termination_reason":"Budget reallocation","arr_k":95.0}],"renewals_due":[{"account":"TotalEnergies","market":"France","sw":"Amun","end_date":"2026-10-01","arr_k":65.0,"extension":"No","renewal_badge":"2M","parent":null},{"account":"Iberdrola","market":"Iberia","sw":"Origin","end_date":"2026-09-05","arr_k":85.0,"extension":"No","renewal_badge":"1M","parent":null}],"renewals_3m_count":3,"renewals_6m_count":5,"termination_count":1};
+  const INLINE = {"regions":["France","Iberia","Italy"],"mkt_col":{"France":"#1e40af","Iberia":"#854d0e","Italy":"#166534"},"arr_as_of":"2026-08","arr_vs_target":[],"region_summary":[],"arr_trend":[],"clients":[{"account":"EDF","parent":null,"market":"France","sw_lines":[{"sw":"Amun","arr_k":110.0,"terminating":false,"renewal_badge":null,"end_date":"2027-01-15"},{"sw":"Origin","arr_k":78.0,"terminating":false,"renewal_badge":"3M","end_date":"2026-11-01"}],"arr_k":188.0,"products":["Amun","Origin"],"flag_upsell":false,"flag_terminating":false,"flag_renewal":true},{"account":"TotalEnergies","parent":null,"market":"France","sw_lines":[{"sw":"Amun","arr_k":65.0,"terminating":false,"renewal_badge":"3M","end_date":"2026-10-01"},{"sw":"Chronos","arr_k":120.0,"terminating":false,"renewal_badge":"3M","end_date":"2026-10-01"}],"arr_k":185.0,"products":["Amun","Chronos"],"flag_upsell":false,"flag_terminating":false,"flag_renewal":true},{"account":"Iberdrola","parent":null,"market":"Iberia","sw_lines":[{"sw":"Chronos","arr_k":380.0,"terminating":false,"renewal_badge":null,"end_date":"2027-06-30"}],"arr_k":380.0,"products":["Chronos"],"flag_upsell":true,"flag_terminating":false,"flag_renewal":false},{"account":"Endesa","parent":"Enel","market":"Iberia","sw_lines":[{"sw":"Amun","arr_k":45.0,"terminating":true,"renewal_badge":null,"end_date":"2026-09-30"}],"arr_k":45.0,"products":["Amun"],"flag_upsell":false,"flag_terminating":true,"flag_renewal":false},{"account":"Enel","parent":null,"market":"Italy","sw_lines":[{"sw":"Chronos","arr_k":220.0,"terminating":false,"renewal_badge":null,"end_date":"2027-03-31"},{"sw":"Amun","arr_k":55.0,"terminating":false,"renewal_badge":"6M","end_date":"2027-02-28"}],"arr_k":275.0,"products":["Chronos","Amun"],"flag_upsell":false,"flag_terminating":false,"flag_renewal":true}],"client_list":[],"dormant_detail":[],"dormant_client_count":0,"termination_in_progress":[{"account":"Endesa","market":"Iberia","sw":"Amun","parent":"Enel","termination_reason":"Budget cut","arr_k":45.0}],"renewals_due":[],"renewals_3m_count":2,"renewals_6m_count":4,"termination_count":1};
   const _orig = window.fetch;
   window.fetch = function(url, opts) {
     if (!String(url).includes('/api/sw-intelligence')) return _orig.call(this, url, opts);
@@ -746,10 +703,11 @@ if (new URLSearchParams(location.search).get('embed') === '1') {
   };
 })();
 
+// ── Load data from API ────────────────────────────────────────────────────
 async function loadData(currency) {
   const isMock = new URLSearchParams(location.search).has('mock');
-  const curr = currency || 'eur';
-  const url = '/api/sw-intelligence?currency=' + curr;
+  const curr   = currency || 'gbp';
+  const url    = '/api/sw-intelligence?currency=' + curr;
   const isInitial = !currency;
   try {
     const resp = await fetch(url);
@@ -757,22 +715,29 @@ async function loadData(currency) {
     DATA = await resp.json();
     DATA_CACHE[curr] = DATA;
     if (DATA.mkt_col) MKT_COL = DATA.mkt_col;
-    var swNames = [...new Set((DATA.arr_vs_target||[]).map(function(r){ return r.sw; }))].sort();
+    document.getElementById('arr-date').textContent = DATA.arr_as_of || '—';
+    var swNames = [...new Set((DATA.arr_vs_target || []).map(function(r) { return r.sw; }))].sort();
     if (DATA.regions && DATA.regions.length) populateSelects(DATA.regions, swNames);
+    populateRegionPills();
     if (isInitial) {
       document.getElementById('loading').style.display = 'none';
       document.getElementById('main-content').style.display = 'block';
       document.getElementById(isMock ? 'demo-dot' : 'live-dot').style.display = '';
     }
-    var active = document.querySelector('section.active');
-    if (active) showTab(active.id); else renderExec();
-  } catch(e) {
+    renderKPIs();
+    renderClients();
+  } catch (e) {
     if (isInitial) {
       document.getElementById('loading').innerHTML =
-        '<p style="color:#c62828;font-size:13px">Failed to load SW data: '+e.message+'</p>';
+        '<p style="color:#c62828;font-size:13px">Failed to load SW data: ' + e.message + '</p>';
     }
   }
 }
+
+if (new URLSearchParams(location.search).get('embed') === '1') {
+  document.documentElement.classList.add('embed-mode');
+}
+
 loadData();
 </script>
 </body>

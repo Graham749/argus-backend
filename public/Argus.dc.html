@@ -190,11 +190,18 @@ input{font-family:inherit;}
           <!-- Summary View (Risk Status Cards) -->
           <div id="sfSummaryView" style="display:none;">
             <!-- Service Type Filter -->
-            <div id="sfFilterContainer" style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+            <div id="sfFilterContainer" style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center;">
               <button class="sfServiceTypeFilter" data-type="all" style="padding:6px 12px;border-radius:6px;border:1px solid #288184;background:#288184;color:#fff;font-size:11px;font-weight:700;cursor:pointer;">All</button>
               <button class="sfServiceTypeFilter" data-type="Software" data-hidden="true" style="padding:6px 12px;border-radius:6px;border:1px solid #e6e6e5;background:#fff;color:#288184;font-size:11px;font-weight:700;cursor:pointer;display:none;">Software</button>
               <button class="sfServiceTypeFilter" data-type="Subscription Analytics" data-hidden="true" style="padding:6px 12px;border-radius:6px;border:1px solid #e6e6e5;background:#fff;color:#288184;font-size:11px;font-weight:700;cursor:pointer;display:none;">Subscription Analytics</button>
               <button class="sfServiceTypeFilter" data-type="Admin Product" data-hidden="true" style="padding:6px 12px;border-radius:6px;border:1px solid #e6e6e5;background:#fff;color:#288184;font-size:11px;font-weight:700;cursor:pointer;display:none;">Admin Product</button>
+              <span id="sfTotalRevPill" style="display:none;margin-left:4px;padding:4px 12px;border-radius:12px;background:#e8f5e9;color:#2e7d32;font-size:11px;font-weight:700;white-space:nowrap;"></span>
+            </div>
+
+            <!-- Product Sub-filter (shown when Software or Subscription Analytics selected) -->
+            <div id="sfProductFilterContainer" style="display:none;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center;">
+              <span style="font-size:11px;color:#6d6d6c;font-weight:700;min-width:70px;">Product:</span>
+              <div id="sfProductFilters" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
             </div>
 
             <!-- Account Filter (Parent/Child) -->
@@ -1340,6 +1347,19 @@ aside > div:nth-child(2) { transition: opacity 0.2s ease; }
 if (localStorage.getItem('sidebarCollapsed') === 'true') {
   document.body.classList.add('sidebar-collapsed');
 }
+
+// Navigate to requested view when opened in new tab (e.g. from SW Intelligence Client Health button)
+(function() {
+  var initView = localStorage.getItem('argusInitView');
+  if (!initView) return;
+  localStorage.removeItem('argusInitView');
+  var attempts = 0;
+  var t = setInterval(function() {
+    attempts++;
+    if (window.__argus) { clearInterval(t); window.__argus.setV({ view: initView }); }
+    else if (attempts > 100) clearInterval(t);
+  }, 100);
+})();
 
 document.addEventListener('click', function(e) {
   // SF risk card drilldown
@@ -5668,6 +5688,7 @@ class Component extends DCLogic {
   renderSubscriptions(subs){
     this.currentSubscriptions = subs;
     this.currentServiceTypeFilter = 'all';
+    this.currentProductFilter = 'all';
     this.currentAccountFilter = 'all';
     this.setupServiceTypeFilters();
     this.setupAccountFilters();
@@ -5741,9 +5762,84 @@ class Component extends DCLogic {
         newBtn.style.border = '1px solid #288184';
 
         this.currentServiceTypeFilter = newBtn.dataset.type;
+        this.currentProductFilter = 'all';
+        this.setupProductFilters(newBtn.dataset.type);
         this.showSummary();
+        if(['Software','Subscription Analytics'].includes(newBtn.dataset.type)){
+          this.autoExpandAll();
+        }
       });
     });
+  }
+
+  setupProductFilters(serviceType){
+    const container = document.getElementById('sfProductFilterContainer');
+    const filtersDiv = document.getElementById('sfProductFilters');
+    const SHOW_FOR = ['Software', 'Subscription Analytics'];
+    if(!SHOW_FOR.includes(serviceType)){
+      container.style.display = 'none';
+      filtersDiv.innerHTML = '';
+      return;
+    }
+    // Collect distinct products + total ARR per product for this service type
+    const prodArr = {};
+    this.currentSubscriptions
+      .filter(s => s.service_type === serviceType && s.product_category)
+      .forEach(s => {
+        prodArr[s.product_category] = (prodArr[s.product_category] || 0) + (s.arr_gbp || 0);
+      });
+    const products = Object.keys(prodArr).sort();
+    if(!products.length){ container.style.display = 'none'; return; }
+
+    const fmtA = v => v >= 1e6 ? '£'+(v/1e6).toFixed(1)+'m' : '£'+Math.round(v/1000)+'k';
+    const btnStyle = (active) =>
+      `padding:5px 10px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;border:1px solid ${active?'#288184':'#e6e6e5'};background:${active?'#288184':'#fff'};color:${active?'#fff':'#288184'};white-space:nowrap;`;
+
+    filtersDiv.innerHTML =
+      `<button data-prod="all" style="${btnStyle(true)}">All</button>`
+      + products.map(p =>
+          `<button data-prod="${p.replace(/"/g,'&quot;')}" style="${btnStyle(false)}">`
+          + `${p}<span style="opacity:0.7;font-weight:400;margin-left:5px;">· ${fmtA(prodArr[p])}</span>`
+          + `</button>`
+        ).join('');
+
+    container.style.display = 'flex';
+
+    filtersDiv.querySelectorAll('button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        filtersDiv.querySelectorAll('button').forEach(b => { b.style.cssText = btnStyle(false); });
+        btn.style.cssText = btnStyle(true);
+        this.currentProductFilter = btn.dataset.prod;
+        this.showSummary();
+        this.autoExpandAll();
+      });
+    });
+  }
+
+  autoExpandAll(){
+    // Show drilldown table BELOW the summary (timeline stays visible)
+    const allSubs = Object.values(this.currentGroupedSubs || {}).flatMap(g => g.subs || []);
+    if(!allSubs.length) return;
+
+    document.getElementById('sfDetailView').style.display = 'block';
+    document.getElementById('sfDrilldownTitle').textContent = '';
+    window.__sfActiveDrilldown = '_all';
+
+    // Hide back button — user resets by clicking All or a different service type
+    const backBtn = document.getElementById('sfBackButton');
+    if(backBtn) backBtn.style.display = 'none';
+
+    this.currentDrilldownSubs = allSubs;
+    this.currentSortField = 'arr_gbp';
+    this.currentSortDir = -1;
+    this.currentAccountFilter = null;
+
+    const filtersDiv = document.getElementById('sfFilterButtons');
+    const accountFilters = document.getElementById('sfAccountFilters');
+    if(filtersDiv) filtersDiv.innerHTML = '';
+    if(accountFilters) accountFilters.style.display = 'none';
+
+    this.showDetailView();
   }
 
   setupAccountFilters(){
@@ -5832,6 +5928,8 @@ class Component extends DCLogic {
     document.getElementById('sfDetailView').style.display = 'none';
     document.getElementById('sfSummaryView').style.display = 'block';
     window.__sfActiveDrilldown = null;
+    const backBtn = document.getElementById('sfBackButton');
+    if(backBtn) backBtn.style.display = '';
     document.querySelectorAll('#sfCard [data-group]').forEach(function(c) {
       var a = c.querySelector('.drill-arrow'); if (a) a.style.opacity = '0.4';
     });
@@ -5845,10 +5943,21 @@ class Component extends DCLogic {
       filteredSubs = this.currentSubscriptions.filter(s => s.service_type === this.currentServiceTypeFilter);
     }
 
+    // Filter subscriptions by product (sub-filter of service type)
+    if(this.currentProductFilter && this.currentProductFilter !== 'all'){
+      filteredSubs = filteredSubs.filter(s => s.product_category === this.currentProductFilter);
+    }
+
     // Filter subscriptions by account
     if(this.currentAccountFilter && this.currentAccountFilter !== 'all'){
       filteredSubs = filteredSubs.filter(s => s.account_name === this.currentAccountFilter);
     }
+
+    // Total revenue pill — always show next to service type buttons
+    const fmtAp = v => v >= 1e6 ? '£'+(v/1e6).toFixed(1)+'m' : '£'+Math.round(v/1000)+'k';
+    const totalArr = filteredSubs.reduce((s, r) => s + (r.arr_gbp || 0), 0);
+    const pill = document.getElementById('sfTotalRevPill');
+    if(pill){ pill.textContent = fmtAp(totalArr) + ' Total ARR'; pill.style.display = 'inline-block'; }
 
     // Regroup based on filtered subscriptions and store for drilldown
     const groups = this.groupByRenewalDays(filteredSubs);
@@ -6187,22 +6296,30 @@ class Component extends DCLogic {
     setTimeout(function() { window.__sfDrillDebounce = false; }, 50);
 
     // Toggle: clicking the active card collapses the drilldown
-    if (window.__sfActiveDrilldown === group) {
+    if (window.__sfActiveDrilldown === group && group !== '_all') {
       this.showSummary();
       return;
     }
 
     document.getElementById('sfSummaryView').style.display = 'none';
     document.getElementById('sfDetailView').style.display = 'block';
-    document.getElementById('sfDrilldownTitle').textContent = `${group} Subscriptions`;
     window.__sfActiveDrilldown = group;
+    const backBtn = document.getElementById('sfBackButton');
+    if(backBtn) backBtn.style.display = '';
     document.querySelectorAll('#sfCard [data-group]').forEach(function(c) {
       var a = c.querySelector('.drill-arrow');
       if (a) a.style.opacity = c.getAttribute('data-group') === group ? '0' : '0.4';
     });
 
-    const groupData = (this.currentGroupedSubs || this.groupedSubs || {})[group];
-    const allSubs = groupData ? groupData.subs : [];
+    let allSubs;
+    if (group === '_all') {
+      allSubs = Object.values(this.currentGroupedSubs || {}).flatMap(g => g.subs || []);
+      document.getElementById('sfDrilldownTitle').textContent = 'All Subscriptions';
+    } else {
+      const groupData = (this.currentGroupedSubs || this.groupedSubs || {})[group];
+      allSubs = groupData ? groupData.subs : [];
+      document.getElementById('sfDrilldownTitle').textContent = `${group} Subscriptions`;
+    }
 
     this.currentDrilldownSubs = allSubs;
     this.currentSortField = 'arr_gbp';
@@ -7337,7 +7454,7 @@ class Component extends DCLogic {
       goBriefing:(e)=>{e&&e.preventDefault();this.setV({view:'briefing'});},
       goBuildStatus:(e)=>{e&&e.preventDefault();this.setV({view:'buildStatus'});},
       goMdm:(e)=>{e&&e.preventDefault();window.__mdmSearch='';window.__mdmConfFilter=null;window.__mdmExpandedId=null;this.setV({view:'mdm'}); },
-      goSwIntelligence:(e)=>{e&&e.preventDefault();this.setV({view:'swIntelligence'});},
+      goSwIntelligence:(e)=>{e&&e.preventDefault();document.body.classList.add('sidebar-collapsed');localStorage.setItem('sidebarCollapsed','true');this.setV({view:'swIntelligence'});},
       navStyleHealth:navStyle('health'), navStyleFeatures:navStyle('features'), navStyleAssistant:navStyle('assistant'), navStyleBriefing:navStyle('briefing'), navStyleBuildStatus:navStyle('buildStatus'), navStyleMdm:navStyle('mdm'), navStyleSwIntelligence:navStyle('swIntelligence'),
       isHealth:S.view==='health', isFeatures:S.view==='features', isAssistant:S.view==='assistant', isBriefing:S.view==='briefing', isBuildStatus:S.view==='buildStatus', isMdm:S.view==='mdm', isSwIntelligence:S.view==='swIntelligence',
       healthTabsHtml, rangesHtml, healthTabs, ranges, hc,
@@ -7635,7 +7752,7 @@ class Component extends DCLogic {
           const toolbarRow = a.sfAccountName
             ? '<tr style="background:#fafafa;">'
                 +'<td colspan="5" style="padding:8px 14px;text-align:right;">'
-                  +'<button onclick="(function(){var acct=\''+a.sfAccountName.replace(/'/g,"\\'")+'\';window.__argusTargetAccount=acct;try{localStorage.setItem(\'argusHealthAccount\',acct);}catch(e){}window.__argus&&window.__argus.setV({view:\'health\'});window.scrollTo(0,0);})()" style="font-size:12px;font-weight:700;color:#fff;cursor:pointer;display:inline-flex;align-items:center;gap:4px;padding:6px 14px;border:none;border-radius:6px;background:#288184;">→ View Client health card</button>'
+                  +'<button onclick="(function(){var acct=\''+a.sfAccountName.replace(/'/g,"\\'")+'\';try{localStorage.setItem(\'argusHealthAccount\',acct);localStorage.setItem(\'argusInitView\',\'health\');}catch(e){}window.open(\'/\',\'_blank\');})()" style="font-size:12px;font-weight:700;color:#fff;cursor:pointer;display:inline-flex;align-items:center;gap:4px;padding:6px 14px;border:none;border-radius:6px;background:#288184;">→ View Client health card</button>'
                 +'</td>'
               +'</tr>'
             : '';
