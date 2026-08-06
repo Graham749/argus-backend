@@ -139,9 +139,9 @@ tfoot td{font-size:11px;color:#9d9d9d;padding:6px 10px;border-top:1px solid #e6e
   <div class="filter-bar">
     <div style="display:flex;flex:1;min-width:220px;max-width:380px;border:1.5px solid #e6e6e5;border-radius:8px;overflow:hidden;background:#fff;">
       <input type="text" id="cl-search" placeholder="Search account or parent…"
-        onkeydown="if(event.key==='Enter')renderClients()"
+        onkeydown="if(event.key==='Enter'){renderKPIs();renderClients();}"
         style="flex:1;padding:6px 12px;border:none;font-size:13px;font-family:inherit;outline:none;min-width:0;">
-      <button onclick="renderClients()"
+      <button onclick="renderKPIs();renderClients();"
         style="padding:6px 14px;background:#288184;color:#fff;border:none;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;">Search</button>
     </div>
     <select id="cl-sw" onchange="renderClients()"><option value="ALL">All products</option></select>
@@ -374,7 +374,13 @@ function setStage(s) {
 
 function filteredTIP() {
   if (!DATA) return [];
+  var search = (document.getElementById('cl-search') || {}).value || '';
+  search = search.toLowerCase();
   var tip = (DATA.termination_in_progress || []).slice();
+  if (search) tip = tip.filter(function(t) {
+    return (t.account || '').toLowerCase().indexOf(search) >= 0
+        || (t.parent && t.parent.toLowerCase().indexOf(search) >= 0);
+  });
   if (REGION !== 'all') tip = tip.filter(function(t) { return (t.region || '').toLowerCase() === REGION; });
   if (MKT.size > 0) tip = tip.filter(function(t) { return MKT.has(t.market); });
   return tip;
