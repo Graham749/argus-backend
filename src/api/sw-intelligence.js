@@ -35,9 +35,10 @@ function getTargets() {
 function process(rows) {
   const arrF = r => r.arr_gbp || 0;
   const T = getTargets();
-  const TODAY  = new Date();
-  const THREE_M = new Date(TODAY); THREE_M.setMonth(THREE_M.getMonth() + 3);
-  const SIX_M   = new Date(TODAY); SIX_M.setMonth(SIX_M.getMonth() + 6);
+  const TODAY    = new Date();
+  const THREE_M  = new Date(TODAY); THREE_M.setMonth(THREE_M.getMonth() + 3);
+  const SIX_M    = new Date(TODAY); SIX_M.setMonth(SIX_M.getMonth() + 6);
+  const TWO_YR   = new Date(TODAY); TWO_YR.setMonth(TWO_YR.getMonth() + 24);
 
   const active = rows.filter(r => r.stage === 'Active');
   const tip    = rows.filter(r => r.stage === 'Termination in Progress');
@@ -126,8 +127,10 @@ function process(rows) {
       region:  r.region || '',
       billing_market: r.billing_market || '',
       termination_reason: r.termination_reason || null,
-      arr_k: 0,
+      arr_k: 0, tip_arr_k: 0, sub_count: 0,
     };
+    tipCombos[key].tip_arr_k += arrF(r) / 1000;
+    tipCombos[key].sub_count  += 1;
     tipCountMap[key] = (tipCountMap[key] || 0) + 1;
   }
   for (const r of Object.values(tipCombos)) {
@@ -151,8 +154,8 @@ function process(rows) {
     const dateStr = r.end_date || r.renewal_date;
     if (!dateStr || !r.service || !r.market) continue;
     const endDate = new Date(dateStr);
-    if (endDate > SIX_M) continue;
-    const renewal_badge = endDate < TODAY ? 'OVERDUE' : (endDate <= THREE_M ? '3M' : '6M');
+    if (endDate > TWO_YR) continue;
+    const renewal_badge = endDate < TODAY ? 'OVERDUE' : endDate <= THREE_M ? '3M' : endDate <= SIX_M ? '6M' : '12M';
     allRenewals.push({
       account: r.account, market: r.market, billing_market: r.billing_market || '',
       sw: r.service, end_date: dateStr, arr_k: kGbp(arrF(r)),
@@ -174,7 +177,7 @@ function process(rows) {
     });
   }
   allRenewals.sort((a, b) => b.arr_k - a.arr_k);
-  const renewals_due = allRenewals.filter(r => r.renewal_badge !== 'OVERDUE');
+  const renewals_due = allRenewals.filter(r => r.renewal_badge !== 'OVERDUE' && new Date(r.end_date) <= SIX_M);
   const renewals_3m_count = new Set(renewals_due.filter(r => r.renewal_badge === '3M').map(r => r.account)).size;
   const renewals_6m_count = new Set(renewals_due.map(r => r.account)).size;
 
@@ -310,10 +313,11 @@ function process(rows) {
     }
     if (!records[recKey].sw_lines.find(l => l.sw === td.sw)) {
       const rb = renewMap[tipKey];
+      const tipLineArr = Math.round(td.tip_arr_k * 10) / 10;
       records[recKey].sw_lines.push({
         sw:            td.sw,
         energy_market: td.market,
-        arr_k:         0,
+        arr_k:         tipLineArr,
         sub_count:     0,
         tip_count:     tipCountMap[tipKey] || 0,
         renew_count:   renewCountMap[tipKey] || 0,
@@ -321,6 +325,7 @@ function process(rows) {
         renewal_badge: rb ? rb.badge    : null,
         end_date:      rb ? rb.end_date : null,
       });
+      records[recKey].arr_k += td.tip_arr_k;
     }
   }
 
@@ -336,6 +341,7 @@ function process(rows) {
       arr_yoy:            null,
       movement:           'same',
       flag_no_recent_use: false,
+      has_active_subs:    rec.sw_lines.some(l => l.sub_count > 0),
       flag_upsell:        rec.sw_lines.length === 1 && rec.arr_k > 20,
       flag_terminating:   rec.sw_lines.some(l => l.terminating),
       flag_renewal:       rec.sw_lines.some(l => l.renewal_badge),

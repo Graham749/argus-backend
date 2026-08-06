@@ -372,6 +372,14 @@ function setStage(s) {
   renderClients();
 }
 
+function filteredTIP() {
+  if (!DATA) return [];
+  var tip = (DATA.termination_in_progress || []).slice();
+  if (REGION !== 'all') tip = tip.filter(function(t) { return (t.region || '').toLowerCase() === REGION; });
+  if (MKT.size > 0) tip = tip.filter(function(t) { return MKT.has(t.market); });
+  return tip;
+}
+
 function clientHealthBucket(client) {
   var TODAY = new Date(); TODAY.setHours(0,0,0,0);
   var minDays = Infinity;
@@ -382,8 +390,8 @@ function clientHealthBucket(client) {
     if (days < minDays) minDays = days;
   });
   if (minDays === Infinity) return client.flag_terminating ? 'AT_RISK' : 'HEALTHY';
-  if (minDays < 30) return 'AT_RISK';
-  if (minDays < 90) return 'TO_WATCH';
+  if (minDays < 180) return 'AT_RISK';
+  if (minDays < 365) return 'TO_WATCH';
   return 'HEALTHY';
 }
 
@@ -422,12 +430,28 @@ function renderHealthBar() {
     allBtn.style.background = HEALTH === 'all' ? '#3c3c3b' : '#f5f5f5';
     allBtn.style.color      = HEALTH === 'all' ? '#fff'    : '#6d6d6c';
   }
+  // Count at subscription level using sw_lines so totals match sub count
+  var TODAY_H = new Date(); TODAY_H.setHours(0,0,0,0);
+  var subCounts = { AT_RISK: 0, TO_WATCH: 0, HEALTHY: 0 };
+  var subArrs   = { AT_RISK: 0, TO_WATCH: 0, HEALTHY: 0 };
+  ALL_CLIENTS.forEach(function(c) {
+    (c.sw_lines || []).forEach(function(l) {
+      var tipN = l.tip_count || 0;
+      if (tipN > 0) { subCounts.AT_RISK += tipN; subArrs.AT_RISK += (l.arr_k || 0); }
+      var actN = l.sub_count || 0;
+      if (actN > 0) {
+        var days = l.end_date ? Math.floor((new Date(l.end_date) - TODAY_H) / 86400000) : Infinity;
+        var b = days < 180 ? 'AT_RISK' : days < 365 ? 'TO_WATCH' : 'HEALTHY';
+        subCounts[b] += actN; subArrs[b] += (l.arr_k || 0);
+      }
+    });
+  });
+
   DEFS.forEach(function(d) {
     var btn = document.getElementById(d.id);
     if (!btn) return;
-    var bucket = ALL_CLIENTS.filter(function(c) { return clientHealthBucket(c) === d.key; });
-    var cnt = bucket.length;
-    var arr = bucket.reduce(function(s, c) { return s + c.arr_k; }, 0);
+    var cnt = subCounts[d.key] || 0;
+    var arr = subArrs[d.key]  || 0;
     btn.textContent = cnt > 0 ? cnt + ' ' + d.lbl + ' · ' + fmtA(arr) : '0 ' + d.lbl;
     btn.classList.toggle('dim', cnt === 0);
     btn.classList.toggle('sel', HEALTH === d.key);
@@ -468,11 +492,16 @@ function toBillingClients(rows) {
 // ── KPI strip ──────────────────────────────────────────────────────────────
 function renderKPIs() {
   if (!DATA) return;
-  var activeArrK = DATA.active_arr_k || 0;
-  var tipArrK    = DATA.tip_arr_k    || 0;
+  var fc = filteredClients();
+  var ft = filteredTIP();
+
+  var activeArrK = fc.filter(function(c) { return c.has_active_subs; })
+                     .reduce(function(s, c) { return s + c.arr_k; }, 0);
+  var tipArrK    = ft.reduce(function(s, t) { return s + (t.tip_arr_k || 0); }, 0);
   var swArrK     = activeArrK + tipArrK;
   var totalSubs  = DATA.total_sub_count || 0;
-  var tipSubs    = DATA.termination_sub_count || 0;
+  var tipSubs    = ft.reduce(function(s, t) { return s + (t.sub_count || 0); }, 0);
+  var activeAccts = new Set(fc.map(function(c) { return c.account; })).size;
 
   function fmtM(k) {
     var v = toDisp(k);
@@ -481,10 +510,10 @@ function renderKPIs() {
 
   document.getElementById('ch-kpi-row').innerHTML =
     kpi('Software ARR', fmtM(swArrK), 'teal', 'active + termination in progress', '', 'all')
-  + kpi('Active ARR', fmtM(activeArrK), '', DATA.termination_count + ' accounts with active subscriptions', '', 'active')
-  + kpi('TIP ARR', fmtM(tipArrK), tipSubs > 0 ? 'warn' : '',
-        tipSubs > 0 ? tipSubs + ' terminations in progress' : 'none in progress',
-        tipSubs > 0 ? 'color:#c62828' : '', 'tip')
+  + kpi('Active ARR', fmtM(activeArrK), '', activeAccts + ' accounts with active subscriptions', '', 'active')
+  + kpi('TIP ARR', fmtM(tipArrK), tipArrK > 0 ? 'warn' : '',
+        tipSubs + ' terminations in progress',
+        tipArrK > 0 ? 'color:#c62828' : '', 'tip')
   + kpi('Subscriptions', totalSubs, '', renewalSubLine(), '', '');
 }
 
