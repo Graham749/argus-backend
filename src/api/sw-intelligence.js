@@ -265,6 +265,7 @@ function process(rows) {
       account: rec.account, parent: rec.parent,
       market: rec.market, billing_market: rec.billing_market,
       region: '', sw_lines, arr_k: rec.arr_k, products,
+      has_active_subs:  sw_lines.some(l => l.sub_count > 0),
       flag_terminating: sw_lines.some(l => l.terminating),
       flag_renewal:     sw_lines.some(l => l.renewal_badge),
       flag_upsell:      products.length === 1 && rec.arr_k > 20,
