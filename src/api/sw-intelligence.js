@@ -398,29 +398,23 @@ async function handler(req, res) {
     const rows = await query(`
       SELECT
         sub.subscription_id,
-        COALESCE(par.account_name, sub.account_name)        AS top_account,
-        sub.account_name                                     AS account,
-        COALESCE(sub.energy_market, '')                      AS market,
-        COALESCE(sub.energy_region, '')                      AS region,
-        COALESCE(acc.tier, '')                               AS tier,
+        COALESCE(sub.top_account, sub.account_name)          AS top_account,
+        sub.account_name                                      AS account,
+        COALESCE(sub.energy_market, '')                       AS market,
+        COALESCE(sub.energy_region, '')                       AS region,
+        COALESCE(sub.tier, '')                                AS tier,
         sub.product_name,
-        COALESCE(sub.Service__c, '')                         AS service,
-        sub.status                                           AS stage,
+        COALESCE(sub.Service__c, '')                          AS service,
+        sub.status                                            AS stage,
         sub.currency,
-        CAST(sub.arr     AS float)                           AS arr_native,
-        CAST(sub.arr_gbp AS float)                           AS arr_gbp,
-        COALESCE(bm.billing_market, '')                      AS billing_market,
-        CONVERT(varchar(10), sub.subscription_end_date, 120) AS end_date,
-        CONVERT(varchar(10), sub.renewal_date,          120) AS renewal_date,
-        NULL AS termination_reason,
-        NULL AS contract_extension_negotiated
-      FROM dbo.gold_sf_subscriptions          sub
-      LEFT JOIN dbo.gold_sf_customer_accounts acc ON acc.account_id   = sub.account_id
-      LEFT JOIN dbo.gold_sf_customer_accounts par ON par.account_id   = acc.parent_account_id
-      LEFT JOIN (
-        SELECT DISTINCT subscription_id, market AS billing_market
-        FROM dbo.gold_sf_sw_subscriptions
-      ) bm ON bm.subscription_id = sub.subscription_id
+        CAST(sub.arr     AS float)                            AS arr_native,
+        CAST(sub.arr_gbp AS float)                            AS arr_gbp,
+        COALESCE(sub.market, '')                              AS billing_market,
+        CONVERT(varchar(10), sub.subscription_end_date, 120)  AS end_date,
+        CONVERT(varchar(10), sub.renewal_date,          120)  AS renewal_date,
+        sub.termination_reason,
+        sub.contract_extension_negotiated
+      FROM dbo.gold_sf_subscriptions sub
       WHERE sub.Service_Type__c = 'Software'
         AND sub.status IN ('Active', 'Termination in Progress')
         AND COALESCE(sub.is_deleted, 0) = 0
