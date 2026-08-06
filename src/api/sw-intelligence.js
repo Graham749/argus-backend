@@ -154,8 +154,8 @@ function process(rows) {
     if (endDate > SIX_M) continue;
     const renewal_badge = endDate < TODAY ? 'OVERDUE' : (endDate <= THREE_M ? '3M' : '6M');
     allRenewals.push({
-      account: r.account, market: r.market, sw: r.service,
-      end_date: dateStr, arr_k: kGbp(arrF(r)),
+      account: r.account, market: r.market, billing_market: r.billing_market || '',
+      sw: r.service, end_date: dateStr, arr_k: kGbp(arrF(r)),
       extension: 'No', renewal_badge,
       parent: r.top_account !== r.account ? r.top_account : null,
     });
@@ -165,10 +165,10 @@ function process(rows) {
     const dateStr = r.end_date || r.renewal_date;
     if (!dateStr || !r.service || !r.market) continue;
     const endDate = new Date(dateStr);
-    if (endDate >= TODAY) continue; // only past-due TIP rows
+    if (endDate >= TODAY) continue;
     allRenewals.push({
-      account: r.account, market: r.market, sw: r.service,
-      end_date: dateStr, arr_k: kGbp(arrF(r)),
+      account: r.account, market: r.market, billing_market: r.billing_market || '',
+      sw: r.service, end_date: dateStr, arr_k: kGbp(arrF(r)),
       extension: 'No', renewal_badge: 'OVERDUE',
       parent: r.top_account !== r.account ? r.top_account : null,
     });
@@ -185,6 +185,88 @@ function process(rows) {
     renewMap[rk] = { badge: r.renewal_badge, end_date: r.end_date };
     renewCountMap[rk] = (renewCountMap[rk] || 0) + 1;
   });
+
+  // ── Billing maps (keyed by account||billing_market||sw) ───────────────────
+  const billingRenewMap = {}, billingRenewCountMap = {};
+  allRenewals.forEach(r => {
+    if (!r.billing_market) return;
+    const rk = `${r.account}||${r.billing_market}||${r.sw}`;
+    billingRenewMap[rk] = { badge: r.renewal_badge, end_date: r.end_date };
+    billingRenewCountMap[rk] = (billingRenewCountMap[rk] || 0) + 1;
+  });
+
+  const billingTipCountMap2 = {}, billingTipSet2 = new Set();
+  const billingTipParentMap = {};
+  for (const r of tip) {
+    if (!r.service || !r.billing_market) continue;
+    const key = `${r.account}||${r.billing_market}||${r.service}`;
+    billingTipCountMap2[key] = (billingTipCountMap2[key] || 0) + 1;
+    billingTipSet2.add(key);
+    if (!billingTipParentMap[`${r.account}||${r.billing_market}`])
+      billingTipParentMap[`${r.account}||${r.billing_market}`] =
+        r.top_account !== r.account ? r.top_account : null;
+  }
+
+  // ── Billing clients (all active SW subs, including null-energy-market) ────
+  const billingRecs = {};
+  for (const r of active) {
+    if (!r.service || !r.billing_market) continue;
+    const recKey = `${r.account}||${r.billing_market}`;
+    if (!billingRecs[recKey]) billingRecs[recKey] = {
+      account: r.account, parent: r.top_account !== r.account ? r.top_account : null,
+      market: r.billing_market, billing_market: r.billing_market,
+      sw_lines: {}, arr_k: 0,
+    };
+    const sw = r.service;
+    const bKey = `${r.account}||${r.billing_market}||${sw}`;
+    if (!billingRecs[recKey].sw_lines[sw]) billingRecs[recKey].sw_lines[sw] = {
+      sw, arr_k: 0, sub_count: 0,
+      tip_count:     billingTipCountMap2[bKey] || 0,
+      renew_count:   billingRenewCountMap[bKey] || 0,
+      terminating:   billingTipSet2.has(bKey),
+      renewal_badge: billingRenewMap[bKey] ? billingRenewMap[bKey].badge : null,
+      end_date:      billingRenewMap[bKey] ? billingRenewMap[bKey].end_date : null,
+    };
+    billingRecs[recKey].sw_lines[sw].arr_k += arrF(r) / 1000;
+    billingRecs[recKey].sw_lines[sw].sub_count += 1;
+    billingRecs[recKey].arr_k += arrF(r) / 1000;
+  }
+  // Inject TIP-only billing sw_lines
+  for (const bKey of billingTipSet2) {
+    const parts = bKey.split('||');
+    const [acct, bMkt, sw] = parts;
+    const recKey = `${acct}||${bMkt}`;
+    if (!billingRecs[recKey]) billingRecs[recKey] = {
+      account: acct, parent: billingTipParentMap[recKey] || null,
+      market: bMkt, billing_market: bMkt,
+      sw_lines: {}, arr_k: 0,
+    };
+    if (!billingRecs[recKey].sw_lines[sw]) {
+      const rb = billingRenewMap[bKey];
+      billingRecs[recKey].sw_lines[sw] = {
+        sw, arr_k: 0, sub_count: 0,
+        tip_count:     billingTipCountMap2[bKey] || 0,
+        renew_count:   billingRenewCountMap[bKey] || 0,
+        terminating:   true,
+        renewal_badge: rb ? rb.badge : null,
+        end_date:      rb ? rb.end_date : null,
+      };
+    }
+  }
+  const billing_clients = Object.values(billingRecs).map(rec => {
+    const sw_lines = Object.values(rec.sw_lines)
+      .sort((a, b) => SW_ORDER.indexOf(a.sw) - SW_ORDER.indexOf(b.sw));
+    rec.arr_k = Math.round(rec.arr_k * 10) / 10;
+    const products = sw_lines.map(l => l.sw);
+    return {
+      account: rec.account, parent: rec.parent,
+      market: rec.market, billing_market: rec.billing_market,
+      region: '', sw_lines, arr_k: rec.arr_k, products,
+      flag_terminating: sw_lines.some(l => l.terminating),
+      flag_renewal:     sw_lines.some(l => l.renewal_badge),
+      flag_upsell:      products.length === 1 && rec.arr_k > 20,
+    };
+  }).sort((a, b) => b.arr_k - a.arr_k);
 
   // ── Client matrix (Account × Energy Market) ───────────────────────────────
   const records = {};
@@ -302,6 +384,7 @@ function process(rows) {
     renewals_6m_count,
     termination_count,
     termination_sub_count,
+    billing_clients,
   };
 }
 

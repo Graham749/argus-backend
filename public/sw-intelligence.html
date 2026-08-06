@@ -184,6 +184,26 @@ tfoot td{font-size:11px;color:#9d9d9d;padding:6px 10px;border-top:1px solid #e6e
 </main>
 
 <script>
+const BILLING_REGION_MAP = {
+  // EMEA
+  'Austria':'EMEA','Baltics':'EMEA','Belgium':'EMEA','Bulgaria':'EMEA','Croatia':'EMEA',
+  'Czechia':'EMEA','France':'EMEA','Germany':'EMEA','Great Britain':'EMEA','Greece':'EMEA',
+  'Hungary':'EMEA','Iberia':'EMEA','Ireland':'EMEA','Italy':'EMEA','Netherlands':'EMEA',
+  'Nordics':'EMEA','Pan-European':'EMEA','Poland':'EMEA','Romania':'EMEA','Serbia':'EMEA',
+  'Slovakia':'EMEA','Slovenia':'EMEA','South Africa':'EMEA','Switzerland':'EMEA',
+  'Western Balkans':'EMEA',
+  // APAC
+  'Australia NEM':'APAC','Australia WEM':'APAC','India':'APAC','Japan':'APAC',
+  'Philippines':'APAC','Singapore/ Indonesia/ Malaysia (SIM)':'APAC','South Korea':'APAC',
+  // NORAM
+  'Alberta':'NORAM','CAISO':'NORAM','ERCOT':'NORAM','ISO-NE':'NORAM','MISO':'NORAM',
+  'NYISO':'NORAM','Ontario':'NORAM','PJM':'NORAM','SERC':'NORAM','SPP':'NORAM','WECC':'NORAM',
+  // LATAM
+  'Brazil':'LATAM','Chile':'LATAM','Colombia':'LATAM','Mexico':'LATAM','Peru':'LATAM',
+  // Global
+  'Global':'Global',
+};
+
 let DATA = null, CURR = 'gbp';
 const DATA_CACHE = {}, EXPANDED = new Set();
 let FP = 'ALL', SS = { col: 'arr_k', dir: -1 };
@@ -271,11 +291,11 @@ function populateMktPills() {
   if (!DATA || REGION === 'all') { bar.style.display = 'none'; return; }
   var mkts, label;
   if (GROUP_BY === 'billing') {
-    var bSet = new Set();
-    DATA.clients.forEach(function(r) {
-      if ((r.region || '').toLowerCase() === REGION && r.billing_market) bSet.add(r.billing_market);
-    });
-    mkts = [...bSet].sort();
+    // Use billing_clients billing_market values for the selected billing region
+    var dataMarkets = new Set((DATA.billing_clients || []).map(function(r) { return r.billing_market; }));
+    mkts = Object.keys(BILLING_REGION_MAP).filter(function(m) {
+      return (BILLING_REGION_MAP[m] || '').toLowerCase() === REGION && dataMarkets.has(m);
+    }).sort();
     label = 'Territory:';
   } else {
     var rm = DATA.region_map || {};
@@ -295,8 +315,18 @@ function populateMktPills() {
 function populateRegionPills() {
   var bar = document.getElementById('region-bar');
   if (!DATA) return;
-  var rm = DATA.region_map || {};
-  var regions = [...new Set(Object.values(rm).filter(Boolean))].sort();
+  var regions;
+  if (GROUP_BY === 'billing') {
+    var bSet = new Set();
+    (DATA.billing_clients || []).forEach(function(r) {
+      var br = BILLING_REGION_MAP[r.billing_market];
+      if (br) bSet.add(br);
+    });
+    regions = [...bSet].sort();
+  } else {
+    var rm = DATA.region_map || {};
+    regions = [...new Set(Object.values(rm).filter(Boolean))].sort();
+  }
   var html = '<span class="filter-label">Region:</span>'
     + '<div class="pill active" data-region="all" onclick="setRegion(this,\'all\')">All Markets</div>'
     + regions.map(function(r) {
@@ -321,10 +351,7 @@ function setGroupBy(el, gb) {
   el.classList.add('active');
   var mb = document.getElementById('mkt-bar');
   if (mb) mb.style.display = 'none';
-  // Reset region pills
-  document.querySelectorAll('#region-bar .pill').forEach(function(p) {
-    p.classList.toggle('active', p.getAttribute('data-region') === 'all');
-  });
+  populateRegionPills(); // rebuild region pills for new mode (energy_region vs billing_region)
   renderKPIs();
   renderClients();
 }
@@ -355,12 +382,18 @@ function setHealth(key) {
 function renderHealthBar() {
   if (!DATA) return;
   // Apply region/market filter but NOT health filter (bar shows full distribution in current scope)
-  var clients = DATA.clients.slice();
-  if (REGION !== 'all') clients = clients.filter(function(r) { return (r.region || '').toLowerCase() === REGION; });
-  if (GROUP_BY === 'energy' && MKT.size > 0) clients = clients.filter(function(r) { return MKT.has(r.market); });
-  if (GROUP_BY === 'billing') clients = toBillingClients(clients);
-  if (GROUP_BY === 'billing' && MKT.size > 0) clients = clients.filter(function(r) { return MKT.has(r.market); });
-  var ALL_CLIENTS = clients;
+  var ALL_CLIENTS;
+  if (GROUP_BY === 'billing') {
+    ALL_CLIENTS = (DATA.billing_clients || []).slice();
+    if (REGION !== 'all') ALL_CLIENTS = ALL_CLIENTS.filter(function(r) {
+      return (BILLING_REGION_MAP[r.billing_market] || '').toLowerCase() === REGION;
+    });
+    if (MKT.size > 0) ALL_CLIENTS = ALL_CLIENTS.filter(function(r) { return MKT.has(r.billing_market); });
+  } else {
+    ALL_CLIENTS = DATA.clients.slice();
+    if (REGION !== 'all') ALL_CLIENTS = ALL_CLIENTS.filter(function(r) { return (r.region || '').toLowerCase() === REGION; });
+    if (MKT.size > 0) ALL_CLIENTS = ALL_CLIENTS.filter(function(r) { return MKT.has(r.market); });
+  }
   var fmtA = function(v) { return v >= 1000 ? currSym()+(v/1000).toFixed(1)+'m' : currSym()+Math.round(v)+'k'; };
   var DEFS = [
     { key:'OVERDUE',  id:'hp-OVERDUE',  lbl:'Overdue'  },
@@ -454,19 +487,20 @@ function filteredClients() {
   var search = (document.getElementById('cl-search') || {}).value || '';
   search = search.toLowerCase();
   var sw = (document.getElementById('cl-sw') || {}).value || 'ALL';
-  var rows = DATA.clients.slice();
-
-  // Region filter — applied before billing re-aggregation (both modes use r.region)
-  if (REGION !== 'all') rows = rows.filter(function(r) { return (r.region || '').toLowerCase() === REGION; });
-
-  // Energy market sub-filter (energy mode only)
-  if (GROUP_BY === 'energy' && MKT.size > 0) rows = rows.filter(function(r) { return MKT.has(r.market); });
-
-  // Re-aggregate into billing-region view if needed
-  if (GROUP_BY === 'billing') rows = toBillingClients(rows);
-
-  // Billing market sub-filter (billing mode — after aggregation, market = billing_market)
-  if (GROUP_BY === 'billing' && MKT.size > 0) rows = rows.filter(function(r) { return MKT.has(r.market); });
+  var rows;
+  if (GROUP_BY === 'billing') {
+    // Billing mode: use pre-built billing_clients (includes null-energy-market subs like SIM)
+    rows = (DATA.billing_clients || []).slice();
+    if (REGION !== 'all') rows = rows.filter(function(r) {
+      return (BILLING_REGION_MAP[r.billing_market] || '').toLowerCase() === REGION;
+    });
+    if (MKT.size > 0) rows = rows.filter(function(r) { return MKT.has(r.billing_market); });
+  } else {
+    // Energy mode: filter by energy_region, then energy_market
+    rows = DATA.clients.slice();
+    if (REGION !== 'all') rows = rows.filter(function(r) { return (r.region || '').toLowerCase() === REGION; });
+    if (MKT.size > 0) rows = rows.filter(function(r) { return MKT.has(r.market); });
+  }
 
   // Account search, product, signal filters
   if (search) rows = rows.filter(function(r) {
