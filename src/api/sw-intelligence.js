@@ -123,6 +123,8 @@ function process(rows) {
     if (!tipCombos[key]) tipCombos[key] = {
       account: r.account, market: r.market, sw: r.service,
       parent:  r.top_account !== r.account ? r.top_account : null,
+      region:  r.region || '',
+      billing_market: r.billing_market || '',
       termination_reason: r.termination_reason || null,
       arr_k: 0,
     };
@@ -210,6 +212,34 @@ function process(rows) {
       end_date:      rb ? rb.end_date : null,
     });
     records[key].arr_k += r.arr / 1000;
+  }
+
+  // Inject TIP-only sw_lines — accounts/products with no Active subscription
+  // won't have a record or sw_line, making their TIP subs invisible to the frontend
+  for (const [tipKey, td] of Object.entries(tipCombos)) {
+    const recKey = `${td.account}||${td.market}`;
+    if (!records[recKey]) {
+      records[recKey] = {
+        account: td.account, parent: td.parent,
+        market:  td.market,  region: td.region,
+        billing_market: td.billing_market,
+        sw_lines: [], arr_k: 0,
+      };
+    }
+    if (!records[recKey].sw_lines.find(l => l.sw === td.sw)) {
+      const rb = renewMap[tipKey];
+      records[recKey].sw_lines.push({
+        sw:            td.sw,
+        energy_market: td.market,
+        arr_k:         0,
+        sub_count:     0,
+        tip_count:     tipCountMap[tipKey] || 0,
+        renew_count:   renewCountMap[tipKey] || 0,
+        terminating:   true,
+        renewal_badge: rb ? rb.badge    : null,
+        end_date:      rb ? rb.end_date : null,
+      });
+    }
   }
 
   const clients = Object.values(records).map(rec => {
