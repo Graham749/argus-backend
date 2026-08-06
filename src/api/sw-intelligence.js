@@ -418,9 +418,9 @@ async function handler(req, res) {
       LEFT JOIN dbo.gold_sf_customer_accounts acc ON acc.account_id   = sub.account_id
       LEFT JOIN dbo.gold_sf_customer_accounts par ON par.account_id   = acc.parent_account_id
       LEFT JOIN (
-        SELECT DISTINCT account, market AS billing_market
+        SELECT DISTINCT subscription_id, market AS billing_market
         FROM dbo.gold_sf_sw_subscriptions
-      ) bm ON bm.account = sub.account_name
+      ) bm ON bm.subscription_id = sub.subscription_id
       WHERE sub.Service_Type__c = 'Software'
         AND sub.status IN ('Active', 'Termination in Progress')
         AND COALESCE(sub.is_deleted, 0) = 0

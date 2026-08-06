@@ -185,23 +185,21 @@ tfoot td{font-size:11px;color:#9d9d9d;padding:6px 10px;border-top:1px solid #e6e
 
 <script>
 const BILLING_REGION_MAP = {
-  // EMEA
-  'Austria':'EMEA','Baltics':'EMEA','Belgium':'EMEA','Bulgaria':'EMEA','Croatia':'EMEA',
-  'Czechia':'EMEA','France':'EMEA','Germany':'EMEA','Great Britain':'EMEA','Greece':'EMEA',
-  'Hungary':'EMEA','Iberia':'EMEA','Ireland':'EMEA','Italy':'EMEA','Netherlands':'EMEA',
-  'Nordics':'EMEA','Pan-European':'EMEA','Poland':'EMEA','Romania':'EMEA','Serbia':'EMEA',
-  'Slovakia':'EMEA','Slovenia':'EMEA','South Africa':'EMEA','Switzerland':'EMEA',
-  'Western Balkans':'EMEA',
+  // EMEA — exact values from gold_sf_sw_subscriptions.market
+  'Africa':'EMEA','Baltics':'EMEA','Belgium':'EMEA','Bulgaria':'EMEA',
+  'Czechia and Slovakia':'EMEA','Denmark':'EMEA','Finland':'EMEA','France':'EMEA',
+  'Germany':'EMEA','Great Britain':'EMEA','Iberia':'EMEA','Ireland':'EMEA',
+  'Italy':'EMEA','Lithuania':'EMEA','Netherlands':'EMEA','Nordics':'EMEA',
+  'Norway':'EMEA','Poland':'EMEA','Romania':'EMEA','South East Europe':'EMEA',
+  'Switzerland & Austria':'EMEA',
   // APAC
-  'Australia NEM':'APAC','Australia WEM':'APAC','India':'APAC','Japan':'APAC',
-  'Philippines':'APAC','Singapore/ Indonesia/ Malaysia (SIM)':'APAC','South Korea':'APAC',
+  'Australia':'APAC','China':'APAC','India':'APAC','Japan':'APAC',
+  'Philippines':'APAC','South Korea':'APAC',
   // NORAM
-  'Alberta':'NORAM','CAISO':'NORAM','ERCOT':'NORAM','ISO-NE':'NORAM','MISO':'NORAM',
-  'NYISO':'NORAM','Ontario':'NORAM','PJM':'NORAM','SERC':'NORAM','SPP':'NORAM','WECC':'NORAM',
+  'Alberta (AIES)':'NORAM','CAISO':'NORAM','ERCOT':'NORAM','New York':'NORAM',
+  'Other North America':'NORAM','PJM':'NORAM','WECC':'NORAM',
   // LATAM
-  'Brazil':'LATAM','Chile':'LATAM','Colombia':'LATAM','Mexico':'LATAM','Peru':'LATAM',
-  // Global
-  'Global':'Global',
+  'Brazil':'LATAM','Chile':'LATAM','Mexico':'LATAM',
 };
 
 let DATA = null, CURR = 'gbp';
