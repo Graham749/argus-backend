@@ -395,7 +395,8 @@ async function handler(req, res) {
       return res.json(CACHE[cacheKey]);
     }
 
-    const rows = await query(`
+    const [rows, fxRows] = await Promise.all([
+      query(`
       SELECT
         sub.subscription_id,
         COALESCE(sub.top_account, sub.account_name)          AS top_account,
@@ -418,9 +419,15 @@ async function handler(req, res) {
       WHERE sub.Service_Type__c = 'Software'
         AND sub.status IN ('Active', 'Termination in Progress')
         AND COALESCE(sub.is_deleted, 0) = 0
-    `);
+    `),
+      query(`SELECT currency_iso_code, CAST(1.0 / gbp_rate AS float) AS gbp_to_ccy FROM dbo.v_silver_lookup_fxrates`),
+    ]);
 
-    const data = process(rows);
+    // fx_rates: GBP→currency multipliers for client-side display conversion
+    const fx_rates = {};
+    fxRows.forEach(r => { fx_rates[r.currency_iso_code] = Math.round(r.gbp_to_ccy * 10000000) / 10000000; });
+
+    const data = { ...process(rows), fx_rates };
     CACHE[cacheKey]    = data;
     CACHE_TS[cacheKey] = Date.now();
     res.json(data);

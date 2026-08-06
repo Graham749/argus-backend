@@ -108,10 +108,7 @@ tfoot td{font-size:11px;color:#9d9d9d;padding:6px 10px;border-top:1px solid #e6e
   <div class="nav-tabs">
     <div class="nav-tab">Region Health</div>
     <div style="margin-left:auto;display:flex;align-items:center;gap:10px;padding:0 14px;flex-shrink:0">
-      <div class="toggle-group" id="curr-toggle">
-        <div class="toggle-btn" data-curr="eur" onclick="setCurr('eur')">€ EUR</div>
-        <div class="toggle-btn active" data-curr="gbp" onclick="setCurr('gbp')">£ GBP</div>
-      </div>
+      <div id="curr-bar" style="display:flex;gap:4px;flex-wrap:wrap;align-items:center"></div>
       <span id="live-dot" style="display:none;font-size:10px;font-weight:700;letter-spacing:.06em;color:#2e7d32;white-space:nowrap">● LIVE</span>
       <span id="demo-dot" style="display:none;font-size:10px;font-weight:700;letter-spacing:.06em;color:#e65100;white-space:nowrap">● DEMO</span>
     </div>
@@ -202,8 +199,13 @@ const BILLING_REGION_MAP = {
   'Brazil':'LATAM','Chile':'LATAM','Mexico':'LATAM',
 };
 
-let DATA = null, CURR = 'gbp';
-const DATA_CACHE = {}, EXPANDED = new Set();
+let DATA = null, CURR = 'GBP', FX_RATES = {};
+const EXPANDED = new Set();
+const CURR_SYMBOLS = {
+  AUD:'A$', BRL:'R$', CAD:'C$', CLP:'CL$', EUR:'€', GBP:'£',
+  INR:'₹', JPY:'¥', MXN:'MX$', PLN:'zł', SEK:'kr', SGD:'S$', USD:'$', ZAR:'R',
+};
+const CURR_ORDER = ['GBP','EUR','USD','AUD','CAD','SEK','NOK','PLN','JPY','BRL','CLP','INR','MXN','SGD','ZAR'];
 let FP = 'ALL', SS = { col: 'arr_k', dir: -1 };
 let MKT_COL = {};
 let REGION = 'all', MKT = new Set(), GROUP_BY = 'energy';
@@ -217,20 +219,28 @@ const SW_COLORS = {
   Solaris: { bg:'#fce4ec', fg:'#880e4f' },
 };
 
-function currSym() { return CURR === 'gbp' ? '£' : '€'; }
+function currSym() { return CURR_SYMBOLS[CURR] || CURR; }
+
+function toDisp(arr_k) { return arr_k * (FX_RATES[CURR] || 1); }
+
+function renderCurrBar() {
+  var bar = document.getElementById('curr-bar');
+  if (!bar) return;
+  var available = CURR_ORDER.filter(function(c) { return FX_RATES[c] !== undefined; });
+  bar.innerHTML = available.map(function(c) {
+    var sym = CURR_SYMBOLS[c] || c;
+    var active = c === CURR ? 'background:#3c3c3b;color:#fff;' : 'background:#fff;color:#6d6d6c;';
+    return '<div onclick="setCurr(\'' + c + '\')" style="' + active +
+      'padding:4px 8px;font-size:11px;font-weight:600;border:1px solid #e6e6e5;border-radius:4px;cursor:pointer;white-space:nowrap">' +
+      sym + ' ' + c + '</div>';
+  }).join('');
+}
 
 function setCurr(c) {
   CURR = c;
-  document.querySelectorAll('#curr-toggle .toggle-btn').forEach(function(b) {
-    b.classList.toggle('active', b.dataset.curr === c);
-  });
-  if (DATA_CACHE[c]) {
-    DATA = DATA_CACHE[c];
-    renderKPIs();
-    renderClients();
-  } else {
-    loadData(c);
-  }
+  renderCurrBar();
+  renderKPIs();
+  renderClients();
 }
 
 function esc(s) {
@@ -238,7 +248,10 @@ function esc(s) {
   return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/'/g,'&#39;').replace(/"/g,'&quot;');
 }
 function dash() { return "<span style='color:#d0d0d0'>—</span>"; }
-function arrFmt(k) { return currSym() + Math.round(k).toLocaleString() + 'k'; }
+function arrFmt(k) {
+  var v = toDisp(k);
+  return currSym() + (v >= 1000 ? (v/1000).toFixed(1) + 'm' : Math.round(v).toLocaleString() + 'k');
+}
 
 function mktDot(m) {
   var c = MKT_COL[m] || '#288184';
@@ -392,7 +405,7 @@ function renderHealthBar() {
     if (REGION !== 'all') ALL_CLIENTS = ALL_CLIENTS.filter(function(r) { return (r.region || '').toLowerCase() === REGION; });
     if (MKT.size > 0) ALL_CLIENTS = ALL_CLIENTS.filter(function(r) { return MKT.has(r.market); });
   }
-  var fmtA = function(v) { return v >= 1000 ? currSym()+(v/1000).toFixed(1)+'m' : currSym()+Math.round(v)+'k'; };
+  var fmtA = function(v) { var d = toDisp(v); return d >= 1000 ? currSym()+(d/1000).toFixed(1)+'m' : currSym()+Math.round(d)+'k'; };
   var DEFS = [
     { key:'OVERDUE',  id:'hp-OVERDUE',  lbl:'Overdue'  },
     { key:'AT_RISK',  id:'hp-AT_RISK',  lbl:'At Risk'  },
@@ -464,9 +477,9 @@ function renderKPIs() {
 
   document.getElementById('ch-kpi-row').innerHTML =
     kpi('SW Clients', uniqueAccts, '', 'unique accounts active', '')
-  + kpi('SW ARR', currSym() + Math.round(totalArr).toLocaleString() + 'k', 'teal', 'active subscriptions', '')
+  + kpi('SW ARR', currSym() + Math.round(toDisp(totalArr)).toLocaleString() + 'k', 'teal', 'active subscriptions', '')
   + kpi('Terminations', tipSubCount, 'warn',
-        tipSubCount > 0 ? currSym() + Math.round(tipArr) + 'k ARR at risk' : 'none in progress',
+        tipSubCount > 0 ? currSym() + Math.round(toDisp(tipArr)) + 'k ARR at risk' : 'none in progress',
         tipSubCount > 0 ? 'color:#c62828' : '')
   + kpi('Cross-sell', xsell, 'blue', 'single product &gt;' + currSym() + '20k', '');
 }
@@ -567,7 +580,7 @@ function renderClients() {
           + swChip(l.sw)
           + cntPill
           + "<span style='font-size:12px;color:#6d6d6c;font-weight:600'>"
-          + currSym() + l.arr_k.toFixed(0) + "k</span>"
+          + currSym() + toDisp(l.arr_k).toFixed(0) + "k</span>"
           + (l.terminating ? "<span style='font-size:10px;color:#c62828;font-weight:700'>●</span>" : "")
           + "</div>";
       }).join('');
@@ -629,7 +642,7 @@ function renderClients() {
         + "<td style='vertical-align:top;padding-top:10px'>"+mktDot(r.market)+"</td>"
         + "<td style='vertical-align:top'>"+prodLines+"</td>"
         + "<td class='num' style='font-weight:700;vertical-align:top;padding-top:10px'>"
-        +   currSym()+r.arr_k.toFixed(0)+"k"
+        +   currSym()+toDisp(r.arr_k).toFixed(0)+"k"
         + "</td>"
         + "<td style='vertical-align:top'>"+sigsCell+"</td>"
         + "<td style='vertical-align:top;padding-top:10px'>"+rnCell+"</td>"
@@ -656,7 +669,7 @@ function renderClients() {
         return "<tr style='border-bottom:1px solid rgba(214,232,235,.6)'>"
           + "<td style='padding:5px 14px 5px 0;border:none'>"+swChip(l.sw)+"</td>"
           + mktCell
-          + "<td style='padding:5px 14px;border:none;text-align:right;font-weight:700;white-space:nowrap'>"+currSym()+l.arr_k.toFixed(0)+"k</td>"
+          + "<td style='padding:5px 14px;border:none;text-align:right;font-weight:700;white-space:nowrap'>"+currSym()+toDisp(l.arr_k).toFixed(0)+"k</td>"
           + "<td style='padding:5px 14px;border:none;font-size:12px;color:#6d6d6c;white-space:nowrap'>"+(l.end_date ? esc(l.end_date) : dash())+"</td>"
           + "<td style='padding:5px 14px;border:none'>"+rb+"</td>"
           + "<td style='padding:5px 14px;border:none'>"+status+"</td>"
@@ -745,12 +758,13 @@ async function loadData(currency) {
     const resp = await fetch(url);
     if (!resp.ok) throw new Error('HTTP ' + resp.status);
     DATA = await resp.json();
-    DATA_CACHE[curr] = DATA;
+    if (DATA.fx_rates) { FX_RATES = DATA.fx_rates; FX_RATES['GBP'] = 1; }
     if (DATA.mkt_col) MKT_COL = DATA.mkt_col;
     document.getElementById('arr-date').textContent = DATA.arr_as_of || '—';
     var swNames = [...new Set((DATA.arr_vs_target || []).map(function(r) { return r.sw; }))].sort();
     if (DATA.regions && DATA.regions.length) populateSelects(DATA.regions, swNames);
     populateRegionPills();
+    renderCurrBar();
     if (isInitial) {
       document.getElementById('loading').style.display = 'none';
       document.getElementById('main-content').style.display = 'block';
