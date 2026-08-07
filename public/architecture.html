@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aurora Energy Research — Data Platform Architecture</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: #F7F7F5;
+    color: #1A1A1A;
+    padding: 48px 40px;
+    min-width: 1100px;
+  }
+
+  .page-title {
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #888;
+    margin-bottom: 6px;
+  }
+
+  .section-heading {
+    font-size: 22px;
+    font-weight: 600;
+    color: #111;
+    margin-bottom: 4px;
+  }
+
+  .section-sub {
+    font-size: 13px;
+    color: #888;
+    margin-bottom: 32px;
+  }
+
+  .diagram-wrap {
+    background: #fff;
+    border: 1px solid #E4E3DF;
+    border-radius: 16px;
+    padding: 40px;
+    margin-bottom: 56px;
+  }
+
+  /* ── BAND ── */
+  .band {
+    position: relative;
+    border-radius: 12px;
+    padding: 20px 24px 20px;
+    margin-bottom: 0;
+  }
+
+  .band + .band { margin-top: 6px; }
+
+  .band-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  .band-sublabel {
+    font-size: 11px;
+    color: #666;
+    margin-bottom: 14px;
+  }
+
+  /* Sources band */
+  .band-sources {
+    background: transparent;
+    border: 1.5px dashed #D0CFC9;
+    padding-bottom: 16px;
+  }
+  .band-sources .band-label { color: #888; }
+
+  /* Bronze */
+  .band-bronze {
+    background: #FEF3E8;
+    border: 1px solid #F5C48A;
+  }
+  .band-bronze .band-label { color: #9A5A10; }
+  .band-bronze .band-sublabel { color: #B07030; }
+
+  /* Silver */
+  .band-silver {
+    background: #EAF6F1;
+    border: 1px solid #8DD4B8;
+  }
+  .band-silver .band-label { color: #0D6E50; }
+  .band-silver .band-sublabel { color: #2A8A6A; }
+
+  /* Gold */
+  .band-gold {
+    background: #F0EBF8;
+    border: 1px solid #B99FD8;
+  }
+  .band-gold .band-label { color: #4A2880; }
+  .band-gold .band-sublabel { color: #6A3EA0; }
+
+  /* Consumers */
+  .band-consumers {
+    background: #EEF4FB;
+    border: 1px solid #94BFEA;
+  }
+  .band-consumers .band-label { color: #1A4F8A; }
+
+  /* ── ARROW CONNECTOR ── */
+  .arrow-row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 32px;
+    gap: 8px;
+    color: #AAA;
+    font-size: 11px;
+  }
+
+  .arrow-row svg { flex-shrink: 0; }
+
+  /* ── BOXES ROW ── */
+  .boxes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .box {
+    background: rgba(255,255,255,0.75);
+    border: 1px solid rgba(0,0,0,0.10);
+    border-radius: 8px;
+    padding: 9px 13px;
+    font-size: 11.5px;
+    font-weight: 500;
+    color: #222;
+    line-height: 1.4;
+    white-space: nowrap;
+  }
+
+  .box sub {
+    font-size: 9.5px;
+    color: #888;
+    font-weight: 400;
+    display: block;
+    margin-top: 2px;
+    white-space: normal;
+  }
+
+  .box.planned {
+    opacity: 0.5;
+    border-style: dashed;
+  }
+  .box.planned::after {
+    content: ' planned';
+    font-size: 9px;
+    font-weight: 400;
+    color: #888;
+    font-style: italic;
+  }
+
+  .box.wide { white-space: normal; min-width: 200px; }
+
+  .footnote {
+    font-size: 11px;
+    color: #888;
+    margin-top: 14px;
+    font-style: italic;
+    line-height: 1.6;
+  }
+
+  /* ── DIAGRAM 2 ── */
+  .d2-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-rows: auto auto auto;
+    gap: 10px;
+  }
+
+  .d2-phase {
+    border-radius: 12px;
+    padding: 20px;
+    border: 1px solid;
+  }
+
+  .d2-phase-green {
+    background: #EBF5EE;
+    border-color: #7DC49A;
+  }
+
+  .d2-phase-blue {
+    background: #EBF2FB;
+    border-color: #7AB0E0;
+    grid-column: 1 / -1;
+  }
+
+  .d2-phase-salmon {
+    background: #FBF0EE;
+    border-color: #E0A098;
+  }
+
+  .d2-hosting {
+    background: #F4F4F2;
+    border: 1px solid #CFCEC8;
+    border-radius: 12px;
+    padding: 20px;
+    grid-column: 1 / -1;
+  }
+
+  .d2-phase-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  .d2-phase-green .d2-phase-label { color: #1A6E3E; }
+  .d2-phase-blue .d2-phase-label { color: #1A4F8A; }
+  .d2-phase-salmon .d2-phase-label { color: #8A2A1A; }
+  .d2-hosting .d2-phase-label { color: #555; }
+
+  .d2-phase-sub {
+    font-size: 11px;
+    color: #666;
+    margin-bottom: 14px;
+    line-height: 1.5;
+  }
+
+  .d2-subboxes {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .d2-subbox {
+    flex: 1;
+    min-width: 130px;
+    background: rgba(255,255,255,0.75);
+    border: 1px solid rgba(0,0,0,0.10);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 11.5px;
+  }
+
+  .d2-subbox strong {
+    display: block;
+    font-weight: 600;
+    font-size: 11.5px;
+    margin-bottom: 4px;
+    color: #111;
+  }
+
+  .d2-subbox p {
+    font-size: 10.5px;
+    color: #666;
+    line-height: 1.5;
+  }
+
+  .d2-tools {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 4px;
+  }
+
+  .d2-tool {
+    background: rgba(255,255,255,0.75);
+    border: 1px solid rgba(0,0,0,0.10);
+    border-radius: 6px;
+    padding: 5px 9px;
+    font-size: 10.5px;
+    font-weight: 500;
+    font-family: 'Courier New', monospace;
+    color: #333;
+  }
+
+  .d2-note {
+    background: rgba(255,255,255,0.6);
+    border: 1px solid rgba(0,0,0,0.08);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 11px;
+    color: #555;
+    line-height: 1.6;
+    margin-top: 10px;
+  }
+
+  .d2-hosting-inner {
+    display: flex;
+    gap: 10px;
+    margin-top: 12px;
+  }
+
+  .d2-hosting-box {
+    flex: 1;
+    background: #fff;
+    border: 1px solid #DDDCD7;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 11.5px;
+    font-weight: 500;
+    color: #222;
+  }
+
+  .d2-hosting-box span {
+    display: block;
+    font-size: 10px;
+    font-weight: 400;
+    color: #888;
+    margin-top: 2px;
+  }
+
+  .d2-arrow-down {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    grid-column: 1 / -1;
+    height: 28px;
+    gap: 6px;
+    color: #999;
+    font-size: 10.5px;
+  }
+
+  .d2-phases-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .gate-banner {
+    margin-top: 16px;
+    background: #FFFBEC;
+    border: 1px solid #F0D080;
+    border-radius: 8px;
+    padding: 10px 16px;
+    font-size: 11.5px;
+    color: #7A5200;
+    line-height: 1.5;
+  }
+</style>
+</head>
+<body>
+
+<p class="page-title">Aurora Energy Research · Data Platform</p>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- DIAGRAM 1                                               -->
+<!-- ═══════════════════════════════════════════════════════ -->
+
+<h1 class="section-heading">Diagram 1 — Medallion Architecture (current state)</h1>
+<p class="section-sub">LH_ProdOps_Dev · Microsoft Fabric · Argus PoC</p>
+
+<div class="diagram-wrap">
+
+  <!-- SOURCES -->
+  <div class="band band-sources">
+    <div class="band-label">Sources</div>
+    <div class="boxes">
+      <div class="box">Salesforce API<sub>subscriptions · accounts · products · cases · opportunities</sub></div>
+      <div class="box">Productboard API<sub>features · subfeatures · relationships</sub></div>
+      <div class="box">Zendesk REST API<sub>tickets</sub></div>
+      <div class="box">PostHog API<sub>events · session data · opt-out flags</sub></div>
+      <div class="box">EOS Parquet files<sub>161M rows · API usage</sub></div>
+    </div>
+  </div>
+
+  <div class="arrow-row">
+    <svg width="12" height="20" viewBox="0 0 12 20"><path d="M6 0v14M1 9l5 7 5-7" stroke="#BBBBBB" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </div>
+
+  <!-- BRONZE -->
+  <div class="band band-bronze">
+    <div class="band-label">Bronze — Raw ingestion</div>
+    <div class="band-sublabel">LH_ProdOps_Dev · Fabric Dataflow Gen2 + PySpark notebooks</div>
+    <div class="boxes">
+      <div class="box" style="font-family:'Courier New',monospace;font-size:10.5px">bronze_sfapi_subscripton__c</div>
+      <div class="box" style="font-family:'Courier New',monospace;font-size:10.5px">bronze_sfapi_account</div>
+      <div class="box" style="font-family:'Courier New',monospace;font-size:10.5px">bronze_sfapi_product2</div>
+      <div class="box" style="font-family:'Courier New',monospace;font-size:10.5px">bronze_sfapi_case</div>
+      <div class="box wide" style="font-family:'Courier New',monospace;font-size:10.5px">bronze_posthog_events<sub>url_state_change · HogQL notebook · GeoIP enriched</sub></div>
+      <div class="box" style="font-family:'Courier New',monospace;font-size:10.5px">bronze_pb_features</div>
+      <div class="box" style="font-family:'Courier New',monospace;font-size:10.5px">bronze_pb_relationships_raw</div>
+      <div class="box" style="font-family:'Courier New',monospace;font-size:10.5px">zd_notebook_* (6 tables)</div>
+      <div class="box wide" style="font-family:'Courier New',monospace;font-size:10.5px">eos_parquet_api_usage_legacy<sub>Delta · 161M rows · partitioned by year / is_internal</sub></div>
+    </div>
+  </div>
+
+  <div class="arrow-row">
+    <svg width="12" height="20" viewBox="0 0 12 20"><path d="M6 0v14M1 9l5 7 5-7" stroke="#BBBBBB" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <span>PySpark transforms + SQL views</span>
+  </div>
+
+  <!-- SILVER -->
+  <div class="band band-silver">
+    <div class="band-label">Silver — Cleansed &amp; joined</div>
+    <div class="band-sublabel">SQL views · Product Ops owned · No materialisation during PoC</div>
+    <div class="boxes">
+      <div class="box" style="font-family:'Courier New',monospace;font-size:10.5px">v_silver_sf_subscriptions</div>
+      <div class="box" style="font-family:'Courier New',monospace;font-size:10.5px">v_silver_sf_customer_accounts</div>
+      <div class="box" style="font-family:'Courier New',monospace;font-size:10.5px">v_silver_sf_products</div>
+      <div class="box" style="font-family:'Courier New',monospace;font-size:10.5px">v_silver_pb_features</div>
+      <div class="box" style="font-family:'Courier New',monospace;font-size:10.5px">v_silver_pb_subfeatures</div>
+      <div class="box wide" style="font-family:'Courier New',monospace;font-size:10.5px">v_silver_mdm_account<sub>SF + ZD + PB joined</sub></div>
+      <div class="box" style="font-family:'Courier New',monospace;font-size:10.5px">v_silver_lookup_fxrates</div>
+      <div class="box wide" style="font-family:'Courier New',monospace;font-size:10.5px">v_silver_bridge_full_hierarchy_region_partition</div>
+    </div>
+    <p class="footnote">Data team will materialise to Delta tables when PoC graduates — no fixed date</p>
+  </div>
+
+  <div class="arrow-row">
+    <svg width="12" height="20" viewBox="0 0 12 20"><path d="M6 0v14M1 9l5 7 5-7" stroke="#BBBBBB" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <span>Materialised to Delta tables</span>
+  </div>
+
+  <!-- GOLD -->
+  <div class="band band-gold">
+    <div class="band-label">Gold — Materialised Delta tables</div>
+    <div class="band-sublabel">Physical Parquet storage · No view-on-view chain · Fast SQL Analytics Endpoint queries</div>
+    <div class="boxes">
+      <div class="box wide" style="font-family:'Courier New',monospace;font-size:10.5px">gold_sf_subscriptions<sub>Single source of truth for all SF subscriptions</sub></div>
+      <div class="box" style="font-family:'Courier New',monospace;font-size:10.5px">gold_lookup_fxrates<sub>PBI-aligned FX rates</sub></div>
+      <div class="box" style="font-family:'Courier New',monospace;font-size:10.5px">gold_sf_opportunities<sub>SF pipeline</sub></div>
+      <div class="box" style="font-family:'Courier New',monospace;font-size:10.5px">gold_exchangeratetable<sub>Historical FX from Bronze</sub></div>
+      <div class="box planned" style="font-family:'Courier New',monospace;font-size:10.5px">gold_churn_propensity_scores</div>
+    </div>
+  </div>
+
+  <div class="arrow-row">
+    <svg width="12" height="20" viewBox="0 0 12 20"><path d="M6 0v14M1 9l5 7 5-7" stroke="#BBBBBB" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <span>SQL Analytics Endpoint</span>
+  </div>
+
+  <!-- CONSUMERS -->
+  <div class="band band-consumers">
+    <div class="band-label">Consumers</div>
+    <div class="boxes">
+      <div class="box">Power BI<sub>Direct SQL Analytics Endpoint connection</sub></div>
+      <div class="box">Argus Node.js API<sub>src/api/ endpoints · 15-min in-memory cache</sub></div>
+      <div class="box">MCP Server<sub>Same endpoint · 9 tools planned</sub></div>
+    </div>
+    <p class="footnote">Materialised Gold = no view-chain recomputation on every query · Fabric Pipeline manages refresh · In-memory API cache reduces concurrent CU burn on F8</p>
+  </div>
+
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- DIAGRAM 2                                               -->
+<!-- ═══════════════════════════════════════════════════════ -->
+
+<h1 class="section-heading">Diagram 2 — Development Cycle &amp; Hosting</h1>
+<p class="section-sub">Phase 1 → Phase 2 · Azure App Service · Target: September 2026</p>
+
+<div class="diagram-wrap">
+
+  <!-- PHASES ROW -->
+  <div class="d2-phases-row">
+
+    <!-- Phase 1 -->
+    <div class="d2-phase d2-phase-green">
+      <div class="d2-phase-label">Phase 1 — Argus app</div>
+      <div class="d2-phase-sub">Frontend dashboard · Node.js API · Test users = CS team</div>
+      <div class="d2-subboxes">
+        <div class="d2-subbox">
+          <strong>Data quality</strong>
+          <p>ARR nulls, filter bugs, field gaps surfaced by real users</p>
+        </div>
+        <div class="d2-subbox">
+          <strong>Data persona</strong>
+          <p>Which questions people ask, which fields matter, what "correct" looks like</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Phase 2 -->
+    <div class="d2-phase d2-phase-salmon">
+      <div class="d2-phase-label">Phase 2 — MCP Server</div>
+      <div class="d2-phase-sub">Claude Enterprise integration · Built from Argus-validated patterns</div>
+      <div class="d2-tools">
+        <span class="d2-tool">get_account_health</span>
+        <span class="d2-tool">get_churn_signals</span>
+        <span class="d2-tool">get_renewals_pipeline</span>
+        <span class="d2-tool">search_accounts</span>
+        <span class="d2-tool">get_account_usage</span>
+        <span class="d2-tool">get_account_summary</span>
+        <span class="d2-tool">list_accounts</span>
+        <span class="d2-tool">get_feature_adoption</span>
+        <span class="d2-tool">get_posthog_opt_out</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Arrow down -->
+  <div class="d2-arrow-down" style="margin-top:6px">
+    <svg width="12" height="20" viewBox="0 0 12 20"><path d="M6 0v14M1 9l5 7 5-7" stroke="#BBBBBB" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <span>Validated queries + proven patterns feed into →</span>
+  </div>
+
+  <!-- Shared API layer -->
+  <div class="d2-phase d2-phase-blue" style="margin-top:0">
+    <div class="d2-phase-label">Shared Node.js API — src/api/endpoints</div>
+    <div class="d2-phase-sub">Single source of truth · Schema changes fixed once · Fabric SQL Analytics Endpoint</div>
+    <div class="d2-note">Both Argus and the MCP server are consumers of the same API layer — not two separate codebases. A schema change in a Gold table needs fixing in one place only.</div>
+  </div>
+
+  <!-- Arrow down -->
+  <div class="d2-arrow-down" style="margin-top:6px">
+    <svg width="12" height="20" viewBox="0 0 12 20"><path d="M6 0v14M1 9l5 7 5-7" stroke="#BBBBBB" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <span>Both must be hosted identically</span>
+  </div>
+
+  <!-- Hosting -->
+  <div class="d2-hosting">
+    <div class="d2-phase-label">Azure App Service — hosting (required for both phases)</div>
+    <div class="d2-phase-sub" style="margin-bottom:0">Stable HTTPS URL · M365 Easy Auth · Node.js 20 LTS · B1 tier</div>
+    <div class="d2-hosting-inner">
+      <div class="d2-hosting-box">
+        Argus app
+        <span>argus.auroraer.com</span>
+      </div>
+      <div class="d2-hosting-box">
+        MCP server
+        <span>argus-mcp.auroraer.com</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Why hosting is required -->
+  <div style="margin-top:10px;background:#F7F7F5;border:1px solid #D8D7D2;border-radius:8px;padding:14px 16px">
+    <strong style="display:block;font-size:11.5px;font-family:Inter,sans-serif;margin-bottom:8px;color:#111">Why both must be hosted (not run locally)</strong>
+    <p style="font-size:11px;font-family:Inter,sans-serif;color:#555;line-height:1.75;margin:0">
+      <strong style="font-weight:600;color:#333">Argus app</strong> — business users need a stable URL they can bookmark and share. Running on a laptop means the app disappears when the machine sleeps or leaves the office. Azure App Service gives it a persistent HTTPS endpoint with M365 Easy Auth so Aurora staff sign in with their existing Microsoft credentials, no separate accounts needed.<br><br>
+      <strong style="font-weight:600;color:#333">MCP server</strong> — Claude Enterprise connects to MCP servers over HTTP at a fixed URL configured in the Claude admin console. There is no way to point Claude at a local machine or ngrok tunnel in a production org. The server must be live at a stable HTTPS address at all times — Claude calls it on demand whenever a user triggers one of the 9 tools, so downtime means broken AI queries. M365 Easy Auth in front also ensures only Aurora-authenticated users can trigger data access, which is required for governance.
+    </p>
+  </div>
+
+  <!-- Gate banner -->
+  <div class="gate-banner" style="margin-top:10px">
+    Gate: IT service principal from Sam unlocks both — Azure App Service hosting + SQL Analytics Endpoint auth via TDS &nbsp;·&nbsp; Target: MCP server live September 2026
+  </div>
+
+</div>
+
+</body>
+</html>
