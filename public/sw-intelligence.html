@@ -176,6 +176,16 @@ tfoot td{font-size:11px;color:#9d9d9d;padding:6px 10px;border-top:1px solid #e6e
     <div class="pill"        id="fp-opp"         onclick="setFP(this,'opp')">Opportunities</div>
   </div>
 
+  <!-- ZD sub-filter row — visible only when ZD Tickets signal is active -->
+  <div class="filter-bar" id="zd-subfilter" style="display:none;padding-left:80px;">
+    <span class="filter-label" style="color:#b8860b;">ZD type:</span>
+    <div class="pill active" id="zdf-all"     onclick="setZDFilter(this,'all')">All</div>
+    <div class="pill"        id="zdf-open"    onclick="setZDFilter(this,'open')">Open</div>
+    <div class="pill"        id="zdf-pending" onclick="setZDFilter(this,'pending')">Pending</div>
+    <div class="pill"        id="zdf-solved"  onclick="setZDFilter(this,'solved')">Solved</div>
+    <div class="pill"        id="zdf-closed"  onclick="setZDFilter(this,'closed')">Closed</div>
+  </div>
+
   <div class="card" style="padding:0;overflow:hidden;overflow-x:auto">
     <table id="client-table"></table>
   </div>
@@ -211,6 +221,7 @@ const CURR_SYMBOLS = {
 };
 const CURR_ORDER = ['GBP','EUR','USD','AUD','CAD','SEK','NOK','PLN','JPY','BRL','CLP','INR','MXN','SGD','ZAR'];
 let FP = 'ALL', SS = { col: 'arr_k', dir: -1 };
+let ZD_FILTER = 'all';
 let MKT_COL = {};
 let REGION = 'all', MKT = new Set(), GROUP_BY = 'energy';
 let HEALTH = 'all', STAGE = 'all';
@@ -270,10 +281,26 @@ function swChip(s) {
   return "<span style='display:inline-flex;align-items:center;padding:1px 7px;border-radius:4px;font-size:11px;font-weight:700;background:"+c.bg+";color:"+c.fg+"'>"+esc(s)+"</span>";
 }
 
+function setZDFilter(el, mode) {
+  ZD_FILTER = mode;
+  document.querySelectorAll('#zd-subfilter .pill').forEach(function(p) { p.classList.remove('active'); });
+  el.classList.add('active');
+  renderKPIs();
+  renderClients();
+}
+
 function setFP(el, mode) {
   FP = mode;
+  ZD_FILTER = 'all';
   document.querySelectorAll('#clients .pill[id^="fp-"]').forEach(function(p) { p.classList.remove('active'); });
   el.classList.add('active');
+  var zdRow = document.getElementById('zd-subfilter');
+  if (zdRow) zdRow.style.display = mode === 'zd' ? 'flex' : 'none';
+  // Reset ZD sub-filter pills to All
+  document.querySelectorAll('#zd-subfilter .pill').forEach(function(p) { p.classList.remove('active'); });
+  var zdAll = document.getElementById('zdf-all');
+  if (zdAll) zdAll.classList.add('active');
+  renderKPIs();
   renderClients();
 }
 
@@ -412,19 +439,8 @@ function setHealth(key) {
 
 function renderHealthBar() {
   if (!DATA) return;
-  // Apply region/market filter but NOT health filter (bar shows full distribution in current scope)
-  var ALL_CLIENTS;
-  if (GROUP_BY === 'billing') {
-    ALL_CLIENTS = (DATA.billing_clients || []).slice();
-    if (REGION !== 'all') ALL_CLIENTS = ALL_CLIENTS.filter(function(r) {
-      return (BILLING_REGION_MAP[r.billing_market] || '').toLowerCase() === REGION;
-    });
-    if (MKT.size > 0) ALL_CLIENTS = ALL_CLIENTS.filter(function(r) { return MKT.has(r.billing_market); });
-  } else {
-    ALL_CLIENTS = DATA.clients.slice();
-    if (REGION !== 'all') ALL_CLIENTS = ALL_CLIENTS.filter(function(r) { return (r.region || '').toLowerCase() === REGION; });
-    if (MKT.size > 0) ALL_CLIENTS = ALL_CLIENTS.filter(function(r) { return MKT.has(r.market); });
-  }
+  // Use filteredClientsBase() so health bar reflects active signal/region/market filters
+  var ALL_CLIENTS = filteredClientsBase();
   var fmtA = function(v) { var d = toDisp(v); return d >= 1000 ? currSym()+(d/1000).toFixed(1)+'m' : currSym()+Math.round(d)+'k'; };
   // Count at account level, using clientHealthBucket (aligns with client health card)
   var byAcct = {};
@@ -549,27 +565,24 @@ function kpi(label, val, cls, sub, subStyle, stage) {
 }
 
 // ── Region Health table ────────────────────────────────────────────────────
-function filteredClients() {
+// Base filter: all active filters EXCEPT health bucket (health bar needs this to show full distribution)
+function filteredClientsBase() {
   if (!DATA) return [];
   var search = (document.getElementById('cl-search') || {}).value || '';
   search = search.toLowerCase();
   var sw = (document.getElementById('cl-sw') || {}).value || 'ALL';
   var rows;
   if (GROUP_BY === 'billing') {
-    // Billing mode: use pre-built billing_clients (includes null-energy-market subs like SIM)
     rows = (DATA.billing_clients || []).slice();
     if (REGION !== 'all') rows = rows.filter(function(r) {
       return (BILLING_REGION_MAP[r.billing_market] || '').toLowerCase() === REGION;
     });
     if (MKT.size > 0) rows = rows.filter(function(r) { return MKT.has(r.billing_market); });
   } else {
-    // Energy mode: filter by energy_region, then energy_market
     rows = DATA.clients.slice();
     if (REGION !== 'all') rows = rows.filter(function(r) { return (r.region || '').toLowerCase() === REGION; });
     if (MKT.size > 0) rows = rows.filter(function(r) { return MKT.has(r.market); });
   }
-
-  // Account search, product, signal filters
   if (search) rows = rows.filter(function(r) {
     return r.account.toLowerCase().indexOf(search) >= 0
         || (r.parent && r.parent.toLowerCase().indexOf(search) >= 0);
@@ -581,8 +594,20 @@ function filteredClients() {
   if (FP === 'renew3m')     rows = rows.filter(function(r) { return (r.sw_lines||[]).some(function(l){ return l.renewal_badge === '3M'; }); });
   if (FP === 'renew6m')     rows = rows.filter(function(r) { return (r.sw_lines||[]).some(function(l){ return l.renewal_badge === '3M' || l.renewal_badge === '6M'; }); });
   if (FP === 'upsell')      rows = rows.filter(function(r) { return r.flag_upsell; });
-  if (FP === 'zd')          rows = rows.filter(function(r) { return r.zd_open > 0; });
+  if (FP === 'zd') {
+    // Any ZD activity; ZD_FILTER sub-filter narrows by ticket type
+    rows = rows.filter(function(r) { return ((r.zd_open||0) + (r.zd_pending||0) + (r.zd_solved||0) + (r.zd_closed||0)) > 0; });
+    if (ZD_FILTER === 'open')    rows = rows.filter(function(r) { return r.zd_open > 0; });
+    if (ZD_FILTER === 'pending') rows = rows.filter(function(r) { return r.zd_pending > 0; });
+    if (ZD_FILTER === 'solved')  rows = rows.filter(function(r) { return r.zd_solved > 0; });
+    if (ZD_FILTER === 'closed')  rows = rows.filter(function(r) { return r.zd_closed > 0; });
+  }
   if (FP === 'opp')         rows = rows.filter(function(r) { return r.opp_count > 0; });
+  return rows;
+}
+
+function filteredClients() {
+  var rows = filteredClientsBase();
   if (HEALTH !== 'all') rows = rows.filter(function(r) { return clientHealthBucket(r) === HEALTH; });
   return rows;
 }

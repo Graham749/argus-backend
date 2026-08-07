@@ -216,7 +216,10 @@ input{font-family:inherit;}
             </div>
 
 
-            <!-- Renewal timeline then risk pills below (consistent with other widgets) -->
+          </div>
+
+          <!-- Chart row: outside sfSummaryView so it stays visible during drilldown -->
+          <div id="sfChartRow" style="display:none;">
             <div id="sfTimelineWrap" style="width:100%;margin-bottom:8px;"></div>
             <div id="sfRiskSummaryRow" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:4px;min-height:24px;"></div>
           </div>
@@ -1739,8 +1742,18 @@ window.__epRender = function(container, data) {
   var CAL_BAR_W   = Math.max(CELL - 3, 3);
   var CAL_H       = ROW_H;
   var BAR_MAX_CAL = CAL_H - 12;
-  var fmtArrCal   = function(v){ return v>=1e6?'£'+(v/1e6).toFixed(1)+'m':'£'+Math.round(v/1e3)+'k'; };
-  var urgColorCal = function(d){ return d<0?'#d32f2f':d<30?'#e65100':d<90?'#1565c0':'#2e7d32'; };
+  var fmtArrCal    = function(v){ return v>=1e6?'£'+(v/1e6).toFixed(1)+'m':'£'+Math.round(v/1e3)+'k'; };
+  var urgColorCal  = function(d){ return d<0?'#d32f2f':d<30?'#e65100':d<90?'#1565c0':'#2e7d32'; };
+  var calHealthBg  = function(d){ return d<0?'#fce4e4':d<30?'#fdf3e3':d<90?'#fef9e3':d<9999?'#f0f8f0':'#f5f5f5'; };
+  var calAddSub    = function(b, rs) {
+    b.subs.push(rs);
+    var a = rs.arr_gbp||0; b.arr += a;
+    if (a < 1) b.zeroCount++;
+    var st = rs.service_type;
+    if (st==='Software') b.swArr+=a;
+    else if (st==='Subscription Analytics') b.saArr+=a;
+    else b.othArr+=a;
+  };
 
   // Monthly buckets
   var calBuckets = [];
@@ -1750,25 +1763,25 @@ window.__epRender = function(container, data) {
     var bKey   = bStart.getFullYear()+'-'+String(bStart.getMonth()+1).padStart(2,'0');
     calBuckets.push({ label: bStart.toLocaleDateString('en-GB',{month:'short'}),
       yearLbl: bStart.getMonth()===0||mi2===0 ? "'"+String(bStart.getFullYear()).slice(2) : '',
-      key:bKey, start:bStart, end:bEnd, subs:[], arr:0, oppWon:0, oppPipe:0 });
+      key:bKey, start:bStart, end:bEnd, subs:[], arr:0, swArr:0, saArr:0, othArr:0, zeroCount:0, oppWon:0, oppPipe:0 });
   }
-  var pastBucket   = { label:'Past',  yearLbl:'', key:'past',   subs:[], arr:0, oppWon:0, oppPipe:0 };
-  var beyondBucket = { label:'18m+',  yearLbl:'', key:'beyond', subs:[], arr:0, oppWon:0, oppPipe:0 };
+  var pastBucket   = { label:'Past',  yearLbl:'', key:'past',   subs:[], arr:0, swArr:0, saArr:0, othArr:0, zeroCount:0, oppWon:0, oppPipe:0 };
+  var beyondBucket = { label:'18m+',  yearLbl:'', key:'beyond', subs:[], arr:0, swArr:0, saArr:0, othArr:0, zeroCount:0, oppWon:0, oppPipe:0 };
 
   // Populate renewals
   var renewalSubs = (data.renewalSubs && data.renewalSubs.length) ? data.renewalSubs : [];
   renewalSubs.filter(function(rs){ return rs.days_to_renewal < 0; }).forEach(function(rs){
-    pastBucket.subs.push(rs); pastBucket.arr += rs.arr_gbp||0;
+    calAddSub(pastBucket, rs);
   });
   renewalSubs.filter(function(rs){ return rs.days_to_renewal>=0 && rs.renewal_date; }).forEach(function(rs){
     var rd = new Date(rs.renewal_date); rd.setHours(0,0,0,0);
     var found = false;
     for (var bi=0; bi<calBuckets.length; bi++) {
       if (rd >= calBuckets[bi].start && rd < calBuckets[bi].end) {
-        calBuckets[bi].subs.push(rs); calBuckets[bi].arr += rs.arr_gbp||0; found=true; break;
+        calAddSub(calBuckets[bi], rs); found=true; break;
       }
     }
-    if (!found) { beyondBucket.subs.push(rs); beyondBucket.arr += rs.arr_gbp||0; }
+    if (!found) calAddSub(beyondBucket, rs);
   });
 
   // Populate opp data by CloseDate into the same columns
@@ -1794,13 +1807,15 @@ window.__epRender = function(container, data) {
     }
   });
 
-  // Set renewal color per bucket
-  pastBucket.color = pastBucket.subs.length ? '#c62828' : '#e0e0e0';
+  // Set renewal color + minDays per bucket (minDays drives health bg tint)
+  pastBucket.minDays = -1;
+  pastBucket.color   = pastBucket.subs.length ? '#c62828' : '#e0e0e0';
   calBuckets.forEach(function(b){
-    var minD = b.subs.length ? Math.min.apply(null,b.subs.map(function(rs){return rs.days_to_renewal;})) : 9999;
-    b.color = urgColorCal(minD);
+    b.minDays = b.subs.length ? Math.min.apply(null,b.subs.map(function(rs){return rs.days_to_renewal;})) : 9999;
+    b.color   = urgColorCal(b.minDays);
   });
-  beyondBucket.color = '#388e3c';
+  beyondBucket.minDays = 9999;
+  beyondBucket.color   = '#388e3c';
 
   // Fixed 20-column array: [past, m0..m17, beyond]
   var calCols = [pastBucket].concat(calBuckets).concat([beyondBucket]);
@@ -1879,18 +1894,46 @@ window.__epRender = function(container, data) {
   calCols.forEach(function(col, ci){
     var cx  = LBL_W + ci * CAL_COL_W;
     var mid = cx + CAL_COL_W / 2;
-    var barH = col.subs.length ? Math.max(6, Math.round((col.arr/maxCalArr)*BAR_MAX_CAL)) : 0;
-    var barY = subY + CAL_H - barH;
+    var totalBarH = col.subs.length ? Math.max(6, Math.round((col.arr/maxCalArr)*BAR_MAX_CAL)) : 0;
+    var barY = subY + CAL_H - totalBarH;
 
-    svg.appendChild(s('rect',{ x:cx+1, y:subY, width:CAL_BAR_W, height:CAL_H, fill:ci===1?'#c0d4e8':'#f5f5f5', rx:2 }));
-    if (barH) {
-      svg.appendChild(s('rect',{ x:cx+1, y:barY, width:CAL_BAR_W, height:barH,
-        fill:col.color, rx:2, opacity:0.85 }));
+    // Track background: health-tinted (keep current-month highlight for col 1)
+    var bgFill = ci===1 ? '#c0d4e8' : (col.subs.length ? calHealthBg(col.minDays) : '#f5f5f5');
+    svg.appendChild(s('rect',{ x:cx+1, y:subY, width:CAL_BAR_W, height:CAL_H, fill:bgFill, rx:2 }));
+
+    if (totalBarH) {
+      // Stacked bar: Software (bottom) → SA (middle) → Other (top)
+      if (col.arr > 0) {
+        var segs = [];
+        if (col.swArr  > 0) segs.push({ arr:col.swArr,  color:'#288184' });
+        if (col.saArr  > 0) segs.push({ arr:col.saArr,  color:'#5c6bc0' });
+        if (col.othArr > 0) segs.push({ arr:col.othArr, color:'#90a4ae' });
+        if (!segs.length)   segs.push({ arr:1,           color:'#bdbdbd' });
+        var curSegY = barY + totalBarH;
+        segs.forEach(function(seg, si) {
+          var segH = si===segs.length-1
+            ? curSegY - barY
+            : Math.max(1, Math.round((seg.arr/col.arr)*totalBarH));
+          curSegY -= segH;
+          svg.appendChild(s('rect',{ x:cx+1, y:curSegY, width:CAL_BAR_W, height:Math.max(segH,1),
+            fill:seg.color, rx:2, opacity:0.88 }));
+        });
+      } else {
+        svg.appendChild(s('rect',{ x:cx+1, y:barY, width:CAL_BAR_W, height:totalBarH,
+          fill:'#bdbdbd', rx:2, opacity:0.88 }));
+      }
+      // Zero-ARR notch
+      if (col.zeroCount > 0 && col.arr > 0) {
+        var zh2 = Math.min(Math.max(col.zeroCount*2,3),6);
+        svg.appendChild(s('rect',{ x:cx+1, y:barY+totalBarH-zh2, width:CAL_BAR_W, height:zh2,
+          fill:'#e0e0e0', rx:0, opacity:0.85 }));
+      }
+      // Count label (urgency colored)
       svg.appendChild(s('text',{ x:mid, y:barY-2, 'text-anchor':'middle',
         'font-size':8, 'font-weight':700, fill:col.color,
         'font-family':'Lato,Helvetica Neue,Arial,sans-serif' }, col.subs.length));
-      if (barH >= 16)
-        svg.appendChild(s('text',{ x:mid, y:barY+barH/2+3, 'text-anchor':'middle',
+      if (totalBarH >= 16)
+        svg.appendChild(s('text',{ x:mid, y:barY+totalBarH/2+3, 'text-anchor':'middle',
           'font-size':7, fill:'#fff', 'font-family':'Lato,Helvetica Neue,Arial,sans-serif' },
           fmtArrCal(col.arr)));
     }
@@ -1906,16 +1949,33 @@ window.__epRender = function(container, data) {
       'font-size':9, 'font-weight':600, fill:'#555', 'font-family':'Lato,Helvetica Neue,Arial,sans-serif' }, col.yearLbl));
   });
 
-  // RHS: total ARR + count
+  // RHS: total count + ARR + service-type key
+  var rhsX = LBL_W + CW + 6;
   if (renewalSubs.length) {
     var totalCalArr = renewalSubs.reduce(function(a,r){return a+r.arr_gbp;},0);
-    svg.appendChild(s('text',{ x:LBL_W+CW+6, y:subY+9, 'dominant-baseline':'middle',
+    svg.appendChild(s('text',{ x:rhsX, y:subY+9, 'dominant-baseline':'middle',
       'font-size':9, 'font-weight':700, 'font-family':'Lato,Helvetica Neue,Arial,sans-serif', fill:'#3c3c3b'
     }, renewalSubs.length + ' subs'));
-    svg.appendChild(s('text',{ x:LBL_W+CW+6, y:subY+21, 'dominant-baseline':'middle',
+    svg.appendChild(s('text',{ x:rhsX, y:subY+21, 'dominant-baseline':'middle',
       'font-size':8, 'font-family':'Lato,Helvetica Neue,Arial,sans-serif', fill:'#b0b0b0'
     }, fmtArrCal(totalCalArr)));
   }
+  // Service-type colour key
+  var keyItems = [
+    { color:'#288184', label:'Software' },
+    { color:'#5c6bc0', label:'Sub Analytics' },
+    { color:'#90a4ae', label:'Other' },
+    { color:'#e0e0e0', label:'£0 ARR', dash:true },
+  ];
+  keyItems.forEach(function(ki, idx) {
+    var ky = subY + 32 + idx * 10;
+    var kr = s('rect',{ x:rhsX, y:ky, width:7, height:7, rx:1, fill:ki.color });
+    if (ki.dash) { kr.setAttribute('stroke','#bbb'); kr.setAttribute('stroke-width','0.8'); kr.setAttribute('stroke-dasharray','2,1'); }
+    svg.appendChild(kr);
+    svg.appendChild(s('text',{ x:rhsX+10, y:ky+6, 'font-size':7,
+      'font-family':'Lato,Helvetica Neue,Arial,sans-serif', fill:'#6d6d6c'
+    }, ki.label));
+  });
 
   // ── Section B: Opportunities (Historic & Future, centred on today) ────────────
   svg.appendChild(s('text', {
@@ -5655,6 +5715,8 @@ class Component extends DCLogic {
     error.style.display = 'none';
     const sfNoAcct = document.getElementById('sfNoAccount');
     if (sfNoAcct) sfNoAcct.style.display = 'none';
+    const chartRow = document.getElementById('sfChartRow');
+    if (chartRow) chartRow.style.display = 'none';
 
 
     const firstMsg = window.__argusNextMsg();
@@ -5947,6 +6009,8 @@ class Component extends DCLogic {
   showSummary(){
     document.getElementById('sfDetailView').style.display = 'none';
     document.getElementById('sfSummaryView').style.display = 'block';
+    const chartRow = document.getElementById('sfChartRow');
+    if (chartRow) chartRow.style.display = 'block';
     window.__sfActiveDrilldown = null;
     const backBtn = document.getElementById('sfBackButton');
     if(backBtn) backBtn.style.display = '';
@@ -6056,56 +6120,102 @@ class Component extends DCLogic {
     const FONT  = 'Lato,Helvetica Neue,Arial,sans-serif';
     const fmtA  = v => v >= 1e6 ? '£'+(v/1e6).toFixed(1)+'m' : '£'+Math.round(v/1e3)+'k';
 
-    // -- Overdue bucket --
-    const overdueSubs = subs.filter(s => s.days_to_renewal < 0);
+    // Service type colors (bar fill = what's in it)
+    const ST_SW    = '#288184';  // Software — brand teal
+    const ST_SA    = '#5c6bc0';  // Subscription Analytics — indigo
+    const ST_OTHER = '#90a4ae';  // Other — blue-grey
 
-    // -- Month buckets for next 18 months --
-    const monthBuckets = [];
-    for (let i = 0; i < MONTHS; i++) {
-      const start = new Date(today.getFullYear(), today.getMonth() + i, 1);
-      const end   = new Date(today.getFullYear(), today.getMonth() + i + 1, 1);
-      monthBuckets.push({
-        key: 'month_'+i, year: start.getFullYear(), month: start.getMonth(),
-        label: start.toLocaleDateString('en-GB', {month:'short'}),
-        yearLabel: start.getMonth() === 0 || i === 0 ? "'"+String(start.getFullYear()).slice(2) : '',
-        start, end, subs:[], arr:0
-      });
-    }
-
-    // -- Beyond bucket --
-    const beyond = { key:'beyond', label:'18m+', yearLabel:'', subs:[], arr:0 };
-
-    subs.filter(s => s.days_to_renewal >= 0 && s.renewal_date).forEach(s => {
-      const rd = new Date(s.renewal_date); rd.setHours(0,0,0,0);
-      const b  = monthBuckets.find(b => rd >= b.start && rd < b.end);
-      if (b) { b.subs.push(s); b.arr += s.arr_gbp||0; }
-      else   { beyond.subs.push(s); beyond.arr += s.arr_gbp||0; }
-    });
+    // Track background tints from health status (urgency)
+    const healthBg = minDays =>
+      minDays < 0    ? '#fce4e4' :   // OVERDUE
+      minDays < 30   ? '#fdf3e3' :   // AT_RISK
+      minDays < 90   ? '#fef9e3' :   // TO_WATCH
+      minDays < 9999 ? '#f0f8f0' :   // HEALTHY
+                       '#f5f5f5';    // empty
 
     const urgencyColor = days =>
       days < 0  ? '#d32f2f' :
       days < 30 ? '#e65100' :
       days < 90 ? '#1565c0' : '#2e7d32';
 
+    // Build a bucket with service-type breakdown and zero-ARR tracking
+    const mkBucket = (key, label, yearLabel) => ({
+      key, label, yearLabel, subs:[], arr:0,
+      swArr:0, saArr:0, othArr:0, zeroCount:0
+    });
+    const addSub = (b, s) => {
+      b.subs.push(s);
+      const a = s.arr_gbp || 0;
+      b.arr += a;
+      if (a < 1) b.zeroCount++;
+      const st = s.service_type;
+      if (st === 'Software')               b.swArr  += a;
+      else if (st === 'Subscription Analytics') b.saArr  += a;
+      else                                      b.othArr += a;
+    };
+
+    // -- Overdue bucket --
+    const odBucket = mkBucket('OVERDUE', 'Past\nDue', '');
+    subs.filter(s => s.days_to_renewal < 0).forEach(s => addSub(odBucket, s));
+
+    // -- Month buckets for next 18 months --
+    const monthBuckets = [];
+    for (let i = 0; i < MONTHS; i++) {
+      const start = new Date(today.getFullYear(), today.getMonth() + i, 1);
+      const end   = new Date(today.getFullYear(), today.getMonth() + i + 1, 1);
+      const b = mkBucket('month_'+i,
+        start.toLocaleDateString('en-GB', {month:'short'}),
+        start.getMonth() === 0 || i === 0 ? "'"+String(start.getFullYear()).slice(2) : '');
+      b.start = start; b.end = end;
+      monthBuckets.push(b);
+    }
+
+    // -- Beyond bucket --
+    const beyond = mkBucket('beyond', '18m+', '');
+
+    subs.filter(s => s.days_to_renewal >= 0 && s.renewal_date).forEach(s => {
+      const rd = new Date(s.renewal_date); rd.setHours(0,0,0,0);
+      const b  = monthBuckets.find(b => rd >= b.start && rd < b.end);
+      addSub(b || beyond, s);
+    });
+
     // -- Build ordered columns --
     const cols = [];
-    if (overdueSubs.length)
-      cols.push({ key:'OVERDUE', label:'Past\nDue', yearLabel:'', subs:overdueSubs,
-        arr:overdueSubs.reduce((s,r)=>s+r.arr_gbp,0), color:'#c62828', isSpecial:true });
+    if (odBucket.subs.length)
+      cols.push({ ...odBucket, color:'#c62828', minDays:-1, isSpecial:true });
     monthBuckets.forEach(b => {
-      const minDays = b.subs.length ? Math.min(...b.subs.map(s=>s.days_to_renewal)) : 9999;
-      b.color = urgencyColor(minDays);
+      b.minDays = b.subs.length ? Math.min(...b.subs.map(s=>s.days_to_renewal)) : 9999;
+      b.color   = urgencyColor(b.minDays);
       cols.push(b);
     });
     if (beyond.subs.length)
-      cols.push({ ...beyond, color:'#388e3c', isSpecial:true });
+      cols.push({ ...beyond, color:'#388e3c', minDays:9999, isSpecial:true });
+
+    // -- Legend --
+    const legendDiv = document.createElement('div');
+    legendDiv.style.cssText = 'display:flex;align-items:center;gap:14px;margin-bottom:4px;font-size:10px;color:#6d6d6c;font-family:'+FONT+';flex-wrap:wrap;';
+    [
+      { color:ST_SW,    label:'Software' },
+      { color:ST_SA,    label:'Sub Analytics' },
+      { color:ST_OTHER, label:'Other' },
+      { color:'#e0e0e0', label:'£0 ARR', border:'1px dashed #bbb' },
+    ].forEach(lg => {
+      const item = document.createElement('span');
+      item.style.cssText = 'display:flex;align-items:center;gap:4px;';
+      const sw = document.createElement('span');
+      sw.style.cssText = 'display:inline-block;width:10px;height:10px;border-radius:2px;background:'+lg.color+';'+(lg.border?'border:'+lg.border:'');
+      item.appendChild(sw);
+      item.appendChild(document.createTextNode(lg.label));
+      legendDiv.appendChild(item);
+    });
+    wrap.appendChild(legendDiv);
 
     // -- SVG layout --
     const W        = Math.max(wrap.offsetWidth||860, 400);
     const H        = 108;
     const PAD_L    = 4, PAD_R = 4;
-    const COUNT_H  = 14;   // space above bars for count labels
-    const LABEL_H  = 28;   // space below bars for month + year labels
+    const COUNT_H  = 14;
+    const LABEL_H  = 28;
     const BAR_AREA = H - COUNT_H - LABEL_H;
     const nCols    = cols.length;
     const COL_W    = Math.floor((W - PAD_L - PAD_R) / nCols);
@@ -6124,8 +6234,8 @@ class Component extends DCLogic {
       return el;
     };
 
-    // Today marker (inside current-month column = first non-overdue column)
-    const todayColIdx = overdueSubs.length;
+    // Today marker
+    const todayColIdx = odBucket.subs.length;
     const daysInMo    = new Date(today.getFullYear(), today.getMonth()+1, 0).getDate();
     const todayFrac   = today.getDate() / daysInMo;
     const todayX      = PAD_L + todayColIdx * COL_W + Math.round(todayFrac * COL_W);
@@ -6136,34 +6246,72 @@ class Component extends DCLogic {
     cols.forEach((col, i) => {
       const x   = PAD_L + i * COL_W;
       const cx  = x + COL_W / 2;
-      const barH = col.subs.length ? Math.max(8, Math.round((col.arr/maxArr)*BAR_MAX)) : 0;
-      const barY = COUNT_H + (BAR_AREA - barH);
+      const totalBarH = col.subs.length ? Math.max(8, Math.round((col.arr/maxArr)*BAR_MAX)) : 0;
+      const barY = COUNT_H + (BAR_AREA - totalBarH);
 
       const g = document.createElementNS(svgNS, 'g');
       g.style.cursor = col.subs.length ? 'pointer' : 'default';
 
-      // Track background
-      g.appendChild(mk('rect', { x:x+2, y:COUNT_H, width:BAR_W, height:BAR_AREA, fill:'#f5f5f5', rx:3 }));
+      // Track background: tinted by health urgency
+      const bgColor = col.subs.length ? healthBg(col.minDays) : '#f5f5f5';
+      g.appendChild(mk('rect', { x:x+2, y:COUNT_H, width:BAR_W, height:BAR_AREA, fill:bgColor, rx:3 }));
 
       const isSel = window.__sfRenewalMo && col.key === window.__sfRenewalMo;
 
-      if (barH) {
-        // Filled bar
-        const bar = mk('rect', { x:x+2, y:barY, width:BAR_W, height:barH, fill:col.color, rx:3, opacity: isSel ? 1 : 0.85 });
-        g.appendChild(bar);
+      if (totalBarH) {
+        // Stacked bar: Software (bottom) → SA (middle) → Other (top)
+        const segRects = [];
+        if (col.arr > 0) {
+          const segments = [];
+          if (col.swArr  > 0) segments.push({ arr:col.swArr,  color:ST_SW });
+          if (col.saArr  > 0) segments.push({ arr:col.saArr,  color:ST_SA });
+          if (col.othArr > 0) segments.push({ arr:col.othArr, color:ST_OTHER });
+          if (!segments.length) segments.push({ arr:1, color:'#bdbdbd' });
 
-        // Count above bar
+          let curY = barY + totalBarH;
+          segments.forEach((seg, si) => {
+            const segH = si === segments.length - 1
+              ? curY - barY
+              : Math.max(1, Math.round((seg.arr / col.arr) * totalBarH));
+            curY -= segH;
+            const r = mk('rect', { x:x+2, y:curY, width:BAR_W, height:Math.max(segH,1),
+              fill:seg.color, rx:2, opacity: isSel ? 1 : 0.88 });
+            g.appendChild(r);
+            segRects.push(r);
+          });
+        } else {
+          // All zero-ARR: single grey bar
+          const r = mk('rect', { x:x+2, y:barY, width:BAR_W, height:totalBarH,
+            fill:'#bdbdbd', rx:2, opacity: isSel ? 1 : 0.88 });
+          g.appendChild(r);
+          segRects.push(r);
+        }
+
+        // Zero-value indicator: small grey notch at bottom of bar if any £0 subs exist
+        if (col.zeroCount > 0 && col.arr > 0) {
+          const zh = Math.min(Math.max(col.zeroCount * 2, 3), 6);
+          g.appendChild(mk('rect', { x:x+2, y:barY+totalBarH-zh, width:BAR_W, height:zh,
+            fill:'#e0e0e0', rx:0, opacity:0.85 }));
+        }
+
+        // Zero-only column: show count in empty track space
+        if (col.zeroCount > 0 && barY > COUNT_H + 10) {
+          g.appendChild(mk('text', { x:cx, y:COUNT_H+10, 'text-anchor':'middle',
+            'font-size':7, fill:'#9e9e9e', 'font-family':FONT }, '£0×'+col.zeroCount));
+        }
+
+        // Count above bar (urgency-colored)
         g.appendChild(mk('text', { x:cx, y:barY-3, 'text-anchor':'middle', 'font-size':9,
           'font-weight':700, fill:col.color, 'font-family':FONT }, col.subs.length));
 
         // ARR inside bar if tall enough
-        if (barH >= 18)
-          g.appendChild(mk('text', { x:cx, y:barY+barH/2+4, 'text-anchor':'middle',
+        if (totalBarH >= 18)
+          g.appendChild(mk('text', { x:cx, y:barY+totalBarH/2+4, 'text-anchor':'middle',
             'font-size':7, fill:'#fff', 'font-family':FONT }, fmtA(col.arr)));
 
-        // Hover
-        g.addEventListener('mouseenter', () => { if (!isSel) bar.setAttribute('opacity','1'); });
-        g.addEventListener('mouseleave', () => { if (!isSel) bar.setAttribute('opacity','0.85'); });
+        // Hover / click
+        g.addEventListener('mouseenter', () => { if (!isSel) segRects.forEach(r => r.setAttribute('opacity','1')); });
+        g.addEventListener('mouseleave', () => { if (!isSel) segRects.forEach(r => r.setAttribute('opacity','0.88')); });
         g.addEventListener('click', () => {
           const wasSelected = window.__sfRenewalMo === col.key;
           window.__sfRenewalMo = wasSelected ? null : col.key;
