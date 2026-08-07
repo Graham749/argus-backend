@@ -87,29 +87,14 @@ input{font-family:inherit;}
       </div>
       <div style="padding:22px 0;">
       <div style="font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:rgba(255,255,255,0.32);padding:10px 20px 6px;">Intelligence</div>
+      <!-- Live pages first -->
       <a href="#" onClick="{{ goHealth }}" style="{{ navStyleHealth }}" style-hover="background:rgba(255,255,255,0.06);color:#fff;">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;flex-shrink:0;"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
         Client health card
       </a>
-      <a href="#" style="display:flex;align-items:center;gap:10px;padding:8px 20px;font-size:13px;color:rgba(255,255,255,0.65);text-decoration:none;border-left:3px solid transparent;font-weight:600;opacity:0.35;pointer-events:none;">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;flex-shrink:0;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-        Ask Argus
-      </a>
-      <a href="#" style="display:flex;align-items:center;gap:10px;padding:8px 20px;font-size:13px;color:rgba(255,255,255,0.65);text-decoration:none;border-left:3px solid transparent;font-weight:600;opacity:0.35;pointer-events:none;">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;flex-shrink:0;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-        Pre-call briefing
-      </a>
-      <a href="#" style="display:flex;align-items:center;gap:10px;padding:8px 20px;font-size:13px;color:rgba(255,255,255,0.65);text-decoration:none;border-left:3px solid transparent;font-weight:600;opacity:0.35;pointer-events:none;">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;flex-shrink:0;"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-        Build status
-      </a>
-      <a href="#" onClick="{{ goBuildDesign }}" style="{{ navStyleBuildDesign }}" style-hover="background:rgba(255,255,255,0.06);color:#fff;">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;flex-shrink:0;"><path d="M2 3h20v4H2zM2 10h20v4H2zM2 17h20v4H2z"/></svg>
-        Build design
-      </a>
       <a href="#" onClick="{{ goSwIntelligence }}" style="{{ navStyleSwIntelligence }}" style-hover="background:rgba(255,255,255,0.06);color:#fff;">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;flex-shrink:0;"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-        Region Intelligence
+        Region intelligence
       </a>
       <a href="#" id="navMdm" onClick="{{ goMdm }}" style="{{ navStyleMdm }}" style-hover="background:rgba(255,255,255,0.06);color:#fff;">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;flex-shrink:0;"><circle cx="12" cy="5" r="3"/><circle cx="5" cy="19" r="3"/><circle cx="19" cy="19" r="3"/><line x1="12" y1="8" x2="5" y2="16"/><line x1="12" y1="8" x2="19" y2="16"/></svg>
@@ -118,6 +103,32 @@ input{font-family:inherit;}
       <a href="#" id="navFeatures" onClick="{{ goFeatures }}" style="{{ navStyleFeatures }}" style-hover="background:rgba(255,255,255,0.06);color:#fff;">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;flex-shrink:0;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
         Feature priority
+      </a>
+      <!-- Build design section -->
+      <div style="display:flex;align-items:center;gap:8px;padding:10px 20px 2px;font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:rgba(255,255,255,0.32);margin-top:6px;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;flex-shrink:0;"><path d="M2 3h20v4H2zM2 10h20v4H2zM2 17h20v4H2z"/></svg>
+        Build design
+      </div>
+      <a href="#" onClick="{{ goDataLakeBuild }}" style="{{ navStyleDataLakeBuild }}" style-hover="background:rgba(255,255,255,0.06);color:#fff;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;flex-shrink:0;"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4.03 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4.03 3 9 3s9-1.34 9-3"/></svg>
+        Data Lake Build
+      </a>
+      <a href="#" onClick="{{ goArgusMcp }}" style="{{ navStyleArgusMcp }}" style-hover="background:rgba(255,255,255,0.06);color:#fff;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;flex-shrink:0;"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+        Argus and MCP
+      </a>
+      <!-- Placeholder pages -->
+      <a href="#" style="display:flex;align-items:center;gap:10px;padding:8px 20px;font-size:13px;color:rgba(255,255,255,0.65);text-decoration:none;border-left:3px solid transparent;font-weight:600;opacity:0.35;pointer-events:none;margin-top:6px;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;flex-shrink:0;"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        Build status
+      </a>
+      <a href="#" style="display:flex;align-items:center;gap:10px;padding:8px 20px;font-size:13px;color:rgba(255,255,255,0.65);text-decoration:none;border-left:3px solid transparent;font-weight:600;opacity:0.35;pointer-events:none;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;flex-shrink:0;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        Ask Argus
+      </a>
+      <a href="#" style="display:flex;align-items:center;gap:10px;padding:8px 20px;font-size:13px;color:rgba(255,255,255,0.65);text-decoration:none;border-left:3px solid transparent;font-weight:600;opacity:0.35;pointer-events:none;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;flex-shrink:0;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Pre-call briefing
       </a>
       <div style="font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:rgba(255,255,255,0.32);padding:18px 20px 6px;">Account</div>
       <a href="#" style="display:flex;align-items:center;gap:10px;padding:8px 20px;font-size:13px;color:rgba(255,255,255,0.65);text-decoration:none;border-left:3px solid transparent;opacity:0.35;pointer-events:none;">
@@ -1321,10 +1332,140 @@ input{font-family:inherit;}
       </div>
       </sc-if>
 
-      <!-- ============ BUILD DESIGN ============ -->
-      <sc-if value="{{ isBuildDesign }}" hint-placeholder-val="{{ false }}">
-      <div style="width:100%;height:calc(100vh - 60px);overflow:hidden;animation:argusFade .2s ease;">
-        <iframe src="/architecture.html" style="width:100%;height:100%;border:none;" title="Build Design — Architecture Diagrams"></iframe>
+      <!-- ============ DATA LAKE BUILD ============ -->
+      <sc-if value="{{ isDataLakeBuild }}" hint-placeholder-val="{{ false }}">
+      <div style="padding:32px;max-width:1080px;animation:argusFade .25s ease;">
+        <div style="font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#9d9d9d;margin-bottom:8px;">Platform · Build design</div>
+        <div style="font-size:24px;font-weight:700;letter-spacing:-0.01em;color:#3c3c3b;">Data Lake Build</div>
+        <div style="font-size:14px;color:#6d6d6c;margin-top:4px;">Medallion Architecture — current state · LH_ProdOps_Dev · Microsoft Fabric · Argus PoC</div>
+        <div style="background:#fff;border:1px solid #e6e6e5;border-radius:12px;padding:28px;margin-top:24px;">
+          <div style="border:1.5px dashed #d6d6d4;border-radius:10px;padding:16px 20px;">
+            <div style="font-size:11px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;margin-bottom:4px;color:#3c3c3b;">Sources</div>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;">
+              <div style="background:rgba(255,255,255,0.8);border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:8px 13px;font-size:11px;font-weight:500;color:#222;white-space:normal;min-width:180px;">Salesforce API<span style="font-size:9.5px;color:#888;font-weight:400;display:block;margin-top:2px;">subscriptions · accounts · products · cases · opportunities</span></div>
+              <div style="background:rgba(255,255,255,0.8);border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:8px 13px;font-size:11px;font-weight:500;color:#222;white-space:normal;min-width:180px;">Productboard API<span style="font-size:9.5px;color:#888;font-weight:400;display:block;margin-top:2px;">features · subfeatures · relationships</span></div>
+              <div style="background:rgba(255,255,255,0.8);border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:8px 13px;font-size:11px;font-weight:500;color:#222;white-space:normal;min-width:180px;">Zendesk REST API<span style="font-size:9.5px;color:#888;font-weight:400;display:block;margin-top:2px;">tickets</span></div>
+              <div style="background:rgba(255,255,255,0.8);border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:8px 13px;font-size:11px;font-weight:500;color:#222;white-space:normal;min-width:180px;">PostHog API<span style="font-size:9.5px;color:#888;font-weight:400;display:block;margin-top:2px;">events · session data · opt-out flags</span></div>
+              <div style="background:rgba(255,255,255,0.8);border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:8px 13px;font-size:11px;font-weight:500;color:#222;white-space:normal;min-width:180px;">EOS Parquet files<span style="font-size:9.5px;color:#888;font-weight:400;display:block;margin-top:2px;">161M rows · API usage</span></div>
+            </div>
+          </div>
+          <div style="display:flex;justify-content:center;align-items:center;height:28px;gap:8px;color:#aaa;font-size:11px;"><svg width="12" height="18" viewBox="0 0 12 18"><path d="M6 0v12M1 7l5 6 5-6" stroke="#CCCCCC" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <div style="background:#FEF3E8;border:1px solid #F5C48A;border-radius:10px;padding:16px 20px;margin-top:6px;">
+            <div style="font-size:11px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;margin-bottom:4px;color:#9A5A10;">Bronze — Raw ingestion</div>
+            <div style="font-size:11px;margin-bottom:12px;color:#B07030;">LH_ProdOps_Dev · Fabric Dataflow Gen2 + PySpark notebooks</div>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;">
+              <div style="background:rgba(255,255,255,0.8);border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:8px 13px;font-family:'Courier New',monospace;font-size:10.5px;font-weight:500;color:#222;white-space:nowrap;">bronze_sfapi_subscripton__c</div>
+              <div style="background:rgba(255,255,255,0.8);border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:8px 13px;font-family:'Courier New',monospace;font-size:10.5px;font-weight:500;color:#222;white-space:nowrap;">bronze_sfapi_account</div>
+              <div style="background:rgba(255,255,255,0.8);border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:8px 13px;font-family:'Courier New',monospace;font-size:10.5px;font-weight:500;color:#222;white-space:nowrap;">bronze_sfapi_product2</div>
+              <div style="background:rgba(255,255,255,0.8);border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:8px 13px;font-family:'Courier New',monospace;font-size:10.5px;font-weight:500;color:#222;white-space:nowrap;">bronze_sfapi_case</div>
+              <div style="background:rgba(255,255,255,0.8);border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:8px 13px;font-family:'Courier New',monospace;font-size:10.5px;font-weight:500;color:#222;white-space:normal;min-width:180px;">bronze_posthog_events<span style="font-size:9.5px;color:#888;font-weight:400;display:block;margin-top:2px;font-family:inherit;">url_state_change · HogQL notebook · GeoIP enriched</span></div>
+              <div style="background:rgba(255,255,255,0.8);border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:8px 13px;font-family:'Courier New',monospace;font-size:10.5px;font-weight:500;color:#222;white-space:nowrap;">bronze_pb_features</div>
+              <div style="background:rgba(255,255,255,0.8);border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:8px 13px;font-family:'Courier New',monospace;font-size:10.5px;font-weight:500;color:#222;white-space:nowrap;">bronze_pb_relationships_raw</div>
+              <div style="background:rgba(255,255,255,0.8);border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:8px 13px;font-family:'Courier New',monospace;font-size:10.5px;font-weight:500;color:#222;white-space:normal;min-width:140px;">zd_notebook_*<span style="font-size:9.5px;color:#888;font-weight:400;display:block;margin-top:2px;font-family:inherit;">6 tables</span></div>
+              <div style="background:rgba(255,255,255,0.8);border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:8px 13px;font-family:'Courier New',monospace;font-size:10.5px;font-weight:500;color:#222;white-space:normal;min-width:220px;">eos_parquet_api_usage_legacy<span style="font-size:9.5px;color:#888;font-weight:400;display:block;margin-top:2px;font-family:inherit;">Delta · 161M rows · partitioned by year / is_internal</span></div>
+            </div>
+          </div>
+          <div style="display:flex;justify-content:center;align-items:center;height:28px;gap:8px;color:#aaa;font-size:11px;"><svg width="12" height="18" viewBox="0 0 12 18"><path d="M6 0v12M1 7l5 6 5-6" stroke="#CCCCCC" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg><span>PySpark transforms + SQL views</span></div>
+          <div style="background:#EAF6F1;border:1px solid #8DD4B8;border-radius:10px;padding:16px 20px;margin-top:6px;">
+            <div style="font-size:11px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;margin-bottom:4px;color:#0D6E50;">Silver — Cleansed &amp; joined</div>
+            <div style="font-size:11px;margin-bottom:12px;color:#2A8A6A;">SQL views · Product Ops owned · No materialisation during PoC</div>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;">
+              <div style="background:rgba(255,255,255,0.8);border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:8px 13px;font-family:'Courier New',monospace;font-size:10.5px;font-weight:500;color:#222;white-space:nowrap;">v_silver_sf_subscriptions</div>
+              <div style="background:rgba(255,255,255,0.8);border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:8px 13px;font-family:'Courier New',monospace;font-size:10.5px;font-weight:500;color:#222;white-space:nowrap;">v_silver_sf_customer_accounts</div>
+              <div style="background:rgba(255,255,255,0.8);border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:8px 13px;font-family:'Courier New',monospace;font-size:10.5px;font-weight:500;color:#222;white-space:nowrap;">v_silver_sf_products</div>
+              <div style="background:rgba(255,255,255,0.8);border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:8px 13px;font-family:'Courier New',monospace;font-size:10.5px;font-weight:500;color:#222;white-space:nowrap;">v_silver_pb_features</div>
+              <div style="background:rgba(255,255,255,0.8);border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:8px 13px;font-family:'Courier New',monospace;font-size:10.5px;font-weight:500;color:#222;white-space:nowrap;">v_silver_pb_subfeatures</div>
+              <div style="background:rgba(255,255,255,0.8);border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:8px 13px;font-family:'Courier New',monospace;font-size:10.5px;font-weight:500;color:#222;white-space:normal;min-width:180px;">v_silver_mdm_account<span style="font-size:9.5px;color:#888;font-weight:400;display:block;margin-top:2px;font-family:inherit;">SF + ZD + PB joined</span></div>
+              <div style="background:rgba(255,255,255,0.8);border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:8px 13px;font-family:'Courier New',monospace;font-size:10.5px;font-weight:500;color:#222;white-space:nowrap;">v_silver_lookup_fxrates</div>
+              <div style="background:rgba(255,255,255,0.8);border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:8px 13px;font-family:'Courier New',monospace;font-size:10.5px;font-weight:500;color:#222;white-space:nowrap;">v_silver_bridge_full_hierarchy_region_partition</div>
+            </div>
+            <div style="font-style:italic;font-size:11px;color:#9d9d9d;margin-top:10px;">Data team will materialise to Delta tables when PoC graduates — no fixed date</div>
+          </div>
+          <div style="display:flex;justify-content:center;align-items:center;height:28px;gap:8px;color:#aaa;font-size:11px;"><svg width="12" height="18" viewBox="0 0 12 18"><path d="M6 0v12M1 7l5 6 5-6" stroke="#CCCCCC" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Materialised to Delta tables</span></div>
+          <div style="background:#F0EBF8;border:1px solid #B99FD8;border-radius:10px;padding:16px 20px;margin-top:6px;">
+            <div style="font-size:11px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;margin-bottom:4px;color:#4A2880;">Gold — Materialised Delta tables</div>
+            <div style="font-size:11px;margin-bottom:12px;color:#6A3EA0;">Physical Parquet storage · No view-on-view chain · Fast SQL Analytics Endpoint queries</div>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;">
+              <div style="background:rgba(255,255,255,0.8);border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:8px 13px;font-family:'Courier New',monospace;font-size:10.5px;font-weight:500;color:#222;white-space:normal;min-width:200px;">gold_sf_subscriptions<span style="font-size:9.5px;color:#888;font-weight:400;display:block;margin-top:2px;font-family:inherit;">Single source of truth for all SF subscriptions</span></div>
+              <div style="background:rgba(255,255,255,0.8);border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:8px 13px;font-family:'Courier New',monospace;font-size:10.5px;font-weight:500;color:#222;white-space:normal;min-width:160px;">gold_lookup_fxrates<span style="font-size:9.5px;color:#888;font-weight:400;display:block;margin-top:2px;font-family:inherit;">PBI-aligned FX rates</span></div>
+              <div style="background:rgba(255,255,255,0.8);border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:8px 13px;font-family:'Courier New',monospace;font-size:10.5px;font-weight:500;color:#222;white-space:normal;min-width:160px;">gold_sf_opportunities<span style="font-size:9.5px;color:#888;font-weight:400;display:block;margin-top:2px;font-family:inherit;">SF pipeline</span></div>
+              <div style="background:rgba(255,255,255,0.8);border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:8px 13px;font-family:'Courier New',monospace;font-size:10.5px;font-weight:500;color:#222;white-space:normal;min-width:160px;">gold_exchangeratetable<span style="font-size:9.5px;color:#888;font-weight:400;display:block;margin-top:2px;font-family:inherit;">Historical FX from Bronze</span></div>
+              <div style="background:rgba(255,255,255,0.8);border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:8px 13px;font-family:'Courier New',monospace;font-size:10.5px;font-weight:500;color:#222;white-space:nowrap;opacity:0.5;border-style:dashed;">gold_churn_propensity_scores <em style="font-size:9px;">planned</em></div>
+            </div>
+          </div>
+          <div style="display:flex;justify-content:center;align-items:center;height:28px;gap:8px;color:#aaa;font-size:11px;"><svg width="12" height="18" viewBox="0 0 12 18"><path d="M6 0v12M1 7l5 6 5-6" stroke="#CCCCCC" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg><span>SQL Analytics Endpoint</span></div>
+          <div style="background:#EEF4FB;border:1px solid #94BFEA;border-radius:10px;padding:16px 20px;margin-top:6px;">
+            <div style="font-size:11px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;margin-bottom:4px;color:#1A4F8A;">Consumers</div>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;">
+              <div style="background:rgba(255,255,255,0.8);border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:8px 13px;font-size:11px;font-weight:500;color:#222;white-space:normal;min-width:180px;">Power BI<span style="font-size:9.5px;color:#888;font-weight:400;display:block;margin-top:2px;">Direct SQL Analytics Endpoint connection</span></div>
+              <div style="background:rgba(255,255,255,0.8);border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:8px 13px;font-size:11px;font-weight:500;color:#222;white-space:normal;min-width:180px;">Argus Node.js API<span style="font-size:9.5px;color:#888;font-weight:400;display:block;margin-top:2px;">src/api/ endpoints · 15-min in-memory cache</span></div>
+              <div style="background:rgba(255,255,255,0.8);border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:8px 13px;font-size:11px;font-weight:500;color:#222;white-space:normal;min-width:180px;">MCP Server<span style="font-size:9.5px;color:#888;font-weight:400;display:block;margin-top:2px;">Same endpoint · 9 tools planned</span></div>
+            </div>
+            <div style="font-size:11px;color:#6d6d6c;margin-top:10px;line-height:1.6;">Materialised Gold = no view-chain recomputation on every query · Fabric Pipeline manages refresh · In-memory API cache reduces concurrent CU burn on F8</div>
+          </div>
+        </div>
+      </div>
+      </sc-if>
+
+      <!-- ============ ARGUS AND MCP ============ -->
+      <sc-if value="{{ isArgusMcp }}" hint-placeholder-val="{{ false }}">
+      <div style="padding:32px;max-width:1080px;animation:argusFade .25s ease;">
+        <div style="font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#9d9d9d;margin-bottom:8px;">Platform · Build design</div>
+        <div style="font-size:24px;font-weight:700;letter-spacing:-0.01em;color:#3c3c3b;">Argus and MCP</div>
+        <div style="font-size:14px;color:#6d6d6c;margin-top:4px;">Development Cycle &amp; Hosting · Phase 1 → Phase 2 · Target: September 2026</div>
+        <div style="background:#fff;border:1px solid #e6e6e5;border-radius:12px;padding:28px;margin-top:24px;">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div style="background:#EBF5EE;border:1px solid #7DC49A;border-radius:10px;padding:20px;">
+              <div style="font-size:11px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:#1A6E3E;margin-bottom:4px;">Phase 1 — Argus app</div>
+              <div style="font-size:11px;color:#555;margin-bottom:14px;">Frontend dashboard · Node.js API · Test users = CS team</div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <div style="flex:1;min-width:130px;background:rgba(255,255,255,0.75);border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:10px 12px;">
+                  <span style="font-weight:600;font-size:11px;display:block;margin-bottom:4px;color:#111;">Data quality</span>
+                  <span style="font-size:10.5px;color:#666;line-height:1.5;">ARR nulls, filter bugs, field gaps surfaced by real users</span>
+                </div>
+                <div style="flex:1;min-width:130px;background:rgba(255,255,255,0.75);border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:10px 12px;">
+                  <span style="font-weight:600;font-size:11px;display:block;margin-bottom:4px;color:#111;">Data persona</span>
+                  <span style="font-size:10.5px;color:#666;line-height:1.5;">Which questions people ask, which fields matter, what 'correct' looks like</span>
+                </div>
+              </div>
+            </div>
+            <div style="background:#FBF0EE;border:1px solid #E0A098;border-radius:10px;padding:20px;">
+              <div style="font-size:11px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:#8A2A1A;margin-bottom:4px;">Phase 2 — MCP Server</div>
+              <div style="font-size:11px;color:#555;margin-bottom:14px;">Claude Enterprise integration · Built from Argus-validated patterns</div>
+              <div style="display:flex;flex-wrap:wrap;gap:6px;">
+                <span style="background:rgba(255,255,255,0.75);border:1px solid rgba(0,0,0,0.1);border-radius:6px;padding:5px 9px;font-size:10px;font-weight:500;font-family:'Courier New',monospace;color:#333;">get_account_health</span>
+                <span style="background:rgba(255,255,255,0.75);border:1px solid rgba(0,0,0,0.1);border-radius:6px;padding:5px 9px;font-size:10px;font-weight:500;font-family:'Courier New',monospace;color:#333;">get_churn_signals</span>
+                <span style="background:rgba(255,255,255,0.75);border:1px solid rgba(0,0,0,0.1);border-radius:6px;padding:5px 9px;font-size:10px;font-weight:500;font-family:'Courier New',monospace;color:#333;">get_renewals_pipeline</span>
+                <span style="background:rgba(255,255,255,0.75);border:1px solid rgba(0,0,0,0.1);border-radius:6px;padding:5px 9px;font-size:10px;font-weight:500;font-family:'Courier New',monospace;color:#333;">search_accounts</span>
+                <span style="background:rgba(255,255,255,0.75);border:1px solid rgba(0,0,0,0.1);border-radius:6px;padding:5px 9px;font-size:10px;font-weight:500;font-family:'Courier New',monospace;color:#333;">get_account_usage</span>
+                <span style="background:rgba(255,255,255,0.75);border:1px solid rgba(0,0,0,0.1);border-radius:6px;padding:5px 9px;font-size:10px;font-weight:500;font-family:'Courier New',monospace;color:#333;">get_account_summary</span>
+                <span style="background:rgba(255,255,255,0.75);border:1px solid rgba(0,0,0,0.1);border-radius:6px;padding:5px 9px;font-size:10px;font-weight:500;font-family:'Courier New',monospace;color:#333;">list_accounts</span>
+                <span style="background:rgba(255,255,255,0.75);border:1px solid rgba(0,0,0,0.1);border-radius:6px;padding:5px 9px;font-size:10px;font-weight:500;font-family:'Courier New',monospace;color:#333;">get_feature_adoption</span>
+                <span style="background:rgba(255,255,255,0.75);border:1px solid rgba(0,0,0,0.1);border-radius:6px;padding:5px 9px;font-size:10px;font-weight:500;font-family:'Courier New',monospace;color:#333;">get_posthog_opt_out</span>
+              </div>
+            </div>
+          </div>
+          <div style="display:flex;justify-content:center;align-items:center;height:28px;gap:8px;color:#aaa;font-size:11px;margin-top:4px;"><svg width="12" height="18" viewBox="0 0 12 18"><path d="M6 0v12M1 7l5 6 5-6" stroke="#CCCCCC" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Validated queries + proven patterns feed into →</span></div>
+          <div style="background:#EEF4FB;border:1px solid #94BFEA;border-radius:10px;padding:20px;margin-top:0;">
+            <div style="font-size:11px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:#1A4F8A;margin-bottom:4px;">Shared Node.js API — src/api/endpoints</div>
+            <div style="font-size:11px;color:#555;margin-bottom:10px;">Single source of truth · Schema changes fixed once · Fabric SQL Analytics Endpoint</div>
+            <div style="background:rgba(255,255,255,0.6);border:1px solid rgba(0,0,0,0.08);border-radius:8px;padding:10px 14px;font-size:11px;color:#555;line-height:1.6;">Both Argus and the MCP server are consumers of the same API layer — not two separate codebases. A schema change in a Gold table needs fixing in one place only.</div>
+          </div>
+          <div style="display:flex;justify-content:center;align-items:center;height:28px;gap:8px;color:#aaa;font-size:11px;"><svg width="12" height="18" viewBox="0 0 12 18"><path d="M6 0v12M1 7l5 6 5-6" stroke="#CCCCCC" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Both must be hosted identically</span></div>
+          <div style="background:#f4f4f2;border:1px solid #CFCEC8;border-radius:10px;padding:20px;margin-top:0;">
+            <div style="font-size:11px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:#555;margin-bottom:4px;">Azure App Service — hosting (required for both phases)</div>
+            <div style="font-size:11px;color:#777;">Stable HTTPS URL · M365 Easy Auth · Node.js 20 LTS · B1 tier</div>
+            <div style="display:flex;gap:10px;margin-top:12px;">
+              <div style="flex:1;background:#fff;border:1px solid #DDDCD7;border-radius:8px;padding:10px 14px;font-size:11.5px;font-weight:600;color:#222;">Argus app<span style="display:block;font-size:10px;font-weight:400;color:#9d9d9d;margin-top:2px;">argus.auroraer.com</span></div>
+              <div style="flex:1;background:#fff;border:1px solid #DDDCD7;border-radius:8px;padding:10px 14px;font-size:11.5px;font-weight:600;color:#222;">MCP server<span style="display:block;font-size:10px;font-weight:400;color:#9d9d9d;margin-top:2px;">argus-mcp.auroraer.com</span></div>
+            </div>
+          </div>
+          <div style="margin-top:10px;background:#f7f7f5;border:1px solid #e6e6e5;border-radius:8px;padding:14px 16px;">
+            <div style="font-size:11.5px;font-weight:700;color:#3c3c3b;margin-bottom:8px;">Why both must be hosted (not run locally)</div>
+            <div style="font-size:11px;color:#6d6d6c;line-height:1.75;"><strong>Argus app</strong> — business users need a stable URL they can bookmark and share. Running on a laptop means the app disappears when the machine sleeps or leaves the office. Azure App Service gives it a persistent HTTPS endpoint with M365 Easy Auth so Aurora staff sign in with their existing Microsoft credentials, no separate accounts needed.<br><br><strong>MCP server</strong> — Claude Enterprise connects to MCP servers over HTTP at a fixed URL configured in the Claude admin console. There is no way to point Claude at a local machine or ngrok tunnel in a production org. The server must be live at a stable HTTPS address at all times — Claude calls it on demand whenever a user triggers one of the 9 tools, so downtime means broken AI queries. M365 Easy Auth in front also ensures only Aurora-authenticated users can trigger data access, which is required for governance.</div>
+          </div>
+          <div style="margin-top:10px;background:#FFFBEC;border:1px solid #F0D080;border-radius:8px;padding:10px 16px;font-size:11.5px;color:#7A5200;line-height:1.5;">Gate: IT service principal from Sam unlocks both — Azure App Service hosting + SQL Analytics Endpoint auth via TDS · Target: MCP server live September 2026</div>
+        </div>
       </div>
       </sc-if>
 
@@ -7631,11 +7772,12 @@ class Component extends DCLogic {
       goAssistant:(e)=>{e&&e.preventDefault();localStorage.setItem('argusView','assistant');this.setV({view:'assistant'});},
       goBriefing:(e)=>{e&&e.preventDefault();localStorage.setItem('argusView','briefing');this.setV({view:'briefing'});},
       goBuildStatus:(e)=>{e&&e.preventDefault();localStorage.setItem('argusView','buildStatus');this.setV({view:'buildStatus'});},
-      goBuildDesign:(e)=>{e&&e.preventDefault();localStorage.setItem('argusView','buildDesign');this.setV({view:'buildDesign'});},
+      goDataLakeBuild:(e)=>{e&&e.preventDefault();localStorage.setItem('argusView','dataLakeBuild');this.setV({view:'dataLakeBuild'});},
+      goArgusMcp:(e)=>{e&&e.preventDefault();localStorage.setItem('argusView','argusMcp');this.setV({view:'argusMcp'});},
       goMdm:(e)=>{e&&e.preventDefault();localStorage.setItem('argusView','mdm');window.__mdmSearch='';window.__mdmConfFilter=null;window.__mdmExpandedId=null;this.setV({view:'mdm'}); },
       goSwIntelligence:(e)=>{e&&e.preventDefault();localStorage.setItem('argusView','swIntelligence');document.body.classList.add('sidebar-collapsed');localStorage.setItem('sidebarCollapsed','true');this.setV({view:'swIntelligence'});},
-      navStyleHealth:navStyle('health'), navStyleFeatures:navStyle('features'), navStyleAssistant:navStyle('assistant'), navStyleBriefing:navStyle('briefing'), navStyleBuildStatus:navStyle('buildStatus'), navStyleBuildDesign:navStyle('buildDesign'), navStyleMdm:navStyle('mdm'), navStyleSwIntelligence:navStyle('swIntelligence'),
-      isHealth:S.view==='health', isFeatures:S.view==='features', isAssistant:S.view==='assistant', isBriefing:S.view==='briefing', isBuildStatus:S.view==='buildStatus', isBuildDesign:S.view==='buildDesign', isMdm:S.view==='mdm', isSwIntelligence:S.view==='swIntelligence',
+      navStyleHealth:navStyle('health'), navStyleFeatures:navStyle('features'), navStyleAssistant:navStyle('assistant'), navStyleBriefing:navStyle('briefing'), navStyleBuildStatus:navStyle('buildStatus'), navStyleDataLakeBuild:{...navStyle('dataLakeBuild'),padding:'6px 20px 6px 32px'}, navStyleArgusMcp:{...navStyle('argusMcp'),padding:'6px 20px 6px 32px'}, navStyleMdm:navStyle('mdm'), navStyleSwIntelligence:navStyle('swIntelligence'),
+      isHealth:S.view==='health', isFeatures:S.view==='features', isAssistant:S.view==='assistant', isBriefing:S.view==='briefing', isBuildStatus:S.view==='buildStatus', isDataLakeBuild:S.view==='dataLakeBuild', isArgusMcp:S.view==='argusMcp', isMdm:S.view==='mdm', isSwIntelligence:S.view==='swIntelligence',
       healthTabsHtml, rangesHtml, healthTabs, ranges, hc,
       toggleUsers:()=>this.toggleDrill('users_'+S.healthClient), drillUsers:!!S.drills['users_'+S.healthClient],
       toggleSubs:()=>this.toggleDrill('subs_'+S.healthClient), drillSubs:!!S.drills['subs_'+S.healthClient],
