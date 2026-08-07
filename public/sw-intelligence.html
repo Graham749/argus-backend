@@ -598,9 +598,7 @@ function renderClients() {
     + "<th style='min-width:90px'>"+(GROUP_BY==='energy'?'Energy Market':'Billing Region')+"</th>"
     + "<th style='min-width:230px'>Products &amp; ARR</th>"
     + "<th class='sortable num' data-col='arr_k' style='min-width:90px'>Total ARR"+si('arr_k')+"</th>"
-    + "<th style='min-width:150px'>Signals</th>"
-    + "<th style='min-width:80px'>ZD Tickets</th>"
-    + "<th style='min-width:90px'>Pipeline</th>"
+    + "<th style='min-width:200px'>Signals</th>"
     + "<th style='min-width:100px'>Next renewal</th>"
     + "<th style='width:100px'></th>"
     + "</tr></thead><tbody>";
@@ -682,8 +680,32 @@ function renderClients() {
           + "<span class='pb' style='padding:1px 6px;font-size:10px'>↑ Cross-sell</span></div>"
         : '';
 
-      var sigsCell = (renewHtml || termHtml || xsellHtml)
-        ? "<div>" + renewHtml + termHtml + xsellHtml + "</div>"
+      // ZD signal — per-account, first market row only
+      var zdSigHtml = '';
+      if (isFirstAcctRow && r.zd_open > 0) {
+        var zdTypes = (r.zd_types || []).sort(function(a,b){return b.count-a.count;});
+        var zdPillsHtml = zdTypes.map(function(t) {
+          return "<span style='display:inline-flex;align-items:center;padding:1px 7px;"
+            + "background:#fdeee0;color:#c2600f;border-radius:100px;font-size:10px;font-weight:700;"
+            + "white-space:nowrap;margin-right:3px'>" + t.count + " " + esc(t.label) + "</span>";
+        }).join('');
+        zdSigHtml = "<div style='margin-top:4px'>"
+          + zdPillsHtml
+          + (r.zd_last ? "<div style='font-size:10px;color:#9d9d9d;margin-top:2px'>last: "+esc(r.zd_last)+"</div>" : "")
+          + "</div>";
+      }
+
+      // No pipeline signal — per-account, first market row only
+      var noOppHtml = '';
+      if (isFirstAcctRow && r.opp_count === 0) {
+        noOppHtml = "<div style='margin-top:4px'>"
+          + "<span style='display:inline-flex;align-items:center;padding:1px 7px;"
+          + "background:#f5f5f5;color:#9d9d9d;border-radius:100px;font-size:10px;font-weight:700'>"
+          + "No Opportunities</span></div>";
+      }
+
+      var sigsCell = (renewHtml || termHtml || xsellHtml || zdSigHtml || noOppHtml)
+        ? "<div>" + renewHtml + termHtml + xsellHtml + zdSigHtml + noOppHtml + "</div>"
         : dash();
 
       // Nearest end date
@@ -692,31 +714,6 @@ function renderClients() {
       var rnCell = dates.length
         ? "<span style='font-size:12px;color:#6d6d6c'>"+esc(dates[0])+"</span>"
         : dash();
-
-      // ZD Tickets cell — per-account, shown only on first market row
-      var zdCell = '';
-      if (isFirstAcctRow) {
-        if (r.zd_open > 0) {
-          var zdTypes = (r.zd_types || []).sort(function(a,b){return b.count-a.count;});
-          zdCell = "<div style='font-size:11px;font-weight:700;color:#e65100'>"
-            + r.zd_open + " ticket" + (r.zd_open !== 1 ? "s" : "") + "</div>"
-            + zdTypes.map(function(t) {
-                return "<div style='font-size:10px;color:#6d6d6c'>"
-                  + esc(t.label) + " (" + t.count + ")</div>";
-              }).join('')
-            + (r.zd_last ? "<div style='font-size:10px;color:#9d9d9d;margin-top:2px'>last: "+esc(r.zd_last)+"</div>" : "");
-        } else {
-          zdCell = dash();
-        }
-      }
-
-      // Pipeline cell — per-account, shown only on first market row
-      var pipCell = isFirstAcctRow
-        ? (r.opp_count > 0
-          ? "<div style='font-size:11px;font-weight:700;color:#1565c0'>"+r.opp_count+" opp"+(r.opp_count!==1?"s":"")+"</div>"
-            + "<div style='font-size:11px;color:#6d6d6c'>"+currSym()+toDisp(r.pipeline_k).toFixed(0)+"k</div>"
-          : dash())
-        : "";
 
       // Main row
       html += "<tr class='expandable"+(isExp ? " expanded-row" : "")+"' data-ekey='"+ekey+"'>"
@@ -727,8 +724,6 @@ function renderClients() {
         +   currSym()+toDisp(r.arr_k).toFixed(0)+"k"
         + "</td>"
         + "<td style='vertical-align:top'>"+sigsCell+"</td>"
-        + "<td style='vertical-align:top;padding-top:9px'>"+zdCell+"</td>"
-        + "<td style='vertical-align:top;padding-top:9px'>"+pipCell+"</td>"
         + "<td style='vertical-align:top;padding-top:10px'>"+rnCell+"</td>"
         + "<td style='vertical-align:top;padding-top:7px'>"
         +   "<button class='ch-btn' data-acct='"+esc(r.account)+"' "
@@ -761,7 +756,7 @@ function renderClients() {
       }).join('');
 
       html += "<tr class='expand-detail"+(isExp ? "" : " hidden")+"'>"
-        + "<td colspan='9'>"
+        + "<td colspan='7'>"
         + "<div style='font-size:10px;color:#9d9d9d;font-weight:600;text-transform:uppercase;letter-spacing:.08em;margin-bottom:7px'>Subscription detail — click row to collapse</div>"
         + "<table style='width:auto'>"
         + "<thead><tr>"
@@ -779,7 +774,7 @@ function renderClients() {
   });
 
   var uniqueAcctCount = new Set(rows.map(function(r) { return r.account; })).size;
-  html += "</tbody><tfoot><tr><td colspan='9'>"
+  html += "</tbody><tfoot><tr><td colspan='7'>"
     + totalRows + " subscription lines · " + uniqueAcctCount + " accounts"
     + "</td></tr></tfoot>";
 
