@@ -31,7 +31,7 @@ main{max-width:1320px;margin:0 auto;padding:24px}
 
 /* ── KPI strip ── */
 .kpi-row{display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap}
-.kpi{background:#fff;border:1px solid #e6e6e5;border-radius:10px;padding:14px 18px;min-width:150px;flex:1}
+.kpi{background:#fff;border:1px solid #e6e6e5;border-radius:10px;padding:11px 14px;min-width:110px;flex:1}
 .kpi-label{font-size:10px;color:#9d9d9d;margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em;font-weight:600}
 .kpi-value{font-size:26px;font-weight:600;line-height:1.2;color:#3c3c3b}
 .kpi-value.teal{color:#288184}
@@ -127,6 +127,7 @@ tfoot td{font-size:11px;color:#9d9d9d;padding:6px 10px;border-top:1px solid #e6e
   <div id="health-bar" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:16px;">
     <span class="filter-label" style="font-size:11px;color:#9d9d9d;font-weight:700">Renewal Health:</span>
     <span class="hp hp-od sel" id="hp-all" onclick="setHealth('all')" style="background:#f5f5f5;color:#6d6d6c">All Accounts</span>
+    <span class="hp hp-od" id="hp-OVERDUE" onclick="setHealth('OVERDUE')">0 Overdue</span>
     <span class="hp hp-ar" id="hp-AT_RISK"  onclick="setHealth('AT_RISK')">0 At Risk</span>
     <span class="hp hp-tw" id="hp-TO_WATCH" onclick="setHealth('TO_WATCH')">0 To Watch</span>
     <span class="hp hp-ok" id="hp-HEALTHY"  onclick="setHealth('HEALTHY')">0 Healthy</span>
@@ -388,19 +389,16 @@ function filteredTIP() {
   return tip;
 }
 
+var HEALTH_ORDER = ['OVERDUE', 'AT_RISK', 'TO_WATCH', 'HEALTHY'];
+var BADGE_TO_HEALTH = { OVERDUE: 'OVERDUE', '3M': 'AT_RISK', '6M': 'TO_WATCH', '12M': 'HEALTHY' };
+
 function clientHealthBucket(client) {
-  var TODAY = new Date(); TODAY.setHours(0,0,0,0);
-  var minDays = Infinity;
+  var worst = client.flag_terminating ? 'AT_RISK' : 'HEALTHY';
   (client.sw_lines || []).forEach(function(l) {
-    if (!l.end_date) return;
-    var d = new Date(l.end_date);
-    var days = Math.round((d - TODAY) / (1000*60*60*24));
-    if (days < minDays) minDays = days;
+    var b = BADGE_TO_HEALTH[l.renewal_badge] || 'HEALTHY';
+    if (HEALTH_ORDER.indexOf(b) < HEALTH_ORDER.indexOf(worst)) worst = b;
   });
-  if (minDays === Infinity) return client.flag_terminating ? 'AT_RISK' : 'HEALTHY';
-  if (minDays < 180) return 'AT_RISK';
-  if (minDays < 365) return 'TO_WATCH';
-  return 'HEALTHY';
+  return worst;
 }
 
 function setHealth(key) {
@@ -426,40 +424,38 @@ function renderHealthBar() {
     if (MKT.size > 0) ALL_CLIENTS = ALL_CLIENTS.filter(function(r) { return MKT.has(r.market); });
   }
   var fmtA = function(v) { var d = toDisp(v); return d >= 1000 ? currSym()+(d/1000).toFixed(1)+'m' : currSym()+Math.round(d)+'k'; };
-  var DEFS = [
-    { key:'AT_RISK',  id:'hp-AT_RISK',  lbl:'At Risk'  },
-    { key:'TO_WATCH', id:'hp-TO_WATCH', lbl:'To Watch' },
-    { key:'HEALTHY',  id:'hp-HEALTHY',  lbl:'Healthy'  },
-  ];
-  // Update All button
+  // Count at account level, using clientHealthBucket (aligns with client health card)
+  var byAcct = {};
+  ALL_CLIENTS.forEach(function(c) {
+    var b = clientHealthBucket(c);
+    if (!byAcct[c.account] || HEALTH_ORDER.indexOf(b) < HEALTH_ORDER.indexOf(byAcct[c.account].bucket)) {
+      byAcct[c.account] = { bucket: b, arr: 0 };
+    }
+    byAcct[c.account].arr += (c.arr_k || 0);
+  });
+  var counts = { OVERDUE: 0, AT_RISK: 0, TO_WATCH: 0, HEALTHY: 0 };
+  var arrs   = { OVERDUE: 0, AT_RISK: 0, TO_WATCH: 0, HEALTHY: 0 };
+  Object.values(byAcct).forEach(function(a) { counts[a.bucket]++; arrs[a.bucket] += a.arr; });
+
+  // All button
   var allBtn = document.getElementById('hp-all');
   if (allBtn) {
     allBtn.classList.toggle('sel', HEALTH === 'all');
     allBtn.style.background = HEALTH === 'all' ? '#3c3c3b' : '#f5f5f5';
     allBtn.style.color      = HEALTH === 'all' ? '#fff'    : '#6d6d6c';
   }
-  // Count at subscription level using sw_lines so totals match sub count
-  var TODAY_H = new Date(); TODAY_H.setHours(0,0,0,0);
-  var subCounts = { AT_RISK: 0, TO_WATCH: 0, HEALTHY: 0 };
-  var subArrs   = { AT_RISK: 0, TO_WATCH: 0, HEALTHY: 0 };
-  ALL_CLIENTS.forEach(function(c) {
-    (c.sw_lines || []).forEach(function(l) {
-      var tipN = l.tip_count || 0;
-      if (tipN > 0) { subCounts.AT_RISK += tipN; subArrs.AT_RISK += (l.arr_k || 0); }
-      var actN = l.sub_count || 0;
-      if (actN > 0) {
-        var days = l.end_date ? Math.floor((new Date(l.end_date) - TODAY_H) / 86400000) : Infinity;
-        var b = days < 180 ? 'AT_RISK' : days < 365 ? 'TO_WATCH' : 'HEALTHY';
-        subCounts[b] += actN; subArrs[b] += (l.arr_k || 0);
-      }
-    });
-  });
 
+  var DEFS = [
+    { key:'OVERDUE',  id:'hp-OVERDUE',  lbl:'Overdue'  },
+    { key:'AT_RISK',  id:'hp-AT_RISK',  lbl:'At Risk'  },
+    { key:'TO_WATCH', id:'hp-TO_WATCH', lbl:'To Watch' },
+    { key:'HEALTHY',  id:'hp-HEALTHY',  lbl:'Healthy'  },
+  ];
   DEFS.forEach(function(d) {
     var btn = document.getElementById(d.id);
     if (!btn) return;
-    var cnt = subCounts[d.key] || 0;
-    var arr = subArrs[d.key]  || 0;
+    var cnt = counts[d.key] || 0;
+    var arr = arrs[d.key]   || 0;
     btn.textContent = cnt > 0 ? cnt + ' ' + d.lbl + ' · ' + fmtA(arr) : '0 ' + d.lbl;
     btn.classList.toggle('dim', cnt === 0);
     btn.classList.toggle('sel', HEALTH === d.key);
@@ -507,9 +503,11 @@ function renderKPIs() {
                      .reduce(function(s, c) { return s + c.arr_k; }, 0);
   var tipArrK    = ft.reduce(function(s, t) { return s + (t.tip_arr_k || 0); }, 0);
   var swArrK     = activeArrK + tipArrK;
-  var totalSubs  = DATA.total_sub_count || 0;
   var tipSubs    = ft.reduce(function(s, t) { return s + (t.sub_count || 0); }, 0);
   var activeAccts = new Set(fc.map(function(c) { return c.account; })).size;
+  var filteredSubCount = fc.reduce(function(s,c) {
+    return s + (c.sw_lines||[]).reduce(function(ss,l){return ss+(l.sub_count||0);},0);
+  }, 0) + tipSubs;
 
   function fmtM(k) {
     var v = toDisp(k);
@@ -522,7 +520,7 @@ function renderKPIs() {
   + kpi('TIP ARR', fmtM(tipArrK), tipArrK > 0 ? 'warn' : '',
         tipSubs + ' terminations in progress',
         tipArrK > 0 ? 'color:#c62828' : '', 'tip')
-  + kpi('Subscriptions', totalSubs, '', renewalSubLine(), '', '');
+  + kpi('Subscriptions', filteredSubCount, '', renewalSubLine(), '', 'all');
 }
 
 function renewalSubLine() {
@@ -598,15 +596,14 @@ function renderClients() {
   function si(c) { return SS.col === c ? (SS.dir === -1 ? ' ↓' : ' ↑') : ''; }
 
   var html = "<thead><tr>"
-    + "<th class='sortable' data-col='account' style='min-width:180px'>Account"+si('account')+"</th>"
-    + "<th style='min-width:90px'>"+(GROUP_BY==='energy'?'Energy Market':'Billing Region')+"</th>"
-    + "<th style='min-width:230px'>Products &amp; ARR</th>"
-    + "<th class='sortable num' data-col='arr_k' style='min-width:90px'>Total ARR"+si('arr_k')+"</th>"
-    + "<th style='min-width:200px'>Signals</th>"
-    + "<th style='min-width:130px'>ZD Tickets</th>"
-    + "<th style='min-width:100px'>Pipeline</th>"
-    + "<th style='min-width:100px'>Next renewal</th>"
-    + "<th style='width:100px'></th>"
+    + "<th class='sortable' data-col='account' style='min-width:160px'>Account"+si('account')+"</th>"
+    + "<th style='min-width:80px'>"+(GROUP_BY==='energy'?'Energy Market':'Billing Region')+"</th>"
+    + "<th style='min-width:200px'>Products &amp; ARR</th>"
+    + "<th class='sortable num' data-col='arr_k' style='min-width:80px'>Total ARR"+si('arr_k')+"</th>"
+    + "<th style='min-width:190px'>Renewal Signals</th>"
+    + "<th style='min-width:120px'>ZD Tickets</th>"
+    + "<th style='min-width:90px'>Pipeline</th>"
+    + "<th style='width:90px'></th>"
     + "</tr></thead><tbody>";
 
   var totalRows = 0;
@@ -646,13 +643,17 @@ function renderClients() {
           + "</div>";
       }).join('');
 
-      // Signals column — Section 1: renewal timeline, Section 2: termination pill
+      // Renewal Signals column — renewal timeline + nearest date + termination + cross-sell
+      var BADGE_PRIORITY = ['OVERDUE', '3M', '6M', '12M'];
       var prodRenew = {};
       (r.sw_lines || []).forEach(function(l) {
         if (!l.renewal_badge) return;
         if (!prodRenew[l.sw]) prodRenew[l.sw] = { renewing: 0, total: 0, badge: l.renewal_badge };
         prodRenew[l.sw].renewing += l.renew_count || 1;
-        if (l.renewal_badge === '3M') prodRenew[l.sw].badge = '3M';
+        // Upgrade to worse badge if needed
+        if (BADGE_PRIORITY.indexOf(l.renewal_badge) < BADGE_PRIORITY.indexOf(prodRenew[l.sw].badge)) {
+          prodRenew[l.sw].badge = l.renewal_badge;
+        }
       });
       (r.sw_lines || []).forEach(function(l) {
         if (prodRenew[l.sw]) prodRenew[l.sw].total = Math.max(prodRenew[l.sw].total || 0, l.sub_count || 1);
@@ -660,13 +661,20 @@ function renderClients() {
 
       var renewHtml = Object.keys(prodRenew).sort().map(function(sw) {
         var d   = prodRenew[sw];
-        var cls = d.badge === '3M' ? 'py' : 'pg';
+        var cls = d.badge === 'OVERDUE' ? 'pr' : d.badge === '3M' ? 'py' : 'pg';
         return "<div style='display:flex;align-items:center;gap:4px;margin-bottom:2px'>"
           + "<span class='" + cls + "' style='padding:1px 6px;font-size:10px'>" + d.badge + "</span>"
           + "<span style='font-size:11px;font-weight:600;color:#3c3c3b'>" + esc(sw) + "</span>"
           + "<span style='font-size:10px;color:#9d9d9d'>" + d.renewing + "/" + d.total + " subs</span>"
           + "</div>";
       }).join('');
+
+      // Nearest renewal date (moved from separate column)
+      var dates = (r.sw_lines || []).filter(function(l) { return l.end_date; })
+                                    .map(function(l) { return l.end_date; }).sort();
+      var rnDate = dates.length
+        ? "<div style='font-size:10px;color:#9d9d9d;margin-top:2px'>Next: "+esc(dates[0])+"</div>"
+        : '';
 
       var termHtml = '';
       if (r.flag_terminating) {
@@ -686,8 +694,8 @@ function renderClients() {
           + "<span class='pb' style='padding:1px 6px;font-size:10px'>↑ Cross-sell</span></div>"
         : '';
 
-      var sigsCell = (renewHtml || termHtml || xsellHtml)
-        ? "<div>" + renewHtml + termHtml + xsellHtml + "</div>"
+      var sigsCell = (renewHtml || rnDate || termHtml || xsellHtml)
+        ? "<div>" + renewHtml + rnDate + termHtml + xsellHtml + "</div>"
         : dash();
 
       // ZD Tickets column — status pills, per-account (first market row only)
@@ -716,19 +724,13 @@ function renderClients() {
 
       // Pipeline column — per-account (first market row only)
       var pipCell = dash();
-      if (isFirstAcctRow) {
-        if (r.opp_count > 0) {
-          pipCell = "<div style='font-size:12px;font-weight:700;color:#3c3c3b'>"+r.opp_count+" open</div>"
-            + (r.pipeline_k > 0 ? "<div style='font-size:11px;color:#6d6d6c'>"+currSym()+r.pipeline_k.toFixed(0)+"k</div>" : "");
-        }
+      if (isFirstAcctRow && r.opp_count > 0) {
+        pipCell = "<span class='pb' style='padding:1px 8px;font-size:10px;font-weight:700'>"
+          + r.opp_count + " open</span>"
+          + (r.pipeline_k > 0
+              ? "<div style='font-size:11px;color:#6d6d6c;margin-top:2px'>"+currSym()+r.pipeline_k.toFixed(0)+"k</div>"
+              : "");
       }
-
-      // Nearest end date
-      var dates = (r.sw_lines || []).filter(function(l) { return l.end_date; })
-                                    .map(function(l) { return l.end_date; }).sort();
-      var rnCell = dates.length
-        ? "<span style='font-size:12px;color:#6d6d6c'>"+esc(dates[0])+"</span>"
-        : dash();
 
       // Main row
       html += "<tr class='expandable"+(isExp ? " expanded-row" : "")+"' data-ekey='"+ekey+"'>"
@@ -741,7 +743,6 @@ function renderClients() {
         + "<td style='vertical-align:top'>"+sigsCell+"</td>"
         + "<td style='vertical-align:top;padding-top:8px'>"+zdCell+"</td>"
         + "<td style='vertical-align:top;padding-top:8px'>"+pipCell+"</td>"
-        + "<td style='vertical-align:top;padding-top:10px'>"+rnCell+"</td>"
         + "<td style='vertical-align:top;padding-top:7px'>"
         +   "<button class='ch-btn' data-acct='"+esc(r.account)+"' "
         +     "style='font-size:11px;font-weight:700;color:#288184;cursor:pointer;padding:4px 10px;"
@@ -753,8 +754,9 @@ function renderClients() {
 
       // Expand detail row
       var detailRows = (r.sw_lines || []).map(function(l) {
-        var rb = l.renewal_badge === '3M' ? "<span class='py'>3M</span>"
-               : l.renewal_badge === '6M' ? "<span class='pg'>6M</span>"
+        var rb = l.renewal_badge === 'OVERDUE' ? "<span class='pr'>OVERDUE</span>"
+               : l.renewal_badge === '3M'     ? "<span class='py'>3M</span>"
+               : l.renewal_badge === '6M'     ? "<span class='pg'>6M</span>"
                : dash();
         var status = l.terminating
           ? "<span class='pr'>Terminating</span>"
@@ -773,7 +775,7 @@ function renderClients() {
       }).join('');
 
       html += "<tr class='expand-detail"+(isExp ? "" : " hidden")+"'>"
-        + "<td colspan='9'>"
+        + "<td colspan='8'>"
         + "<div style='font-size:10px;color:#9d9d9d;font-weight:600;text-transform:uppercase;letter-spacing:.08em;margin-bottom:7px'>Subscription detail — click row to collapse</div>"
         + "<table style='width:auto'>"
         + "<thead><tr>"
@@ -791,7 +793,7 @@ function renderClients() {
   });
 
   var uniqueAcctCount = new Set(rows.map(function(r) { return r.account; })).size;
-  html += "</tbody><tfoot><tr><td colspan='9'>"
+  html += "</tbody><tfoot><tr><td colspan='8'>"
     + totalRows + " subscription lines · " + uniqueAcctCount + " accounts"
     + "</td></tr></tfoot>";
 
