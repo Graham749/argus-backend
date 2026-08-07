@@ -15,6 +15,7 @@ input,select,button,textarea{font-family:inherit;}
 
 /* ── Nav ── */
 nav{background:#fff;border-bottom:1px solid #e6e6e5;padding:0 24px;display:flex;align-items:center;position:sticky;top:0;z-index:100;height:48px}
+.embed-mode nav{display:none!important}
 .embed-mode .nav-back,.embed-mode .nav-brand,.embed-mode .nav-meta,.embed-mode .nav-sep{display:none!important}
 .embed-mode nav{padding:0 20px;background:#fff;border-bottom:1px solid #e6e6e5}
 .embed-mode .nav-tab{padding:0 14px;height:44px;display:flex;align-items:center;font-size:13px;}
@@ -23,6 +24,13 @@ nav{background:#fff;border-bottom:1px solid #e6e6e5;padding:0 24px;display:flex;
 .nav-brand{font-size:14px;font-weight:700;margin-right:28px;white-space:nowrap;color:#3c3c3b;letter-spacing:-0.01em}
 .nav-tabs{display:flex;height:100%;flex:1}
 .nav-tab{padding:0 14px;font-size:13px;border-bottom:2px solid #288184;color:#3c3c3b;white-space:nowrap;display:flex;align-items:center;font-weight:600}
+
+/* ── Page-level section tabs ── */
+.page-tabs{background:#fff;border-bottom:1px solid #e6e6e5;padding:0 24px;display:flex;gap:0;}
+.page-tab{padding:12px 20px;font-size:13px;font-weight:600;color:#9d9d9d;border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:8px;margin-bottom:-1px;}
+.page-tab.active{color:#3c3c3b;border-bottom-color:#288184;}
+.page-tab.soon{opacity:0.4;cursor:not-allowed;pointer-events:none;}
+.page-tab-badge{font-size:9px;font-weight:700;letter-spacing:.06em;background:#e6e6e5;color:#9d9d9d;border-radius:4px;padding:1px 5px;text-transform:uppercase;}
 .nav-meta{font-size:11px;color:#9d9d9d;display:flex;align-items:center;gap:6px;white-space:nowrap}
 .nav-back{font-size:12px;color:#6d6d6c;text-decoration:none;display:flex;align-items:center;gap:4px;padding:0;margin-right:16px}
 .nav-back:hover{color:#3c3c3b}
@@ -93,7 +101,7 @@ tfoot td{font-size:11px;color:#9d9d9d;padding:6px 10px;border-top:1px solid #e6e
 .hp-ok{background:#e8f5e9;color:#2e7d32}
 
 /* ── Loading / empty ── */
-#loading{display:flex;align-items:center;justify-content:center;height:60vh;flex-direction:column;gap:16px;color:#9d9d9d;font-size:13px}
+#loading{display:flex;align-items:center;justify-content:center;min-height:200px;padding:40px;flex-direction:column;gap:16px;color:#9d9d9d;font-size:13px}
 .spinner{width:28px;height:28px;border:2px solid #e6e6e5;border-top-color:#288184;border-radius:50%;animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 .empty{text-align:center;padding:32px;color:#9d9d9d;font-size:13px}
@@ -105,18 +113,26 @@ tfoot td{font-size:11px;color:#9d9d9d;padding:6px 10px;border-top:1px solid #e6e
   <a href="/" class="nav-back"><i class="ti ti-arrow-left" aria-hidden="true"></i> Argus</a>
   <span class="nav-sep"></span>
   <div class="nav-brand"><i class="ti ti-chart-line" aria-hidden="true" style="margin-right:5px;color:#288184"></i>Region Intelligence</div>
-  <div class="nav-tabs">
-    <div class="nav-tab">Software Health</div>
-    <div style="margin-left:auto;display:flex;align-items:center;gap:10px;padding:0 14px;flex-shrink:0">
-      <div id="curr-bar" style="display:flex;gap:4px;flex-wrap:wrap;align-items:center"></div>
-      <span id="live-dot" style="display:none;font-size:10px;font-weight:700;letter-spacing:.06em;color:#2e7d32;white-space:nowrap">● LIVE</span>
-      <span id="demo-dot" style="display:none;font-size:10px;font-weight:700;letter-spacing:.06em;color:#e65100;white-space:nowrap">● DEMO</span>
-    </div>
-  </div>
+  <div style="flex:1"></div>
   <div class="nav-meta">ARR <strong id="arr-date">—</strong>&nbsp;·&nbsp;Fabric</div>
 </nav>
 
 <div id="loading"><div class="spinner"></div>Loading SW data…</div>
+
+<!-- Row 1: Page section tabs -->
+<div class="page-tabs">
+  <div class="page-tab active">Software Health
+    <span id="live-dot" style="display:none;font-size:10px;font-weight:700;letter-spacing:.06em;color:#2e7d32;white-space:nowrap;">● LIVE</span>
+    <span id="demo-dot" style="display:none;font-size:10px;font-weight:700;letter-spacing:.06em;color:#e65100;white-space:nowrap;">● DEMO</span>
+  </div>
+  <div class="page-tab soon">Subscription Analytics Health <span class="page-tab-badge">Coming soon</span></div>
+</div>
+
+<!-- Row 2: Currency selection (outside main-content so always in DOM) -->
+<div style="padding:8px 24px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;border-bottom:1px solid #e6e6e5;background:#fff;">
+  <span class="filter-label">Currency:</span>
+  <div id="curr-bar" style="display:flex;gap:4px;flex-wrap:wrap;align-items:center"></div>
+</div>
 
 <main id="main-content" style="display:none">
 
@@ -145,13 +161,13 @@ tfoot td{font-size:11px;color:#9d9d9d;padding:6px 10px;border-top:1px solid #e6e
       <button onclick="renderKPIs();renderClients();"
         style="padding:6px 14px;background:#288184;color:#fff;border:none;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;">Search</button>
     </div>
-    <select id="cl-sw" onchange="renderClients()"><option value="ALL">All products</option></select>
+    <select id="cl-sw" onchange="renderKPIs();renderClients();"><option value="ALL">All products</option></select>
     <span style="margin-left:auto;display:flex;align-items:center;gap:6px;flex-shrink:0">
-      <span class="filter-label">Group by:</span>
-      <div class="toggle-group" id="groupby-toggle">
+      <div class="toggle-group" id="groupby-toggle" style="display:none;">
         <div class="toggle-btn active" data-gb="energy"  onclick="setGroupBy(this,'energy')">Energy Market</div>
         <div class="toggle-btn"        data-gb="billing" onclick="setGroupBy(this,'billing')">Billing Region</div>
       </div>
+      <div onclick="clearAll()" style="padding:5px 12px;font-size:11px;font-weight:600;border:1.5px solid #e6e6e5;border-radius:6px;cursor:pointer;color:#6d6d6c;background:#fff;white-space:nowrap;" onmouseover="this.style.borderColor='#288184';this.style.color='#288184'" onmouseout="this.style.borderColor='#e6e6e5';this.style.color='#6d6d6c'">Clear All</div>
     </span>
   </div>
 
@@ -184,6 +200,13 @@ tfoot td{font-size:11px;color:#9d9d9d;padding:6px 10px;border-top:1px solid #e6e
     <div class="pill"        id="zdf-pending" onclick="setZDFilter(this,'pending')">Pending</div>
     <div class="pill"        id="zdf-solved"  onclick="setZDFilter(this,'solved')">Solved</div>
     <div class="pill"        id="zdf-closed"  onclick="setZDFilter(this,'closed')">Closed</div>
+  </div>
+
+  <!-- Opp sub-filter row — visible only when Opportunities signal is active -->
+  <div class="filter-bar" id="opp-subfilter" style="display:none;padding-left:80px;">
+    <span class="filter-label" style="color:#5c6bc0;">Opps:</span>
+    <div class="pill active" id="oppf-open"   onclick="setOPPFilter(this,'open')">Open</div>
+    <div class="pill"        id="oppf-none"   onclick="setOPPFilter(this,'none')">No Opportunity</div>
   </div>
 
   <div class="card" style="padding:0;overflow:hidden;overflow-x:auto">
@@ -221,7 +244,7 @@ const CURR_SYMBOLS = {
 };
 const CURR_ORDER = ['GBP','EUR','USD','AUD','CAD','SEK','NOK','PLN','JPY','BRL','CLP','INR','MXN','SGD','ZAR'];
 let FP = 'ALL', SS = { col: 'arr_k', dir: -1 };
-let ZD_FILTER = 'all';
+let ZD_FILTER = 'all', OPP_FILTER = 'open';
 let MKT_COL = {};
 let REGION = 'all', MKT = new Set(), GROUP_BY = 'energy';
 let HEALTH = 'all', STAGE = 'all';
@@ -289,17 +312,33 @@ function setZDFilter(el, mode) {
   renderClients();
 }
 
+function setOPPFilter(el, mode) {
+  OPP_FILTER = mode;
+  document.querySelectorAll('#opp-subfilter .pill').forEach(function(p) { p.classList.remove('active'); });
+  el.classList.add('active');
+  renderKPIs();
+  renderClients();
+}
+
 function setFP(el, mode) {
   FP = mode;
   ZD_FILTER = 'all';
+  OPP_FILTER = 'open';
   document.querySelectorAll('#clients .pill[id^="fp-"]').forEach(function(p) { p.classList.remove('active'); });
   el.classList.add('active');
-  var zdRow = document.getElementById('zd-subfilter');
-  if (zdRow) zdRow.style.display = mode === 'zd' ? 'flex' : 'none';
-  // Reset ZD sub-filter pills to All
+  // Show/hide sub-filter rows
+  var zdRow  = document.getElementById('zd-subfilter');
+  var oppRow = document.getElementById('opp-subfilter');
+  if (zdRow)  zdRow.style.display  = mode === 'zd'  ? 'flex' : 'none';
+  if (oppRow) oppRow.style.display = mode === 'opp' ? 'flex' : 'none';
+  // Reset ZD pills to All
   document.querySelectorAll('#zd-subfilter .pill').forEach(function(p) { p.classList.remove('active'); });
   var zdAll = document.getElementById('zdf-all');
   if (zdAll) zdAll.classList.add('active');
+  // Reset Opp pills to Open
+  document.querySelectorAll('#opp-subfilter .pill').forEach(function(p) { p.classList.remove('active'); });
+  var oppOpen = document.getElementById('oppf-open');
+  if (oppOpen) oppOpen.classList.add('active');
   renderKPIs();
   renderClients();
 }
@@ -384,6 +423,43 @@ function openClientHealth(acct) {
     localStorage.setItem('argusInitView', 'health');
   } catch(e) {}
   window.open('/', '_blank');
+}
+
+function clearAll() {
+  // Reset all state
+  REGION = 'all'; MKT = new Set(); HEALTH = 'all'; STAGE = 'all';
+  FP = 'ALL'; ZD_FILTER = 'all'; OPP_FILTER = 'open';
+  // Clear search + product dropdown
+  var srch = document.getElementById('cl-search');
+  if (srch) srch.value = '';
+  var sw = document.getElementById('cl-sw');
+  if (sw) sw.value = 'ALL';
+  // Reset region pills
+  document.querySelectorAll('#region-bar .pill').forEach(function(p) { p.classList.remove('active'); });
+  var allRegion = document.querySelector('#region-bar .pill[data-region="all"]');
+  if (allRegion) allRegion.classList.add('active');
+  var mktBar = document.getElementById('mkt-bar');
+  if (mktBar) mktBar.style.display = 'none';
+  // Reset signal pills
+  document.querySelectorAll('#clients .pill[id^="fp-"]').forEach(function(p) { p.classList.remove('active'); });
+  var fpAll = document.getElementById('fp-ALL');
+  if (fpAll) fpAll.classList.add('active');
+  // Hide sub-filters
+  var zdRow = document.getElementById('zd-subfilter');
+  var oppRow = document.getElementById('opp-subfilter');
+  if (zdRow)  zdRow.style.display  = 'none';
+  if (oppRow) oppRow.style.display = 'none';
+  // Reset ZD + opp pills to defaults
+  document.querySelectorAll('#zd-subfilter .pill').forEach(function(p) { p.classList.remove('active'); });
+  var zdAll = document.getElementById('zdf-all');
+  if (zdAll) zdAll.classList.add('active');
+  document.querySelectorAll('#opp-subfilter .pill').forEach(function(p) { p.classList.remove('active'); });
+  var oppOpen = document.getElementById('oppf-open');
+  if (oppOpen) oppOpen.classList.add('active');
+  populateRegionPills();
+  renderHealthBar();
+  renderKPIs();
+  renderClients();
 }
 
 function setGroupBy(el, gb) {
@@ -602,7 +678,10 @@ function filteredClientsBase() {
     if (ZD_FILTER === 'solved')  rows = rows.filter(function(r) { return r.zd_solved > 0; });
     if (ZD_FILTER === 'closed')  rows = rows.filter(function(r) { return r.zd_closed > 0; });
   }
-  if (FP === 'opp')         rows = rows.filter(function(r) { return r.opp_count > 0; });
+  if (FP === 'opp') {
+    if (OPP_FILTER === 'open') rows = rows.filter(function(r) { return r.opp_count > 0; });
+    if (OPP_FILTER === 'none') rows = rows.filter(function(r) { return !(r.opp_count > 0); });
+  }
   return rows;
 }
 
