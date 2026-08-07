@@ -27,6 +27,7 @@ const clientTimeline    = require('./api/client-timeline');
 const sfCases           = require('./api/sf-cases');
 const sfOpportunities   = require('./api/sf-opportunities');
 const { query: dbQuery } = require('./lib/db');
+const cacheWarmer        = require('./lib/cache-warmer');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -119,4 +120,7 @@ app.listen(PORT, () => {
   }).catch(err => {
     console.warn('[db] Warm-up failed (will retry on first request):', err.message);
   });
+
+  // Pre-warm top-30 accounts across all client health endpoints (staggered, non-blocking).
+  cacheWarmer.run(PORT).catch(err => console.warn('[cache-warmer]', err.message));
 });

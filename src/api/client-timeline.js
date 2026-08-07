@@ -173,11 +173,16 @@ module.exports = async function clientTimeline(req, res) {
     const zdEsc = (zd_org_id    || '').replace(/'/g, "''");
     const pbEsc = (pb_company_id|| '').toLowerCase().replace(/'/g, "''");
 
-    // Step 2: PH tenant lookup
-    const phRows = await query(`
-      SELECT TOP 1 ph_tenant FROM dbo.gold_mdm_posthog WHERE sf_account_id = '${sfEsc}'
-    `);
-    const phTenant = phRows?.[0]?.ph_tenant || null;
+    // Step 2: PH tenant lookup (cached per SF account ID — 15min TTL)
+    const phCacheKey = `ph_tenant:${sf_account_id}`;
+    let phTenant = cacheGet(phCacheKey);
+    if (phTenant === undefined) {
+      const phRows = await query(`
+        SELECT TOP 1 ph_tenant FROM dbo.gold_mdm_posthog WHERE sf_account_id = '${sfEsc}'
+      `);
+      phTenant = phRows?.[0]?.ph_tenant || null;
+      cacheSet(phCacheKey, phTenant, 15 * 60 * 1000);
+    }
     const phEsc = (phTenant || '').replace(/'/g, "''");
 
     // Step 3: parallel per-account queries + benchmark

@@ -96,6 +96,10 @@ input{font-family:inherit;}
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;flex-shrink:0;"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
         Region intelligence
       </a>
+      <a href="#" onClick="{{ goBuildDesign }}" style="{{ navStyleBuildDesign }}" style-hover="background:rgba(255,255,255,0.06);color:#fff;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;flex-shrink:0;"><path d="M2 3h20v4H2zM2 10h20v4H2zM2 17h20v4H2z"/></svg>
+        Build design
+      </a>
       <a href="#" id="navMdm" onClick="{{ goMdm }}" style="{{ navStyleMdm }}" style-hover="background:rgba(255,255,255,0.06);color:#fff;">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;flex-shrink:0;"><circle cx="12" cy="5" r="3"/><circle cx="5" cy="19" r="3"/><circle cx="19" cy="19" r="3"/><line x1="12" y1="8" x2="5" y2="16"/><line x1="12" y1="8" x2="19" y2="16"/></svg>
         Account MDM
@@ -103,19 +107,6 @@ input{font-family:inherit;}
       <a href="#" id="navFeatures" onClick="{{ goFeatures }}" style="{{ navStyleFeatures }}" style-hover="background:rgba(255,255,255,0.06);color:#fff;">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;flex-shrink:0;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
         Feature priority
-      </a>
-      <!-- Build design section -->
-      <div style="display:flex;align-items:center;gap:8px;padding:10px 20px 2px;font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:rgba(255,255,255,0.32);margin-top:6px;">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;flex-shrink:0;"><path d="M2 3h20v4H2zM2 10h20v4H2zM2 17h20v4H2z"/></svg>
-        Build design
-      </div>
-      <a href="#" onClick="{{ goDataLakeBuild }}" style="{{ navStyleDataLakeBuild }}" style-hover="background:rgba(255,255,255,0.06);color:#fff;">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;flex-shrink:0;"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4.03 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4.03 3 9 3s9-1.34 9-3"/></svg>
-        Data Lake Build
-      </a>
-      <a href="#" onClick="{{ goArgusMcp }}" style="{{ navStyleArgusMcp }}" style-hover="background:rgba(255,255,255,0.06);color:#fff;">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;flex-shrink:0;"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
-        Argus and MCP
       </a>
       <!-- Placeholder pages -->
       <a href="#" style="display:flex;align-items:center;gap:10px;padding:8px 20px;font-size:13px;color:rgba(255,255,255,0.65);text-decoration:none;border-left:3px solid transparent;font-weight:600;opacity:0.35;pointer-events:none;margin-top:6px;">
@@ -1332,147 +1323,303 @@ input{font-family:inherit;}
       </div>
       </sc-if>
 
-      <!-- ============ DATA LAKE BUILD ============ -->
-      <sc-if value="{{ isDataLakeBuild }}" hint-placeholder-val="{{ false }}">
-      <div style="padding:32px;max-width:1080px;animation:argusFade .25s ease;">
-        <div style="margin-bottom:32px;">
-          <div style="font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:#9d9d9d;margin-bottom:12px;">Platform · Build design</div>
-          <div style="font-size:28px;font-weight:700;letter-spacing:-0.02em;color:#3c3c3b;margin-bottom:10px;">Data Lake Build</div>
-          <div style="font-size:15px;color:#6d6d6c;line-height:1.5;">Medallion Architecture — current state · LH_ProdOps_Dev · Microsoft Fabric · Argus PoC</div>
+      <!-- ============ BUILD DESIGN ============ -->
+      <sc-if value="{{ isBuildDesign }}" hint-placeholder-val="{{ false }}">
+      <div style="background:#fff;border-bottom:1px solid #e6e6e5;padding:0 24px;display:flex;gap:0;animation:argusFade .25s ease;">
+        <div onClick="{{ setBuildTabArgusVision }}" style="{{ buildTabStyleArgusVision }}">Argus Vision</div>
+        <div onClick="{{ setBuildTabDatalake }}" style="{{ buildTabStyleDatalake }}">Data Lake Build</div>
+        <div onClick="{{ setBuildTabArgusMcp }}" style="{{ buildTabStyleArgusMcp }}">Argus and MCP</div>
+      </div>
+      <div style="padding:28px 32px;max-width:1080px;">
+        <!-- Argus Vision tab -->
+        <sc-if value="{{ buildTabIsArgusVision }}" hint-placeholder-val="{{ false }}">
+        <div style="max-width:800px;">
+
+          <!-- Origin story -->
+          <div style="background:#f0f7fd;border:1px solid #94BFEA;border-radius:10px;padding:18px 20px;margin-bottom:24px;display:flex;gap:18px;align-items:flex-start;">
+            <div style="flex-shrink:0;background:#288184;color:#fff;border-radius:8px;padding:8px 12px;text-align:center;min-width:56px;">
+              <div style="font-size:17px;font-weight:800;line-height:1;">20</div>
+              <div style="font-size:9px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;margin-top:2px;opacity:0.85;">Team</div>
+            </div>
+            <div>
+              <div style="font-size:12px;font-weight:700;color:#1A4F8A;margin-bottom:4px;">Aurora AI Offsite · June 2026</div>
+              <div style="font-size:11.5px;color:#3A5A7A;line-height:1.65;">~150 people. 21 teams. One day to go from problem to working prototype. Team 20 built a single HTML file called <strong>Argus</strong> — a client-intelligence dashboard that unified Salesforce, Zendesk, Productboard and PostHog around a single account view. Three screens: Client health card, Ask Argus (AI chat), and Pre-call briefing. The prototype proved the idea was worth building properly. What you're looking at now is that build.</div>
+            </div>
+          </div>
+
+          <!-- Problem statement -->
+          <div style="margin-bottom:24px;">
+            <div style="font-size:20px;font-weight:700;color:#3c3c3b;letter-spacing:-0.02em;margin-bottom:8px;">Aurora's commercial data is rich — but it lives in silos</div>
+            <div style="font-size:14px;color:#6d6d6c;line-height:1.7;">Salesforce holds subscriptions and accounts. Zendesk holds support history. Productboard holds what clients are asking for. EOS holds how much they actually use the product. Nobody has all four in front of them at once.</div>
+          </div>
+
+          <!-- Before / After -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;">
+            <div style="background:#fef6f5;border:1px solid #e8b0a8;border-radius:10px;padding:18px;">
+              <div style="font-size:11px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:#8A2A1A;margin-bottom:12px;">Before Argus</div>
+              <div style="display:flex;flex-direction:column;gap:8px;">
+                <div style="display:flex;gap:10px;align-items:flex-start;"><span style="color:#C0392B;font-size:13px;flex-shrink:0;margin-top:1px;">✕</span><span style="font-size:11.5px;color:#5A2A20;line-height:1.5;">Pre-call prep means opening SF, then ZD, then PB — each in a separate tab, mentally joining the picture yourself</span></div>
+                <div style="display:flex;gap:10px;align-items:flex-start;"><span style="color:#C0392B;font-size:13px;flex-shrink:0;margin-top:1px;">✕</span><span style="font-size:11.5px;color:#5A2A20;line-height:1.5;">Renewal risk is invisible until an account flags a concern or a manager pulls the report manually</span></div>
+                <div style="display:flex;gap:10px;align-items:flex-start;"><span style="color:#C0392B;font-size:13px;flex-shrink:0;margin-top:1px;">✕</span><span style="font-size:11.5px;color:#5A2A20;line-height:1.5;">Ad-hoc questions ("which Power &amp; Renewables clients haven't renewed in 18 months?") require IT or a data analyst</span></div>
+                <div style="display:flex;gap:10px;align-items:flex-start;"><span style="color:#C0392B;font-size:13px;flex-shrink:0;margin-top:1px;">✕</span><span style="font-size:11.5px;color:#5A2A20;line-height:1.5;">The same client appears under three different names across SF, ZD and PB — no unified identity</span></div>
+              </div>
+            </div>
+            <div style="background:#f0faf6;border:1px solid #7DC49A;border-radius:10px;padding:18px;">
+              <div style="font-size:11px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:#1A6E3E;margin-bottom:12px;">With Argus</div>
+              <div style="display:flex;flex-direction:column;gap:8px;">
+                <div style="display:flex;gap:10px;align-items:flex-start;"><span style="color:#1A6E3E;font-size:13px;flex-shrink:0;margin-top:1px;">✓</span><span style="font-size:11.5px;color:#1A4A30;line-height:1.5;">One account view: subscriptions, ARR, renewal date, open tickets, and platform usage in a single screen</span></div>
+                <div style="display:flex;gap:10px;align-items:flex-start;"><span style="color:#1A6E3E;font-size:13px;flex-shrink:0;margin-top:1px;">✓</span><span style="font-size:11.5px;color:#1A4A30;line-height:1.5;">At-risk renewals surface automatically — OVERDUE, AT_RISK and TO_WATCH flagged before they become urgent</span></div>
+                <div style="display:flex;gap:10px;align-items:flex-start;"><span style="color:#1A6E3E;font-size:13px;flex-shrink:0;margin-top:1px;">✓</span><span style="font-size:11.5px;color:#1A4A30;line-height:1.5;">CS and RPM answer their own data questions — no IT request, no waiting for a report</span></div>
+                <div style="display:flex;gap:10px;align-items:flex-start;"><span style="color:#1A6E3E;font-size:13px;flex-shrink:0;margin-top:1px;">✓</span><span style="font-size:11.5px;color:#1A4A30;line-height:1.5;">MDM layer resolves account identity across all sources — one canonical record per client</span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- The longer vision -->
+          <div style="background:#f7f7f5;border:1px solid #e6e6e5;border-radius:10px;padding:20px;margin-bottom:24px;">
+            <div style="font-size:13px;font-weight:700;color:#3c3c3b;margin-bottom:10px;">The bigger picture — Aurora data in plain English</div>
+            <div style="font-size:12px;color:#6d6d6c;line-height:1.75;margin-bottom:14px;">The Argus App is phase one — a live dashboard giving CS and RPM a single view of account health, renewal risk, support activity and feature demand across Salesforce, Zendesk, Productboard and EOS. Phase two connects the same data to Claude Enterprise — so instead of clicking through the Argus App, a CS manager types <em>"brief me on Shell before my 3pm call"</em> and gets a live, synthesised answer pulled from Salesforce, Zendesk, Productboard and EOS in seconds. The data foundation being built now is what makes that possible — without it, Claude has nothing reliable to read from.</div>
+            <div style="display:flex;gap:12px;flex-wrap:wrap;">
+              <div style="flex:1;min-width:180px;background:#fff;border:1px solid #e6e6e5;border-radius:8px;padding:12px 14px;">
+                <div style="font-size:11px;font-weight:700;color:#288184;margin-bottom:8px;">Phase 1 — now</div>
+                <div style="display:flex;flex-direction:column;gap:6px;">
+                  <div><div style="font-size:11px;font-weight:600;color:#3c3c3b;margin-bottom:2px;">Prove the data</div><div style="font-size:11px;color:#6d6d6c;line-height:1.5;">Real users surface ARR gaps, filter issues and field quality problems before they reach Claude</div></div>
+                  <div><div style="font-size:11px;font-weight:600;color:#3c3c3b;margin-bottom:2px;">Learn what questions matter</div><div style="font-size:11px;color:#6d6d6c;line-height:1.5;">Which accounts, which metrics, which time horizons — shapes exactly what the MCP tools need to return</div></div>
+                </div>
+              </div>
+              <div style="flex:1;min-width:180px;background:#fff;border:1px solid #e6e6e5;border-radius:8px;padding:12px 14px;">
+                <div style="font-size:11px;font-weight:700;color:#3c3c3b;margin-bottom:4px;">Phase 2 — pending IT</div>
+                <div style="font-size:11px;color:#6d6d6c;line-height:1.5;">Claude MCP server · ask questions in plain English · live answers from our data sources</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Who this is for -->
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">
+            <div style="background:#fff;border:1px solid #e6e6e5;border-radius:8px;padding:14px;">
+              <div style="font-size:11px;font-weight:700;color:#3c3c3b;margin-bottom:4px;">CS team</div>
+              <div style="font-size:11px;color:#6d6d6c;line-height:1.5;">Account health at a glance · pre-call prep in seconds · renewal risk flagged proactively</div>
+            </div>
+            <div style="background:#fff;border:1px solid #e6e6e5;border-radius:8px;padding:14px;">
+              <div style="font-size:11px;font-weight:700;color:#3c3c3b;margin-bottom:4px;">RPM team</div>
+              <div style="font-size:11px;color:#6d6d6c;line-height:1.5;">Portfolio-level renewal pipeline · ARR at risk · feature demand by market and service type</div>
+            </div>
+            <div style="background:#fff;border:1px solid #e6e6e5;border-radius:8px;padding:14px;">
+              <div style="font-size:11px;font-weight:700;color:#3c3c3b;margin-bottom:4px;">Leadership</div>
+              <div style="font-size:11px;color:#6d6d6c;line-height:1.5;">Single source of truth across SF, ZD and PB · no more conflicting numbers from different exports</div>
+            </div>
+          </div>
+
         </div>
+        </sc-if>
+
+        <!-- Data Lake Build tab -->
+        <sc-if value="{{ buildTabIsDataLake }}" hint-placeholder-val="{{ false }}">
+        <div>
         <div style="background:#fff;border:1px solid #e6e6e5;border-radius:12px;padding:28px;margin-top:0;">
+
+          <!-- Sources -->
           <div style="border:1.5px dashed #d6d6d4;border-radius:10px;padding:16px 20px;">
             <div style="font-size:11px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;margin-bottom:4px;color:#3c3c3b;">Sources</div>
             <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;">
-              <div style="background:rgba(255,255,255,0.8);border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:8px 13px;font-size:11px;font-weight:500;color:#222;white-space:normal;min-width:180px;">Salesforce API<span style="font-size:9.5px;color:#888;font-weight:400;display:block;margin-top:2px;">subscriptions · accounts · products · cases · opportunities</span></div>
-              <div style="background:rgba(255,255,255,0.8);border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:8px 13px;font-size:11px;font-weight:500;color:#222;white-space:normal;min-width:180px;">Productboard API<span style="font-size:9.5px;color:#888;font-weight:400;display:block;margin-top:2px;">features · subfeatures · relationships</span></div>
-              <div style="background:rgba(255,255,255,0.8);border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:8px 13px;font-size:11px;font-weight:500;color:#222;white-space:normal;min-width:180px;">Zendesk REST API<span style="font-size:9.5px;color:#888;font-weight:400;display:block;margin-top:2px;">tickets</span></div>
-              <div style="background:rgba(255,255,255,0.8);border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:8px 13px;font-size:11px;font-weight:500;color:#222;white-space:normal;min-width:180px;">PostHog API<span style="font-size:9.5px;color:#888;font-weight:400;display:block;margin-top:2px;">events · session data</span></div>
-              <div style="background:rgba(255,255,255,0.8);border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:8px 13px;font-size:11px;font-weight:500;color:#222;white-space:normal;min-width:180px;">EOS Parquet files<span style="font-size:9.5px;color:#888;font-weight:400;display:block;margin-top:2px;">161M rows · API usage</span></div>
+              <div style="background:#f7f7f5;border:1px solid #d6d6d4;border-radius:8px;padding:8px 13px;font-size:11px;font-weight:500;color:#222;min-width:180px;">Salesforce API<span style="font-size:9.5px;color:#888;font-weight:400;display:block;margin-top:2px;">subscriptions · accounts · products · cases · opportunities</span></div>
+              <div style="background:#f7f7f5;border:1px solid #d6d6d4;border-radius:8px;padding:8px 13px;font-size:11px;font-weight:500;color:#222;min-width:180px;">Productboard API<span style="font-size:9.5px;color:#888;font-weight:400;display:block;margin-top:2px;">features · subfeatures · relationships</span></div>
+              <div style="background:#f7f7f5;border:1px solid #d6d6d4;border-radius:8px;padding:8px 13px;font-size:11px;font-weight:500;color:#222;min-width:180px;">Zendesk REST API<span style="font-size:9.5px;color:#888;font-weight:400;display:block;margin-top:2px;">tickets · organisations</span></div>
+              <div style="background:#f7f7f5;border:1px solid #d6d6d4;border-radius:8px;padding:8px 13px;font-size:11px;font-weight:500;color:#222;min-width:180px;">PostHog API<span style="font-size:9.5px;color:#888;font-weight:400;display:block;margin-top:2px;">events · session data</span></div>
+              <div style="background:#f7f7f5;border:1px solid #d6d6d4;border-radius:8px;padding:8px 13px;font-size:11px;font-weight:500;color:#222;min-width:180px;">EOS Parquet files<span style="font-size:9.5px;color:#888;font-weight:400;display:block;margin-top:2px;">161M rows · API usage</span></div>
             </div>
           </div>
-          <div style="display:flex;justify-content:center;align-items:center;height:28px;gap:8px;color:#aaa;font-size:11px;"><svg width="12" height="18" viewBox="0 0 12 18"><path d="M6 0v12M1 7l5 6 5-6" stroke="#CCCCCC" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-          <div style="background:#FEF3E8;border:1px solid #F5C48A;border-radius:10px;padding:16px 20px;margin-top:6px;">
-            <div style="font-size:11px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;margin-bottom:4px;color:#9A5A10;">Bronze — Raw ingestion</div>
+
+          <div style="display:flex;justify-content:center;align-items:center;height:28px;color:#ccc;"><svg width="12" height="18" viewBox="0 0 12 18"><path d="M6 0v12M1 7l5 6 5-6" stroke="#CCCCCC" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+
+          <!-- Bronze -->
+          <div style="background:#FEF3E8;border:1px solid #F5C48A;border-radius:10px;padding:16px 20px;">
+            <div style="font-size:11px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;margin-bottom:2px;color:#9A5A10;">Bronze — Raw ingestion</div>
             <div style="font-size:11px;margin-bottom:12px;color:#B07030;">LH_ProdOps_Dev · Fabric Dataflow Gen2 + PySpark notebooks</div>
             <div style="display:flex;flex-wrap:wrap;gap:8px;">
-              <div style="background:rgba(255,255,255,0.8);border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:8px 13px;font-family:'Courier New',monospace;font-size:10.5px;font-weight:500;color:#222;white-space:nowrap;">bronze_sfapi_subscripton__c</div>
-              <div style="background:rgba(255,255,255,0.8);border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:8px 13px;font-family:'Courier New',monospace;font-size:10.5px;font-weight:500;color:#222;white-space:nowrap;">bronze_sfapi_account</div>
-              <div style="background:rgba(255,255,255,0.8);border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:8px 13px;font-family:'Courier New',monospace;font-size:10.5px;font-weight:500;color:#222;white-space:nowrap;">bronze_sfapi_product2</div>
-              <div style="background:rgba(255,255,255,0.8);border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:8px 13px;font-family:'Courier New',monospace;font-size:10.5px;font-weight:500;color:#222;white-space:nowrap;">bronze_sfapi_case</div>
-              <div style="background:rgba(255,255,255,0.8);border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:8px 13px;font-family:'Courier New',monospace;font-size:10.5px;font-weight:500;color:#222;white-space:normal;min-width:180px;">bronze_posthog_events<span style="font-size:9.5px;color:#888;font-weight:400;display:block;margin-top:2px;font-family:inherit;">url_state_change · HogQL notebook · GeoIP enriched</span></div>
-              <div style="background:rgba(255,255,255,0.8);border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:8px 13px;font-family:'Courier New',monospace;font-size:10.5px;font-weight:500;color:#222;white-space:nowrap;">bronze_pb_features</div>
-              <div style="background:rgba(255,255,255,0.8);border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:8px 13px;font-family:'Courier New',monospace;font-size:10.5px;font-weight:500;color:#222;white-space:nowrap;">bronze_pb_relationships_raw</div>
-              <div style="background:rgba(255,255,255,0.8);border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:8px 13px;font-family:'Courier New',monospace;font-size:10.5px;font-weight:500;color:#222;white-space:normal;min-width:140px;">zd_notebook_*<span style="font-size:9.5px;color:#888;font-weight:400;display:block;margin-top:2px;font-family:inherit;">6 tables</span></div>
-              <div style="background:rgba(255,255,255,0.8);border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:8px 13px;font-family:'Courier New',monospace;font-size:10.5px;font-weight:500;color:#222;white-space:normal;min-width:220px;">eos_parquet_api_usage_legacy<span style="font-size:9.5px;color:#888;font-weight:400;display:block;margin-top:2px;font-family:inherit;">Delta · 161M rows · partitioned by year / is_internal</span></div>
+              <div style="background:#FEF9F0;border:1px solid #E8A855;border-radius:8px;padding:8px 13px;font-family:'Courier New',monospace;font-size:10.5px;font-weight:500;color:#7A4010;white-space:nowrap;">bronze_sfapi_subscripton__c</div>
+              <div style="background:#FEF9F0;border:1px solid #E8A855;border-radius:8px;padding:8px 13px;font-family:'Courier New',monospace;font-size:10.5px;font-weight:500;color:#7A4010;white-space:nowrap;">bronze_sfapi_account</div>
+              <div style="background:#FEF9F0;border:1px solid #E8A855;border-radius:8px;padding:8px 13px;font-family:'Courier New',monospace;font-size:10.5px;font-weight:500;color:#7A4010;white-space:nowrap;">bronze_sfapi_product2</div>
+              <div style="background:#FEF9F0;border:1px solid #E8A855;border-radius:8px;padding:8px 13px;font-family:'Courier New',monospace;font-size:10.5px;font-weight:500;color:#7A4010;white-space:nowrap;">bronze_sfapi_case</div>
+              <div style="background:#FEF9F0;border:1px solid #E8A855;border-radius:8px;padding:8px 13px;font-family:'Courier New',monospace;font-size:10.5px;font-weight:500;color:#7A4010;white-space:nowrap;">bronze_sfapi_opportunity</div>
+              <div style="background:#FEF9F0;border:1px solid #E8A855;border-radius:8px;padding:8px 13px;font-family:'Courier New',monospace;font-size:10.5px;font-weight:500;color:#7A4010;min-width:180px;">bronze_posthog_events<span style="font-size:9.5px;color:#B07030;font-weight:400;display:block;margin-top:2px;font-family:inherit;">url_state_change · HogQL · GeoIP enriched</span></div>
+              <div style="background:#FEF9F0;border:1px solid #E8A855;border-radius:8px;padding:8px 13px;font-family:'Courier New',monospace;font-size:10.5px;font-weight:500;color:#7A4010;white-space:nowrap;">bronze_pb_features</div>
+              <div style="background:#FEF9F0;border:1px solid #E8A855;border-radius:8px;padding:8px 13px;font-family:'Courier New',monospace;font-size:10.5px;font-weight:500;color:#7A4010;white-space:nowrap;">bronze_pb_relationships_raw</div>
+              <div style="background:#FEF9F0;border:1px solid #E8A855;border-radius:8px;padding:8px 13px;font-family:'Courier New',monospace;font-size:10.5px;font-weight:500;color:#7A4010;min-width:140px;">zd_notebook_*<span style="font-size:9.5px;color:#B07030;font-weight:400;display:block;margin-top:2px;font-family:inherit;">6 tables</span></div>
+              <div style="background:#FEF9F0;border:1px solid #E8A855;border-radius:8px;padding:8px 13px;font-family:'Courier New',monospace;font-size:10.5px;font-weight:500;color:#7A4010;min-width:220px;">eos_parquet_api_usage_legacy<span style="font-size:9.5px;color:#B07030;font-weight:400;display:block;margin-top:2px;font-family:inherit;">Delta · 161M rows · partitioned by year / is_internal</span></div>
             </div>
           </div>
+
           <div style="display:flex;justify-content:center;align-items:center;height:28px;gap:8px;color:#aaa;font-size:11px;"><svg width="12" height="18" viewBox="0 0 12 18"><path d="M6 0v12M1 7l5 6 5-6" stroke="#CCCCCC" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg><span>PySpark transforms + SQL views</span></div>
-          <div style="background:#EAF6F1;border:1px solid #8DD4B8;border-radius:10px;padding:16px 20px;margin-top:6px;">
-            <div style="font-size:11px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;margin-bottom:4px;color:#0D6E50;">Silver — Cleansed &amp; joined</div>
-            <div style="font-size:11px;margin-bottom:12px;color:#2A8A6A;">SQL views · Product Ops owned · No materialisation during PoC</div>
-            <div style="display:flex;flex-wrap:wrap;gap:8px;">
-              <div style="background:rgba(255,255,255,0.8);border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:8px 13px;font-family:'Courier New',monospace;font-size:10.5px;font-weight:500;color:#222;white-space:nowrap;">v_silver_sf_subscriptions</div>
-              <div style="background:rgba(255,255,255,0.8);border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:8px 13px;font-family:'Courier New',monospace;font-size:10.5px;font-weight:500;color:#222;white-space:nowrap;">v_silver_sf_customer_accounts</div>
-              <div style="background:rgba(255,255,255,0.8);border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:8px 13px;font-family:'Courier New',monospace;font-size:10.5px;font-weight:500;color:#222;white-space:nowrap;">v_silver_sf_products</div>
-              <div style="background:rgba(255,255,255,0.8);border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:8px 13px;font-family:'Courier New',monospace;font-size:10.5px;font-weight:500;color:#222;white-space:nowrap;">v_silver_pb_features</div>
-              <div style="background:rgba(255,255,255,0.8);border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:8px 13px;font-family:'Courier New',monospace;font-size:10.5px;font-weight:500;color:#222;white-space:nowrap;">v_silver_pb_subfeatures</div>
-              <div style="background:rgba(255,255,255,0.8);border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:8px 13px;font-family:'Courier New',monospace;font-size:10.5px;font-weight:500;color:#222;white-space:normal;min-width:180px;">v_silver_mdm_account<span style="font-size:9.5px;color:#888;font-weight:400;display:block;margin-top:2px;font-family:inherit;">SF + ZD + PB joined</span></div>
-              <div style="background:rgba(255,255,255,0.8);border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:8px 13px;font-family:'Courier New',monospace;font-size:10.5px;font-weight:500;color:#222;white-space:nowrap;">v_silver_lookup_fxrates</div>
-              <div style="background:rgba(255,255,255,0.8);border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:8px 13px;font-family:'Courier New',monospace;font-size:10.5px;font-weight:500;color:#222;white-space:nowrap;">v_silver_bridge_full_hierarchy_region_partition</div>
+
+          <!-- Silver -->
+          <div style="background:#F2F4F5;border:1px solid #A8B5BE;border-radius:10px;padding:16px 20px;margin-top:6px;">
+            <div style="font-size:11px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;margin-bottom:2px;color:#3A4855;">Silver — Cleansed &amp; joined</div>
+            <div style="font-size:11px;margin-bottom:12px;color:#5A6E7A;">SQL views · Product Ops owned · No materialisation during PoC</div>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;">
+              <div style="background:#E8EBEE;border:1px solid #8898A8;border-radius:8px;padding:8px 13px;font-family:'Courier New',monospace;font-size:10.5px;font-weight:500;color:#2A3A48;white-space:nowrap;">v_silver_sf_subscriptions</div>
+              <div style="background:#E8EBEE;border:1px solid #8898A8;border-radius:8px;padding:8px 13px;font-family:'Courier New',monospace;font-size:10.5px;font-weight:500;color:#2A3A48;white-space:nowrap;">v_silver_sf_customer_accounts</div>
+              <div style="background:#E8EBEE;border:1px solid #8898A8;border-radius:8px;padding:8px 13px;font-family:'Courier New',monospace;font-size:10.5px;font-weight:500;color:#2A3A48;white-space:nowrap;">v_silver_sf_products</div>
+              <div style="background:#E8EBEE;border:1px solid #8898A8;border-radius:8px;padding:8px 13px;font-family:'Courier New',monospace;font-size:10.5px;font-weight:500;color:#2A3A48;white-space:nowrap;">v_silver_sf_opportunities</div>
+              <div style="background:#E8EBEE;border:1px solid #8898A8;border-radius:8px;padding:8px 13px;font-family:'Courier New',monospace;font-size:10.5px;font-weight:500;color:#2A3A48;white-space:nowrap;">v_silver_pb_features</div>
+              <div style="background:#E8EBEE;border:1px solid #8898A8;border-radius:8px;padding:8px 13px;font-family:'Courier New',monospace;font-size:10.5px;font-weight:500;color:#2A3A48;white-space:nowrap;">v_silver_pb_subfeatures</div>
+              <div style="background:#E8EBEE;border:1px solid #8898A8;border-radius:8px;padding:8px 13px;font-family:'Courier New',monospace;font-size:10.5px;font-weight:500;color:#2A3A48;white-space:nowrap;">v_silver_pb_companies</div>
+              <div style="background:#E8EBEE;border:1px solid #8898A8;border-radius:8px;padding:8px 13px;font-family:'Courier New',monospace;font-size:10.5px;font-weight:500;color:#2A3A48;white-space:nowrap;">v_silver_lookup_fxrates</div>
+              <div style="background:#E8EBEE;border:1px solid #8898A8;border-radius:8px;padding:8px 13px;font-family:'Courier New',monospace;font-size:10.5px;font-weight:500;color:#2A3A48;white-space:nowrap;">v_silver_bridge_full_hierarchy_region_partition</div>
             </div>
-            <div style="font-style:italic;font-size:11px;color:#9d9d9d;margin-top:10px;">Data team will materialise to Delta tables when PoC graduates — no fixed date</div>
+
+            <!-- MDM callout -->
+            <div style="background:rgba(255,255,255,0.6);border:1.5px solid #8898A8;border-radius:8px;padding:14px 16px;">
+              <div style="font-size:10.5px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#3A4855;margin-bottom:8px;">MDM View — Master Data Management</div>
+              <div style="display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap;">
+                <div style="display:flex;flex-direction:column;gap:6px;min-width:160px;">
+                  <div style="display:flex;align-items:center;gap:6px;">
+                    <span style="background:#FEF9F0;border:1px solid #E8A855;border-radius:5px;padding:3px 8px;font-family:'Courier New',monospace;font-size:10px;color:#7A4010;font-weight:600;">SF</span>
+                    <span style="font-size:10px;color:#3A4855;font-weight:600;">Master spine</span>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:6px;">
+                    <span style="background:#FEF9F0;border:1px solid #E8A855;border-radius:5px;padding:3px 8px;font-family:'Courier New',monospace;font-size:10px;color:#7A4010;font-weight:600;">ZD</span>
+                    <span style="font-size:10px;color:#5A6E7A;">LEFT JOIN satellite</span>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:6px;">
+                    <span style="background:#FEF9F0;border:1px solid #E8A855;border-radius:5px;padding:3px 8px;font-family:'Courier New',monospace;font-size:10px;color:#7A4010;font-weight:600;">PB</span>
+                    <span style="font-size:10px;color:#5A6E7A;">LEFT JOIN satellite</span>
+                  </div>
+                </div>
+                <div style="display:flex;align-items:center;color:#A8B5BE;font-size:18px;padding-top:6px;">→</div>
+                <div style="background:#E8EBEE;border:1.5px solid #8898A8;border-radius:8px;padding:8px 14px;">
+                  <div style="font-family:'Courier New',monospace;font-size:10.5px;font-weight:600;color:#2A3A48;">v_silver_mdm_account</div>
+                  <div style="font-size:9.5px;color:#5A6E7A;margin-top:3px;">All matched accounts · SF as master</div>
+                </div>
+              </div>
+              <div style="margin-top:10px;font-size:10px;color:#5A6E7A;line-height:1.6;">
+                <strong style="color:#3A4855;">PB-only orphans</strong> — companies with no SF match queried separately from <span style="font-family:'Courier New',monospace;font-size:9.5px;">v_silver_pb_companies</span> (NOT IN subquery) · appended by API with <span style="font-family:'Courier New',monospace;font-size:9.5px;">pbOnly: true</span><br>
+                <strong style="color:#3A4855;">Hierarchy</strong> — queried separately from <span style="font-family:'Courier New',monospace;font-size:9.5px;">v_silver_sf_customer_accounts</span> · parent/child resolved in JS<br>
+                <strong style="color:#3A4855;">Planned evolution</strong> — FULL OUTER JOIN when Data team materialises to Gold Delta; <span style="font-family:'Courier New',monospace;font-size:9.5px;">source_type</span> column replaces <span style="font-family:'Courier New',monospace;font-size:9.5px;">pbOnly</span> flag
+              </div>
+            </div>
+
+            <div style="font-style:italic;font-size:11px;color:#9d9d9d;margin-top:12px;">Data team will materialise to Delta tables when PoC graduates — no fixed date</div>
           </div>
+
           <div style="display:flex;justify-content:center;align-items:center;height:28px;gap:8px;color:#aaa;font-size:11px;"><svg width="12" height="18" viewBox="0 0 12 18"><path d="M6 0v12M1 7l5 6 5-6" stroke="#CCCCCC" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Materialised to Delta tables</span></div>
-          <div style="background:#F0EBF8;border:1px solid #B99FD8;border-radius:10px;padding:16px 20px;margin-top:6px;">
-            <div style="font-size:11px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;margin-bottom:4px;color:#4A2880;">Gold — Materialised Delta tables</div>
-            <div style="font-size:11px;margin-bottom:12px;color:#6A3EA0;">Physical Parquet storage · No view-on-view chain · Fast SQL Analytics Endpoint queries</div>
+
+          <!-- Gold -->
+          <div style="background:#FFFAEB;border:1px solid #D4AA30;border-radius:10px;padding:16px 20px;margin-top:6px;">
+            <div style="font-size:11px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;margin-bottom:2px;color:#7A5800;">Gold — Materialised Delta tables</div>
+            <div style="font-size:11px;margin-bottom:12px;color:#9A7200;">Physical Parquet storage · Fabric Pipeline managed · Fast SQL Analytics Endpoint queries</div>
             <div style="display:flex;flex-wrap:wrap;gap:8px;">
-              <div style="background:rgba(255,255,255,0.8);border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:8px 13px;font-family:'Courier New',monospace;font-size:10.5px;font-weight:500;color:#222;white-space:normal;min-width:200px;">gold_sf_subscriptions<span style="font-size:9.5px;color:#888;font-weight:400;display:block;margin-top:2px;font-family:inherit;">Single source of truth for all SF subscriptions</span></div>
-              <div style="background:rgba(255,255,255,0.8);border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:8px 13px;font-family:'Courier New',monospace;font-size:10.5px;font-weight:500;color:#222;white-space:normal;min-width:160px;">gold_lookup_fxrates<span style="font-size:9.5px;color:#888;font-weight:400;display:block;margin-top:2px;font-family:inherit;">PBI-aligned FX rates</span></div>
-              <div style="background:rgba(255,255,255,0.8);border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:8px 13px;font-family:'Courier New',monospace;font-size:10.5px;font-weight:500;color:#222;white-space:normal;min-width:160px;">gold_sf_opportunities<span style="font-size:9.5px;color:#888;font-weight:400;display:block;margin-top:2px;font-family:inherit;">SF pipeline</span></div>
-              <div style="background:rgba(255,255,255,0.8);border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:8px 13px;font-family:'Courier New',monospace;font-size:10.5px;font-weight:500;color:#222;white-space:normal;min-width:160px;">gold_exchangeratetable<span style="font-size:9.5px;color:#888;font-weight:400;display:block;margin-top:2px;font-family:inherit;">Historical FX from Bronze</span></div>
-              <div style="background:rgba(255,255,255,0.8);border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:8px 13px;font-family:'Courier New',monospace;font-size:10.5px;font-weight:500;color:#222;white-space:nowrap;opacity:0.5;border-style:dashed;">gold_churn_propensity_scores <em style="font-size:9px;">planned</em></div>
+              <div style="background:#FEF5CC;border:1px solid #C8A000;border-radius:8px;padding:8px 13px;font-family:'Courier New',monospace;font-size:10.5px;font-weight:500;color:#6B5000;min-width:200px;">gold_sf_subscriptions<span style="font-size:9.5px;color:#9A7200;font-weight:400;display:block;margin-top:2px;font-family:inherit;">Single source of truth · all SF subscriptions</span></div>
+              <div style="background:#FEF5CC;border:1px solid #C8A000;border-radius:8px;padding:8px 13px;font-family:'Courier New',monospace;font-size:10.5px;font-weight:500;color:#6B5000;min-width:180px;">gold_sf_customer_accounts<span style="font-size:9.5px;color:#9A7200;font-weight:400;display:block;margin-top:2px;font-family:inherit;">Hierarchy · parent/child relationships</span></div>
+              <div style="background:#FEF5CC;border:1px solid #C8A000;border-radius:8px;padding:8px 13px;font-family:'Courier New',monospace;font-size:10.5px;font-weight:500;color:#6B5000;min-width:160px;">gold_sf_opportunities<span style="font-size:9.5px;color:#9A7200;font-weight:400;display:block;margin-top:2px;font-family:inherit;">SF pipeline</span></div>
+              <div style="background:#FEF5CC;border:1px solid #C8A000;border-radius:8px;padding:8px 13px;font-family:'Courier New',monospace;font-size:10.5px;font-weight:500;color:#6B5000;min-width:160px;">gold_lookup_fxrates<span style="font-size:9.5px;color:#9A7200;font-weight:400;display:block;margin-top:2px;font-family:inherit;">PBI-aligned FX rates</span></div>
+              <div style="background:#FEF5CC;border:1px solid #C8A000;border-radius:8px;padding:8px 13px;font-family:'Courier New',monospace;font-size:10.5px;font-weight:500;color:#6B5000;min-width:160px;">gold_exchangeratetable<span style="font-size:9.5px;color:#9A7200;font-weight:400;display:block;margin-top:2px;font-family:inherit;">Historical FX from Bronze</span></div>
+              <div style="background:#FEF5CC;border:1px dashed #C8A000;border-radius:8px;padding:8px 13px;font-family:'Courier New',monospace;font-size:10.5px;font-weight:500;color:#C8A000;white-space:nowrap;opacity:0.6;">gold_mdm_accounts <em style="font-size:9px;font-family:inherit;">planned — FULL OUTER JOIN</em></div>
+              <div style="background:#FEF5CC;border:1px dashed #C8A000;border-radius:8px;padding:8px 13px;font-family:'Courier New',monospace;font-size:10.5px;font-weight:500;color:#C8A000;white-space:nowrap;opacity:0.6;">gold_churn_propensity_scores <em style="font-size:9px;font-family:inherit;">planned</em></div>
             </div>
           </div>
+
           <div style="display:flex;justify-content:center;align-items:center;height:28px;gap:8px;color:#aaa;font-size:11px;"><svg width="12" height="18" viewBox="0 0 12 18"><path d="M6 0v12M1 7l5 6 5-6" stroke="#CCCCCC" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg><span>SQL Analytics Endpoint</span></div>
+
+          <!-- Consumers -->
           <div style="background:#EEF4FB;border:1px solid #94BFEA;border-radius:10px;padding:16px 20px;margin-top:6px;">
-            <div style="font-size:11px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;margin-bottom:4px;color:#1A4F8A;">Consumers</div>
-            <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;">
-              <div style="background:rgba(255,255,255,0.8);border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:8px 13px;font-size:11px;font-weight:500;color:#222;white-space:normal;min-width:180px;">Power BI<span style="font-size:9.5px;color:#888;font-weight:400;display:block;margin-top:2px;">Direct SQL Analytics Endpoint connection</span></div>
-              <div style="background:rgba(255,255,255,0.8);border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:8px 13px;font-size:11px;font-weight:500;color:#222;white-space:normal;min-width:180px;">Argus Node.js API<span style="font-size:9.5px;color:#888;font-weight:400;display:block;margin-top:2px;">src/api/ endpoints · 15-min in-memory cache</span></div>
-              <div style="background:rgba(255,255,255,0.8);border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:8px 13px;font-size:11px;font-weight:500;color:#222;white-space:normal;min-width:180px;">MCP Server<span style="font-size:9.5px;color:#888;font-weight:400;display:block;margin-top:2px;">Same endpoint · 9 tools planned</span></div>
+            <div style="font-size:11px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;margin-bottom:8px;color:#1A4F8A;">Consumers</div>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;">
+              <div style="background:#F0F7FD;border:1px solid #7AAED8;border-radius:8px;padding:8px 13px;font-size:11px;font-weight:500;color:#1A4F8A;min-width:180px;">Power BI<span style="font-size:9.5px;color:#4A7AAA;font-weight:400;display:block;margin-top:2px;">Direct SQL Analytics Endpoint</span></div>
+              <div style="background:#F0F7FD;border:1px solid #7AAED8;border-radius:8px;padding:8px 13px;font-size:11px;font-weight:500;color:#1A4F8A;min-width:180px;">Argus Node.js API<span style="font-size:9.5px;color:#4A7AAA;font-weight:400;display:block;margin-top:2px;">src/api/ · 15-min in-memory cache</span></div>
+              <div style="background:#F0F7FD;border:1px solid #7AAED8;border-radius:8px;padding:8px 13px;font-size:11px;font-weight:500;color:#1A4F8A;min-width:180px;">MCP Server<span style="font-size:9.5px;color:#4A7AAA;font-weight:400;display:block;margin-top:2px;">Same API layer · 9 tools planned</span></div>
             </div>
-            <div style="font-size:11px;color:#6d6d6c;margin-top:10px;line-height:1.6;">Materialised Gold = no view-chain recomputation on every query · Fabric Pipeline manages refresh · In-memory API cache reduces concurrent CU burn on F8</div>
+            <div style="font-size:11px;color:#4A7AAA;margin-top:10px;line-height:1.6;">Materialised Gold = no view-chain recomputation on every query · Fabric Pipeline manages refresh · In-memory cache reduces concurrent CU burn on F8</div>
           </div>
+
         </div>
       </div>
       </sc-if>
 
-      <!-- ============ ARGUS AND MCP ============ -->
-      <sc-if value="{{ isArgusMcp }}" hint-placeholder-val="{{ false }}">
-      <div style="padding:32px;max-width:1080px;animation:argusFade .25s ease;">
-        <div style="margin-bottom:32px;">
-          <div style="font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:#9d9d9d;margin-bottom:12px;">Platform · Build design</div>
-          <div style="font-size:28px;font-weight:700;letter-spacing:-0.02em;color:#3c3c3b;margin-bottom:10px;">Argus and MCP</div>
-          <div style="font-size:15px;color:#6d6d6c;line-height:1.5;">Development Cycle &amp; Hosting · Phase 1 → Phase 2 · Target: September 2026</div>
-        </div>
+      <!-- Argus and MCP tab -->
+      <sc-if value="{{ buildTabIsArgusMcp }}" hint-placeholder-val="{{ false }}">
         <div style="background:#fff;border:1px solid #e6e6e5;border-radius:12px;padding:28px;margin-top:0;">
-          <!-- 1. Gate banner -->
-          <div style="background:#fce4e4;border:1px solid #e8a0a0;border-radius:8px;padding:10px 16px;font-size:11.5px;color:#8b1a1a;line-height:1.5;margin-bottom:12px;">Status: IT service principal unlocks both — Azure App Service hosting + SQL Analytics Endpoint auth via TDS · IT resource update due September 2026 · Investigating AWS hosting as an alternative</div>
-          <!-- 2. Why hosted -->
-          <div style="background:#f7f7f5;border:1px solid #e6e6e5;border-radius:8px;padding:14px 16px;margin-bottom:16px;">
-            <div style="font-size:11.5px;font-weight:700;color:#3c3c3b;margin-bottom:8px;">Why both must be hosted (not run locally)</div>
-            <div style="font-size:11px;color:#6d6d6c;line-height:1.75;"><strong>Argus app</strong> — business users need a stable URL they can bookmark and share. Running on a laptop means the app disappears when the machine sleeps or leaves the office. Azure App Service gives it a persistent HTTPS endpoint with M365 Easy Auth so Aurora staff sign in with their existing Microsoft credentials, no separate accounts needed.<br><br><strong>MCP server</strong> — Claude Enterprise connects to MCP servers over HTTP at a fixed URL configured in the Claude admin console. There is no way to point Claude at a local machine or ngrok tunnel in a production org. The server must be live at a stable HTTPS address at all times — Claude calls it on demand whenever a user triggers one of the 9 tools, so downtime means broken AI queries. M365 Easy Auth in front also ensures only Aurora-authenticated users can trigger data access, which is required for governance.</div>
+
+          <!-- Status -->
+          <div style="background:#fce4e4;border:1px solid #e8a0a0;border-radius:8px;padding:10px 16px;font-size:11.5px;color:#8b1a1a;line-height:1.5;margin-bottom:20px;">
+            <strong>Blocked on IT:</strong> Azure App Service hosting + Fabric SQL authentication require a one-time IT service principal setup · IT resource update due September 2026 · Investigating AWS hosting as an alternative · <a href="https://learn.microsoft.com/en-us/fabric/data-warehouse/connectivity" target="_blank" style="color:#8b1a1a;text-decoration:underline;">Technical detail (TDS)</a>
           </div>
-          <!-- 3. Phases row -->
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-            <div style="background:#EBF5EE;border:1px solid #7DC49A;border-radius:10px;padding:20px;">
-              <div style="font-size:11px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:#1A6E3E;margin-bottom:4px;">Phase 1 — Argus app</div>
-              <div style="font-size:11px;color:#555;margin-bottom:14px;">Frontend dashboard · Node.js API · Test users = CS team</div>
-              <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                <div style="flex:1;min-width:130px;background:rgba(255,255,255,0.75);border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:10px 12px;">
-                  <span style="font-weight:600;font-size:11px;display:block;margin-bottom:4px;color:#111;">Data quality</span>
-                  <span style="font-size:10.5px;color:#666;line-height:1.5;">ARR nulls, filter bugs, field gaps surfaced by real users</span>
-                </div>
-                <div style="flex:1;min-width:130px;background:rgba(255,255,255,0.75);border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:10px 12px;">
-                  <span style="font-weight:600;font-size:11px;display:block;margin-bottom:4px;color:#111;">Data persona</span>
-                  <span style="font-size:10.5px;color:#666;line-height:1.5;">Which questions people ask, which fields matter, what 'correct' looks like</span>
-                </div>
+
+          <!-- What it enables -->
+          <div style="margin-bottom:20px;">
+            <div style="font-size:13px;font-weight:700;color:#3c3c3b;margin-bottom:4px;">What Claude can do once this is live</div>
+            <div style="font-size:11.5px;color:#6d6d6c;margin-bottom:14px;">Aurora staff ask plain-English questions in Claude. The MCP server queries our live Salesforce, Zendesk and Productboard data and returns a structured answer — no dashboard, no SQL, no waiting for a report.</div>
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              <div style="background:#f7f7f5;border:1px solid #e6e6e5;border-radius:8px;padding:12px 16px;">
+                <div style="font-size:11px;font-weight:600;color:#288184;margin-bottom:4px;">— "Brief me on TotalEnergies before my 2pm call"</div>
+                <div style="font-size:11px;color:#6d6d6c;line-height:1.6;">Claude returns: 12 active subscriptions · £850k ARR · renewal due March 2027 · 2 open Zendesk tickets (1 escalated) · Power &amp; Renewables focus — aligns with the upcoming LNG feature release they've requested</div>
               </div>
-            </div>
-            <div style="background:#FBF0EE;border:1px solid #E0A098;border-radius:10px;padding:20px;">
-              <div style="font-size:11px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:#8A2A1A;margin-bottom:4px;">Phase 2 — MCP Server</div>
-              <div style="font-size:11px;color:#555;margin-bottom:14px;">Claude Enterprise integration · Built from Argus-validated patterns</div>
-              <div style="display:flex;flex-wrap:wrap;gap:6px;">
-                <span style="background:rgba(255,255,255,0.75);border:1px solid rgba(0,0,0,0.1);border-radius:6px;padding:5px 9px;font-size:10px;font-weight:500;font-family:'Courier New',monospace;color:#333;">get_account_health</span>
-                <span style="background:rgba(255,255,255,0.75);border:1px solid rgba(0,0,0,0.1);border-radius:6px;padding:5px 9px;font-size:10px;font-weight:500;font-family:'Courier New',monospace;color:#333;">get_churn_signals</span>
-                <span style="background:rgba(255,255,255,0.75);border:1px solid rgba(0,0,0,0.1);border-radius:6px;padding:5px 9px;font-size:10px;font-weight:500;font-family:'Courier New',monospace;color:#333;">get_renewals_pipeline</span>
-                <span style="background:rgba(255,255,255,0.75);border:1px solid rgba(0,0,0,0.1);border-radius:6px;padding:5px 9px;font-size:10px;font-weight:500;font-family:'Courier New',monospace;color:#333;">search_accounts</span>
-                <span style="background:rgba(255,255,255,0.75);border:1px solid rgba(0,0,0,0.1);border-radius:6px;padding:5px 9px;font-size:10px;font-weight:500;font-family:'Courier New',monospace;color:#333;">get_account_usage</span>
-                <span style="background:rgba(255,255,255,0.75);border:1px solid rgba(0,0,0,0.1);border-radius:6px;padding:5px 9px;font-size:10px;font-weight:500;font-family:'Courier New',monospace;color:#333;">get_account_summary</span>
-                <span style="background:rgba(255,255,255,0.75);border:1px solid rgba(0,0,0,0.1);border-radius:6px;padding:5px 9px;font-size:10px;font-weight:500;font-family:'Courier New',monospace;color:#333;">list_accounts</span>
-                <span style="background:rgba(255,255,255,0.75);border:1px solid rgba(0,0,0,0.1);border-radius:6px;padding:5px 9px;font-size:10px;font-weight:500;font-family:'Courier New',monospace;color:#333;">get_feature_adoption</span>
-                <span style="background:rgba(255,255,255,0.75);border:1px solid rgba(0,0,0,0.1);border-radius:6px;padding:5px 9px;font-size:10px;font-weight:500;font-family:'Courier New',monospace;color:#333;">get_posthog_opt_out</span>
+              <div style="background:#f7f7f5;border:1px solid #e6e6e5;border-radius:8px;padding:12px 16px;">
+                <div style="font-size:11px;font-weight:600;color:#288184;margin-bottom:4px;">— "Which accounts are renewing in the next 30 days with ARR over £200k?"</div>
+                <div style="font-size:11px;color:#6d6d6c;line-height:1.6;">Claude returns a ranked list — Equinor overdue, Shell in 12 days, BP in 28 — with ARR, contract type and renewal owner for each</div>
+              </div>
+              <div style="background:#f7f7f5;border:1px solid #e6e6e5;border-radius:8px;padding:12px 16px;">
+                <div style="font-size:11px;font-weight:600;color:#288184;margin-bottom:4px;">— "What features are Power &amp; Renewables clients asking for most right now?"</div>
+                <div style="font-size:11px;color:#6d6d6c;line-height:1.6;">Claude pulls the top-scored Productboard features for that segment — useful for pre-call prep or shaping a commercial conversation</div>
               </div>
             </div>
           </div>
-          <div style="display:flex;justify-content:center;align-items:center;height:28px;gap:8px;color:#aaa;font-size:11px;margin-top:4px;"><svg width="12" height="18" viewBox="0 0 12 18"><path d="M6 0v12M1 7l5 6 5-6" stroke="#CCCCCC" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Validated queries + proven patterns feed into →</span></div>
-          <div style="background:#EEF4FB;border:1px solid #94BFEA;border-radius:10px;padding:20px;margin-top:0;">
-            <div style="font-size:11px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:#1A4F8A;margin-bottom:4px;">Shared Node.js API — src/api/endpoints</div>
-            <div style="font-size:11px;color:#555;margin-bottom:10px;">Single source of truth · Schema changes fixed once · Fabric SQL Analytics Endpoint</div>
-            <div style="background:rgba(255,255,255,0.6);border:1px solid rgba(0,0,0,0.08);border-radius:8px;padding:10px 14px;font-size:11px;color:#555;line-height:1.6;">Both Argus and the MCP server are consumers of the same API layer — not two separate codebases. A schema change in a Gold table needs fixing in one place only.</div>
+
+          <!-- Why not live yet -->
+          <div style="background:#fffaeb;border:1px solid #D4AA30;border-radius:8px;padding:16px 18px;margin-bottom:20px;">
+            <div style="font-size:12px;font-weight:700;color:#7A5800;margin-bottom:10px;">Why this isn't live yet — three one-time IT tasks</div>
+            <div style="display:flex;flex-direction:column;gap:10px;">
+              <div style="display:flex;gap:12px;align-items:flex-start;">
+                <div style="background:#D4AA30;color:#fff;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px;">1</div>
+                <div><div style="font-size:11.5px;font-weight:600;color:#7A5800;margin-bottom:2px;">Service principal for Fabric</div><div style="font-size:11px;color:#9A7200;line-height:1.5;">IT creates an Azure AD identity that the server uses to authenticate to our Fabric data warehouse. Without this, no data can be read. It's the same mechanism Power BI uses today — we just need a separate one for Argus.</div></div>
+              </div>
+              <div style="display:flex;gap:12px;align-items:flex-start;">
+                <div style="background:#D4AA30;color:#fff;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px;">2</div>
+                <div><div style="font-size:11.5px;font-weight:600;color:#7A5800;margin-bottom:2px;">Azure App Service hosting</div><div style="font-size:11px;color:#9A7200;line-height:1.5;">The Argus app and MCP server need to run at a permanent HTTPS URL — not on a laptop. IT provisions an App Service (small, low cost), adds M365 Easy Auth so Aurora staff sign in with their existing Microsoft account. Setup is roughly a half-day of IT time.</div></div>
+              </div>
+              <div style="display:flex;gap:12px;align-items:flex-start;">
+                <div style="background:#D4AA30;color:#fff;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px;">3</div>
+                <div><div style="font-size:11.5px;font-weight:600;color:#7A5800;margin-bottom:2px;">Claude Enterprise admin config</div><div style="font-size:11px;color:#9A7200;line-height:1.5;">Once the server is live at its URL, an Aurora Claude admin registers it in the Claude Enterprise workspace settings. After that, every Aurora user can immediately ask Claude questions against live data — no individual setup required.</div></div>
+              </div>
+            </div>
+            <div style="margin-top:12px;font-size:11px;color:#9A7200;border-top:1px solid #E8C060;padding-top:10px;">Once these three steps are done, it is self-service for every Aurora user — no further IT involvement for each person who uses it.</div>
           </div>
-          <div style="display:flex;justify-content:center;align-items:center;height:28px;gap:8px;color:#aaa;font-size:11px;"><svg width="12" height="18" viewBox="0 0 12 18"><path d="M6 0v12M1 7l5 6 5-6" stroke="#CCCCCC" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Both must be hosted identically</span></div>
-          <div style="background:#f4f4f2;border:1px solid #CFCEC8;border-radius:10px;padding:20px;margin-top:0;">
-            <div style="font-size:11px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:#555;margin-bottom:4px;">Azure App Service — hosting (required for both phases)</div>
-            <div style="font-size:11px;color:#777;">Stable HTTPS URL · M365 Easy Auth · Node.js 20 LTS · B1 tier</div>
-            <div style="display:flex;gap:10px;margin-top:12px;">
-              <div style="flex:1;background:#fff;border:1px solid #DDDCD7;border-radius:8px;padding:10px 14px;font-size:11.5px;font-weight:600;color:#222;">Argus app<span style="display:block;font-size:10px;font-weight:400;color:#9d9d9d;margin-top:2px;">argus.auroraer.com</span></div>
-              <div style="flex:1;background:#fff;border:1px solid #DDDCD7;border-radius:8px;padding:10px 14px;font-size:11.5px;font-weight:600;color:#222;">MCP server<span style="display:block;font-size:10px;font-weight:400;color:#9d9d9d;margin-top:2px;">argus-mcp.auroraer.com</span></div>
+
+          <!-- Development journey -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+            <div style="background:#EBF5EE;border:1px solid #7DC49A;border-radius:10px;padding:18px;">
+              <div style="font-size:10px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:#1A6E3E;margin-bottom:4px;">Phase 1 — Argus dashboard</div>
+              <div style="font-size:11px;color:#555;margin-bottom:12px;">CS &amp; RPM test users · live data · building data confidence</div>
+              <div style="display:flex;flex-direction:column;gap:6px;">
+                <div style="background:rgba(255,255,255,0.75);border:1px solid rgba(0,0,0,0.08);border-radius:6px;padding:8px 10px;font-size:10.5px;color:#333;line-height:1.4;"><strong style="display:block;margin-bottom:2px;">Prove the data</strong>Real users surface ARR gaps, filter issues and field quality problems before they reach Claude</div>
+                <div style="background:rgba(255,255,255,0.75);border:1px solid rgba(0,0,0,0.08);border-radius:6px;padding:8px 10px;font-size:10.5px;color:#333;line-height:1.4;"><strong style="display:block;margin-bottom:2px;">Learn what questions matter</strong>Which accounts, which metrics, which time horizons — shapes exactly what the MCP tools need to return</div>
+              </div>
+            </div>
+            <div style="background:#FBF0EE;border:1px solid #E0A098;border-radius:10px;padding:18px;">
+              <div style="font-size:10px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:#8A2A1A;margin-bottom:4px;">Phase 2 — MCP server (9 tools)</div>
+              <div style="font-size:11px;color:#555;margin-bottom:12px;">Built from Argus-validated patterns · same API layer</div>
+              <div style="display:flex;flex-direction:column;gap:4px;">
+                <div style="display:flex;align-items:baseline;gap:8px;"><span style="font-family:'Courier New',monospace;font-size:9.5px;font-weight:600;color:#8A2A1A;white-space:nowrap;">search_accounts</span><span style="font-size:9.5px;color:#777;">name lookup · resolves parent/child</span></div>
+                <div style="display:flex;align-items:baseline;gap:8px;"><span style="font-family:'Courier New',monospace;font-size:9.5px;font-weight:600;color:#8A2A1A;white-space:nowrap;">get_account_summary</span><span style="font-size:9.5px;color:#777;">ARR · health · renewal date</span></div>
+                <div style="display:flex;align-items:baseline;gap:8px;"><span style="font-family:'Courier New',monospace;font-size:9.5px;font-weight:600;color:#8A2A1A;white-space:nowrap;">get_account_subscriptions</span><span style="font-size:9.5px;color:#777;">service · market · ARR per line</span></div>
+                <div style="display:flex;align-items:baseline;gap:8px;"><span style="font-family:'Courier New',monospace;font-size:9.5px;font-weight:600;color:#8A2A1A;white-space:nowrap;">get_renewals_at_risk</span><span style="font-size:9.5px;color:#777;">OVERDUE / AT_RISK / TO_WATCH · ARR</span></div>
+                <div style="display:flex;align-items:baseline;gap:8px;"><span style="font-family:'Courier New',monospace;font-size:9.5px;font-weight:600;color:#8A2A1A;white-space:nowrap;">get_opportunities</span><span style="font-size:9.5px;color:#777;">SF pipeline · stage · ARR</span></div>
+                <div style="display:flex;align-items:baseline;gap:8px;"><span style="font-family:'Courier New',monospace;font-size:9.5px;font-weight:600;color:#8A2A1A;white-space:nowrap;">get_support_tickets</span><span style="font-size:9.5px;color:#777;">Zendesk open / pending / trend</span></div>
+                <div style="display:flex;align-items:baseline;gap:8px;"><span style="font-family:'Courier New',monospace;font-size:9.5px;font-weight:600;color:#8A2A1A;white-space:nowrap;">get_feature_priorities</span><span style="font-size:9.5px;color:#777;">Productboard · by market / service</span></div>
+                <div style="display:flex;align-items:baseline;gap:8px;"><span style="font-family:'Courier New',monospace;font-size:9.5px;font-weight:600;color:#8A2A1A;white-space:nowrap;">get_account_usage</span><span style="font-size:9.5px;color:#777;">EOS API volume · engagement trend</span></div>
+                <div style="display:flex;align-items:baseline;gap:8px;"><span style="font-family:'Courier New',monospace;font-size:9.5px;font-weight:600;color:#8A2A1A;white-space:nowrap;">get_pre_call_brief</span><span style="font-size:9.5px;color:#777;">all of the above · one response</span></div>
+              </div>
             </div>
           </div>
+
+          <!-- Technical note (for IT readers) -->
+          <div style="background:#f7f7f5;border:1px solid #e6e6e5;border-radius:8px;padding:14px 16px;">
+            <div style="font-size:11px;font-weight:700;color:#6d6d6c;margin-bottom:6px;">For IT — architecture note</div>
+            <div style="font-size:11px;color:#9d9d9d;line-height:1.6;">Both Argus and the MCP server run on the same Node.js codebase and share the same API layer — a schema change in a Gold table is fixed once, not twice. Azure App Service (B1 tier) hosts both at separate subdomains. M365 Easy Auth gates access to Aurora-authenticated users. The MCP server exposes tools over HTTP; Claude Enterprise calls them on demand via the URL registered in the Anthropic admin console. No data is stored by Claude — every query hits Fabric live and returns only the rows needed.</div>
+          </div>
+
         </div>
+      </sc-if>
       </div>
       </sc-if>
 
@@ -2400,11 +2547,13 @@ class Component extends DCLogic {
     const ls = typeof localStorage !== 'undefined' ? localStorage : {getItem:()=>null,setItem:()=>{},removeItem:()=>{}};
     // One-time bust: clear any mock-polluted accounts cache from previous ?mock sessions
     try { if (ls.getItem('argusAccCacheV') !== '2') { ls.removeItem('argusAccountsCache'); ls.setItem('argusAccCacheV', '2'); } } catch(e){}
-    const savedView         = ls.getItem('argusView') || 'health';
+    let savedView           = ls.getItem('argusView') || 'health';
+    if (savedView==='dataLakeBuild'||savedView==='argusMcp') { savedView='buildDesign'; }
     const savedHealthClient = ls.getItem('argusHealthClient') || 'rwe';
     const savedRange        = ls.getItem('argusRange')        || '3m';
+    const savedBuildTab     = ls.getItem('buildTab') || 'argusVision';
     this.state = {
-      view: savedView, healthClient: savedHealthClient, range: savedRange, briefClient:'rwe',
+      view: savedView, buildTab: savedBuildTab, healthClient: savedHealthClient, range: savedRange, briefClient:'rwe',
       featProduct:'all', featCritFilter:null, featEffFilter:null, featScoreSource:null, featStatusFilter:[], featHideDelivered:true, featGroupFilter:[], featMarketExclusions:[], featFiltersOpen:true, featSearch:'', featInsights:'all', featSort:'score', drills:{}, featInsightsData:{}, companyFeatsData:{}, featuresLoaded:false, featLoading:false, features:[],
       mdmLoaded:false, mdmLoading:false, mdmSummary:null, mdmDuplicates:[],
       chat:[{role:'argus', html:'Hello — I can brief you on any client account, or help you spot patterns across your portfolio. Try asking about a specific client, or a cross-portfolio question like &ldquo;which clients are at churn risk?&rdquo;'}],
@@ -7779,12 +7928,18 @@ class Component extends DCLogic {
       goAssistant:(e)=>{e&&e.preventDefault();localStorage.setItem('argusView','assistant');this.setV({view:'assistant'});},
       goBriefing:(e)=>{e&&e.preventDefault();localStorage.setItem('argusView','briefing');this.setV({view:'briefing'});},
       goBuildStatus:(e)=>{e&&e.preventDefault();localStorage.setItem('argusView','buildStatus');this.setV({view:'buildStatus'});},
-      goDataLakeBuild:(e)=>{e&&e.preventDefault();localStorage.setItem('argusView','dataLakeBuild');this.setV({view:'dataLakeBuild'});},
-      goArgusMcp:(e)=>{e&&e.preventDefault();localStorage.setItem('argusView','argusMcp');this.setV({view:'argusMcp'});},
+      goBuildDesign:(e)=>{e&&e.preventDefault();localStorage.setItem('argusView','buildDesign');this.setV({view:'buildDesign'});},
+      setBuildTabArgusVision:(e)=>{e&&e.preventDefault();localStorage.setItem('buildTab','argusVision');this.setV({buildTab:'argusVision'});},
+      setBuildTabDatalake:(e)=>{e&&e.preventDefault();localStorage.setItem('buildTab','dataLakeBuild');this.setV({buildTab:'dataLakeBuild'});},
+      setBuildTabArgusMcp:(e)=>{e&&e.preventDefault();localStorage.setItem('buildTab','argusMcp');this.setV({buildTab:'argusMcp'});},
       goMdm:(e)=>{e&&e.preventDefault();localStorage.setItem('argusView','mdm');window.__mdmSearch='';window.__mdmConfFilter=null;window.__mdmExpandedId=null;this.setV({view:'mdm'}); },
       goSwIntelligence:(e)=>{e&&e.preventDefault();localStorage.setItem('argusView','swIntelligence');document.body.classList.add('sidebar-collapsed');localStorage.setItem('sidebarCollapsed','true');this.setV({view:'swIntelligence'});},
-      navStyleHealth:navStyle('health'), navStyleFeatures:navStyle('features'), navStyleAssistant:navStyle('assistant'), navStyleBriefing:navStyle('briefing'), navStyleBuildStatus:navStyle('buildStatus'), navStyleDataLakeBuild:{...navStyle('dataLakeBuild'),padding:'6px 20px 6px 32px'}, navStyleArgusMcp:{...navStyle('argusMcp'),padding:'6px 20px 6px 32px'}, navStyleMdm:navStyle('mdm'), navStyleSwIntelligence:navStyle('swIntelligence'),
-      isHealth:S.view==='health', isFeatures:S.view==='features', isAssistant:S.view==='assistant', isBriefing:S.view==='briefing', isBuildStatus:S.view==='buildStatus', isDataLakeBuild:S.view==='dataLakeBuild', isArgusMcp:S.view==='argusMcp', isMdm:S.view==='mdm', isSwIntelligence:S.view==='swIntelligence',
+      navStyleHealth:navStyle('health'), navStyleFeatures:navStyle('features'), navStyleAssistant:navStyle('assistant'), navStyleBriefing:navStyle('briefing'), navStyleBuildStatus:navStyle('buildStatus'), navStyleBuildDesign:navStyle('buildDesign'), navStyleMdm:navStyle('mdm'), navStyleSwIntelligence:navStyle('swIntelligence'),
+      isHealth:S.view==='health', isFeatures:S.view==='features', isAssistant:S.view==='assistant', isBriefing:S.view==='briefing', isBuildStatus:S.view==='buildStatus', isBuildDesign:S.view==='buildDesign', isMdm:S.view==='mdm', isSwIntelligence:S.view==='swIntelligence',
+      buildTabIsArgusVision:(S.buildTab||'argusVision')==='argusVision', buildTabIsDataLake:S.buildTab==='dataLakeBuild', buildTabIsArgusMcp:S.buildTab==='argusMcp',
+      buildTabStyleArgusVision:(S.buildTab||'argusVision')==='argusVision'?'padding:12px 20px;font-size:13px;font-weight:600;color:#3c3c3b;border-bottom:2px solid #288184;cursor:pointer;white-space:nowrap;display:flex;align-items:center;margin-bottom:-1px;':'padding:12px 20px;font-size:13px;font-weight:600;color:#9d9d9d;border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap;display:flex;align-items:center;margin-bottom:-1px;',
+      buildTabStyleDatalake:S.buildTab==='dataLakeBuild'?'padding:12px 20px;font-size:13px;font-weight:600;color:#3c3c3b;border-bottom:2px solid #288184;cursor:pointer;white-space:nowrap;display:flex;align-items:center;margin-bottom:-1px;':'padding:12px 20px;font-size:13px;font-weight:600;color:#9d9d9d;border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap;display:flex;align-items:center;margin-bottom:-1px;',
+      buildTabStyleArgusMcp:S.buildTab==='argusMcp'?'padding:12px 20px;font-size:13px;font-weight:600;color:#3c3c3b;border-bottom:2px solid #288184;cursor:pointer;white-space:nowrap;display:flex;align-items:center;margin-bottom:-1px;':'padding:12px 20px;font-size:13px;font-weight:600;color:#9d9d9d;border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap;display:flex;align-items:center;margin-bottom:-1px;',
       healthTabsHtml, rangesHtml, healthTabs, ranges, hc,
       toggleUsers:()=>this.toggleDrill('users_'+S.healthClient), drillUsers:!!S.drills['users_'+S.healthClient],
       toggleSubs:()=>this.toggleDrill('subs_'+S.healthClient), drillSubs:!!S.drills['subs_'+S.healthClient],
