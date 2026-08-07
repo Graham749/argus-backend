@@ -407,7 +407,7 @@ function process(rows) {
 async function handler(req, res) {
   const cacheKey = 'gbp';
   try {
-    if (CACHE[cacheKey] && Date.now() - CACHE_TS[cacheKey] < CACHE_TTL) {
+    if (CACHE[cacheKey] && Date.now() - CACHE_TS[cacheKey] < CACHE_TTL && !req.query.bust) {
       return res.json(CACHE[cacheKey]);
     }
 
