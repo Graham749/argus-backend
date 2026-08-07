@@ -509,6 +509,16 @@ function renderKPIs() {
     return s + (c.sw_lines||[]).reduce(function(ss,l){return ss+(l.sub_count||0);},0);
   }, 0) + tipSubs;
 
+  // Renewals <3m: unique accounts in filtered clients with any 3M badge
+  var renew3mAccts = new Set();
+  fc.forEach(function(c) {
+    if ((c.sw_lines||[]).some(function(l){ return l.renewal_badge === '3M'; })) {
+      renew3mAccts.add(c.account);
+    }
+  });
+  var subLine = (tipSubs > 0 ? tipSubs + ' terminating' : 'none terminating')
+              + (renew3mAccts.size > 0 ? ' · ' + renew3mAccts.size + ' renew &lt;3m' : '');
+
   function fmtM(k) {
     var v = toDisp(k);
     return v >= 1000 ? currSym() + (v / 1000).toFixed(2) + 'M' : currSym() + Math.round(v).toLocaleString() + 'k';
@@ -520,15 +530,7 @@ function renderKPIs() {
   + kpi('TIP ARR', fmtM(tipArrK), tipArrK > 0 ? 'warn' : '',
         tipSubs + ' terminations in progress',
         tipArrK > 0 ? 'color:#c62828' : '', 'tip')
-  + kpi('Subscriptions', filteredSubCount, '', renewalSubLine(), '', 'all');
-}
-
-function renewalSubLine() {
-  if (!DATA) return '';
-  var r3 = DATA.renewals_3m_count || 0;
-  var tip = DATA.termination_sub_count || 0;
-  return (tip > 0 ? tip + ' terminating' : 'none terminating')
-       + (r3 > 0 ? ' · ' + r3 + ' renew &lt;3m' : '');
+  + kpi('Subscriptions', filteredSubCount, '', subLine, '', 'all');
 }
 
 function kpi(label, val, cls, sub, subStyle, stage) {
