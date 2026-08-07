@@ -163,6 +163,7 @@ tfoot td{font-size:11px;color:#9d9d9d;padding:6px 10px;border-top:1px solid #e6e
     </div>
     <select id="cl-sw" onchange="renderKPIs();renderClients();"><option value="ALL">All products</option></select>
     <span style="margin-left:auto;display:flex;align-items:center;gap:6px;flex-shrink:0">
+      <span class="filter-label">Grouped by:</span>
       <div class="toggle-group" id="groupby-toggle">
         <div class="toggle-btn active" data-gb="energy"  onclick="setGroupBy(this,'energy')">Energy Market</div>
         <div class="toggle-btn"        data-gb="billing" onclick="setGroupBy(this,'billing')" style="display:none;">Billing Region</div>
