@@ -440,10 +440,14 @@ async function handler(req, res) {
     `),
       query(`SELECT currency_iso_code, CAST(1.0 / gbp_rate AS float) AS gbp_to_ccy FROM dbo.v_silver_lookup_fxrates`),
       query(`
-        SELECT sf_account_name, COUNT(*) AS open_count
+        SELECT
+          sf_account_name,
+          COALESCE(NULLIF(LTRIM(RTRIM(support_type)), ''), 'General Support') AS support_type,
+          COUNT(*) AS type_count,
+          CONVERT(varchar(10), MAX(TRY_CAST(updated_at AS datetime2)), 120) AS last_date
         FROM dbo.v_gold_mdm_zd_tickets
         WHERE status IN ('new', 'open', 'pending')
-        GROUP BY sf_account_name
+        GROUP BY sf_account_name, COALESCE(NULLIF(LTRIM(RTRIM(support_type)), ''), 'General Support')
       `),
       query(`
         SELECT
@@ -462,9 +466,17 @@ async function handler(req, res) {
     const fx_rates = {};
     fxRows.forEach(r => { fx_rates[r.currency_iso_code] = Math.round(r.gbp_to_ccy * 10000000) / 10000000; });
 
-    // ZD open tickets per account (new/open/pending)
+    // ZD open tickets per account: { open_count, types: [{label, count}], last_date }
     const zdMap = {};
-    zdRows.forEach(r => { zdMap[r.sf_account_name] = r.open_count || 0; });
+    zdRows.forEach(r => {
+      const acct = r.sf_account_name;
+      if (!zdMap[acct]) zdMap[acct] = { open_count: 0, types: [], last_date: null };
+      zdMap[acct].open_count += r.type_count || 0;
+      zdMap[acct].types.push({ label: r.support_type, count: r.type_count || 0 });
+      if (!zdMap[acct].last_date || r.last_date > zdMap[acct].last_date) {
+        zdMap[acct].last_date = r.last_date;
+      }
+    });
 
     // SF open pipeline per account
     const oppMap = {};
@@ -479,7 +491,10 @@ async function handler(req, res) {
 
     // Attach ZD + pipeline signals to each client record
     function attachSignals(c) {
-      c.zd_open    = zdMap[c.account] || 0;
+      const zd     = zdMap[c.account] || null;
+      c.zd_open    = zd ? zd.open_count : 0;
+      c.zd_types   = zd ? zd.types      : [];
+      c.zd_last    = zd ? zd.last_date  : null;
       const opp    = oppMap[c.account] || {};
       c.opp_count  = opp.opp_count  || 0;
       c.pipeline_k = opp.pipeline_k || 0;
