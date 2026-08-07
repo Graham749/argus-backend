@@ -163,12 +163,14 @@ tfoot td{font-size:11px;color:#9d9d9d;padding:6px 10px;border-top:1px solid #e6e
     </div>
     <select id="cl-sw" onchange="renderKPIs();renderClients();"><option value="ALL">All products</option></select>
     <span style="margin-left:auto;display:flex;align-items:center;gap:6px;flex-shrink:0">
-      <div class="toggle-group" id="groupby-toggle" style="display:none;">
+      <div class="toggle-group" id="groupby-toggle">
         <div class="toggle-btn active" data-gb="energy"  onclick="setGroupBy(this,'energy')">Energy Market</div>
-        <div class="toggle-btn"        data-gb="billing" onclick="setGroupBy(this,'billing')">Billing Region</div>
+        <div class="toggle-btn"        data-gb="billing" onclick="setGroupBy(this,'billing')" style="display:none;">Billing Region</div>
       </div>
-      <div onclick="clearAll()" style="padding:5px 12px;font-size:11px;font-weight:600;border:1.5px solid #e6e6e5;border-radius:6px;cursor:pointer;color:#6d6d6c;background:#fff;white-space:nowrap;" onmouseover="this.style.borderColor='#288184';this.style.color='#288184'" onmouseout="this.style.borderColor='#e6e6e5';this.style.color='#6d6d6c'">Clear All</div>
     </span>
+  </div>
+  <div style="display:flex;justify-content:flex-end;margin-top:-6px;margin-bottom:6px;">
+    <div id="clear-all-btn" onclick="clearAll()" style="padding:4px 12px;font-size:11px;font-weight:600;border:1.5px solid #e6e6e5;border-radius:6px;cursor:pointer;color:#9d9d9d;background:#fff;white-space:nowrap;transition:all .15s;">Clear All</div>
   </div>
 
   <!-- Filters row 2 — region hierarchy (energy market mode only) -->
@@ -308,16 +310,14 @@ function setZDFilter(el, mode) {
   ZD_FILTER = mode;
   document.querySelectorAll('#zd-subfilter .pill').forEach(function(p) { p.classList.remove('active'); });
   el.classList.add('active');
-  renderKPIs();
-  renderClients();
+  renderKPIs(); renderClients(); updateClearAllState();
 }
 
 function setOPPFilter(el, mode) {
   OPP_FILTER = mode;
   document.querySelectorAll('#opp-subfilter .pill').forEach(function(p) { p.classList.remove('active'); });
   el.classList.add('active');
-  renderKPIs();
-  renderClients();
+  renderKPIs(); renderClients(); updateClearAllState();
 }
 
 function setFP(el, mode) {
@@ -326,21 +326,17 @@ function setFP(el, mode) {
   OPP_FILTER = 'open';
   document.querySelectorAll('#clients .pill[id^="fp-"]').forEach(function(p) { p.classList.remove('active'); });
   el.classList.add('active');
-  // Show/hide sub-filter rows
   var zdRow  = document.getElementById('zd-subfilter');
   var oppRow = document.getElementById('opp-subfilter');
   if (zdRow)  zdRow.style.display  = mode === 'zd'  ? 'flex' : 'none';
   if (oppRow) oppRow.style.display = mode === 'opp' ? 'flex' : 'none';
-  // Reset ZD pills to All
   document.querySelectorAll('#zd-subfilter .pill').forEach(function(p) { p.classList.remove('active'); });
   var zdAll = document.getElementById('zdf-all');
   if (zdAll) zdAll.classList.add('active');
-  // Reset Opp pills to Open
   document.querySelectorAll('#opp-subfilter .pill').forEach(function(p) { p.classList.remove('active'); });
   var oppOpen = document.getElementById('oppf-open');
   if (oppOpen) oppOpen.classList.add('active');
-  renderKPIs();
-  renderClients();
+  renderKPIs(); renderClients(); updateClearAllState();
 }
 
 function setRegion(el, r) {
@@ -348,8 +344,7 @@ function setRegion(el, r) {
   document.querySelectorAll('#region-bar .pill').forEach(function(p) { p.classList.remove('active'); });
   el.classList.add('active');
   populateMktPills();
-  renderKPIs();
-  renderClients();
+  renderKPIs(); renderClients(); updateClearAllState();
 }
 
 function setMkt(el, m) {
@@ -363,8 +358,7 @@ function setMkt(el, m) {
     var allPill = document.querySelector('#mkt-bar .pill[data-mkt=""]');
     if (allPill) allPill.classList.toggle('active', MKT.size === 0);
   }
-  renderKPIs();
-  renderClients();
+  renderKPIs(); renderClients(); updateClearAllState();
 }
 
 function populateMktPills() {
@@ -425,31 +419,43 @@ function openClientHealth(acct) {
   window.open('/', '_blank');
 }
 
+function updateClearAllState() {
+  var btn = document.getElementById('clear-all-btn');
+  if (!btn) return;
+  var srch = (document.getElementById('cl-search') || {}).value || '';
+  var sw   = (document.getElementById('cl-sw') || {}).value || 'ALL';
+  var active = REGION !== 'all' || MKT.size > 0 || HEALTH !== 'all' || FP !== 'ALL'
+            || ZD_FILTER !== 'all' || OPP_FILTER !== 'open' || srch !== '' || sw !== 'ALL';
+  if (active) {
+    btn.style.borderColor = '#2e7d32';
+    btn.style.color       = '#2e7d32';
+    btn.style.background  = '#f0faf0';
+  } else {
+    btn.style.borderColor = '#e6e6e5';
+    btn.style.color       = '#9d9d9d';
+    btn.style.background  = '#fff';
+  }
+}
+
 function clearAll() {
-  // Reset all state
   REGION = 'all'; MKT = new Set(); HEALTH = 'all'; STAGE = 'all';
   FP = 'ALL'; ZD_FILTER = 'all'; OPP_FILTER = 'open';
-  // Clear search + product dropdown
   var srch = document.getElementById('cl-search');
   if (srch) srch.value = '';
   var sw = document.getElementById('cl-sw');
   if (sw) sw.value = 'ALL';
-  // Reset region pills
   document.querySelectorAll('#region-bar .pill').forEach(function(p) { p.classList.remove('active'); });
   var allRegion = document.querySelector('#region-bar .pill[data-region="all"]');
   if (allRegion) allRegion.classList.add('active');
   var mktBar = document.getElementById('mkt-bar');
   if (mktBar) mktBar.style.display = 'none';
-  // Reset signal pills
   document.querySelectorAll('#clients .pill[id^="fp-"]').forEach(function(p) { p.classList.remove('active'); });
   var fpAll = document.getElementById('fp-ALL');
   if (fpAll) fpAll.classList.add('active');
-  // Hide sub-filters
   var zdRow = document.getElementById('zd-subfilter');
   var oppRow = document.getElementById('opp-subfilter');
   if (zdRow)  zdRow.style.display  = 'none';
   if (oppRow) oppRow.style.display = 'none';
-  // Reset ZD + opp pills to defaults
   document.querySelectorAll('#zd-subfilter .pill').forEach(function(p) { p.classList.remove('active'); });
   var zdAll = document.getElementById('zdf-all');
   if (zdAll) zdAll.classList.add('active');
@@ -460,6 +466,7 @@ function clearAll() {
   renderHealthBar();
   renderKPIs();
   renderClients();
+  updateClearAllState();
 }
 
 function setGroupBy(el, gb) {
@@ -476,8 +483,7 @@ function setGroupBy(el, gb) {
 
 function setStage(s) {
   STAGE = (STAGE === s) ? 'all' : s;
-  renderKPIs();
-  renderClients();
+  renderKPIs(); renderClients(); updateClearAllState();
 }
 
 function filteredTIP() {
@@ -509,8 +515,7 @@ function clientHealthBucket(client) {
 function setHealth(key) {
   HEALTH = key;
   renderHealthBar();
-  renderKPIs();
-  renderClients();
+  renderKPIs(); renderClients(); updateClearAllState();
 }
 
 function renderHealthBar() {
@@ -693,6 +698,7 @@ function filteredClients() {
 
 function renderClients() {
   if (!DATA) return;
+  updateClearAllState();
   renderHealthBar();
   var rows = filteredClients();
   // Group by account, sort by max ARR desc
