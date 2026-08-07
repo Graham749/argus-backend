@@ -1345,7 +1345,7 @@ input{font-family:inherit;}
               <div style="background:rgba(255,255,255,0.8);border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:8px 13px;font-size:11px;font-weight:500;color:#222;white-space:normal;min-width:180px;">Salesforce API<span style="font-size:9.5px;color:#888;font-weight:400;display:block;margin-top:2px;">subscriptions · accounts · products · cases · opportunities</span></div>
               <div style="background:rgba(255,255,255,0.8);border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:8px 13px;font-size:11px;font-weight:500;color:#222;white-space:normal;min-width:180px;">Productboard API<span style="font-size:9.5px;color:#888;font-weight:400;display:block;margin-top:2px;">features · subfeatures · relationships</span></div>
               <div style="background:rgba(255,255,255,0.8);border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:8px 13px;font-size:11px;font-weight:500;color:#222;white-space:normal;min-width:180px;">Zendesk REST API<span style="font-size:9.5px;color:#888;font-weight:400;display:block;margin-top:2px;">tickets</span></div>
-              <div style="background:rgba(255,255,255,0.8);border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:8px 13px;font-size:11px;font-weight:500;color:#222;white-space:normal;min-width:180px;">PostHog API<span style="font-size:9.5px;color:#888;font-weight:400;display:block;margin-top:2px;">events · session data · opt-out flags</span></div>
+              <div style="background:rgba(255,255,255,0.8);border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:8px 13px;font-size:11px;font-weight:500;color:#222;white-space:normal;min-width:180px;">PostHog API<span style="font-size:9.5px;color:#888;font-weight:400;display:block;margin-top:2px;">events · session data</span></div>
               <div style="background:rgba(255,255,255,0.8);border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:8px 13px;font-size:11px;font-weight:500;color:#222;white-space:normal;min-width:180px;">EOS Parquet files<span style="font-size:9.5px;color:#888;font-weight:400;display:block;margin-top:2px;">161M rows · API usage</span></div>
             </div>
           </div>
@@ -1414,6 +1414,14 @@ input{font-family:inherit;}
         <div style="font-size:24px;font-weight:700;letter-spacing:-0.01em;color:#3c3c3b;">Argus and MCP</div>
         <div style="font-size:14px;color:#6d6d6c;margin-top:4px;">Development Cycle &amp; Hosting · Phase 1 → Phase 2 · Target: September 2026</div>
         <div style="background:#fff;border:1px solid #e6e6e5;border-radius:12px;padding:28px;margin-top:24px;">
+          <!-- 1. Gate banner -->
+          <div style="background:#FFFBEC;border:1px solid #F0D080;border-radius:8px;padding:10px 16px;font-size:11.5px;color:#7A5200;line-height:1.5;margin-bottom:12px;">Gate: IT service principal unlocks both — Azure App Service hosting + SQL Analytics Endpoint auth via TDS · Target: MCP server live September 2026</div>
+          <!-- 2. Why hosted -->
+          <div style="background:#f7f7f5;border:1px solid #e6e6e5;border-radius:8px;padding:14px 16px;margin-bottom:16px;">
+            <div style="font-size:11.5px;font-weight:700;color:#3c3c3b;margin-bottom:8px;">Why both must be hosted (not run locally)</div>
+            <div style="font-size:11px;color:#6d6d6c;line-height:1.75;"><strong>Argus app</strong> — business users need a stable URL they can bookmark and share. Running on a laptop means the app disappears when the machine sleeps or leaves the office. Azure App Service gives it a persistent HTTPS endpoint with M365 Easy Auth so Aurora staff sign in with their existing Microsoft credentials, no separate accounts needed.<br><br><strong>MCP server</strong> — Claude Enterprise connects to MCP servers over HTTP at a fixed URL configured in the Claude admin console. There is no way to point Claude at a local machine or ngrok tunnel in a production org. The server must be live at a stable HTTPS address at all times — Claude calls it on demand whenever a user triggers one of the 9 tools, so downtime means broken AI queries. M365 Easy Auth in front also ensures only Aurora-authenticated users can trigger data access, which is required for governance.</div>
+          </div>
+          <!-- 3. Phases row -->
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
             <div style="background:#EBF5EE;border:1px solid #7DC49A;border-radius:10px;padding:20px;">
               <div style="font-size:11px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:#1A6E3E;margin-bottom:4px;">Phase 1 — Argus app</div>
@@ -1460,11 +1468,6 @@ input{font-family:inherit;}
               <div style="flex:1;background:#fff;border:1px solid #DDDCD7;border-radius:8px;padding:10px 14px;font-size:11.5px;font-weight:600;color:#222;">MCP server<span style="display:block;font-size:10px;font-weight:400;color:#9d9d9d;margin-top:2px;">argus-mcp.auroraer.com</span></div>
             </div>
           </div>
-          <div style="margin-top:10px;background:#f7f7f5;border:1px solid #e6e6e5;border-radius:8px;padding:14px 16px;">
-            <div style="font-size:11.5px;font-weight:700;color:#3c3c3b;margin-bottom:8px;">Why both must be hosted (not run locally)</div>
-            <div style="font-size:11px;color:#6d6d6c;line-height:1.75;"><strong>Argus app</strong> — business users need a stable URL they can bookmark and share. Running on a laptop means the app disappears when the machine sleeps or leaves the office. Azure App Service gives it a persistent HTTPS endpoint with M365 Easy Auth so Aurora staff sign in with their existing Microsoft credentials, no separate accounts needed.<br><br><strong>MCP server</strong> — Claude Enterprise connects to MCP servers over HTTP at a fixed URL configured in the Claude admin console. There is no way to point Claude at a local machine or ngrok tunnel in a production org. The server must be live at a stable HTTPS address at all times — Claude calls it on demand whenever a user triggers one of the 9 tools, so downtime means broken AI queries. M365 Easy Auth in front also ensures only Aurora-authenticated users can trigger data access, which is required for governance.</div>
-          </div>
-          <div style="margin-top:10px;background:#FFFBEC;border:1px solid #F0D080;border-radius:8px;padding:10px 16px;font-size:11.5px;color:#7A5200;line-height:1.5;">Gate: IT service principal from Sam unlocks both — Azure App Service hosting + SQL Analytics Endpoint auth via TDS · Target: MCP server live September 2026</div>
         </div>
       </div>
       </sc-if>
