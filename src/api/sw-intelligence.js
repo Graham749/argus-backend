@@ -442,12 +442,14 @@ async function handler(req, res) {
       query(`
         SELECT
           sf_account_name,
-          COALESCE(NULLIF(LTRIM(RTRIM(support_type)), ''), 'General Support') AS support_type,
-          COUNT(*) AS type_count,
+          SUM(CASE WHEN status IN ('new','open') THEN 1 ELSE 0 END) AS open_count,
+          SUM(CASE WHEN status = 'pending'       THEN 1 ELSE 0 END) AS pending_count,
+          SUM(CASE WHEN status = 'solved'        THEN 1 ELSE 0 END) AS solved_count,
+          SUM(CASE WHEN status = 'closed'        THEN 1 ELSE 0 END) AS closed_count,
           CONVERT(varchar(10), MAX(TRY_CAST(updated_at AS datetime2)), 120) AS last_date
         FROM dbo.v_gold_mdm_zd_tickets
-        WHERE status IN ('new', 'open', 'pending')
-        GROUP BY sf_account_name, COALESCE(NULLIF(LTRIM(RTRIM(support_type)), ''), 'General Support')
+        WHERE status NOT IN ('deleted')
+        GROUP BY sf_account_name
       `),
       query(`
         SELECT
@@ -466,16 +468,16 @@ async function handler(req, res) {
     const fx_rates = {};
     fxRows.forEach(r => { fx_rates[r.currency_iso_code] = Math.round(r.gbp_to_ccy * 10000000) / 10000000; });
 
-    // ZD open tickets per account: { open_count, types: [{label, count}], last_date }
+    // ZD tickets per account (status breakdown)
     const zdMap = {};
     zdRows.forEach(r => {
-      const acct = r.sf_account_name;
-      if (!zdMap[acct]) zdMap[acct] = { open_count: 0, types: [], last_date: null };
-      zdMap[acct].open_count += r.type_count || 0;
-      zdMap[acct].types.push({ label: r.support_type, count: r.type_count || 0 });
-      if (!zdMap[acct].last_date || r.last_date > zdMap[acct].last_date) {
-        zdMap[acct].last_date = r.last_date;
-      }
+      zdMap[r.sf_account_name] = {
+        open_count:    r.open_count    || 0,
+        pending_count: r.pending_count || 0,
+        solved_count:  r.solved_count  || 0,
+        closed_count:  r.closed_count  || 0,
+        last_date:     r.last_date     || null,
+      };
     });
 
     // SF open pipeline per account
@@ -491,13 +493,15 @@ async function handler(req, res) {
 
     // Attach ZD + pipeline signals to each client record
     function attachSignals(c) {
-      const zd     = zdMap[c.account] || null;
-      c.zd_open    = zd ? zd.open_count : 0;
-      c.zd_types   = zd ? zd.types      : [];
-      c.zd_last    = zd ? zd.last_date  : null;
-      const opp    = oppMap[c.account] || {};
-      c.opp_count  = opp.opp_count  || 0;
-      c.pipeline_k = opp.pipeline_k || 0;
+      const zd          = zdMap[c.account] || null;
+      c.zd_open         = zd ? zd.open_count    : 0;
+      c.zd_pending      = zd ? zd.pending_count : 0;
+      c.zd_solved       = zd ? zd.solved_count  : 0;
+      c.zd_closed       = zd ? zd.closed_count  : 0;
+      c.zd_last         = zd ? zd.last_date     : null;
+      const opp         = oppMap[c.account] || {};
+      c.opp_count       = opp.opp_count  || 0;
+      c.pipeline_k      = opp.pipeline_k || 0;
     }
     data.clients.forEach(attachSignals);
     data.billing_clients.forEach(attachSignals);
