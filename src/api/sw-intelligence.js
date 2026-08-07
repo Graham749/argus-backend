@@ -411,7 +411,7 @@ async function handler(req, res) {
       return res.json(CACHE[cacheKey]);
     }
 
-    const [rows, fxRows] = await Promise.all([
+    const [rows, fxRows, zdRows, oppRows] = await Promise.all([
       query(`
       SELECT
         sub.subscription_id,
@@ -439,13 +439,54 @@ async function handler(req, res) {
         AND (sub.status = 'Active' OR sub.renewal_date >= GETDATE())
     `),
       query(`SELECT currency_iso_code, CAST(1.0 / gbp_rate AS float) AS gbp_to_ccy FROM dbo.v_silver_lookup_fxrates`),
+      query(`
+        SELECT sf_account_name, COUNT(*) AS open_count
+        FROM dbo.v_gold_mdm_zd_tickets
+        WHERE status IN ('new', 'open', 'pending')
+        GROUP BY sf_account_name
+      `),
+      query(`
+        SELECT
+          a.account_name,
+          COUNT(*) AS opp_count,
+          SUM(COALESCE(CAST(o.amount AS float), 0) * COALESCE(CAST(fx.gbp_rate AS float), 1.0)) AS pipeline_gbp
+        FROM dbo.gold_sf_opportunities o
+        JOIN dbo.v_silver_sf_customer_accounts a ON o.account_id = a.account_id
+        LEFT JOIN dbo.v_silver_lookup_fxrates fx ON o.currency = fx.currency_iso_code
+        WHERE o.is_closed = 0
+        GROUP BY a.account_name
+      `),
     ]);
 
     // fx_rates: GBP→currency multipliers for client-side display conversion
     const fx_rates = {};
     fxRows.forEach(r => { fx_rates[r.currency_iso_code] = Math.round(r.gbp_to_ccy * 10000000) / 10000000; });
 
+    // ZD open tickets per account (new/open/pending)
+    const zdMap = {};
+    zdRows.forEach(r => { zdMap[r.sf_account_name] = r.open_count || 0; });
+
+    // SF open pipeline per account
+    const oppMap = {};
+    oppRows.forEach(r => {
+      oppMap[r.account_name] = {
+        opp_count:  r.opp_count || 0,
+        pipeline_k: Math.round((r.pipeline_gbp || 0) / 100) / 10,
+      };
+    });
+
     const data = { ...process(rows), fx_rates };
+
+    // Attach ZD + pipeline signals to each client record
+    function attachSignals(c) {
+      c.zd_open    = zdMap[c.account] || 0;
+      const opp    = oppMap[c.account] || {};
+      c.opp_count  = opp.opp_count  || 0;
+      c.pipeline_k = opp.pipeline_k || 0;
+    }
+    data.clients.forEach(attachSignals);
+    data.billing_clients.forEach(attachSignals);
+
     CACHE[cacheKey]    = data;
     CACHE_TS[cacheKey] = Date.now();
     res.json(data);

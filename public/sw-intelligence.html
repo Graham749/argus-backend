@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SW Intelligence · Software Health</title>
+<title>Region Intelligence · Software Health</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
 <style>
 @font-face{font-family:'Lato';src:url('assets/fonts/lato-regular.woff2') format('woff2');font-weight:400;font-style:normal;font-display:swap;}
@@ -104,7 +104,7 @@ tfoot td{font-size:11px;color:#9d9d9d;padding:6px 10px;border-top:1px solid #e6e
 <nav>
   <a href="/" class="nav-back"><i class="ti ti-arrow-left" aria-hidden="true"></i> Argus</a>
   <span class="nav-sep"></span>
-  <div class="nav-brand"><i class="ti ti-chart-line" aria-hidden="true" style="margin-right:5px;color:#288184"></i>SW Intelligence</div>
+  <div class="nav-brand"><i class="ti ti-chart-line" aria-hidden="true" style="margin-right:5px;color:#288184"></i>Region Intelligence</div>
   <div class="nav-tabs">
     <div class="nav-tab">Software Health</div>
     <div style="margin-left:auto;display:flex;align-items:center;gap:10px;padding:0 14px;flex-shrink:0">
@@ -599,6 +599,8 @@ function renderClients() {
     + "<th style='min-width:230px'>Products &amp; ARR</th>"
     + "<th class='sortable num' data-col='arr_k' style='min-width:90px'>Total ARR"+si('arr_k')+"</th>"
     + "<th style='min-width:150px'>Signals</th>"
+    + "<th style='min-width:80px'>ZD Tickets</th>"
+    + "<th style='min-width:90px'>Pipeline</th>"
     + "<th style='min-width:100px'>Next renewal</th>"
     + "<th style='width:100px'></th>"
     + "</tr></thead><tbody>";
@@ -613,8 +615,9 @@ function renderClients() {
       var isExp  = EXPANDED.has(key);
 
       // Account cell — suppress repeat if same parent account spans markets
+      var isFirstAcctRow = prevAcct !== r.account;
       var acctCell;
-      if (prevAcct !== r.account) {
+      if (isFirstAcctRow) {
         acctCell = "<td style='vertical-align:top'>"
           + "<div style='font-weight:600'>"+esc(r.account)+"</div>"
           + (r.parent ? "<div style='font-size:11px;color:#9d9d9d;margin-top:1px'>"+esc(r.parent)+"</div>" : "")
@@ -690,6 +693,21 @@ function renderClients() {
         ? "<span style='font-size:12px;color:#6d6d6c'>"+esc(dates[0])+"</span>"
         : dash();
 
+      // ZD Tickets cell — per-account, shown only on first market row
+      var zdCell = isFirstAcctRow
+        ? (r.zd_open > 0
+          ? "<span class='py' style='padding:2px 9px;font-size:11px;font-weight:700'>"+r.zd_open+"</span>"
+          : dash())
+        : "";
+
+      // Pipeline cell — per-account, shown only on first market row
+      var pipCell = isFirstAcctRow
+        ? (r.opp_count > 0
+          ? "<div style='font-size:11px;font-weight:700;color:#1565c0'>"+r.opp_count+" opp"+(r.opp_count!==1?"s":"")+"</div>"
+            + "<div style='font-size:11px;color:#6d6d6c'>"+currSym()+toDisp(r.pipeline_k).toFixed(0)+"k</div>"
+          : dash())
+        : "";
+
       // Main row
       html += "<tr class='expandable"+(isExp ? " expanded-row" : "")+"' data-ekey='"+ekey+"'>"
         + acctCell
@@ -699,6 +717,8 @@ function renderClients() {
         +   currSym()+toDisp(r.arr_k).toFixed(0)+"k"
         + "</td>"
         + "<td style='vertical-align:top'>"+sigsCell+"</td>"
+        + "<td style='vertical-align:top;padding-top:9px'>"+zdCell+"</td>"
+        + "<td style='vertical-align:top;padding-top:9px'>"+pipCell+"</td>"
         + "<td style='vertical-align:top;padding-top:10px'>"+rnCell+"</td>"
         + "<td style='vertical-align:top;padding-top:7px'>"
         +   "<button class='ch-btn' data-acct='"+esc(r.account)+"' "
@@ -731,7 +751,7 @@ function renderClients() {
       }).join('');
 
       html += "<tr class='expand-detail"+(isExp ? "" : " hidden")+"'>"
-        + "<td colspan='7'>"
+        + "<td colspan='9'>"
         + "<div style='font-size:10px;color:#9d9d9d;font-weight:600;text-transform:uppercase;letter-spacing:.08em;margin-bottom:7px'>Subscription detail — click row to collapse</div>"
         + "<table style='width:auto'>"
         + "<thead><tr>"
@@ -749,7 +769,7 @@ function renderClients() {
   });
 
   var uniqueAcctCount = new Set(rows.map(function(r) { return r.account; })).size;
-  html += "</tbody><tfoot><tr><td colspan='7'>"
+  html += "</tbody><tfoot><tr><td colspan='9'>"
     + totalRows + " subscription lines · " + uniqueAcctCount + " accounts"
     + "</td></tr></tfoot>";
 
