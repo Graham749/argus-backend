@@ -421,6 +421,7 @@ input{font-family:inherit;}
               <span id="zdPendingPct" style="display:none;"></span>
               <span id="zdSolvedPct" style="display:none;"></span>
               <span id="zdClosedPct" style="display:none;"></span>
+              <span id="zdMoChip" style="display:none;font-size:11px;color:#fff;background:#6d6d6c;border-radius:100px;padding:2px 8px;cursor:pointer;font-weight:600;"></span>
             </div>
 
             <!-- Resolution stats -->
@@ -2935,6 +2936,25 @@ class Component extends DCLogic {
               document.getElementById('zdPendingCount').textContent = pool.filter(function(t){ return (t.status||'').toLowerCase()==='pending'; }).length;
               document.getElementById('zdSolvedCount').textContent  = pool.filter(function(t){ return (t.status||'').toLowerCase()==='solved'; }).length;
               document.getElementById('zdClosedCount').textContent  = pool.filter(function(t){ return (t.status||'').toLowerCase()==='closed'; }).length;
+              var chip = document.getElementById('zdMoChip');
+              if (chip) {
+                if (window.__zdMo) {
+                  chip.textContent = window.__zdMo + ' ×';
+                  chip.style.display = 'inline-block';
+                  chip.onclick = function() {
+                    window.__zdMo = null;
+                    if (window.__renderZdGraph) window.__renderZdGraph();
+                    var allT2 = window.__zdTickets || [];
+                    document.getElementById('zdOpenCount').textContent    = allT2.filter(function(t){ var st=(t.status||'').toLowerCase(); return st==='open'||st==='new'; }).length;
+                    document.getElementById('zdPendingCount').textContent = allT2.filter(function(t){ return (t.status||'').toLowerCase()==='pending'; }).length;
+                    document.getElementById('zdSolvedCount').textContent  = allT2.filter(function(t){ return (t.status||'').toLowerCase()==='solved'; }).length;
+                    document.getElementById('zdClosedCount').textContent  = allT2.filter(function(t){ return (t.status||'').toLowerCase()==='closed'; }).length;
+                    chip.style.display = 'none';
+                  };
+                } else {
+                  chip.style.display = 'none';
+                }
+              }
               if (window.__zdMo) {
                 window.__zdTickets_filtered = pool;
                 window.__zdShowMonthDrilldown(window.__zdMo, pool);
