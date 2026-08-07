@@ -169,6 +169,8 @@ tfoot td{font-size:11px;color:#9d9d9d;padding:6px 10px;border-top:1px solid #e6e
     <span class="filter-label">Signals:</span>
     <div class="pill active" id="fp-ALL"         onclick="setFP(this,'ALL')">All</div>
     <div class="pill"        id="fp-terminating" onclick="setFP(this,'terminating')">Termination</div>
+    <div class="pill"        id="fp-renew3m"     onclick="setFP(this,'renew3m')">Renew &lt;3m</div>
+    <div class="pill"        id="fp-renew6m"     onclick="setFP(this,'renew6m')">Renew &lt;6m</div>
     <div class="pill"        id="fp-upsell"      onclick="setFP(this,'upsell')">Cross-sell</div>
     <div class="pill"        id="fp-zd"          onclick="setFP(this,'zd')">ZD Tickets</div>
     <div class="pill"        id="fp-opp"         onclick="setFP(this,'opp')">Opportunities</div>
@@ -576,6 +578,8 @@ function filteredClients() {
   if (STAGE === 'active') rows = rows.filter(function(r) { return !r.flag_terminating; });
   if (STAGE === 'tip')    rows = rows.filter(function(r) { return r.flag_terminating; });
   if (FP === 'terminating') rows = rows.filter(function(r) { return r.flag_terminating; });
+  if (FP === 'renew3m')     rows = rows.filter(function(r) { return (r.sw_lines||[]).some(function(l){ return l.renewal_badge === '3M'; }); });
+  if (FP === 'renew6m')     rows = rows.filter(function(r) { return (r.sw_lines||[]).some(function(l){ return l.renewal_badge === '3M' || l.renewal_badge === '6M'; }); });
   if (FP === 'upsell')      rows = rows.filter(function(r) { return r.flag_upsell; });
   if (FP === 'zd')          rows = rows.filter(function(r) { return r.zd_open > 0; });
   if (FP === 'opp')         rows = rows.filter(function(r) { return r.opp_count > 0; });
