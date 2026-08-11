@@ -88,15 +88,18 @@ async function getAccountSubscriptions(req, res) {
     const reportingAccountId = accountLookup.parentAccountId || accountLookup.accountId;
     const queryAccountName   = accountLookup.parentAccountName || accountName;
 
+    const rId = reportingAccountId.replace(/'/g, "''");
     const detailRows = await query(`
-      WITH AccountTree AS (
-        SELECT account_id
-        FROM dbo.gold_sf_customer_accounts
-        WHERE account_id = '${reportingAccountId.replace(/'/g, "''")}'
-        UNION ALL
-        SELECT a.account_id
-        FROM dbo.gold_sf_customer_accounts a
-        INNER JOIN AccountTree t ON a.parent_account_id = t.account_id
+      WITH
+      L1 AS (SELECT account_id FROM dbo.gold_sf_customer_accounts WHERE account_id = '${rId}'),
+      L2 AS (SELECT a.account_id FROM dbo.gold_sf_customer_accounts a WHERE a.parent_account_id IN (SELECT account_id FROM L1)),
+      L3 AS (SELECT a.account_id FROM dbo.gold_sf_customer_accounts a WHERE a.parent_account_id IN (SELECT account_id FROM L2)),
+      L4 AS (SELECT a.account_id FROM dbo.gold_sf_customer_accounts a WHERE a.parent_account_id IN (SELECT account_id FROM L3)),
+      AllAccounts AS (
+        SELECT account_id FROM L1
+        UNION ALL SELECT account_id FROM L2
+        UNION ALL SELECT account_id FROM L3
+        UNION ALL SELECT account_id FROM L4
       )
       SELECT
         s.subscription_id,
@@ -120,7 +123,7 @@ async function getAccountSubscriptions(req, res) {
           ELSE 'HEALTHY'
         END as renewal_status
       FROM dbo.gold_sf_subscriptions s
-      WHERE s.account_id IN (SELECT account_id FROM AccountTree)
+      WHERE s.account_id IN (SELECT account_id FROM AllAccounts)
         AND s.status IN ('Active', 'Termination in Progress')
       ORDER BY days_to_renewal ASC
     `);
