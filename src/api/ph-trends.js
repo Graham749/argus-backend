@@ -15,6 +15,7 @@ function buildDomainSet(mdm) {
   if (mdm.sf_eos_access_domains_2) mdm.sf_eos_access_domains_2.split(';').forEach(add);
   add(mdm.zd_primary_email_domain);
   if (mdm.sf_account_code) add(mdm.sf_account_code);
+  if (mdm.sf_eos_tenant)   add(mdm.sf_eos_tenant);
   domains.delete('');
   return domains;
 }
@@ -22,6 +23,7 @@ function buildDomainSet(mdm) {
 function matchMethod(mdm, tenant) {
   if ((mdm.sf_website_domain || '').toLowerCase() === tenant) return 'Website Domain';
   if ((mdm.sf_account_code   || '').toLowerCase() === tenant) return 'Account Code';
+  if ((mdm.sf_eos_tenant     || '').toLowerCase() === tenant) return 'EOS Tenant';
   return 'EOS Domain';
 }
 

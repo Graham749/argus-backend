@@ -123,4 +123,9 @@ app.listen(PORT, () => {
 
   // Pre-warm top-30 accounts across all client health endpoints (staggered, non-blocking).
   cacheWarmer.run(PORT).catch(err => console.warn('[cache-warmer]', err.message));
+
+  // Keep Fabric compute warm — prevents autosuspend between cache refreshes.
+  setInterval(() => {
+    dbQuery('SELECT 1 AS ping').catch(() => {});
+  }, 5 * 60 * 1000);
 });

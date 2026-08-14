@@ -25,12 +25,12 @@ async function getAccountSubscriptions(req, res) {
       // 1. Try exact name match in gold customer accounts
       let baseRows = await query(`
         WITH account_info AS (
-          SELECT TOP 1 account_id, account_name, parent_account_id
+          SELECT TOP 1 account_id, account_name, parent_account_id, account_manager
           FROM dbo.gold_sf_customer_accounts
           WHERE account_name = '${esc}'
         ),
         parent_info AS (
-          SELECT TOP 1 account_id, account_name
+          SELECT TOP 1 account_id, account_name, account_manager
           FROM dbo.gold_sf_customer_accounts
           WHERE account_id = (SELECT parent_account_id FROM account_info WHERE parent_account_id IS NOT NULL)
         )
@@ -38,7 +38,11 @@ async function getAccountSubscriptions(req, res) {
           (SELECT account_id        FROM account_info) as account_id,
           (SELECT account_name      FROM account_info) as account_name,
           (SELECT parent_account_id FROM account_info) as parent_account_id,
-          (SELECT account_name      FROM parent_info)  as parent_account_name
+          (SELECT account_name      FROM parent_info)  as parent_account_name,
+          COALESCE(
+            (SELECT account_manager FROM account_info WHERE account_manager IS NOT NULL AND TRIM(account_manager) != ''),
+            (SELECT account_manager FROM parent_info  WHERE account_manager IS NOT NULL AND TRIM(account_manager) != '')
+          ) as account_manager
       `);
 
       // 2. If not found by name, resolve via MDM sf_account_id
@@ -49,12 +53,12 @@ async function getAccountSubscriptions(req, res) {
           const sfEsc = sfId.replace(/'/g, "''");
           baseRows = await query(`
             WITH account_info AS (
-              SELECT TOP 1 account_id, account_name, parent_account_id
+              SELECT TOP 1 account_id, account_name, parent_account_id, account_manager
               FROM dbo.gold_sf_customer_accounts
               WHERE account_id = '${sfEsc}'
             ),
             parent_info AS (
-              SELECT TOP 1 account_id, account_name
+              SELECT TOP 1 account_id, account_name, account_manager
               FROM dbo.gold_sf_customer_accounts
               WHERE account_id = (SELECT parent_account_id FROM account_info WHERE parent_account_id IS NOT NULL)
             )
@@ -62,7 +66,11 @@ async function getAccountSubscriptions(req, res) {
               (SELECT account_id        FROM account_info) as account_id,
               (SELECT account_name      FROM account_info) as account_name,
               (SELECT parent_account_id FROM account_info) as parent_account_id,
-              (SELECT account_name      FROM parent_info)  as parent_account_name
+              (SELECT account_name      FROM parent_info)  as parent_account_name,
+              COALESCE(
+                (SELECT account_manager FROM account_info WHERE account_manager IS NOT NULL AND TRIM(account_manager) != ''),
+                (SELECT account_manager FROM parent_info  WHERE account_manager IS NOT NULL AND TRIM(account_manager) != '')
+              ) as account_manager
           `);
         }
       }
@@ -80,6 +88,7 @@ async function getAccountSubscriptions(req, res) {
         accountId:         baseRows[0].account_id,
         parentAccountId:   baseRows[0].parent_account_id,
         parentAccountName: baseRows[0].parent_account_name,
+        accountManager:    baseRows[0].account_manager || null,
         cachedAt: now,
       };
       accountCache[accountName] = accountLookup;
@@ -158,7 +167,7 @@ async function getAccountSubscriptions(req, res) {
     const contract_cards = Object.values(contractMap).sort((a, b) => b.total - a.total);
     contract_cards.forEach(c => { c.arr_gbp = Math.round(c.arr_gbp); });
 
-    const data = { account: queryAccountName, summary: summaryData, contract_cards, subscriptions: detailRows };
+    const data = { account: queryAccountName, account_manager: accountLookup.accountManager || null, summary: summaryData, contract_cards, subscriptions: detailRows };
     resultCache[accountName] = { ts: Date.now(), data };
     res.json(data);
   } catch (err) {

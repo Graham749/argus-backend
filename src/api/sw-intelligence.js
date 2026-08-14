@@ -2,7 +2,7 @@ const { query } = require('../lib/db');
 
 const CACHE = {};
 const CACHE_TS = {};
-const CACHE_TTL = 15 * 60 * 1000;
+const CACHE_TTL = 60 * 60 * 1000;
 const EUR_GBP_RATE = 0.8557;
 
 const SW_ORDER  = ['Chronos', 'Amun', 'Origin', 'Lumus', 'Solaris'];
@@ -411,7 +411,7 @@ async function handler(req, res) {
       return res.json(CACHE[cacheKey]);
     }
 
-    const [rows, fxRows, zdRows, oppRows] = await Promise.all([
+    const [rows, fxRows, zdRows, amRows, oppRows] = await Promise.all([
       query(`
       SELECT
         sub.subscription_id,
@@ -451,6 +451,7 @@ async function handler(req, res) {
         WHERE status NOT IN ('deleted')
         GROUP BY sf_account_name
       `),
+      query(`SELECT account_name, account_manager FROM dbo.gold_sf_customer_accounts WHERE account_manager IS NOT NULL AND TRIM(account_manager) != ''`),
       query(`
         SELECT
           a.account_name,
@@ -480,6 +481,10 @@ async function handler(req, res) {
       };
     });
 
+    // Account manager per account name
+    const amMap = {};
+    (amRows || []).forEach(r => { if (r.account_name) amMap[r.account_name] = r.account_manager; });
+
     // SF open pipeline per account
     const oppMap = {};
     oppRows.forEach(r => {
@@ -493,6 +498,7 @@ async function handler(req, res) {
 
     // Attach ZD + pipeline signals to each client record
     function attachSignals(c) {
+      c.account_manager = amMap[c.parent || c.account] || amMap[c.account] || null;
       const zd          = zdMap[c.account] || null;
       c.zd_open         = zd ? zd.open_count    : 0;
       c.zd_pending      = zd ? zd.pending_count : 0;

@@ -61,6 +61,11 @@ async function run(port) {
     return;
   }
 
+  // Warm global endpoints first — these also keep Fabric compute alive
+  console.log('[cache-warmer] Warming global endpoints...');
+  await fetchLocal(port, '/api/sw-intelligence');
+  console.log('[cache-warmer] sw-intelligence warmed');
+
   console.log(`[cache-warmer] Pre-warming ${accounts.length} accounts...`);
   for (let i = 0; i < accounts.length; i++) {
     try {

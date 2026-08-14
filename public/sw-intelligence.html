@@ -99,6 +99,7 @@ tfoot td{font-size:11px;color:#9d9d9d;padding:6px 10px;border-top:1px solid #e6e
 .hp-ar{background:#fff3e0;color:#e65100}
 .hp-tw{background:#e3f2fd;color:#1565c0}
 .hp-ok{background:#e8f5e9;color:#2e7d32}
+.hp-tm{background:#fdecea;color:#b71c1c}
 
 /* ── Loading / empty ── */
 #loading{display:flex;align-items:center;justify-content:center;min-height:200px;padding:40px;flex-direction:column;gap:16px;color:#9d9d9d;font-size:13px}
@@ -132,7 +133,15 @@ tfoot td{font-size:11px;color:#9d9d9d;padding:6px 10px;border-top:1px solid #e6e
   <div id="curr-bar" style="display:flex;gap:4px;flex-wrap:wrap;align-items:center"></div>
 </div>
 
-<div id="loading"><div class="spinner"></div>Loading SW data…</div>
+<div id="loading" style="display:flex;align-items:center;justify-content:center;min-height:320px;">
+  <div style="max-width:520px;width:100%;padding:40px 32px;text-align:center;">
+    <div style="font-size:15px;font-weight:600;color:#3c3c3b;margin-bottom:16px;">Loading software health from Fabric</div>
+    <div style="height:5px;border-radius:3px;background:#f1f1f0;overflow:hidden;margin-bottom:20px;">
+      <div id="sw-load-bar" style="height:100%;border-radius:3px;background:linear-gradient(90deg,#288184,#00be86);width:0%;transition:width 0.4s ease;"></div>
+    </div>
+    <div id="sw-loading-msg" style="font-size:13px;color:#9d9d9d;font-style:italic;min-height:20px;"></div>
+  </div>
+</div>
 
 <main id="main-content" style="display:none">
 
@@ -143,10 +152,11 @@ tfoot td{font-size:11px;color:#9d9d9d;padding:6px 10px;border-top:1px solid #e6e
   <div id="health-bar" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:16px;">
     <span class="filter-label" style="font-size:11px;color:#9d9d9d;font-weight:700">Renewal Health:</span>
     <span class="hp hp-od sel" id="hp-all" onclick="setHealth('all')" style="background:#f5f5f5;color:#6d6d6c">All Accounts</span>
-    <span class="hp hp-od" id="hp-OVERDUE" onclick="setHealth('OVERDUE')">0 Overdue</span>
-    <span class="hp hp-ar" id="hp-AT_RISK"  onclick="setHealth('AT_RISK')">0 At Risk</span>
-    <span class="hp hp-tw" id="hp-TO_WATCH" onclick="setHealth('TO_WATCH')">0 To Watch</span>
-    <span class="hp hp-ok" id="hp-HEALTHY"  onclick="setHealth('HEALTHY')">0 Healthy</span>
+    <span class="hp hp-tm" id="hp-TERMINATING" onclick="setHealth('TERMINATING')">0 Terminating</span>
+    <span class="hp hp-od" id="hp-OVERDUE"     onclick="setHealth('OVERDUE')">0 Overdue</span>
+    <span class="hp hp-ar" id="hp-AT_RISK"     onclick="setHealth('AT_RISK')">0 At Risk</span>
+    <span class="hp hp-tw" id="hp-TO_WATCH"    onclick="setHealth('TO_WATCH')">0 To Watch</span>
+    <span class="hp hp-ok" id="hp-HEALTHY"     onclick="setHealth('HEALTHY')">0 Healthy</span>
   </div>
 
   <!-- KPI strip -->
@@ -162,6 +172,7 @@ tfoot td{font-size:11px;color:#9d9d9d;padding:6px 10px;border-top:1px solid #e6e
         style="padding:6px 14px;background:#288184;color:#fff;border:none;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;">Search</button>
     </div>
     <select id="cl-sw" onchange="renderKPIs();renderClients();"><option value="ALL">All products</option></select>
+    <div id="cl-am" style="display:inline-block;flex-shrink:0;"></div>
     <span style="margin-left:auto;display:flex;align-items:center;gap:6px;flex-shrink:0">
       <span class="filter-label">Grouped by:</span>
       <div class="toggle-group" id="groupby-toggle">
@@ -176,7 +187,7 @@ tfoot td{font-size:11px;color:#9d9d9d;padding:6px 10px;border-top:1px solid #e6e
 
   <!-- Filters row 2 — region hierarchy (energy market mode only) -->
   <div class="filter-bar" id="region-bar">
-    <span class="filter-label">Region:</span>
+    <span class="filter-label">Energy Market:</span>
     <div class="pill active" data-region="all" onclick="setRegion(this,'all')">All Markets</div>
   </div>
 
@@ -403,7 +414,7 @@ function populateRegionPills() {
     var rm = DATA.region_map || {};
     regions = [...new Set(Object.values(rm).filter(Boolean))].sort();
   }
-  var html = '<span class="filter-label">Region:</span>'
+  var html = '<span class="filter-label">Energy Market:</span>'
     + '<div class="pill active" data-region="all" onclick="setRegion(this,\'all\')">All Markets</div>'
     + regions.map(function(r) {
         var key = r.toLowerCase();
@@ -426,7 +437,8 @@ function updateClearAllState() {
   var srch = (document.getElementById('cl-search') || {}).value || '';
   var sw   = (document.getElementById('cl-sw') || {}).value || 'ALL';
   var active = REGION !== 'all' || MKT.size > 0 || HEALTH !== 'all' || FP !== 'ALL'
-            || ZD_FILTER !== 'all' || OPP_FILTER !== 'open' || srch !== '' || sw !== 'ALL';
+            || ZD_FILTER !== 'all' || OPP_FILTER !== 'open' || srch !== '' || sw !== 'ALL'
+            || (window.__swAmVal && window.__swAmVal !== 'ALL');
   if (active) {
     btn.style.borderColor = '#2e7d32';
     btn.style.color       = '#2e7d32';
@@ -445,6 +457,8 @@ function clearAll() {
   if (srch) srch.value = '';
   var sw = document.getElementById('cl-sw');
   if (sw) sw.value = 'ALL';
+  window.__swAmVal = 'ALL';
+  if (window.__swAmState) window.__swAmState.reset();
   document.querySelectorAll('#region-bar .pill').forEach(function(p) { p.classList.remove('active'); });
   var allRegion = document.querySelector('#region-bar .pill[data-region="all"]');
   if (allRegion) allRegion.classList.add('active');
@@ -494,18 +508,19 @@ function filteredTIP() {
   var tip = (DATA.termination_in_progress || []).slice();
   if (search) tip = tip.filter(function(t) {
     return (t.account || '').toLowerCase().indexOf(search) >= 0
-        || (t.parent && t.parent.toLowerCase().indexOf(search) >= 0);
+        || (t.parent && t.parent.toLowerCase().indexOf(search) >= 0)
+        || (t.account_manager && t.account_manager.toLowerCase().indexOf(search) >= 0);
   });
   if (REGION !== 'all') tip = tip.filter(function(t) { return (t.region || '').toLowerCase() === REGION; });
   if (MKT.size > 0) tip = tip.filter(function(t) { return MKT.has(t.market); });
   return tip;
 }
 
-var HEALTH_ORDER = ['OVERDUE', 'AT_RISK', 'TO_WATCH', 'HEALTHY'];
+var HEALTH_ORDER = ['TERMINATING', 'OVERDUE', 'AT_RISK', 'TO_WATCH', 'HEALTHY'];
 var BADGE_TO_HEALTH = { OVERDUE: 'OVERDUE', '3M': 'AT_RISK', '6M': 'TO_WATCH', '12M': 'HEALTHY' };
 
 function clientHealthBucket(client) {
-  var worst = client.flag_terminating ? 'AT_RISK' : 'HEALTHY';
+  var worst = client.flag_terminating ? 'TERMINATING' : 'HEALTHY';
   (client.sw_lines || []).forEach(function(l) {
     var b = BADGE_TO_HEALTH[l.renewal_badge] || 'HEALTHY';
     if (HEALTH_ORDER.indexOf(b) < HEALTH_ORDER.indexOf(worst)) worst = b;
@@ -533,8 +548,8 @@ function renderHealthBar() {
     }
     byAcct[c.account].arr += (c.arr_k || 0);
   });
-  var counts = { OVERDUE: 0, AT_RISK: 0, TO_WATCH: 0, HEALTHY: 0 };
-  var arrs   = { OVERDUE: 0, AT_RISK: 0, TO_WATCH: 0, HEALTHY: 0 };
+  var counts = { TERMINATING: 0, OVERDUE: 0, AT_RISK: 0, TO_WATCH: 0, HEALTHY: 0 };
+  var arrs   = { TERMINATING: 0, OVERDUE: 0, AT_RISK: 0, TO_WATCH: 0, HEALTHY: 0 };
   Object.values(byAcct).forEach(function(a) { counts[a.bucket]++; arrs[a.bucket] += a.arr; });
 
   // All button
@@ -546,10 +561,11 @@ function renderHealthBar() {
   }
 
   var DEFS = [
-    { key:'OVERDUE',  id:'hp-OVERDUE',  lbl:'Overdue'  },
-    { key:'AT_RISK',  id:'hp-AT_RISK',  lbl:'At Risk'  },
-    { key:'TO_WATCH', id:'hp-TO_WATCH', lbl:'To Watch' },
-    { key:'HEALTHY',  id:'hp-HEALTHY',  lbl:'Healthy'  },
+    { key:'TERMINATING', id:'hp-TERMINATING', lbl:'Terminating' },
+    { key:'OVERDUE',     id:'hp-OVERDUE',     lbl:'Overdue'     },
+    { key:'AT_RISK',     id:'hp-AT_RISK',     lbl:'At Risk'     },
+    { key:'TO_WATCH',    id:'hp-TO_WATCH',    lbl:'To Watch'    },
+    { key:'HEALTHY',     id:'hp-HEALTHY',     lbl:'Healthy'     },
   ];
   DEFS.forEach(function(d) {
     var btn = document.getElementById(d.id);
@@ -667,9 +683,12 @@ function filteredClientsBase() {
   }
   if (search) rows = rows.filter(function(r) {
     return r.account.toLowerCase().indexOf(search) >= 0
-        || (r.parent && r.parent.toLowerCase().indexOf(search) >= 0);
+        || (r.parent && r.parent.toLowerCase().indexOf(search) >= 0)
+        || (r.account_manager && r.account_manager.toLowerCase().indexOf(search) >= 0);
   });
   if (sw !== 'ALL') rows = rows.filter(function(r) { return (r.products || []).indexOf(sw) >= 0; });
+  var am = window.__swAmVal || 'ALL';
+  if (am !== 'ALL') rows = rows.filter(function(r) { return r.account_manager === am; });
   if (STAGE === 'active') rows = rows.filter(function(r) { return !r.flag_terminating; });
   if (STAGE === 'tip')    rows = rows.filter(function(r) { return r.flag_terminating; });
   if (FP === 'terminating') rows = rows.filter(function(r) { return r.flag_terminating; });
@@ -697,9 +716,23 @@ function filteredClients() {
   return rows;
 }
 
+function updateAmDropdown() {
+  if (!window.__swAmState || !window.__swAmState.update) return;
+  var saved = window.__swAmVal;
+  window.__swAmVal = 'ALL';
+  var rows = filteredClientsBase();
+  window.__swAmVal = saved;
+  var managers = [];
+  rows.forEach(function(r) {
+    if (r.account_manager && managers.indexOf(r.account_manager) < 0) managers.push(r.account_manager);
+  });
+  window.__swAmState.update(managers.sort());
+}
+
 function renderClients() {
   if (!DATA) return;
   updateClearAllState();
+  updateAmDropdown();
   renderHealthBar();
   var rows = filteredClients();
   // Group by account, sort by max ARR desc
@@ -739,6 +772,7 @@ function renderClients() {
         acctCell = "<td style='vertical-align:top'>"
           + "<div style='font-weight:600'>"+esc(r.account)+"</div>"
           + (r.parent ? "<div style='font-size:11px;color:#9d9d9d;margin-top:1px'>"+esc(r.parent)+"</div>" : "")
+          + (r.account_manager ? "<div style='font-size:11px;color:#288184;margin-top:2px'>"+esc(r.account_manager)+"</div>" : "")
           + "</td>";
       } else {
         acctCell = "<td style='color:transparent;user-select:none;font-size:10px;vertical-align:top'>"+esc(r.account)+"</td>";
@@ -941,6 +975,92 @@ document.getElementById('client-table').addEventListener('click', function(e) {
   renderClients();
 });
 
+// ── Searchable dropdown helper ────────────────────────────────────────────
+window.makeSearchableSelect = window.makeSearchableSelect || function(wrapperId, options, allValue, allLabel, onChange) {
+  var state = { val: allValue };
+  var _opts = options;
+  var wrap = document.getElementById(wrapperId);
+  if (!wrap) return state;
+  wrap.style.cssText += 'position:relative;display:inline-block;flex-shrink:0;';
+  wrap.innerHTML = '';
+
+  var btn = document.createElement('button');
+  btn.type = 'button';
+  btn.style.cssText = 'display:flex;align-items:center;gap:6px;padding:7px 10px;border:1.5px solid #e6e6e5;border-radius:8px;font-size:12px;color:#3c3c3b;background:#fff;cursor:pointer;white-space:nowrap;min-width:130px;font-family:inherit;';
+  var btnLabel = document.createElement('span'); btnLabel.style.flex = '1';
+  var btnChev  = document.createElement('span'); btnChev.textContent = '▾'; btnChev.style.cssText = 'font-size:10px;color:#9d9d9d;flex-shrink:0;';
+  btn.appendChild(btnLabel); btn.appendChild(btnChev);
+
+  var panel = document.createElement('div');
+  panel.className = '__ss-panel';
+  panel.style.cssText = 'display:none;position:absolute;top:calc(100% + 4px);left:0;min-width:220px;background:#fff;border:1.5px solid #e6e6e5;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,0.13);z-index:1000;overflow:hidden;';
+
+  var srch = document.createElement('input');
+  srch.type = 'text'; srch.placeholder = 'Search…';
+  srch.style.cssText = 'width:100%;box-sizing:border-box;padding:8px 10px;border:none;border-bottom:1px solid #f1f1f0;font-size:12px;font-family:inherit;outline:none;display:block;';
+
+  var list = document.createElement('div');
+  list.style.cssText = 'max-height:200px;overflow-y:auto;';
+
+  panel.appendChild(srch); panel.appendChild(list);
+  wrap.appendChild(btn); wrap.appendChild(panel);
+
+  function updateBtn() {
+    btnLabel.textContent = state.val === allValue ? allLabel : state.val;
+    var active = state.val !== allValue;
+    btn.style.fontWeight = active ? '600' : 'normal';
+    btn.style.color = active ? '#288184' : '#3c3c3b';
+    btn.style.borderColor = active ? '#288184' : '#e6e6e5';
+  }
+
+  function renderList(q) {
+    var all = [allValue].concat(_opts.filter(function(o) { return !q || o.toLowerCase().indexOf(q) >= 0; }));
+    list.innerHTML = '';
+    all.forEach(function(o) {
+      var item = document.createElement('div');
+      item.textContent = o === allValue ? allLabel : o;
+      var sel = o === state.val;
+      item.style.cssText = 'padding:7px 10px;font-size:12px;cursor:pointer;' + (sel ? 'background:#f0fafa;font-weight:600;color:#288184;' : 'color:#3c3c3b;');
+      item.addEventListener('mouseenter', function() { if (!sel) item.style.background = '#f7f7f6'; });
+      item.addEventListener('mouseleave', function() { item.style.background = sel ? '#f0fafa' : ''; });
+      item.addEventListener('mousedown', function(e) { e.preventDefault(); });
+      item.addEventListener('click', function(e) { e.stopPropagation(); state.val = o; panel.style.display = 'none'; updateBtn(); onChange(o); });
+      list.appendChild(item);
+    });
+  }
+
+  btn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    var open = panel.style.display !== 'none';
+    document.querySelectorAll('.__ss-panel').forEach(function(p) { p.style.display = 'none'; });
+    if (!open) { panel.style.display = 'block'; srch.value = ''; renderList(''); srch.focus(); }
+  });
+  srch.addEventListener('input', function() { renderList(srch.value.toLowerCase()); });
+  srch.addEventListener('click', function(e) { e.stopPropagation(); });
+
+  updateBtn();
+  state.reset = function() { state.val = allValue; updateBtn(); };
+  state.update = function(newOpts) {
+    _opts = newOpts;
+    if (state.val !== allValue && _opts.indexOf(state.val) < 0) {
+      state.val = allValue;
+      updateBtn();
+      onChange(allValue);
+    } else {
+      updateBtn();
+    }
+    if (panel.style.display !== 'none') renderList(srch.value.toLowerCase());
+  };
+  return state;
+};
+
+if (!window.__ssClickWired) {
+  window.__ssClickWired = true;
+  document.addEventListener('click', function() {
+    document.querySelectorAll('.__ss-panel').forEach(function(p) { p.style.display = 'none'; });
+  });
+}
+
 // ── Populate product dropdown ─────────────────────────────────────────────
 function populateSelects(regions, swNames) {
   var sel = document.getElementById('cl-sw');
@@ -950,6 +1070,17 @@ function populateSelects(regions, swNames) {
       var o = document.createElement('option'); o.value = s; o.textContent = s; sel.appendChild(o);
     });
   }
+  var managers = [];
+  var _allRecs = (DATA && DATA.clients || []).concat(DATA && DATA.billing_clients || []);
+  _allRecs.forEach(function(c) {
+    if (c.account_manager && managers.indexOf(c.account_manager) < 0) managers.push(c.account_manager);
+  });
+  managers.sort();
+  window.__swAmVal = 'ALL';
+  window.__swAmState = window.makeSearchableSelect('cl-am', managers, 'ALL', 'All managers', function(v) {
+    window.__swAmVal = v;
+    renderKPIs(); renderClients();
+  });
 }
 
 // ── Mock data (append ?mock to URL for offline testing) ───────────────────
@@ -963,12 +1094,69 @@ function populateSelects(regions, swNames) {
   };
 })();
 
+// ── Rotating loading quotes (matches Argus main app style) ───────────────
+var __swNextMsg = (function() {
+  var _all = [
+    "Argus had 100 eyes — all of them are bloodshot right now",
+    "The Oracle is consulting... if only it was a materialised table and not a view",
+    "Hermes is on his way — he stopped for coffee",
+    "Please bear with us — this is a Proof of Concept",
+    "Hephaestus is forging your insights — craftsmanship takes time",
+    "The Fates are measuring your metrics — they're very thorough",
+    "100 eyes, one slow query",
+    "Zeus is reviewing the figures — he has notes",
+    "Athena didn't build Athens in a day",
+    "The Titans are crunching numbers — there are a lot of numbers",
+    "Consulting the Oracle... the query is still running",
+    "Good things come to those who wait. So does this reload",
+    "Argus is swimming in the data lake — all 100 eyes open underwater",
+    "Diving deep into the data lake — Argus forgot his goggles",
+    "The data lake is murky today — even Argus can't see the bottom",
+    "Joining the dots across Salesforce, Zendesk and PostHog…",
+    "Cross-referencing tenant domains…",
+    "Aggregating software ARR across all markets…",
+    "Counting renewals due in the next 90 days…",
+    "Checking who's terminating — it's not what it sounds like",
+  ];
+  var _q = [];
+  return function() {
+    if (!_q.length) {
+      _q = _all.slice();
+      for (var i = _q.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        var t = _q[i]; _q[i] = _q[j]; _q[j] = t;
+      }
+    }
+    return _q.pop();
+  };
+})();
+
 // ── Load data from API ────────────────────────────────────────────────────
 async function loadData(currency) {
   const isMock = new URLSearchParams(location.search).has('mock');
   const curr   = currency || 'gbp';
   const url    = '/api/sw-intelligence?currency=' + curr;
   const isInitial = !currency;
+
+  // Animate loading bar and rotate quotes on initial load
+  var _msgInterval = null;
+  var _barInterval = null;
+  if (isInitial) {
+    var _pct = 0;
+    var msgEl = document.getElementById('sw-loading-msg');
+    var barEl = document.getElementById('sw-load-bar');
+    if (msgEl) msgEl.textContent = __swNextMsg();
+    if (barEl) {
+      _barInterval = setInterval(function() {
+        _pct = Math.min(_pct + (Math.random() * 3), 88);
+        barEl.style.width = _pct + '%';
+      }, 400);
+    }
+    _msgInterval = setInterval(function() {
+      if (msgEl) msgEl.textContent = __swNextMsg();
+    }, 10000);
+  }
+
   try {
     const resp = await fetch(url);
     if (!resp.ok) throw new Error('HTTP ' + resp.status);
@@ -977,17 +1165,25 @@ async function loadData(currency) {
     if (DATA.mkt_col) MKT_COL = DATA.mkt_col;
     document.getElementById('arr-date').textContent = DATA.arr_as_of || '—';
     var swNames = [...new Set((DATA.arr_vs_target || []).map(function(r) { return r.sw; }))].sort();
-    if (DATA.regions && DATA.regions.length) populateSelects(DATA.regions, swNames);
+    populateSelects(DATA.regions || [], swNames);
     populateRegionPills();
     renderCurrBar();
     if (isInitial) {
-      document.getElementById('loading').style.display = 'none';
-      document.getElementById('main-content').style.display = 'block';
-      document.getElementById(isMock ? 'demo-dot' : 'live-dot').style.display = '';
+      clearInterval(_msgInterval);
+      clearInterval(_barInterval);
+      var barEl2 = document.getElementById('sw-load-bar');
+      if (barEl2) { barEl2.style.width = '100%'; }
+      setTimeout(function() {
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('main-content').style.display = 'block';
+        document.getElementById(isMock ? 'demo-dot' : 'live-dot').style.display = '';
+      }, 300);
     }
     renderKPIs();
     renderClients();
   } catch (e) {
+    clearInterval(_msgInterval);
+    clearInterval(_barInterval);
     if (isInitial) {
       document.getElementById('loading').innerHTML =
         '<p style="color:#c62828;font-size:13px">Failed to load SW data: ' + e.message + '</p>';

@@ -20,7 +20,7 @@ async function mdmAccounts(req, res) {
   _inflight = new Promise((rs, rj) => { resolveFlight = rs; rejectFlight = rj; });
 
   try {
-    const [summaryRows, accountRows, hierarchyRows, dupRows, pbOnlyRows, zdUserRows, zdTicketRows, pbNoteRows, sfSubRows, phCovRows, phRows, phUnmatchedRows, mdmDomainRows] = await Promise.all([
+    const [summaryRows, accountRows, hierarchyRows, dupRows, pbOnlyRows, zdUserRows, zdTicketRows, pbNoteRows, sfSubRows, phCovRows, phRows, phUnmatchedRows, mdmDomainRows, amRows] = await Promise.all([
       query(`
         SELECT
           COUNT(*)                                                              AS total,
@@ -144,6 +144,7 @@ async function mdmAccounts(req, res) {
             MAX(CASE WHEN g.match_method = 'Account Code'   THEN 1 ELSE 0 END) AS is_acct_code_match,
             MAX(CASE WHEN g.match_method = 'ZD Domain'      THEN 1 ELSE 0 END) AS is_zd_match,
             MAX(CASE WHEN g.match_method = 'Wildcard'       THEN 1 ELSE 0 END) AS is_wildcard_match,
+            MAX(CASE WHEN g.match_method = 'EOS Tenant'     THEN 1 ELSE 0 END) AS is_eos_tenant_match,
             MAX(CASE WHEN g.ph_tenant IS NOT NULL           THEN 1 ELSE 0 END) AS is_any_match
           FROM dbo.gold_posthog_account_activity ph
           LEFT JOIN dbo.gold_mdm_posthog g ON g.ph_tenant = ph.ph_tenant
@@ -159,6 +160,7 @@ async function mdmAccounts(req, res) {
           SUM(CASE WHEN is_acct_code_match = 1                                                   THEN 1 ELSE 0 END) AS ph_acct_code_match,
           SUM(CASE WHEN is_zd_match        = 1                                                   THEN 1 ELSE 0 END) AS ph_zd_match,
           SUM(CASE WHEN is_wildcard_match  = 1                                                   THEN 1 ELSE 0 END) AS ph_wildcard_match,
+          SUM(CASE WHEN is_eos_tenant_match = 1                                                  THEN 1 ELSE 0 END) AS ph_eos_tenant_match,
           SUM(CASE WHEN is_any_match = 1 AND ph_tenant_format IN ('domain','short_code')         THEN 1 ELSE 0 END) AS ph_any_match,
           SUM(CASE WHEN is_any_match = 0 AND ph_tenant_format = 'domain'                         THEN 1 ELSE 0 END) AS ph_no_sf_match
         FROM ph_classified
@@ -214,7 +216,8 @@ async function mdmAccounts(req, res) {
         FROM dbo.gold_mdm_account
         CROSS APPLY STRING_SPLIT(REPLACE(COALESCE(sf_eos_access_domains_2,''), '; ', ';'), ';') s
         WHERE TRIM(s.value) != ''
-      `)
+      `),
+      query(`SELECT account_id, account_manager FROM dbo.gold_sf_customer_accounts WHERE account_manager IS NOT NULL AND TRIM(account_manager) != ''`)
     ]);
 
     // Build metric lookup maps — keyed by org/company ID for O(1) row renderer access
@@ -279,6 +282,9 @@ async function mdmAccounts(req, res) {
       if (pid) childCounts[pid] = (childCounts[pid] || 0) + 1;
     });
 
+    const amMap = {};
+    (amRows || []).forEach(r => { if (r.account_id) amMap[r.account_id] = r.account_manager; });
+
     const summary = summaryRows[0] || {};
     const accounts = accountRows.map(r => {
       const hier = hierById[r.sf_account_id] || {};
@@ -303,6 +309,7 @@ async function mdmAccounts(req, res) {
         pbMatchMethod:      r.pb_match_method,
         hasPbCompany:       r.has_pb_company === true || r.has_pb_company === 1,
         sfNameCollision:    r.sf_name_collision === true || r.sf_name_collision === 1,
+        sfAccountManager:   amMap[r.sf_account_id] || null,
         sfActiveSubscriptions: Number(r.sf_active_subscriptions) || 0,
         parentAccountId:    parentAccountId,
         parentAccountName:  parentInfo ? parentInfo.accountName : null,
@@ -393,6 +400,7 @@ async function mdmAccounts(req, res) {
         phAcctCodeMatch:   Number((phCovRows[0] || {}).ph_acct_code_match)  || 0,
         phZdMatch:         Number((phCovRows[0] || {}).ph_zd_match)         || 0,
         phWildcardMatch:   Number((phCovRows[0] || {}).ph_wildcard_match)   || 0,
+        phEosTenantMatch:  Number((phCovRows[0] || {}).ph_eos_tenant_match) || 0,
         // EOS, AnyMatch, NoMatch all corrected using JS STRING_SPLIT approach:
         // SQL ph_no_sf_match uses REPLACE+LIKE via v_gold_mdm_posthog which mssql npm
         // evaluates incorrectly — recovered tenants are all EOS Domain matches, so the

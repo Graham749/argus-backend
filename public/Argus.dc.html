@@ -33,6 +33,7 @@ input{font-family:inherit;}
 .hc-pill-ar{background:#fff3e0;color:#e65100;}
 .hc-pill-tw{background:#e3f2fd;color:#1565c0;}
 .hc-pill-ok{background:#e8f5e9;color:#2e7d32;}
+.hc-pill-tm{background:#fdecea;color:#b71c1c;}
 .hc-pill-grey{background:#f7f7f6;color:#6d6d6c;border:1px solid #e6e6e5;}
 .hc-pill-ph{background:#fff8f3;color:#e36a00;}
 .hc-pill-lb{background:#f0f3ff;color:#1D4AFF;}
@@ -144,6 +145,7 @@ input{font-family:inherit;}
       <div style="padding:20px 28px;max-width:1000px;animation:argusFade .25s ease;">
         <div style="margin-bottom:12px;">
           <div id="healthPageTitle" style="font-size:20px;font-weight:700;letter-spacing:-0.01em;">Client health card</div>
+          <div id="hcAccountManager" style="font-size:12px;color:#288184;margin-top:2px;display:none;"></div>
           <div style="font-size:12px;color:#9d9d9d;margin-top:2px;">Unified signals from Posthog · Zendesk · Salesforce · Productboard</div>
         </div>
 
@@ -1657,6 +1659,16 @@ if (localStorage.getItem('sidebarCollapsed') === 'true') {
   document.body.classList.add('sidebar-collapsed');
 }
 
+// Auto-select account from URL param: ?account=Sonnedix
+(function() {
+  var params = new URLSearchParams(window.location.search);
+  var acct = params.get('account');
+  if (acct) {
+    try { localStorage.setItem('argusHealthAccount', acct); } catch(_) {}
+    window.__argusTargetAccount = acct;
+  }
+})();
+
 // Navigate to requested view when opened in new tab (e.g. from SW Intelligence Client Health button)
 (function() {
   var initView = localStorage.getItem('argusInitView');
@@ -2537,6 +2549,92 @@ window.__argusNextMsg = (function(){
     return _q.pop();
   };
 })();
+
+// Lightweight searchable dropdown — replaces a container div with a button + search panel
+window.makeSearchableSelect = function(wrapperId, options, allValue, allLabel, onChange) {
+  var state = { val: allValue };
+  var _opts = options;
+  var wrap = document.getElementById(wrapperId);
+  if (!wrap) return state;
+  wrap.style.cssText += 'position:relative;display:inline-block;flex-shrink:0;';
+  wrap.innerHTML = '';
+
+  var btn = document.createElement('button');
+  btn.type = 'button';
+  btn.style.cssText = 'display:flex;align-items:center;gap:6px;padding:7px 10px;border:1.5px solid #e6e6e5;border-radius:8px;font-size:12px;color:#3c3c3b;background:#fff;cursor:pointer;white-space:nowrap;min-width:130px;font-family:inherit;';
+  var btnLabel = document.createElement('span'); btnLabel.style.flex = '1';
+  var btnChev  = document.createElement('span'); btnChev.textContent = '▾'; btnChev.style.cssText = 'font-size:10px;color:#9d9d9d;flex-shrink:0;';
+  btn.appendChild(btnLabel); btn.appendChild(btnChev);
+
+  var panel = document.createElement('div');
+  panel.className = '__ss-panel';
+  panel.style.cssText = 'display:none;position:absolute;top:calc(100% + 4px);left:0;min-width:220px;background:#fff;border:1.5px solid #e6e6e5;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,0.13);z-index:1000;overflow:hidden;';
+
+  var srch = document.createElement('input');
+  srch.type = 'text'; srch.placeholder = 'Search…';
+  srch.style.cssText = 'width:100%;box-sizing:border-box;padding:8px 10px;border:none;border-bottom:1px solid #f1f1f0;font-size:12px;font-family:inherit;outline:none;display:block;';
+
+  var list = document.createElement('div');
+  list.style.cssText = 'max-height:200px;overflow-y:auto;';
+
+  panel.appendChild(srch); panel.appendChild(list);
+  wrap.appendChild(btn); wrap.appendChild(panel);
+
+  function updateBtn() {
+    btnLabel.textContent = state.val === allValue ? allLabel : state.val;
+    var active = state.val !== allValue;
+    btn.style.fontWeight = active ? '600' : 'normal';
+    btn.style.color = active ? '#288184' : '#3c3c3b';
+    btn.style.borderColor = active ? '#288184' : '#e6e6e5';
+  }
+
+  function renderList(q) {
+    var all = [allValue].concat(_opts.filter(function(o) { return !q || o.toLowerCase().indexOf(q) >= 0; }));
+    list.innerHTML = '';
+    all.forEach(function(o) {
+      var item = document.createElement('div');
+      item.textContent = o === allValue ? allLabel : o;
+      var sel = o === state.val;
+      item.style.cssText = 'padding:7px 10px;font-size:12px;cursor:pointer;' + (sel ? 'background:#f0fafa;font-weight:600;color:#288184;' : 'color:#3c3c3b;');
+      item.addEventListener('mouseenter', function() { if (!sel) item.style.background = '#f7f7f6'; });
+      item.addEventListener('mouseleave', function() { item.style.background = sel ? '#f0fafa' : ''; });
+      item.addEventListener('mousedown', function(e) { e.preventDefault(); });
+      item.addEventListener('click', function(e) { e.stopPropagation(); state.val = o; panel.style.display = 'none'; updateBtn(); onChange(o); });
+      list.appendChild(item);
+    });
+  }
+
+  btn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    var open = panel.style.display !== 'none';
+    document.querySelectorAll('.__ss-panel').forEach(function(p) { p.style.display = 'none'; });
+    if (!open) { panel.style.display = 'block'; srch.value = ''; renderList(''); srch.focus(); }
+  });
+  srch.addEventListener('input', function() { renderList(srch.value.toLowerCase()); });
+  srch.addEventListener('click', function(e) { e.stopPropagation(); });
+
+  updateBtn();
+  state.reset = function() { state.val = allValue; updateBtn(); };
+  state.update = function(newOpts) {
+    _opts = newOpts;
+    if (state.val !== allValue && _opts.indexOf(state.val) < 0) {
+      state.val = allValue;
+      updateBtn();
+      onChange(allValue);
+    } else {
+      updateBtn();
+    }
+    if (panel.style.display !== 'none') renderList(srch.value.toLowerCase());
+  };
+  return state;
+};
+
+if (!window.__ssClickWired) {
+  window.__ssClickWired = true;
+  document.addEventListener('click', function() {
+    document.querySelectorAll('.__ss-panel').forEach(function(p) { p.style.display = 'none'; });
+  });
+}
 
 </script>
 
@@ -5389,6 +5487,8 @@ class Component extends DCLogic {
     const set = (id, base) => { const el = document.getElementById(id); if(el) el.textContent = accountName ? `${base} — ${accountName}` : base; };
     set('healthPageTitle', 'Client health card');
     set('sfWidgetTitle',   'Salesforce Subscriptions');
+    const amEl = document.getElementById('hcAccountManager');
+    if (amEl) { amEl.style.display = 'none'; amEl.textContent = ''; }
     set('zdWidgetTitle',   'Zendesk Support Tickets');
     set('pbWidgetTitle',   'Productboard Insights');
     set('phWidgetTitle',   'PostHog Analytics');
@@ -6058,6 +6158,11 @@ class Component extends DCLogic {
         console.log('[Argus] Got subscriptions, count:', data.subscriptions?.length || 0);
         clearInterval(window.__subMsgInterval);
         loading.style.display = 'none';
+        const amEl = document.getElementById('hcAccountManager');
+        if (amEl) {
+          if (data.account_manager) { amEl.textContent = 'Account Manager: ' + data.account_manager; amEl.style.display = 'block'; }
+          else { amEl.style.display = 'none'; }
+        }
         this.renderSubscriptions(data.subscriptions || []);
         console.log('[Argus] Subscriptions rendered');
       })
@@ -6285,6 +6390,7 @@ class Component extends DCLogic {
 
   groupByRenewalDays(subs){
     const groups = {
+      'TERMINATING': {subs: [], byType: {}},
       'OVERDUE': {subs: [], byType: {}},
       'AT_RISK': {subs: [], byType: {}},
       'TO_WATCH': {subs: [], byType: {}},
@@ -6296,7 +6402,8 @@ class Component extends DCLogic {
       const type = sub.service_type || 'Other';
       let groupKey;
 
-      if(days < 0) groupKey = 'OVERDUE';
+      if(sub.status === 'Termination in Progress') groupKey = 'TERMINATING';
+      else if(days < 0) groupKey = 'OVERDUE';
       else if(days < 30) groupKey = 'AT_RISK';
       else if(days < 90) groupKey = 'TO_WATCH';
       else groupKey = 'HEALTHY';
@@ -6355,10 +6462,11 @@ class Component extends DCLogic {
     this.currentGroupedSubs = groups;
 
     const RISK_DEFS = [
-      { key:'OVERDUE',  cls:'hc-pill-od', lbl:'Overdue'  },
-      { key:'AT_RISK',  cls:'hc-pill-ar', lbl:'At Risk'  },
-      { key:'TO_WATCH', cls:'hc-pill-tw', lbl:'To Watch' },
-      { key:'HEALTHY',  cls:'hc-pill-ok', lbl:'Healthy'  },
+      { key:'TERMINATING', cls:'hc-pill-tm', lbl:'Terminating' },
+      { key:'OVERDUE',     cls:'hc-pill-od', lbl:'Overdue'     },
+      { key:'AT_RISK',     cls:'hc-pill-ar', lbl:'At Risk'     },
+      { key:'TO_WATCH',    cls:'hc-pill-tw', lbl:'To Watch'    },
+      { key:'HEALTHY',     cls:'hc-pill-ok', lbl:'Healthy'     },
     ];
     const fmtArr = (v) => v >= 1e6 ? '£'+(v/1e6).toFixed(1)+'m' : '£'+Math.round(v/1000)+'k';
 
@@ -7201,6 +7309,14 @@ class Component extends DCLogic {
       if (window.__mdmExpandedId === undefined) window.__mdmExpandedId = null;
       this.setState({mdmLoaded: true, mdmLoading: false, mdmSummary: data.summary || null, mdmDuplicates: data.duplicates || []});
       setTimeout(() => window.__mdmRefresh && window.__mdmRefresh(), 50);
+      setTimeout(() => {
+        const _mgrs = Array.from(new Set((window.__mdmAccounts||[]).map(a=>a.sfAccountManager).filter(Boolean))).sort();
+        window.__mdmAmVal = '';
+        window.__mdmAmState = window.makeSearchableSelect('mdm-am-wrap', _mgrs, '', 'All managers', function(v) {
+          window.__mdmAmVal = v;
+          window.__mdmRefresh && window.__mdmRefresh();
+        });
+      }, 150);
     } catch(e) {
       console.error('[Argus] loadMdm failed:', e);
       this.setState({mdmLoaded: true, mdmLoading: false});
@@ -8011,19 +8127,7 @@ class Component extends DCLogic {
         const pbNotMatched = sm.total - sm.pbLinked;
         const pbUnlinked   = sm.pbTotal - sm.pbCompaniesMatched;
 
-        // Filter buttons — no state update, no re-render
-        const filterBtns = (function(){
-          const base = 'font-size:12px;font-weight:700;padding:5px 14px;border-radius:20px;cursor:pointer;border:1.5px solid;white-space:nowrap;';
-          const btn = (v, label, col, textCol) => {
-            const active = window.__mdmConfFilter === v;
-            const style = active
-              ? base+'background:'+col+';color:'+(textCol||'#fff')+';border-color:'+col+';'
-              : base+'background:#fff;color:'+col+';border-color:'+col+';';
-            const vAttr = v === null ? 'null' : "'"+v+"'";
-            return '<button onclick="(function(){window.__mdmConfFilter='+vAttr+';window.__mdmRefresh&&window.__mdmRefresh();})()" style="'+style+'">'+label+'</button>';
-          };
-          return btn(null, 'All', '#288184');
-        })();
+        const filterBtns = '';
 
         // Define row renderer and filter function as globals so search/expand never trigger re-render
         window.__mdmRow = function(a) {
@@ -8040,11 +8144,14 @@ class Component extends DCLogic {
                 +'<span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px;background:#f0e9f7;color:#7030a0;white-space:nowrap;">PB Only</span>'
                 +(a.pbCompanyDomain?'<span style="font-size:10px;color:#9d9d9d;">'+a.pbCompanyDomain+'</span>':'')
               +'</div>'
-            : '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">'
-                +'<span style="font-size:13px;font-weight:500;">'+a.sfAccountName+'</span>'
-                +(a.sfAccountType==='parent'||a.sfAccountType==='child'?'<span style="'+(typeStyle[a.sfAccountType]||'')+'">'+({parent:'Parent',child:'Child'}[a.sfAccountType]||'')+'</span>':'')
-                +(a.sfAccountType==='child'&&a.parentAccountName?'<span style="font-size:10px;color:#9d9d9d;">↑ '+a.parentAccountName+'</span>':'')
-                +(a.sfNameCollision?'<span style="font-size:9px;color:#e07000;" title="Duplicate SF name">⚠</span>':'')
+            : '<div style="display:flex;flex-direction:column;gap:2px;">'
+                +'<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">'
+                  +'<span style="font-size:13px;font-weight:500;">'+a.sfAccountName+'</span>'
+                  +(a.sfAccountType==='parent'||a.sfAccountType==='child'?'<span style="'+(typeStyle[a.sfAccountType]||'')+'">'+({parent:'Parent',child:'Child'}[a.sfAccountType]||'')+'</span>':'')
+                  +(a.sfAccountType==='child'&&a.parentAccountName?'<span style="font-size:10px;color:#9d9d9d;">↑ '+a.parentAccountName+'</span>':'')
+                  +(a.sfNameCollision?'<span style="font-size:9px;color:#e07000;" title="Duplicate SF name">⚠</span>':'')
+                +'</div>'
+                +(a.sfAccountManager?'<div style="font-size:11px;color:#288184;">'+a.sfAccountManager+'</div>':'')
               +'</div>';
           const zdConf = (a.zdMatchConfidence||'').toUpperCase();
           const zdPill = a.hasZdOrg
@@ -8247,6 +8354,7 @@ class Component extends DCLogic {
           if (!tbody) return;
           const s = (window.__mdmSearch || '').toLowerCase();
           const cf = window.__mdmConfFilter;
+          const amf = window.__mdmAmVal || '';
           let filtered = (window.__mdmAccounts || []);
           if (s) filtered = filtered.filter(function(a){
             return (a.sfAccountName && a.sfAccountName.toLowerCase().includes(s))
@@ -8255,13 +8363,15 @@ class Component extends DCLogic {
               || (a.zdOrgName && a.zdOrgName.toLowerCase().includes(s))
               || (a.zdOrgId && String(a.zdOrgId).includes(s))
               || (a.pbCompanyName && a.pbCompanyName.toLowerCase().includes(s))
-              || (a.pbCompanyId && String(a.pbCompanyId).toLowerCase().includes(s));
+              || (a.pbCompanyId && String(a.pbCompanyId).toLowerCase().includes(s))
+              || (a.sfAccountManager && a.sfAccountManager.toLowerCase().includes(s));
           });
+          if (amf) filtered = filtered.filter(function(a){ return a.sfAccountManager === amf; });
           if (cf === 'NO_ZD') filtered = filtered.filter(function(a){ return !a.hasZdOrg && !a.pbOnly; });
           else if (cf === 'NO_PB') filtered = filtered.filter(function(a){ return a.pbOnly === true; });
           const total = filtered.length;
           const all = (window.__mdmAccounts||[]).length;
-          const isFiltered = s || cf;
+          const isFiltered = s || cf || amf;
           const bySubs = filtered.slice().sort(function(a, b) {
             var sa = (window.__mdmSfSubCounts && window.__mdmSfSubCounts[a.sfAccountId]) || 0;
             var sb = (window.__mdmSfSubCounts && window.__mdmSfSubCounts[b.sfAccountId]) || 0;
@@ -8275,6 +8385,14 @@ class Component extends DCLogic {
           tbody.innerHTML = total
             ? display.map(window.__mdmRow).join('')
             : '<tr><td colspan="5" style="padding:32px;text-align:center;color:#9d9d9d;">No accounts match this filter</td></tr>';
+          const clrBtn = document.getElementById('mdm-clear-btn');
+          if (clrBtn) {
+            if (isFiltered) {
+              clrBtn.style.borderColor = '#2e7d32'; clrBtn.style.color = '#2e7d32'; clrBtn.style.background = '#f0faf0';
+            } else {
+              clrBtn.style.borderColor = '#e6e6e5'; clrBtn.style.color = '#9d9d9d'; clrBtn.style.background = '#fff';
+            }
+          }
         };
 
         // Schedule table population after x-dc sets innerHTML
@@ -9083,7 +9201,15 @@ class Component extends DCLogic {
               +'<button onclick="(function(){var v=document.getElementById(\'mdm-search\').value;window.__mdmSearch=v;window.__mdmRefresh&&window.__mdmRefresh();})()" '
                 +'style="padding:8px 16px;background:#288184;color:#fff;border:none;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;">Search</button>'
             +'</div>'
+            +'<div id="mdm-am-wrap"></div>'
             +filterBtns
+            +'<button id="mdm-clear-btn" onclick="(function(){'
+              +'var inp=document.getElementById(\'mdm-search\');if(inp){inp.value=\'\';window.__mdmSearch=\'\';}'
+              +'window.__mdmAmVal=\'\';'
+              +'if(window.__mdmAmState)window.__mdmAmState.reset();'
+              +'window.__mdmConfFilter=null;'
+              +'window.__mdmRefresh&&window.__mdmRefresh();'
+            +'})()" style="padding:7px 14px;border:1.5px solid #e6e6e5;border-radius:8px;background:#fff;font-size:12px;font-weight:600;color:#9d9d9d;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:all .15s;">Clear All</button>'
             +'<span id="mdm-count-label" style="font-size:12px;color:#9d9d9d;white-space:nowrap;margin-left:auto;">Loading…</span>'
           +'</div>'
 
