@@ -120,16 +120,16 @@ tfoot td{font-size:11px;color:#9d9d9d;padding:6px 10px;border-top:1px solid #e6e
 
 <!-- Row 1: Page section tabs -->
 <div class="page-tabs">
-  <div class="page-tab active">Software Health
+  <div class="page-tab active" id="sw-tab" onclick="switchTab('sw')">Software Health
     <span id="live-dot" style="display:none;font-size:10px;font-weight:700;letter-spacing:.06em;color:#2e7d32;white-space:nowrap;">● LIVE</span>
     <span id="demo-dot" style="display:none;font-size:10px;font-weight:700;letter-spacing:.06em;color:#e65100;white-space:nowrap;">● DEMO</span>
   </div>
-  <div class="page-tab" onclick="location.href='/eos-engagement'">Client Engagement</div>
+  <div class="page-tab" id="eng-tab" onclick="switchTab('engagement')">Client Engagement</div>
   <div class="page-tab soon">Subscription Analytics Health <span class="page-tab-badge">Coming soon</span></div>
 </div>
 
-<!-- Row 2: Currency selection (outside main-content so always in DOM) -->
-<div style="padding:8px 24px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;border-bottom:1px solid #e6e6e5;background:#fff;">
+<!-- Row 2: Currency selection (SW tab only) -->
+<div id="curr-bar-row" style="padding:8px 24px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;border-bottom:1px solid #e6e6e5;background:#fff;">
   <span class="filter-label">Currency:</span>
   <div id="curr-bar" style="display:flex;gap:4px;flex-wrap:wrap;align-items:center"></div>
 </div>
@@ -231,6 +231,49 @@ tfoot td{font-size:11px;color:#9d9d9d;padding:6px 10px;border-top:1px solid #e6e
 </section>
 
 </main>
+
+<!-- ══ CLIENT ENGAGEMENT TAB ════════════════════════════════════════════════ -->
+<div id="engagement-section" style="display:none;max-width:1320px;margin:0 auto;padding:24px">
+
+  <div class="filter-bar">
+    <span class="filter-label">Region:</span>
+    <div class="pill active" data-eng-region="ALL" onclick="engSetRegion(this,'ALL')">All</div>
+    <div class="pill" data-eng-region="EMEA" onclick="engSetRegion(this,'EMEA')">EMEA</div>
+    <div class="pill" data-eng-region="APAC" onclick="engSetRegion(this,'APAC')">APAC</div>
+    <div class="pill" data-eng-region="NORAM" onclick="engSetRegion(this,'NORAM')">NORAM</div>
+    <div class="pill" data-eng-region="LATAM" onclick="engSetRegion(this,'LATAM')">LATAM</div>
+    <span style="width:1px;height:20px;background:#e6e6e5;margin:0 8px;flex-shrink:0"></span>
+    <span class="filter-label">Period:</span>
+    <div class="pill active" data-eng-period="all" onclick="engSetPeriod(this,'all')">All time</div>
+    <div class="pill" data-eng-period="12m" onclick="engSetPeriod(this,'12m')">Last 12m</div>
+    <div class="pill" data-eng-period="3m" onclick="engSetPeriod(this,'3m')">Last 3m</div>
+  </div>
+
+  <div id="eng-kpi-row" class="kpi-row"></div>
+
+  <div id="eng-loading" style="text-align:center;padding:40px;color:#9d9d9d;font-size:13px">
+    <div class="spinner" style="margin:0 auto 12px"></div>
+    Loading engagement data from Fabric…
+  </div>
+
+  <div id="eng-content" style="display:none">
+    <div class="card" style="padding:0;overflow:hidden;overflow-x:auto;margin-bottom:16px">
+      <div style="padding:14px 18px;font-size:12px;font-weight:700;color:#3c3c3b;border-bottom:1px solid #e6e6e5">Monthly activity (last 36 months)</div>
+      <table id="eng-monthly-table"></table>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="card" style="padding:0;overflow:hidden">
+        <div style="padding:14px 18px;font-size:12px;font-weight:700;color:#3c3c3b;border-bottom:1px solid #e6e6e5">Software runs by market</div>
+        <table id="eng-runs-table"></table>
+      </div>
+      <div class="card" style="padding:0;overflow:hidden">
+        <div style="padding:14px 18px;font-size:12px;font-weight:700;color:#3c3c3b;border-bottom:1px solid #e6e6e5">Events by market (webinars + group meetings)</div>
+        <table id="eng-events-table"></table>
+      </div>
+    </div>
+  </div>
+
+</div>
 
 <script>
 const BILLING_REGION_MAP = {
@@ -1203,6 +1246,136 @@ async function loadData(currency) {
 if (new URLSearchParams(location.search).get('embed') === '1') {
   document.documentElement.classList.add('embed-mode');
 }
+
+// ── Client Engagement tab ─────────────────────────────────────────────────
+var ENG_DATA = null, engRegion = 'ALL', engPeriod = 'all', engLoaded = false;
+
+function switchTab(tab) {
+  var isSW = (tab === 'sw');
+  document.getElementById('sw-tab').classList.toggle('active', isSW);
+  document.getElementById('eng-tab').classList.toggle('active', !isSW);
+  document.getElementById('curr-bar-row').style.display = isSW ? '' : 'none';
+  document.getElementById('engagement-section').style.display = isSW ? 'none' : '';
+  if (!isSW) {
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('main-content').style.display = 'none';
+    if (!engLoaded) loadEngagement();
+  }
+}
+
+function engSetRegion(el, val) {
+  document.querySelectorAll('[data-eng-region]').forEach(function(e) { e.classList.remove('active'); });
+  el.classList.add('active');
+  engRegion = val;
+  engRender();
+}
+
+function engSetPeriod(el, val) {
+  document.querySelectorAll('[data-eng-period]').forEach(function(e) { e.classList.remove('active'); });
+  el.classList.add('active');
+  engPeriod = val;
+  engRender();
+}
+
+async function loadEngagement() {
+  try {
+    var resp = await fetch('/api/eos-engagement');
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    ENG_DATA = await resp.json();
+    engLoaded = true;
+    document.getElementById('eng-loading').style.display = 'none';
+    document.getElementById('eng-content').style.display = '';
+    engRender();
+  } catch (e) {
+    document.getElementById('eng-loading').innerHTML = '<span style="color:#c62828">Failed to load: ' + e.message + '</span>';
+  }
+}
+
+function engFmt(n) {
+  if (n == null || isNaN(+n)) return '—';
+  n = +n;
+  if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
+  if (n >= 1000)    return (n / 1000).toFixed(1) + 'k';
+  return n.toLocaleString();
+}
+
+function engRender() {
+  if (!ENG_DATA) return;
+  var streams = ENG_DATA.streams || [];
+  var COLORS = { software:'#288184', downloads:'#1565c0', videos:'#7b1fa2', cases:'#e65100', webinars:'#2e7d32', gm:'#00897b' };
+
+  // KPI tiles
+  var kpiHtml = streams.map(function(s) {
+    var val = engPeriod === '3m' ? s.last_3m : engPeriod === '12m' ? s.last_12m : s.total;
+    var col = COLORS[s.key] || '#3c3c3b';
+    var sub = engPeriod !== 'all' ? ('all time: ' + engFmt(s.total))
+            : (s.watch_mins_total ? Math.round(s.watch_mins_total / 60).toLocaleString() + ' watch hrs total' : s.unit);
+    return '<div class="kpi"><div class="kpi-label">' + s.label + '</div>'
+      + '<div class="kpi-value" style="color:' + col + ';font-size:22px">' + engFmt(val) + '</div>'
+      + '<div class="kpi-sub">' + sub + '</div></div>';
+  }).join('');
+  document.getElementById('eng-kpi-row').innerHTML = kpiHtml;
+
+  // Monthly table
+  var mStreams = streams.filter(function(s) { return s.by_month && s.by_month.length; });
+  var allMo = {};
+  mStreams.forEach(function(s) { s.by_month.forEach(function(r) { allMo[r.month] = true; }); });
+  var periodStart = engPeriod === '3m'  ? new Date(Date.now() - 92*864e5).toISOString().slice(0,7)
+                  : engPeriod === '12m' ? new Date(Date.now() - 366*864e5).toISOString().slice(0,7)
+                  : '0000-00';
+  var sortedMo = Object.keys(allMo).filter(function(m) { return m >= periodStart; }).sort().reverse().slice(0, 36);
+  var mLookup = {};
+  mStreams.forEach(function(s) {
+    mLookup[s.key] = {};
+    s.by_month.forEach(function(r) { mLookup[s.key][r.month] = r.cnt || r.plays || r.attendees || 0; });
+  });
+  var thHtml = '<tr><th>Month</th>' + mStreams.map(function(s) { return '<th class="num">' + s.label + '</th>'; }).join('') + '</tr>';
+  var trHtml = sortedMo.map(function(mo) {
+    return '<tr><td>' + mo + '</td>'
+      + mStreams.map(function(s) { var v = mLookup[s.key][mo] || 0; return '<td class="num">' + (v ? engFmt(v) : '<span style="color:#d0d0d0">—</span>') + '</td>'; }).join('') + '</tr>';
+  }).join('');
+  document.getElementById('eng-monthly-table').innerHTML = '<thead>' + thHtml + '</thead><tbody>' + (trHtml || '<tr><td colspan="' + (mStreams.length+1) + '" class="empty">No data for period</td></tr>') + '</tbody>';
+
+  // Runs by market
+  var runsS = streams.find(function(s) { return s.key === 'software'; });
+  var runsMkt = ((runsS && runsS.by_market) || []).filter(function(m) { return engRegion === 'ALL' || m.region === engRegion; });
+  var rMax = Math.max.apply(null, runsMkt.map(function(m) { return m.total || 0; }).concat([1]));
+  var rTh = '<thead><tr><th>Market</th><th>Region</th><th class="num">Total</th><th class="num">Last 3m</th></tr></thead>';
+  var rTr = runsMkt.slice(0, 30).map(function(m) {
+    var pct = Math.round((m.total||0)/rMax*100);
+    return '<tr><td><div style="font-size:11px;font-weight:600">' + (m.market||'—') + '</div>'
+      + '<div style="height:3px;background:#e6e6e5;border-radius:2px;margin-top:3px"><div style="height:3px;background:#288184;border-radius:2px;width:' + pct + '%"></div></div></td>'
+      + '<td><span class="pn" style="font-size:10px">' + (m.region||'—') + '</span></td>'
+      + '<td class="num">' + engFmt(m.total) + '</td><td class="num">' + engFmt(m.last_3m) + '</td></tr>';
+  }).join('');
+  document.getElementById('eng-runs-table').innerHTML = rTh + '<tbody>' + (rTr || '<tr><td colspan="4" class="empty">No data</td></tr>') + '</tbody>';
+
+  // Events by market (webinars + GMs combined)
+  var evMap = {};
+  ['webinars','gm'].forEach(function(k) {
+    var s = streams.find(function(s) { return s.key === k; });
+    if (!s) return;
+    (s.by_market || []).forEach(function(m) {
+      var key = m.market || 'Unknown';
+      if (!evMap[key]) evMap[key] = { market: key, region: m.region, attendees: 0, events: 0 };
+      evMap[key].attendees += (m.attendees || 0);
+      evMap[key].events    += (m.event_count || 0);
+    });
+  });
+  var evList = Object.values(evMap).sort(function(a,b) { return b.attendees - a.attendees; })
+    .filter(function(m) { return engRegion === 'ALL' || m.region === engRegion; });
+  var eMax = Math.max.apply(null, evList.map(function(m) { return m.attendees; }).concat([1]));
+  var eTh = '<thead><tr><th>Market</th><th>Region</th><th class="num">Attendees</th><th class="num">Events</th></tr></thead>';
+  var eTr = evList.slice(0, 30).map(function(m) {
+    var pct = Math.round(m.attendees/eMax*100);
+    return '<tr><td><div style="font-size:11px;font-weight:600">' + (m.market||'—') + '</div>'
+      + '<div style="height:3px;background:#e6e6e5;border-radius:2px;margin-top:3px"><div style="height:3px;background:#2e7d32;border-radius:2px;width:' + pct + '%"></div></div></td>'
+      + '<td><span class="pn" style="font-size:10px">' + (m.region||'—') + '</span></td>'
+      + '<td class="num">' + engFmt(m.attendees) + '</td><td class="num">' + m.events + '</td></tr>';
+  }).join('');
+  document.getElementById('eng-events-table').innerHTML = eTh + '<tbody>' + (eTr || '<tr><td colspan="4" class="empty">No data</td></tr>') + '</tbody>';
+}
+// ─────────────────────────────────────────────────────────────────────────────
 
 loadData();
 </script>

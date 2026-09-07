@@ -143,8 +143,11 @@ module.exports = async function eosEngagement(req, res) {
       const m3 = Number(r.last_3m) || 0;
       const m12 = Number(r.last_12m) || 0;
       runsTotal += t; runs3m += m3; runs12m += m12;
-      runsByRegion[region]  = (runsByRegion[region]  || 0) + t;
-      runsByMarket[mkt]     = (runsByMarket[mkt]     || 0) + t;
+      runsByRegion[region] = (runsByRegion[region] || 0) + t;
+      if (!runsByMarket[mkt]) runsByMarket[mkt] = { total: 0, last_3m: 0, last_12m: 0, region };
+      runsByMarket[mkt].total   += t;
+      runsByMarket[mkt].last_3m += m3;
+      runsByMarket[mkt].last_12m += m12;
     }
 
     // ── Process downloads ─────────────────────────────────────────────────────
@@ -178,12 +181,14 @@ module.exports = async function eosEngagement(req, res) {
     const webByRegion = {};
     const webByMarket = {};
     for (const r of webinarRows) {
-      const m = r.month; const att = Number(r.attendees) || 0;
+      const m = r.month; const att = Number(r.attendees) || 0; const evCnt = Number(r.event_count) || 0;
       const region = regionOf(r.market_raw);
       const mkt    = r.market_raw || 'Other';
       if (m) webByMonth[m] = (webByMonth[m] || 0) + att;
       webByRegion[region] = (webByRegion[region] || 0) + att;
-      webByMarket[mkt]    = (webByMarket[mkt]    || 0) + att;
+      if (!webByMarket[mkt]) webByMarket[mkt] = { attendees: 0, event_count: 0, region };
+      webByMarket[mkt].attendees   += att;
+      webByMarket[mkt].event_count += evCnt;
     }
     const webTotal = Object.values(webByMonth).reduce((s, v) => s + v, 0);
     const web3m  = Object.entries(webByMonth).filter(([m]) => m >= m3Start  && m <= nowStr).reduce((s, [, v]) => s + v, 0);
@@ -194,12 +199,14 @@ module.exports = async function eosEngagement(req, res) {
     const gmByRegion = {};
     const gmByMarket = {};
     for (const r of gmRows) {
-      const m = r.month; const att = Number(r.attendees) || 0;
+      const m = r.month; const att = Number(r.attendees) || 0; const evCnt = Number(r.event_count) || 0;
       const region = regionOf(r.market_raw);
       const mkt    = r.market_raw || 'Other';
       if (m) gmByMonth[m] = (gmByMonth[m] || 0) + att;
       gmByRegion[region] = (gmByRegion[region] || 0) + att;
-      gmByMarket[mkt]    = (gmByMarket[mkt]    || 0) + att;
+      if (!gmByMarket[mkt]) gmByMarket[mkt] = { attendees: 0, event_count: 0, region };
+      gmByMarket[mkt].attendees   += att;
+      gmByMarket[mkt].event_count += evCnt;
     }
     const gmTotal = Object.values(gmByMonth).reduce((s, v) => s + v, 0);
     const gm3m  = Object.entries(gmByMonth).filter(([m]) => m >= m3Start  && m <= nowStr).reduce((s, [, v]) => s + v, 0);
@@ -216,15 +223,25 @@ module.exports = async function eosEngagement(req, res) {
       };
     }
 
+    const toMonthArr = (obj, valKey) =>
+      Object.entries(obj).map(([month, v]) => ({ month, [valKey]: v })).sort((a, b) => a.month.localeCompare(b.month));
+
+    const runsMktArr = Object.entries(runsByMarket)
+      .map(([market, v]) => ({ market, ...v })).sort((a, b) => b.total - a.total);
+    const webMktArr  = Object.entries(webByMarket)
+      .map(([market, v]) => ({ market, ...v })).sort((a, b) => b.attendees - a.attendees);
+    const gmMktArr   = Object.entries(gmByMarket)
+      .map(([market, v]) => ({ market, ...v })).sort((a, b) => b.attendees - a.attendees);
+
     const payload = {
       snapshot: new Date().toISOString().slice(0, 10),
       streams: [
-        { key: 'software',  label: 'Software Runs',          unit: 'runs',      total: runsTotal, last_3m: runs3m, last_12m: runs12m, regional: true,  by_region: runsByRegion, by_market: runsByMarket },
-        { key: 'downloads', label: 'EOS Downloads',          unit: 'downloads', total: dlTotal,   last_3m: dl3m,   last_12m: dl12m,  regional: false, by_month: dlByMonth },
-        { key: 'videos',    label: 'Video Plays',            unit: 'plays',     total: vidTotal,  last_3m: vid3m,  last_12m: vid12m, regional: false, by_month: vidByMonth, watch_mins_total: Math.round(secsTotal / 60) },
-        { key: 'cases',     label: 'Support Cases',          unit: 'cases',     total: caseTotal, last_3m: case3m, last_12m: case12m, regional: false, by_month: caseByMonth, by_type: caseByType },
-        { key: 'webinars',  label: 'Webinar Attendance',     unit: 'attendees', total: webTotal,  last_3m: web3m,  last_12m: web12m,  regional: true,  by_region: webByRegion, by_market: webByMarket, by_month: webByMonth },
-        { key: 'gm',        label: 'Group Meeting Attendance', unit: 'attendees', total: gmTotal, last_3m: gm3m,   last_12m: gm12m,  regional: true,  by_region: gmByRegion, by_market: gmByMarket, by_month: gmByMonth },
+        { key: 'software',  label: 'Software Runs',             unit: 'runs',      total: runsTotal, last_3m: runs3m,  last_12m: runs12m,  regional: true,  by_region: runsByRegion, by_market: runsMktArr },
+        { key: 'downloads', label: 'EOS Downloads',             unit: 'downloads', total: dlTotal,   last_3m: dl3m,    last_12m: dl12m,    regional: false, by_month: toMonthArr(dlByMonth,  'cnt') },
+        { key: 'videos',    label: 'Video Plays',               unit: 'plays',     total: vidTotal,  last_3m: vid3m,   last_12m: vid12m,   regional: false, by_month: toMonthArr(vidByMonth, 'plays'), watch_mins_total: Math.round(secsTotal / 60) },
+        { key: 'cases',     label: 'Support Cases',             unit: 'cases',     total: caseTotal, last_3m: case3m,  last_12m: case12m,  regional: false, by_month: toMonthArr(caseByMonth,'cnt'), by_type: caseByType },
+        { key: 'webinars',  label: 'Webinar Attendance',        unit: 'attendees', total: webTotal,  last_3m: web3m,   last_12m: web12m,   regional: true,  by_region: webByRegion,  by_market: webMktArr,  by_month: toMonthArr(webByMonth, 'attendees') },
+        { key: 'gm',        label: 'Group Meeting Attendance',  unit: 'attendees', total: gmTotal,   last_3m: gm3m,    last_12m: gm12m,    regional: true,  by_region: gmByRegion,   by_market: gmMktArr,   by_month: toMonthArr(gmByMonth,  'attendees') },
       ],
       region_totals: regionTotals,
     };
