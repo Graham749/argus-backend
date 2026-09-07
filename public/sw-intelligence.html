@@ -301,7 +301,7 @@ tfoot td{font-size:11px;color:#9d9d9d;padding:6px 10px;border-top:1px solid #e6e
       <!-- 4. Breakdown over time -->
       <section style="margin-bottom:24px">
         <div style="font-size:13px;font-weight:700;color:#3c3c3b;margin-bottom:12px">Breakdown over time <span id="eng-time-hint" style="font-size:11px;color:#9d9d9d;font-weight:400"></span></div>
-        <div class="card" style="padding:0;overflow-x:auto"><div id="eng-timetable"></div></div>
+        <div class="card" style="padding:0"><div id="eng-timetable"></div></div>
       </section>
 
       <!-- 5. Market detail -->
@@ -1591,8 +1591,8 @@ function engRenderTimeTable(streams,wm){
     +'#eng-timetable tfoot td{font-size:14px;font-weight:700;color:#3c3c3b;padding:9px 10px;border-top:2px solid #d8d8d7;border-bottom:none}'
     +'</style>';
   document.getElementById('eng-timetable').innerHTML= ttStyle
-    +'<table><thead>'+head+'</thead><tbody>'+rows+'</tbody><tfoot>'+foot+'</tfoot></table>'
-    +'<div style="font-size:11px;color:#9d9d9d;margin-top:6px">'
+    +'<div style="overflow-x:auto"><table><thead>'+head+'</thead><tbody>'+rows+'</tbody><tfoot>'+foot+'</tfoot></table></div>'
+    +'<div style="font-size:11px;color:#9d9d9d;padding:8px 16px 14px">'
     +'* Video plays are not region-specific — shown as an all-regions total.'
     +'</div>';
 }
