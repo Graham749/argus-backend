@@ -118,15 +118,41 @@ module.exports = async function eosEngagement(req, res) {
         ) x WHERE rn = 1
       `),
 
-      // 8. Downloads by account (for regional split) — same filters as query 2
+      // 8. Downloads by region — derived from product code (what was downloaded), not account region
+      //    bra/chl/mex → LATAM; nem/wem/jpn/jap/ind/kor/mys/phl/sgp → APAC
+      //    ercot/pjm/caiso/miso/wecc/abt/nyiso/isone/spp → NORAM; else → EMEA
       query(`
-        SELECT sf_account_code,
-               COUNT(DISTINCT tracking_id) AS cnt
+        SELECT
+          CASE
+            WHEN LOWER(product) LIKE 'bra%' OR LOWER(product) LIKE 'chl%' OR LOWER(product) LIKE 'mex%' THEN 'LATAM'
+            WHEN LOWER(product) LIKE 'nem%' OR LOWER(product) LIKE 'wem%'
+              OR LOWER(product) LIKE 'jpn%' OR LOWER(product) LIKE 'jap%' OR LOWER(product) LIKE 'ind%'
+              OR LOWER(product) LIKE 'kor%' OR LOWER(product) LIKE 'mys%'
+              OR LOWER(product) LIKE 'phl%' OR LOWER(product) LIKE 'sgp%' THEN 'APAC'
+            WHEN LOWER(product) LIKE 'ercot%' OR LOWER(product) LIKE 'pjm%' OR LOWER(product) LIKE 'caiso%'
+              OR LOWER(product) LIKE 'miso%' OR LOWER(product) LIKE 'wecc%' OR LOWER(product) LIKE 'abt%'
+              OR LOWER(product) LIKE 'nyiso%' OR LOWER(product) LIKE 'isone%' OR LOWER(product) LIKE 'spp%' THEN 'NORAM'
+            WHEN product IS NULL THEN 'Other'
+            ELSE 'EMEA'
+          END AS region,
+          COUNT(DISTINCT tracking_id) AS cnt
         FROM dbo.v_silver_eos_downloads
-        WHERE download_date IS NOT NULL AND sf_account_code IS NOT NULL
+        WHERE download_date IS NOT NULL
           AND tracking_id IS NOT NULL
           AND COALESCE(product, '') != 'scenarioExplorer'
-        GROUP BY sf_account_code
+        GROUP BY
+          CASE
+            WHEN LOWER(product) LIKE 'bra%' OR LOWER(product) LIKE 'chl%' OR LOWER(product) LIKE 'mex%' THEN 'LATAM'
+            WHEN LOWER(product) LIKE 'nem%' OR LOWER(product) LIKE 'wem%'
+              OR LOWER(product) LIKE 'jpn%' OR LOWER(product) LIKE 'jap%' OR LOWER(product) LIKE 'ind%'
+              OR LOWER(product) LIKE 'kor%' OR LOWER(product) LIKE 'mys%'
+              OR LOWER(product) LIKE 'phl%' OR LOWER(product) LIKE 'sgp%' THEN 'APAC'
+            WHEN LOWER(product) LIKE 'ercot%' OR LOWER(product) LIKE 'pjm%' OR LOWER(product) LIKE 'caiso%'
+              OR LOWER(product) LIKE 'miso%' OR LOWER(product) LIKE 'wecc%' OR LOWER(product) LIKE 'abt%'
+              OR LOWER(product) LIKE 'nyiso%' OR LOWER(product) LIKE 'isone%' OR LOWER(product) LIKE 'spp%' THEN 'NORAM'
+            WHEN product IS NULL THEN 'Other'
+            ELSE 'EMEA'
+          END
       `),
 
       // 9. Cases by account + type — date_of_work consistent with query 4
@@ -179,8 +205,7 @@ module.exports = async function eosEngagement(req, res) {
       if (m) dlByMonth[m] = (dlByMonth[m] || 0) + cnt;
     }
     for (const r of dlAcctRows) {
-      const region = accountRegion[r.sf_account_code] || 'Other';
-      dlByRegion[region] = (dlByRegion[region] || 0) + (Number(r.cnt) || 0);
+      dlByRegion[r.region || 'Other'] = (dlByRegion[r.region || 'Other'] || 0) + (Number(r.cnt) || 0);
     }
     const dlTotal = Object.values(dlByMonth).reduce((s, v) => s + v, 0);
 
