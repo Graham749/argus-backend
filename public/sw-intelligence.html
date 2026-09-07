@@ -243,29 +243,22 @@ tfoot td{font-size:11px;color:#9d9d9d;padding:6px 10px;border-top:1px solid #e6e
 <div id="engagement-section" style="display:none">
 
   <!-- Controls -->
-  <div style="background:#fff;border-bottom:1px solid #e6e6e5;padding:14px 24px">
-    <div class="filter-bar" style="margin-bottom:8px">
-      <span class="filter-label">Region:</span>
+  <div style="background:#fff;border-bottom:1px solid #e6e6e5;padding:10px 24px">
+    <div class="filter-bar">
+      <span class="filter-label">Energy Market:</span>
       <div id="eng-filter" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
     </div>
-    <div class="filter-bar" style="margin-bottom:8px">
+    <div class="filter-bar" id="eng-market-bar" style="display:none">
       <span class="filter-label">Market:</span>
-      <select id="eng-market-sel" style="height:30px;padding:0 8px;border:1px solid #e6e6e5;border-radius:6px;font-size:12px;background:#fff;outline:none;cursor:pointer;color:#3c3c3b">
-        <option value="All">All markets</option>
-      </select>
-      <span id="eng-market-note" style="font-size:11px;color:#9d9d9d;margin-left:8px">drills the market-detail table below</span>
+      <div id="eng-market-pills" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
     </div>
-    <div class="filter-bar" style="margin-bottom:0">
+    <div class="filter-bar">
       <span class="filter-label">Period:</span>
-      <label style="font-size:12px;color:#6d6d6c">From <input type="month" id="eng-start-m" style="margin-left:4px;height:28px;border:1px solid #e6e6e5;border-radius:6px;padding:0 6px;font-size:12px;outline:none" onchange="engDateChange()"></label>
-      <label style="font-size:12px;color:#6d6d6c">To <input type="month" id="eng-end-m" style="margin-left:4px;height:28px;border:1px solid #e6e6e5;border-radius:6px;padding:0 6px;font-size:12px;outline:none" onchange="engDateChange()"></label>
-      <span style="width:10px"></span>
-      <div class="pill" id="eng-preset-all" onclick="engPreset('all')">All time</div>
+      <div class="pill active" id="eng-preset-all" onclick="engPreset('all')">All time</div>
       <div class="pill" id="eng-preset-12m" onclick="engPreset('12m')">Last 12 months</div>
       <div class="pill" id="eng-preset-ytd" onclick="engPreset('ytd')">This year (YTD)</div>
       <div class="pill" id="eng-preset-2025" onclick="engPreset('2025')">2025</div>
     </div>
-    <div id="eng-scopebar" style="color:#9d9d9d;font-size:12px;margin-top:10px"></div>
   </div>
 
   <div style="max-width:1320px;margin:0 auto;padding:24px">
@@ -1369,13 +1362,9 @@ async function loadEngagement() {
     E_MIN = "2019-01"; // always start from 2019
     E_MAX = allM[allM.length-1] || new Date().toISOString().slice(0,7);
     E_START = E_MIN; E_END = E_MAX;
-    var sm = document.getElementById('eng-start-m');
-    var em = document.getElementById('eng-end-m');
-    if (sm) { sm.min = E_MIN; sm.max = E_MAX; sm.value = E_START; }
-    if (em) { em.min = E_MIN; em.max = E_MAX; em.value = E_END; }
     engUpdatePresetHighlight();
     engRenderFilter();
-    engPopulateMarketSelect();
+    engPopulateMarketBar();
     document.getElementById('eng-live-dot').style.display = '';
     document.getElementById('eng-loading').style.display = 'none';
     document.getElementById('eng-content').style.display = '';
@@ -1391,15 +1380,21 @@ function engFmt(n) {
 }
 
 function engRenderFilter() {
-  document.getElementById('eng-filter').innerHTML = ["All","EMEA","APAC","NORAM","LATAM"].map(function(r){
-    return '<div class="pill'+(r===E_REGION?' active':'')+'" onclick="engSetRegion(\''+r+'\')">'+(r==="All"?"All regions":r)+'</div>';
+  document.getElementById('eng-filter').innerHTML = ["All","APAC","EMEA","LATAM","NORAM"].map(function(r){
+    return '<div class="pill'+(r===E_REGION?' active':'')+'" onclick="engSetRegion(\''+r+'\')">'+(r==="All"?"All Markets":r)+'</div>';
   }).join('');
 }
 
 function engSetRegion(r) {
   E_REGION = r; E_MARKET = "All";
   engRenderFilter();
-  engPopulateMarketSelect();
+  engPopulateMarketBar();
+  engRender();
+}
+
+function engSetMarket(m) {
+  E_MARKET = m;
+  engPopulateMarketBar();
   engRender();
 }
 
@@ -1413,15 +1408,6 @@ function engPreset(p) {
   }
   else if (p === 'ytd') { E_START = now.getFullYear()+'-01'; E_END = curM; }
   else { E_START = p+'-01'; E_END = p+'-12'; }
-  document.getElementById('eng-start-m').value = E_START;
-  document.getElementById('eng-end-m').value   = E_END;
-  engUpdatePresetHighlight();
-  engRender();
-}
-
-function engDateChange() {
-  E_START = document.getElementById('eng-start-m').value || E_MIN;
-  E_END   = document.getElementById('eng-end-m').value   || E_MAX;
   engUpdatePresetHighlight();
   engRender();
 }
@@ -1442,54 +1428,35 @@ function engUpdatePresetHighlight() {
   });
 }
 
-function engPopulateMarketSelect() {
+function engPopulateMarketBar() {
   if (!ENG_DATA) return;
+  var bar   = document.getElementById('eng-market-bar');
+  var pills = document.getElementById('eng-market-pills');
+  if (E_REGION === "All") { bar.style.display = 'none'; E_MARKET = "All"; return; }
   var mktsMap = {};
   ['software','webinars','gm'].forEach(function(k){
     var s=(ENG_DATA.streams||[]).find(function(x){return x.key===k;});
     if(!s) return;
     (s.by_market||[]).forEach(function(m){
       if(!m.market) return;
-      if(E_REGION!=="All" && m.region!==E_REGION) return;
-      if(!mktsMap[m.market]) mktsMap[m.market]=m.region||"Other";
+      if(m.region!==E_REGION) return;
+      mktsMap[m.market]=true;
     });
   });
-  var REG_ORDER=["EMEA","APAC","NORAM","LATAM","Other"], byReg={};
-  Object.keys(mktsMap).forEach(function(mk){ var r=mktsMap[mk]; (byReg[r]=byReg[r]||[]).push(mk); });
-  var html='<option value="All">All markets</option>';
-  if(E_REGION==="All"){
-    REG_ORDER.forEach(function(r){
-      var ms=(byReg[r]||[]).sort(function(a,b){return a.localeCompare(b);});
-      if(!ms.length) return;
-      html+='<optgroup label="'+r+'">'+ms.map(function(m){return '<option value="'+m.replace(/"/g,'&quot;')+'">'+m+'</option>';}).join('')+'</optgroup>';
-    });
-  } else {
-    html+=Object.keys(mktsMap).sort(function(a,b){return a.localeCompare(b);}).map(function(m){
-      return '<option value="'+m.replace(/"/g,'&quot;')+'">'+m+'</option>';
-    }).join('');
-  }
+  var mkts=Object.keys(mktsMap).sort(function(a,b){return a.localeCompare(b);});
+  if(!mkts.length){ bar.style.display='none'; E_MARKET="All"; return; }
   if(E_MARKET!=="All" && !mktsMap[E_MARKET]) E_MARKET="All";
-  var sel=document.getElementById('eng-market-sel');
-  sel.innerHTML=html; sel.value=E_MARKET;
-  sel.onchange=function(){ E_MARKET=sel.value||"All"; engRender(); };
-  var note=document.getElementById('eng-market-note');
-  note.innerHTML=E_MARKET==="All"?"drills the market-detail table below":"focused on <b>"+E_MARKET+"</b>";
-}
-
-function engUpdateScope() {
-  var scopeR=E_REGION==="All"?"All regions":E_REGION;
-  var scopeM=E_MARKET!=="All"?" &middot; "+E_MARKET:"";
-  var yearLabel = (E_START===E_MIN&&E_END===E_MAX) ? "all time" : E_START.slice(0,4)+(E_START.slice(0,4)!==E_END.slice(0,4)?" &ndash; "+E_END.slice(0,4):"");
-  document.getElementById('eng-scopebar').innerHTML=
-    "Showing <b>"+scopeR+scopeM+"</b> &middot; <b>"+yearLabel+"</b>"
-    +". Video plays have no regional breakdown.";
+  pills.innerHTML=['All'].concat(mkts).map(function(m){
+    var label=m==='All'?'All '+E_REGION:m;
+    return '<div class="pill'+(m===E_MARKET?' active':'')+'" onclick="engSetMarket(\''+m.replace(/\\/g,'\\\\').replace(/'/g,"\\'")+'\')">' +label+ '</div>';
+  }).join('');
+  bar.style.display='';
 }
 
 function engRender() {
   if(!ENG_DATA) return;
   if(E_START>E_END){ var t=E_START; E_START=E_END; E_END=t; }
   var wm=engWindowMonths(), streams=ENG_DATA.streams||[];
-  engUpdateScope();
   engRenderKPIs(streams,wm);
   engRenderMix(streams,wm);
   engRenderTable(streams,wm);
