@@ -1550,31 +1550,51 @@ function engRenderTable(streams,wm){
   document.getElementById('eng-table').innerHTML='<table><thead>'+head+'</thead><tbody>'+rows+'</tbody></table>';
 }
 
+function engFmtZ(n){
+  // Like engFmt but returns "0" instead of "—" for zero (years with no activity yet)
+  if(n==null||n===undefined||isNaN(+n)) return '&mdash;';
+  return Math.round(+n).toLocaleString('en-GB');
+}
 function engRenderTimeTable(streams,wm){
-  // Always bucket by year
   var yrs={}; wm.forEach(function(m){yrs[m.slice(0,4)]=true;});
   var buckets=Object.keys(yrs).sort().map(function(y){
     return{key:y,label:y,months:wm.filter(function(m){return m.startsWith(y);})};
   });
   document.getElementById('eng-time-hint').textContent=
     "for "+(E_REGION==="All"?"all regions":E_REGION)+" — by year";
-  var head='<tr><th>Year</th>'+streams.map(function(s){
+
+  // Header cells: override global white-space:nowrap so long labels wrap
+  var TH='style="white-space:normal;word-break:break-word;max-width:105px;min-width:72px;'
+        +'padding:6px 8px;vertical-align:bottom;line-height:1.3"';
+  var TH1='style="white-space:nowrap;min-width:46px;padding:6px 8px;vertical-align:bottom"';
+
+  var head='<tr><th '+TH1+'>Year</th>'+streams.map(function(s){
     var note=!s.regional?' *':'';
-    return '<th class="num">'+s.label+note+'</th>';
+    return '<th class="num" '+TH+'>'+s.label+note+'</th>';
   }).join('')+'</tr>';
+
+  var TD='style="padding:7px 8px"';
+  var TDN='style="padding:7px 8px;text-align:right;white-space:nowrap"';
   var rows=buckets.map(function(b){
-    return '<tr><td>'+b.label+'</td>'+streams.map(function(s){
-      return '<td class="num">'+engFmt(engSumStream(s,E_REGION,b.months))+'</td>';
+    return '<tr><td '+TD+'>'+b.label+'</td>'+streams.map(function(s){
+      return '<td class="num" '+TDN+'>'+engFmtZ(engSumStream(s,E_REGION,b.months))+'</td>';
     }).join('')+'</tr>';
   }).join('');
-  var foot='<tr><td><b>Total</b></td>'+streams.map(function(s){
-    return '<td class="num"><b>'+engFmt(engSumStream(s,E_REGION,wm))+'</b></td>';
+
+  // Total row: override tfoot td global style (gray 11px) to bold dark 14px
+  var FTD='style="font-size:14px;font-weight:700;color:#3c3c3b;padding:9px 8px;'
+         +'border-top:2px solid #e0e0df;border-bottom:none"';
+  var FTDN='style="font-size:14px;font-weight:700;color:#3c3c3b;padding:9px 8px;'
+          +'text-align:right;white-space:nowrap;border-top:2px solid #e0e0df;border-bottom:none"';
+  var foot='<tr><td '+FTD+'>Total</td>'+streams.map(function(s){
+    return '<td '+FTDN+'>'+engFmtZ(engSumStream(s,E_REGION,wm))+'</td>';
   }).join('')+'</tr>';
+
   document.getElementById('eng-timetable').innerHTML=
-    '<table><thead>'+head+'</thead><tbody>'+rows+'</tbody><tfoot>'+foot+'</tfoot></table>'
+    '<table style="font-size:12px"><thead>'+head+'</thead><tbody>'+rows+'</tbody>'
+    +'<tfoot>'+foot+'</tfoot></table>'
     +'<div style="font-size:11px;color:#9d9d9d;margin-top:6px">'
-    +'* All-regions total (no regional breakdown). '
-    +'‡ All-time total (year filter does not apply — no monthly grain in source).'
+    +'* Video plays are not region-specific — shown as an all-regions total.'
     +'</div>';
 }
 
