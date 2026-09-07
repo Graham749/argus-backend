@@ -63,25 +63,28 @@ module.exports = async function eosEngagement(req, res) {
         ORDER BY month
       `),
 
-      // 3. Video plays by month (all-time, no regional breakdown)
+      // 3. Video plays by month — DISTINCT tracking_id matches PBI Watch Count DAX measure
       query(`
-        SELECT FORMAT(CAST(watch_date AS DATE), 'yyyy-MM') AS month, COUNT(*) AS plays, SUM(watch_time_secs) AS watch_secs
-        FROM dbo.v_silver_eos_videos
-        WHERE watch_date IS NOT NULL
-        GROUP BY FORMAT(CAST(watch_date AS DATE), 'yyyy-MM')
+        SELECT FORMAT(CAST(time AS DATE), 'yyyy-MM') AS month,
+               COUNT(DISTINCT tracking_id) AS plays,
+               SUM(watch_time_secs) AS watch_secs
+        FROM dbo.sp_raw_eos2_videos
+        WHERE time IS NOT NULL
+          AND tracking_id IS NOT NULL
+        GROUP BY FORMAT(CAST(time AS DATE), 'yyyy-MM')
         ORDER BY month
       `),
 
-      // 4. Cases by month + type (for time series)
+      // 4. Cases by month + type — date_of_work = "delivered date" per reference notes
       query(`
         SELECT
-          FORMAT(TRY_CAST(created_date AS DATE), 'yyyy-MM') AS month,
+          FORMAT(TRY_CAST(date_of_work AS DATE), 'yyyy-MM') AS month,
           COALESCE(case_type, 'Other') AS case_type,
           COUNT(*) AS cnt
         FROM dbo.v_silver_sf_cases
-        WHERE TRY_CAST(created_date AS DATE) IS NOT NULL
+        WHERE TRY_CAST(date_of_work AS DATE) IS NOT NULL
           AND account_id IS NOT NULL
-        GROUP BY FORMAT(TRY_CAST(created_date AS DATE), 'yyyy-MM'), COALESCE(case_type, 'Other')
+        GROUP BY FORMAT(TRY_CAST(date_of_work AS DATE), 'yyyy-MM'), COALESCE(case_type, 'Other')
         ORDER BY month
       `),
 
@@ -126,12 +129,12 @@ module.exports = async function eosEngagement(req, res) {
         GROUP BY sf_account_code
       `),
 
-      // 9. Cases by account + type (for regional split)
+      // 9. Cases by account + type — date_of_work consistent with query 4
       query(`
         SELECT mdm.sf_account_code, COALESCE(c.case_type, 'Other') AS case_type, COUNT(*) AS cnt
         FROM dbo.v_silver_sf_cases c
         JOIN dbo.gold_mdm_account mdm ON mdm.sf_account_id = c.account_id
-        WHERE TRY_CAST(c.created_date AS DATE) IS NOT NULL AND c.account_id IS NOT NULL
+        WHERE TRY_CAST(c.date_of_work AS DATE) IS NOT NULL AND c.account_id IS NOT NULL
         GROUP BY mdm.sf_account_code, COALESCE(c.case_type, 'Other')
       `),
     ]);
@@ -156,11 +159,12 @@ module.exports = async function eosEngagement(req, res) {
       runsByRegion[region] = (runsByRegion[region] || 0) + cnt;
       if (!runsByMarket[mkt]) runsByMarket[mkt] = { total: 0, region };
       runsByMarket[mkt].total += cnt;
-      // Distribute yearly total evenly across 12 months
-      const perMonth = Math.round(cnt / 12);
+      // Distribute yearly total across 12 months; remainder goes to month 12 so sum is exact
+      const perMonth = Math.floor(cnt / 12);
+      const remainder = cnt - perMonth * 12;
       for (let m = 1; m <= 12; m++) {
         const key = yr + '-' + String(m).padStart(2, '0');
-        runsByMonth[key] = (runsByMonth[key] || 0) + perMonth;
+        runsByMonth[key] = (runsByMonth[key] || 0) + (m === 12 ? perMonth + remainder : perMonth);
       }
     }
     const runsMktArr = Object.entries(runsByMarket)
