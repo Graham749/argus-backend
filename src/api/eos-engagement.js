@@ -119,19 +119,26 @@ module.exports = async function eosEngagement(req, res) {
       `),
 
       // 8. Downloads by region — derived from product code (what was downloaded), not account region
-      //    bra/chl/mex → LATAM; nem/wem/jpn/jap/ind/kor/mys/phl/sgp → APAC
-      //    ercot/pjm/caiso/miso/wecc/abt/nyiso/isone/spp → NORAM; else → EMEA
+      //    NORAM evaluated before APAC so wecc% is caught before wec% (Australia WEM)
       query(`
         SELECT
           CASE
             WHEN LOWER(product) LIKE 'bra%' OR LOWER(product) LIKE 'chl%' OR LOWER(product) LIKE 'mex%' THEN 'LATAM'
-            WHEN LOWER(product) LIKE 'nem%' OR LOWER(product) LIKE 'wem%'
-              OR LOWER(product) LIKE 'jpn%' OR LOWER(product) LIKE 'jap%' OR LOWER(product) LIKE 'ind%'
-              OR LOWER(product) LIKE 'kor%' OR LOWER(product) LIKE 'mys%'
-              OR LOWER(product) LIKE 'phl%' OR LOWER(product) LIKE 'sgp%' THEN 'APAC'
-            WHEN LOWER(product) LIKE 'ercot%' OR LOWER(product) LIKE 'pjm%' OR LOWER(product) LIKE 'caiso%'
-              OR LOWER(product) LIKE 'miso%' OR LOWER(product) LIKE 'wecc%' OR LOWER(product) LIKE 'abt%'
-              OR LOWER(product) LIKE 'nyiso%' OR LOWER(product) LIKE 'isone%' OR LOWER(product) LIKE 'spp%' THEN 'NORAM'
+            WHEN LOWER(product) LIKE 'erc%'   OR LOWER(product) LIKE 'pjm%'
+              OR LOWER(product) LIKE 'cai%'   OR LOWER(product) LIKE 'cas%'
+              OR LOWER(product) LIKE 'sp15%'  OR LOWER(product) LIKE 'zp26%' OR LOWER(product) LIKE 'np15%'
+              OR LOWER(product) LIKE 'mis%'   OR LOWER(product) LIKE 'isone%'
+              OR LOWER(product) LIKE 'ny%'    OR LOWER(product) LIKE 'ne%'
+              OR LOWER(product) LIKE 'alb%'   OR LOWER(product) LIKE 'abt%'  OR LOWER(product) LIKE 'ont%'
+              OR LOWER(product) LIKE 'spp%'   OR LOWER(product) LIKE 'wecc%' THEN 'NORAM'
+            WHEN LOWER(product) LIKE 'aus%'   OR LOWER(product) LIKE 'ais%'
+              OR LOWER(product) LIKE 'nsw%'   OR LOWER(product) LIKE 'vic%'
+              OR LOWER(product) LIKE 'saa%'   OR LOWER(product) LIKE 'qld%'  OR LOWER(product) LIKE 'tas%'
+              OR LOWER(product) LIKE 'waa%'   OR LOWER(product) LIKE 'wem%'  OR LOWER(product) LIKE 'wec%'
+              OR LOWER(product) LIKE 'jpn%'   OR LOWER(product) LIKE 'jap%'
+              OR LOWER(product) LIKE 'phl%'   OR LOWER(product) LIKE 'sin%'  OR LOWER(product) LIKE 'sgp%'
+              OR LOWER(product) LIKE 'kor%'   OR LOWER(product) LIKE 'tw%'
+              OR LOWER(product) LIKE 'ind%'   OR LOWER(product) LIKE 'mys%' THEN 'APAC'
             WHEN product IS NULL THEN 'Other'
             ELSE 'EMEA'
           END AS region,
@@ -143,13 +150,21 @@ module.exports = async function eosEngagement(req, res) {
         GROUP BY
           CASE
             WHEN LOWER(product) LIKE 'bra%' OR LOWER(product) LIKE 'chl%' OR LOWER(product) LIKE 'mex%' THEN 'LATAM'
-            WHEN LOWER(product) LIKE 'nem%' OR LOWER(product) LIKE 'wem%'
-              OR LOWER(product) LIKE 'jpn%' OR LOWER(product) LIKE 'jap%' OR LOWER(product) LIKE 'ind%'
-              OR LOWER(product) LIKE 'kor%' OR LOWER(product) LIKE 'mys%'
-              OR LOWER(product) LIKE 'phl%' OR LOWER(product) LIKE 'sgp%' THEN 'APAC'
-            WHEN LOWER(product) LIKE 'ercot%' OR LOWER(product) LIKE 'pjm%' OR LOWER(product) LIKE 'caiso%'
-              OR LOWER(product) LIKE 'miso%' OR LOWER(product) LIKE 'wecc%' OR LOWER(product) LIKE 'abt%'
-              OR LOWER(product) LIKE 'nyiso%' OR LOWER(product) LIKE 'isone%' OR LOWER(product) LIKE 'spp%' THEN 'NORAM'
+            WHEN LOWER(product) LIKE 'erc%'   OR LOWER(product) LIKE 'pjm%'
+              OR LOWER(product) LIKE 'cai%'   OR LOWER(product) LIKE 'cas%'
+              OR LOWER(product) LIKE 'sp15%'  OR LOWER(product) LIKE 'zp26%' OR LOWER(product) LIKE 'np15%'
+              OR LOWER(product) LIKE 'mis%'   OR LOWER(product) LIKE 'isone%'
+              OR LOWER(product) LIKE 'ny%'    OR LOWER(product) LIKE 'ne%'
+              OR LOWER(product) LIKE 'alb%'   OR LOWER(product) LIKE 'abt%'  OR LOWER(product) LIKE 'ont%'
+              OR LOWER(product) LIKE 'spp%'   OR LOWER(product) LIKE 'wecc%' THEN 'NORAM'
+            WHEN LOWER(product) LIKE 'aus%'   OR LOWER(product) LIKE 'ais%'
+              OR LOWER(product) LIKE 'nsw%'   OR LOWER(product) LIKE 'vic%'
+              OR LOWER(product) LIKE 'saa%'   OR LOWER(product) LIKE 'qld%'  OR LOWER(product) LIKE 'tas%'
+              OR LOWER(product) LIKE 'waa%'   OR LOWER(product) LIKE 'wem%'  OR LOWER(product) LIKE 'wec%'
+              OR LOWER(product) LIKE 'jpn%'   OR LOWER(product) LIKE 'jap%'
+              OR LOWER(product) LIKE 'phl%'   OR LOWER(product) LIKE 'sin%'  OR LOWER(product) LIKE 'sgp%'
+              OR LOWER(product) LIKE 'kor%'   OR LOWER(product) LIKE 'tw%'
+              OR LOWER(product) LIKE 'ind%'   OR LOWER(product) LIKE 'mys%' THEN 'APAC'
             WHEN product IS NULL THEN 'Other'
             ELSE 'EMEA'
           END
