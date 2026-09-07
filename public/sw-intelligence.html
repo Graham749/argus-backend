@@ -83,6 +83,12 @@ tr.expand-detail td{background:#f4f8fb;padding:10px 16px 14px;border-bottom:1px 
 tr.expand-detail.hidden{display:none}
 tfoot td{font-size:11px;color:#9d9d9d;padding:6px 10px;border-top:1px solid #e6e6e5}
 
+/* ── Engagement time table — compact rows ── */
+#eng-timetable td{padding:4px 8px;font-size:12px;vertical-align:middle}
+#eng-timetable th{padding:4px 8px 5px;font-size:10px;white-space:normal;word-break:break-word;max-width:105px;min-width:68px;vertical-align:bottom;line-height:1.25}
+#eng-timetable th:first-child{white-space:nowrap;min-width:42px;max-width:none}
+#eng-timetable tfoot td{font-size:13px;font-weight:700;color:#3c3c3b;padding:7px 8px;border-top:2px solid #d8d8d7;border-bottom:none}
+
 /* ── Badges ── */
 .pg{background:#e8f5e9;color:#2e7d32;padding:2px 8px;border-radius:100px;font-size:11px;font-weight:600;display:inline-block;white-space:nowrap}
 .py{background:#fff3e0;color:#e65100;padding:2px 8px;border-radius:100px;font-size:11px;font-weight:600;display:inline-block;white-space:nowrap}
@@ -1563,36 +1569,23 @@ function engRenderTimeTable(streams,wm){
   document.getElementById('eng-time-hint').textContent=
     "for "+(E_REGION==="All"?"all regions":E_REGION)+" — by year";
 
-  // Header cells: override global white-space:nowrap; tight padding; align bottom so wrapped lines sit flush
-  var TH='style="white-space:normal;word-break:break-word;max-width:100px;min-width:68px;'
-        +'padding:4px 8px 5px;vertical-align:bottom;line-height:1.25;font-size:10px"';
-  var TH1='style="white-space:nowrap;min-width:42px;padding:4px 8px 5px;vertical-align:bottom;font-size:10px"';
-
-  var head='<tr><th '+TH1+'>Year</th>'+streams.map(function(s){
+  var head='<tr><th>Year</th>'+streams.map(function(s){
     var note=!s.regional?' *':'';
-    return '<th class="num" '+TH+'>'+s.label+note+'</th>';
+    return '<th class="num">'+s.label+note+'</th>';
   }).join('')+'</tr>';
 
-  var TD='style="padding:4px 8px;font-size:12px"';
-  var TDN='style="padding:4px 8px;text-align:right;white-space:nowrap;font-size:12px"';
   var rows=buckets.map(function(b){
-    return '<tr><td '+TD+'>'+b.label+'</td>'+streams.map(function(s){
-      return '<td '+TDN+'>'+engFmtZ(engSumStream(s,E_REGION,b.months))+'</td>';
+    return '<tr><td>'+b.label+'</td>'+streams.map(function(s){
+      return '<td class="num">'+engFmtZ(engSumStream(s,E_REGION,b.months))+'</td>';
     }).join('')+'</tr>';
   }).join('');
 
-  // Total row: bold, dark, slightly larger — overrides global tfoot td (gray 11px)
-  var FTD='style="font-size:13px;font-weight:700;color:#3c3c3b;padding:7px 8px;'
-         +'border-top:2px solid #d8d8d7;border-bottom:none"';
-  var FTDN='style="font-size:13px;font-weight:700;color:#3c3c3b;padding:7px 8px;'
-          +'text-align:right;white-space:nowrap;border-top:2px solid #d8d8d7;border-bottom:none"';
-  var foot='<tr><td '+FTD+'>Total</td>'+streams.map(function(s){
-    return '<td '+FTDN+'>'+engFmtZ(engSumStream(s,E_REGION,wm))+'</td>';
+  var foot='<tr><td>Total</td>'+streams.map(function(s){
+    return '<td class="num">'+engFmtZ(engSumStream(s,E_REGION,wm))+'</td>';
   }).join('')+'</tr>';
 
   document.getElementById('eng-timetable').innerHTML=
-    '<table style="font-size:12px;border-spacing:0"><thead>'+head+'</thead><tbody>'+rows+'</tbody>'
-    +'<tfoot>'+foot+'</tfoot></table>'
+    '<table><thead>'+head+'</thead><tbody>'+rows+'</tbody><tfoot>'+foot+'</tfoot></table>'
     +'<div style="font-size:11px;color:#9d9d9d;margin-top:6px">'
     +'* Video plays are not region-specific — shown as an all-regions total.'
     +'</div>';
