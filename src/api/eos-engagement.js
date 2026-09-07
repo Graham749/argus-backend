@@ -62,38 +62,38 @@ module.exports = async function eosEngagement(req, res) {
         ORDER BY total DESC
       `),
 
-      // 2. EOS downloads by month
+      // 2. EOS downloads by month — all time (no date cutoff)
       query(`
         SELECT
           FORMAT(CAST(download_date AS DATE), 'yyyy-MM') AS month,
           COUNT(*) AS cnt,
           COUNT(DISTINCT sf_account_code) AS accounts
         FROM dbo.v_silver_eos_downloads
-        WHERE download_date >= DATEADD(YEAR, -4, GETDATE())
+        WHERE download_date IS NOT NULL
         GROUP BY FORMAT(CAST(download_date AS DATE), 'yyyy-MM')
         ORDER BY month
       `),
 
-      // 3. Video plays by month
+      // 3. Video plays by month — all time
       query(`
         SELECT
           FORMAT(CAST(watch_date AS DATE), 'yyyy-MM') AS month,
           COUNT(*) AS plays,
           SUM(watch_time_secs) AS watch_secs
         FROM dbo.v_silver_eos_videos
-        WHERE watch_date >= DATEADD(YEAR, -4, GETDATE())
+        WHERE watch_date IS NOT NULL
         GROUP BY FORMAT(CAST(watch_date AS DATE), 'yyyy-MM')
         ORDER BY month
       `),
 
-      // 4. SF cases by month and type
+      // 4. SF cases by month and type — all time
       query(`
         SELECT
           FORMAT(TRY_CAST(created_date AS DATE), 'yyyy-MM') AS month,
           COALESCE(case_type, 'Other') AS case_type,
           COUNT(*) AS cnt
         FROM dbo.v_silver_sf_cases
-        WHERE TRY_CAST(created_date AS DATE) >= DATEADD(YEAR, -4, GETDATE())
+        WHERE TRY_CAST(created_date AS DATE) IS NOT NULL
           AND account_id IS NOT NULL
         GROUP BY
           FORMAT(TRY_CAST(created_date AS DATE), 'yyyy-MM'),

@@ -124,7 +124,7 @@ tfoot td{font-size:11px;color:#9d9d9d;padding:6px 10px;border-top:1px solid #e6e
     <span id="live-dot" style="display:none;font-size:10px;font-weight:700;letter-spacing:.06em;color:#2e7d32;white-space:nowrap;">● LIVE</span>
     <span id="demo-dot" style="display:none;font-size:10px;font-weight:700;letter-spacing:.06em;color:#e65100;white-space:nowrap;">● DEMO</span>
   </div>
-  <div class="page-tab" id="eng-tab" onclick="switchTab('engagement')">Client Engagement</div>
+  <div class="page-tab" id="eng-tab" onclick="switchTab('engagement')">Total Client Engagement</div>
   <div class="page-tab soon">Subscription Analytics Health <span class="page-tab-badge">Coming soon</span></div>
 </div>
 
@@ -232,47 +232,73 @@ tfoot td{font-size:11px;color:#9d9d9d;padding:6px 10px;border-top:1px solid #e6e
 
 </main>
 
-<!-- ══ CLIENT ENGAGEMENT TAB ════════════════════════════════════════════════ -->
-<div id="engagement-section" style="display:none;max-width:1320px;margin:0 auto;padding:24px">
+<!-- ══ TOTAL CLIENT ENGAGEMENT TAB ═══════════════════════════════════════════ -->
+<div id="engagement-section" style="display:none">
 
-  <div class="filter-bar">
-    <span class="filter-label">Region:</span>
-    <div class="pill active" data-eng-region="ALL" onclick="engSetRegion(this,'ALL')">All</div>
-    <div class="pill" data-eng-region="EMEA" onclick="engSetRegion(this,'EMEA')">EMEA</div>
-    <div class="pill" data-eng-region="APAC" onclick="engSetRegion(this,'APAC')">APAC</div>
-    <div class="pill" data-eng-region="NORAM" onclick="engSetRegion(this,'NORAM')">NORAM</div>
-    <div class="pill" data-eng-region="LATAM" onclick="engSetRegion(this,'LATAM')">LATAM</div>
-    <span style="width:1px;height:20px;background:#e6e6e5;margin:0 8px;flex-shrink:0"></span>
-    <span class="filter-label">Period:</span>
-    <div class="pill active" data-eng-period="all" onclick="engSetPeriod(this,'all')">All time</div>
-    <div class="pill" data-eng-period="12m" onclick="engSetPeriod(this,'12m')">Last 12m</div>
-    <div class="pill" data-eng-period="3m" onclick="engSetPeriod(this,'3m')">Last 3m</div>
-  </div>
-
-  <div id="eng-kpi-row" class="kpi-row"></div>
-
-  <div id="eng-loading" style="text-align:center;padding:40px;color:#9d9d9d;font-size:13px">
-    <div class="spinner" style="margin:0 auto 12px"></div>
-    Loading engagement data from Fabric…
-  </div>
-
-  <div id="eng-content" style="display:none">
-    <div class="card" style="padding:0;overflow:hidden;overflow-x:auto;margin-bottom:16px">
-      <div style="padding:14px 18px;font-size:12px;font-weight:700;color:#3c3c3b;border-bottom:1px solid #e6e6e5">Monthly activity (last 36 months)</div>
-      <table id="eng-monthly-table"></table>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-      <div class="card" style="padding:0;overflow:hidden">
-        <div style="padding:14px 18px;font-size:12px;font-weight:700;color:#3c3c3b;border-bottom:1px solid #e6e6e5">Software runs by market</div>
-        <table id="eng-runs-table"></table>
-      </div>
-      <div class="card" style="padding:0;overflow:hidden">
-        <div style="padding:14px 18px;font-size:12px;font-weight:700;color:#3c3c3b;border-bottom:1px solid #e6e6e5">Events by market (webinars + group meetings)</div>
-        <table id="eng-events-table"></table>
-      </div>
+  <!-- Filter bar -->
+  <div style="background:#fff;border-bottom:1px solid #e6e6e5;padding:10px 24px">
+    <div class="filter-bar" style="margin-bottom:0">
+      <span class="filter-label">Region:</span>
+      <div class="pill active" data-eng-region="ALL" onclick="engSetRegion(this,'ALL')">All regions</div>
+      <div class="pill" data-eng-region="EMEA" onclick="engSetRegion(this,'EMEA')">EMEA</div>
+      <div class="pill" data-eng-region="APAC" onclick="engSetRegion(this,'APAC')">APAC</div>
+      <div class="pill" data-eng-region="NORAM" onclick="engSetRegion(this,'NORAM')">NORAM</div>
+      <div class="pill" data-eng-region="LATAM" onclick="engSetRegion(this,'LATAM')">LATAM</div>
+      <span style="width:1px;height:20px;background:#e6e6e5;margin:0 8px;flex-shrink:0"></span>
+      <span class="filter-label">Period:</span>
+      <div class="pill active" data-eng-period="all" onclick="engSetPeriod(this,'all')">All time</div>
+      <div class="pill" data-eng-period="12m" onclick="engSetPeriod(this,'12m')">Last 12m</div>
+      <div class="pill" data-eng-period="3m" onclick="engSetPeriod(this,'3m')">Last 3m</div>
     </div>
   </div>
 
+  <div style="max-width:1320px;margin:0 auto;padding:24px">
+
+    <!-- 1. Engagement summary -->
+    <div style="font-size:13px;font-weight:700;color:#3c3c3b;margin-bottom:12px;text-transform:uppercase;letter-spacing:.04em">Engagement summary</div>
+    <div id="eng-kpi-row" class="kpi-row"></div>
+
+    <div id="eng-loading" style="text-align:center;padding:40px;color:#9d9d9d;font-size:13px">
+      <div class="spinner" style="margin:0 auto 12px"></div>
+      Loading engagement data from Fabric…
+    </div>
+
+    <div id="eng-content" style="display:none">
+
+      <!-- 2. Regional distribution by stream -->
+      <div style="font-size:13px;font-weight:700;color:#3c3c3b;margin:20px 0 12px;text-transform:uppercase;letter-spacing:.04em">Regional distribution by stream</div>
+      <div class="card">
+        <div id="eng-legend" style="display:flex;flex-wrap:wrap;gap:14px;margin-bottom:14px;font-size:11px;color:#9d9d9d"></div>
+        <div id="eng-mix"></div>
+      </div>
+
+      <!-- 3. Regional breakdown -->
+      <div style="font-size:13px;font-weight:700;color:#3c3c3b;margin:20px 0 12px;text-transform:uppercase;letter-spacing:.04em">Regional breakdown</div>
+      <div class="card" style="padding:0;overflow-x:auto">
+        <table id="eng-region-table"></table>
+      </div>
+
+      <!-- 4. Breakdown over time -->
+      <div style="font-size:13px;font-weight:700;color:#3c3c3b;margin:20px 0 12px;text-transform:uppercase;letter-spacing:.04em">Breakdown over time</div>
+      <div class="card" style="padding:0;overflow-x:auto">
+        <table id="eng-monthly-table"></table>
+      </div>
+
+      <!-- 5. Market detail -->
+      <div style="font-size:13px;font-weight:700;color:#3c3c3b;margin:20px 0 12px;text-transform:uppercase;letter-spacing:.04em">Market detail</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="card" style="padding:0;overflow:hidden">
+          <div style="padding:14px 18px;font-size:12px;font-weight:700;color:#3c3c3b;border-bottom:1px solid #e6e6e5">Software runs by market</div>
+          <table id="eng-runs-table"></table>
+        </div>
+        <div class="card" style="padding:0;overflow:hidden">
+          <div style="padding:14px 18px;font-size:12px;font-weight:700;color:#3c3c3b;border-bottom:1px solid #e6e6e5">Events by market (webinars + group meetings)</div>
+          <table id="eng-events-table"></table>
+        </div>
+      </div>
+
+    </div><!-- /eng-content -->
+  </div>
 </div>
 
 <script>
@@ -1291,32 +1317,82 @@ async function loadEngagement() {
   }
 }
 
+// Format number with full commas (no k/M abbreviation) — matches reference
 function engFmt(n) {
   if (n == null || isNaN(+n)) return '—';
-  n = +n;
-  if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
-  if (n >= 1000)    return (n / 1000).toFixed(1) + 'k';
-  return n.toLocaleString();
+  return Math.round(+n).toLocaleString('en-GB');
 }
 
 function engRender() {
   if (!ENG_DATA) return;
   var streams = ENG_DATA.streams || [];
-  var COLORS = { software:'#288184', downloads:'#1565c0', videos:'#7b1fa2', cases:'#e65100', webinars:'#2e7d32', gm:'#00897b' };
+  var RCOLORS = { EMEA:'#2563eb', APAC:'#0891b2', NORAM:'#7c3aed', LATAM:'#ea580c', Other:'#94a3b8' };
+  var REGIONS_ORD = ['EMEA','APAC','NORAM','LATAM','Other'];
+  var STREAM_COLORS = { software:'#288184', downloads:'#1565c0', videos:'#7b1fa2', cases:'#e65100', webinars:'#2e7d32', gm:'#00897b' };
 
-  // KPI tiles
+  function getVal(s) {
+    return engPeriod === '3m' ? s.last_3m : engPeriod === '12m' ? s.last_12m : s.total;
+  }
+
+  // 1. KPI tiles — show region-specific values when region filter active
   var kpiHtml = streams.map(function(s) {
-    var val = engPeriod === '3m' ? s.last_3m : engPeriod === '12m' ? s.last_12m : s.total;
-    var col = COLORS[s.key] || '#3c3c3b';
-    var sub = engPeriod !== 'all' ? ('all time: ' + engFmt(s.total))
-            : (s.watch_mins_total ? Math.round(s.watch_mins_total / 60).toLocaleString() + ' watch hrs total' : s.unit);
+    var val = getVal(s);
+    // Apply region filter for regional streams
+    if (engRegion !== 'ALL' && s.by_region) {
+      val = s.by_region[engRegion] || 0;
+    }
+    var col = STREAM_COLORS[s.key] || '#3c3c3b';
+    var pct = (engRegion !== 'ALL' && s.by_region && s.total > 0) ? (' · ' + Math.round(val / s.total * 1000) / 10 + '% of total') : '';
+    var sub = engPeriod !== 'all' ? ('all time: ' + engFmt(s.total) + pct) : (s.unit + pct);
     return '<div class="kpi"><div class="kpi-label">' + s.label + '</div>'
-      + '<div class="kpi-value" style="color:' + col + ';font-size:22px">' + engFmt(val) + '</div>'
+      + '<div class="kpi-value" style="color:' + col + ';font-size:1.55rem;letter-spacing:-.02em">' + engFmt(val) + '</div>'
       + '<div class="kpi-sub">' + sub + '</div></div>';
   }).join('');
   document.getElementById('eng-kpi-row').innerHTML = kpiHtml;
 
-  // Monthly table
+  // 2. Regional distribution stacked bars (only regional streams)
+  var regStreams = streams.filter(function(s) { return s.by_region; });
+  document.getElementById('eng-legend').innerHTML = REGIONS_ORD.map(function(r) {
+    return '<span style="display:inline-flex;align-items:center;gap:5px">'
+      + '<span style="width:10px;height:10px;border-radius:2px;background:' + RCOLORS[r] + ';display:inline-block"></span>' + r + '</span>';
+  }).join('');
+  document.getElementById('eng-mix').innerHTML = regStreams.map(function(s) {
+    var reg = s.by_region || {};
+    var grandTotal = REGIONS_ORD.reduce(function(sum, r) { return sum + (reg[r] || 0); }, 0);
+    if (!grandTotal) return '';
+    var segs = REGIONS_ORD.map(function(r) {
+      var v = reg[r] || 0; if (!v) return '';
+      var pct = v / grandTotal * 100;
+      return '<div style="height:100%;width:' + pct.toFixed(1) + '%;background:' + RCOLORS[r] + ';min-width:2px"></div>';
+    }).join('');
+    var labels = REGIONS_ORD.filter(function(r) { return reg[r] > 0; }).map(function(r) {
+      return '<span style="color:' + RCOLORS[r] + ';font-size:11px;font-weight:600">' + r + ' <b>' + engFmt(reg[r]) + '</b></span>';
+    }).join(' · ');
+    return '<div style="display:grid;grid-template-columns:220px 1fr;gap:14px;align-items:center;margin:10px 0">'
+      + '<div style="font-size:13px;font-weight:600;display:flex;justify-content:space-between;padding-right:10px">'
+      + '<span>' + s.label + '</span><span style="color:#9d9d9d;font-weight:600">' + engFmt(grandTotal) + '</span></div>'
+      + '<div><div style="display:flex;height:22px;border-radius:6px;overflow:hidden;background:#f1f1f0">' + segs + '</div>'
+      + '<div style="margin-top:5px;font-size:11px;color:#9d9d9d">' + labels + '</div></div></div>';
+  }).join('');
+
+  // 3. Regional breakdown table
+  var rThead = '<thead><tr><th>Region</th>' + streams.map(function(s) {
+    return '<th class="num" style="font-size:10px">' + s.label + '</th>';
+  }).join('') + '</tr></thead>';
+  var rRows = REGIONS_ORD.map(function(r) {
+    var dim = (engRegion !== 'ALL' && r !== engRegion) ? 'color:#ccc' : '';
+    return '<tr><td style="' + dim + '"><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:' + RCOLORS[r] + ';margin-right:6px;vertical-align:middle"></span>' + r + '</td>'
+      + streams.map(function(s) {
+          if (!s.by_region) return '<td class="num" style="color:#ccc;' + dim + '">—</td>';
+          var v = s.by_region[r] || 0;
+          return '<td class="num" style="' + dim + '">' + (v ? engFmt(v) : '<span style="color:#ccc">—</span>') + '</td>';
+        }).join('') + '</tr>';
+  }).join('');
+  var totalRow = '<tr style="font-weight:700;border-top:2px solid #e6e6e5"><td>Total</td>'
+    + streams.map(function(s) { return '<td class="num">' + engFmt(s.total) + '</td>'; }).join('') + '</tr>';
+  document.getElementById('eng-region-table').innerHTML = rThead + '<tbody>' + rRows + totalRow + '</tbody>';
+
+  // 4. Monthly table (last 36 months, filtered by period)
   var mStreams = streams.filter(function(s) { return s.by_month && s.by_month.length; });
   var allMo = {};
   mStreams.forEach(function(s) { s.by_month.forEach(function(r) { allMo[r.month] = true; }); });
@@ -1329,14 +1405,14 @@ function engRender() {
     mLookup[s.key] = {};
     s.by_month.forEach(function(r) { mLookup[s.key][r.month] = r.cnt || r.plays || r.attendees || 0; });
   });
-  var thHtml = '<tr><th>Month</th>' + mStreams.map(function(s) { return '<th class="num">' + s.label + '</th>'; }).join('') + '</tr>';
-  var trHtml = sortedMo.map(function(mo) {
+  var mTh = '<tr><th>Month</th>' + mStreams.map(function(s) { return '<th class="num" style="font-size:10px">' + s.label + '</th>'; }).join('') + '</tr>';
+  var mTr = sortedMo.map(function(mo) {
     return '<tr><td>' + mo + '</td>'
       + mStreams.map(function(s) { var v = mLookup[s.key][mo] || 0; return '<td class="num">' + (v ? engFmt(v) : '<span style="color:#d0d0d0">—</span>') + '</td>'; }).join('') + '</tr>';
   }).join('');
-  document.getElementById('eng-monthly-table').innerHTML = '<thead>' + thHtml + '</thead><tbody>' + (trHtml || '<tr><td colspan="' + (mStreams.length+1) + '" class="empty">No data for period</td></tr>') + '</tbody>';
+  document.getElementById('eng-monthly-table').innerHTML = '<thead>' + mTh + '</thead><tbody>' + (mTr || '<tr><td colspan="' + (mStreams.length+1) + '" class="empty">No data for period</td></tr>') + '</tbody>';
 
-  // Runs by market
+  // 5a. Runs by market
   var runsS = streams.find(function(s) { return s.key === 'software'; });
   var runsMkt = ((runsS && runsS.by_market) || []).filter(function(m) { return engRegion === 'ALL' || m.region === engRegion; });
   var rMax = Math.max.apply(null, runsMkt.map(function(m) { return m.total || 0; }).concat([1]));
