@@ -26,6 +26,8 @@ const swIntelligence = require('./api/sw-intelligence');
 const clientTimeline    = require('./api/client-timeline');
 const sfCases           = require('./api/sf-cases');
 const sfOpportunities   = require('./api/sf-opportunities');
+const eosEngagement        = require('./api/eos-engagement');
+const eosEngagementAccount = require('./api/eos-engagement-account');
 const { query: dbQuery } = require('./lib/db');
 const cacheWarmer        = require('./lib/cache-warmer');
 
@@ -88,7 +90,10 @@ app.get('/api/sw-intelligence',   swIntelligence);
 app.get('/api/client-timeline',   clientTimeline);
 app.get('/api/sf-cases',          sfCases);
 app.get('/api/sf-opportunities',  sfOpportunities);
-app.get('/sw-intelligence', (req, res) => res.sendFile(path.join(argusPath, 'sw-intelligence.html')));
+app.get('/api/eos-engagement',         eosEngagement);
+app.get('/api/eos-engagement-account', eosEngagementAccount);
+app.get('/sw-intelligence',   (req, res) => res.sendFile(path.join(argusPath, 'sw-intelligence.html')));
+app.get('/eos-engagement',    (req, res) => res.sendFile(path.join(argusPath, 'eos-engagement.html')));
 
 // Serve Argus dashboard at root
 app.get('/', (req, res) => {

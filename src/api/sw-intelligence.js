@@ -430,8 +430,13 @@ async function handler(req, res) {
         CONVERT(varchar(10), sub.subscription_end_date, 120)  AS end_date,
         CONVERT(varchar(10), sub.renewal_date,          120)  AS renewal_date,
         sub.termination_reason,
-        sub.contract_extension_negotiated
-      FROM dbo.gold_sf_subscriptions sub
+        sub.contract_extension_negotiated,
+        sub.eos_runs_3m,
+        sub.eos_runs_12m,
+        sub.eos_failed_3m,
+        sub.eos_active_users_12m,
+        sub.eos_last_run
+      FROM dbo.v_silver_sf_subscriptions sub
       WHERE sub.Service_Type__c = 'Software'
         AND sub.status IN ('Active', 'Termination in Progress')
         AND COALESCE(sub.is_deleted, 0) = 0
@@ -485,6 +490,20 @@ async function handler(req, res) {
     const amMap = {};
     (amRows || []).forEach(r => { if (r.account_name) amMap[r.account_name] = r.account_manager; });
 
+    // EOS run health per account — read directly from subscription rows (view join)
+    const eosMap = {};
+    rows.forEach(r => {
+      if (r.account && !eosMap[r.account]) {
+        eosMap[r.account] = {
+          runs_3m:      r.eos_runs_3m           || 0,
+          runs_12m:     r.eos_runs_12m          || 0,
+          failed_3m:    r.eos_failed_3m         || 0,
+          active_users: r.eos_active_users_12m  || 0,
+          last_run:     r.eos_last_run          || null,
+        };
+      }
+    });
+
     // SF open pipeline per account
     const oppMap = {};
     oppRows.forEach(r => {
@@ -508,6 +527,12 @@ async function handler(req, res) {
       const opp         = oppMap[c.account] || {};
       c.opp_count       = opp.opp_count  || 0;
       c.pipeline_k      = opp.pipeline_k || 0;
+      const eos         = eosMap[c.account] || eosMap[c.parent] || {};
+      c.eos_runs_3m     = eos.runs_3m      || 0;
+      c.eos_runs_12m    = eos.runs_12m     || 0;
+      c.eos_failed_3m   = eos.failed_3m    || 0;
+      c.eos_active_users = eos.active_users || 0;
+      c.eos_last_run    = eos.last_run     || null;
     }
     data.clients.forEach(attachSignals);
     data.billing_clients.forEach(attachSignals);

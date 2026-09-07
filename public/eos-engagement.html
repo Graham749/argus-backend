@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Region Intelligence · Client Engagement</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+<style>
+@font-face{font-family:'Lato';src:url('assets/fonts/lato-regular.woff2') format('woff2');font-weight:400;font-style:normal;font-display:swap;}
+@font-face{font-family:'Lato';src:url('assets/fonts/lato-bold.woff2') format('woff2');font-weight:700;font-style:normal;font-display:swap;}
+@font-face{font-family:'Lato';src:url('assets/fonts/lato-black.woff2') format('woff2');font-weight:900;font-style:normal;font-display:swap;}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Lato','Helvetica Neue',Arial,sans-serif;background:#f7f7f6;color:#3c3c3b;font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;}
+input,select,button{font-family:inherit;}
+nav{background:#fff;border-bottom:1px solid #e6e6e5;padding:0 24px;display:flex;align-items:center;height:48px;position:sticky;top:0;z-index:100;}
+.embed-mode nav{display:none!important}
+.embed-mode main{padding:16px 20px 24px;}
+.nav-back{font-size:12px;color:#6d6d6c;text-decoration:none;display:flex;align-items:center;gap:4px;margin-right:16px;}
+.nav-back:hover{color:#3c3c3b}
+.nav-sep{width:1px;height:20px;background:#e6e6e5;margin-right:16px;flex-shrink:0;}
+.nav-brand{font-size:14px;font-weight:700;margin-right:28px;white-space:nowrap;color:#3c3c3b;letter-spacing:-0.01em;}
+.nav-meta{font-size:11px;color:#9d9d9d;display:flex;align-items:center;gap:6px;white-space:nowrap;margin-left:auto;}
+.page-tabs{background:#fff;border-bottom:1px solid #e6e6e5;padding:0 24px;display:flex;}
+.page-tab{padding:12px 20px;font-size:13px;font-weight:600;color:#9d9d9d;border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:8px;margin-bottom:-1px;}
+.page-tab.active{color:#3c3c3b;border-bottom-color:#288184;}
+.page-tab:hover:not(.active){color:#6d6d6c;}
+main{max-width:1320px;margin:0 auto;padding:24px;}
+/* Filter bar */
+.filter-bar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;align-items:center;}
+.filter-label{font-size:11px;color:#9d9d9d;font-weight:600;}
+.pill{display:inline-flex;align-items:center;padding:0 10px;border-radius:100px;border:1px solid #e6e6e5;background:#fff;font-size:12px;cursor:pointer;color:#6d6d6c;height:30px;user-select:none;}
+.pill:hover{border-color:#9d9d9d;}
+.pill.active{background:#288184;color:#fff;border-color:#288184;}
+/* KPI grid */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:24px;}
+.kpi{background:#fff;border:1px solid #e6e6e5;border-radius:10px;padding:14px 16px;}
+.kpi-label{font-size:10px;color:#9d9d9d;text-transform:uppercase;letter-spacing:.06em;font-weight:600;margin-bottom:4px;}
+.kpi-value{font-size:26px;font-weight:700;line-height:1.2;color:#3c3c3b;}
+.kpi-value.teal{color:#288184;}
+.kpi-sub{font-size:11px;color:#9d9d9d;margin-top:4px;}
+.kpi-src{font-size:10px;color:#c0c0be;margin-top:6px;}
+/* Card */
+.card{background:#fff;border:1px solid #e6e6e5;border-radius:12px;padding:18px 20px;margin-bottom:20px;}
+.card-title{font-size:13px;font-weight:700;color:#3c3c3b;margin-bottom:14px;}
+/* Table */
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{text-align:left;padding:8px 10px;border-bottom:1px solid #e6e6e5;font-weight:600;font-size:10px;color:#9d9d9d;text-transform:uppercase;letter-spacing:.06em;white-space:nowrap;background:#fff;}
+th.num{text-align:right;}
+td{padding:9px 10px;border-bottom:1px solid rgba(230,230,229,.55);}
+td.num{text-align:right;white-space:nowrap;}
+tr:last-child td{border-bottom:none;}
+/* Region dot */
+.rdot{display:inline-flex;align-items:center;gap:6px;}
+.rdot-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+/* Bar segment */
+.bar-wrap{display:flex;height:16px;border-radius:4px;overflow:hidden;background:#f5f5f4;width:100%;min-width:80px;}
+.bar-seg{height:100%;}
+/* Stream chip */
+.stream-chip{display:inline-block;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:700;}
+/* Loading */
+#loading{display:flex;align-items:center;justify-content:center;min-height:320px;flex-direction:column;gap:16px;color:#9d9d9d;font-size:13px;}
+.spinner{width:28px;height:28px;border:2px solid #e6e6e5;border-top-color:#288184;border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.empty{text-align:center;padding:32px;color:#9d9d9d;font-size:13px;}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="/" class="nav-back"><i class="ti ti-arrow-left"></i> Argus</a>
+  <span class="nav-sep"></span>
+  <div class="nav-brand"><i class="ti ti-chart-line" style="margin-right:5px;color:#288184"></i>Region Intelligence</div>
+  <div class="nav-meta">Snapshot <strong id="snap-date">—</strong>&nbsp;·&nbsp;Fabric</div>
+</nav>
+
+<div class="page-tabs">
+  <div class="page-tab" onclick="location.href='/sw-intelligence'">Software Health</div>
+  <div class="page-tab active">Client Engagement</div>
+</div>
+
+<div id="loading">
+  <div class="spinner"></div>
+  <div>Loading engagement data from Fabric…</div>
+</div>
+
+<main id="main" style="display:none">
+
+  <!-- Region filter -->
+  <div class="filter-bar" id="region-bar">
+    <span class="filter-label">Region:</span>
+    <div class="pill active" data-r="All"   onclick="setRegion(this,'All')">All regions</div>
+    <div class="pill"        data-r="EMEA"  onclick="setRegion(this,'EMEA')">EMEA</div>
+    <div class="pill"        data-r="APAC"  onclick="setRegion(this,'APAC')">APAC</div>
+    <div class="pill"        data-r="NORAM" onclick="setRegion(this,'NORAM')">NORAM</div>
+    <div class="pill"        data-r="LATAM" onclick="setRegion(this,'LATAM')">LATAM</div>
+  </div>
+
+  <!-- Period filter -->
+  <div class="filter-bar" style="margin-top:-6px;margin-bottom:20px;">
+    <span class="filter-label">Period:</span>
+    <div class="pill active" data-p="all"  onclick="setPeriod(this,'all')">All time</div>
+    <div class="pill"        data-p="12m"  onclick="setPeriod(this,'12m')">Last 12 months</div>
+    <div class="pill"        data-p="3m"   onclick="setPeriod(this,'3m')">Last 3 months</div>
+  </div>
+
+  <!-- KPI grid -->
+  <div class="kpi-grid" id="kpi-grid"></div>
+
+  <!-- Regional distribution -->
+  <div class="card">
+    <div class="card-title">Regional distribution by stream <span style="font-size:11px;color:#9d9d9d;font-weight:400;">(available for software runs, webinars &amp; group meetings)</span></div>
+    <div id="region-dist"></div>
+  </div>
+
+  <!-- Monthly time series (all-up) -->
+  <div class="card">
+    <div class="card-title" id="series-title">Monthly activity — all regions</div>
+    <div style="overflow-x:auto"><div id="series-table"></div></div>
+  </div>
+
+  <!-- Market detail — software runs -->
+  <div class="card">
+    <div class="card-title">Software runs by model region</div>
+    <div style="overflow-x:auto"><div id="runs-market"></div></div>
+  </div>
+
+  <!-- Market detail — webinars + GMs -->
+  <div class="card">
+    <div class="card-title">Webinar &amp; group meeting attendance by market</div>
+    <div style="overflow-x:auto"><div id="events-market"></div></div>
+  </div>
+
+</main>
+
+<script>
+const REGION_COLORS = { EMEA:'#2563eb', APAC:'#0891b2', NORAM:'#7c3aed', LATAM:'#ea580c', Other:'#94a3b8' };
+const STREAM_COLORS = {
+  software: { bg:'#e3f0fb', fg:'#0c447c' },
+  downloads:{ bg:'#e0f7f0', fg:'#0e6b4a' },
+  videos:   { bg:'#fce4ec', fg:'#880e4f' },
+  cases:    { bg:'#fff8e1', fg:'#795548' },
+  webinars: { bg:'#f3e5f5', fg:'#6a1b9a' },
+  gm:       { bg:'#e8f5e9', fg:'#1b5e20' },
+};
+
+let DATA = null;
+let REGION = 'All';
+let PERIOD = 'all';
+
+function fmt(n) { return Number(n||0).toLocaleString('en-GB'); }
+function fmtK(n) { const v = Number(n||0); return v >= 1000 ? (v/1000).toFixed(1)+'k' : String(v); }
+
+function setRegion(el, r) {
+  REGION = r;
+  document.querySelectorAll('#region-bar .pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  render();
+}
+
+function setPeriod(el, p) {
+  PERIOD = p;
+  document.querySelectorAll('.filter-bar .pill[data-p]').forEach(x => x.classList.remove('active'));
+  el.classList.add('active');
+  render();
+}
+
+function streamValue(s) {
+  if (PERIOD === '3m')  return s.last_3m;
+  if (PERIOD === '12m') return s.last_12m;
+  return s.total;
+}
+
+function streamRegionalValue(s, region) {
+  if (!s.regional || !s.by_region) return null;
+  if (REGION !== 'All') {
+    return s.by_region[REGION] || 0;
+  }
+  return s.by_region;
+}
+
+function render() {
+  if (!DATA) return;
+  renderKPIs();
+  renderRegionDist();
+  renderSeriesTable();
+  renderRunsMarket();
+  renderEventsMarket();
+}
+
+function renderKPIs() {
+  const chips = DATA.streams.map(s => {
+    const col = STREAM_COLORS[s.key] || { bg:'#f5f5f5', fg:'#6d6d6c' };
+    let val = streamValue(s);
+    if (s.regional && REGION !== 'All' && s.by_region) {
+      val = s.by_region[REGION] || 0;
+    }
+    let sub = PERIOD === 'all' ? 'all time' : PERIOD === '12m' ? 'last 12 months' : 'last 3 months';
+    if (s.key === 'videos' && PERIOD === 'all') sub = `${fmt(s.watch_mins_total)} watch-mins total`;
+    if (s.key === 'cases' && s.by_type) {
+      const top = Object.entries(s.by_type).sort((a,b)=>b[1]-a[1])[0];
+      if (top) sub = `top type: ${top[0]}`;
+    }
+    return `<div class="kpi">
+      <div class="kpi-label">${s.label}</div>
+      <div class="kpi-value">${fmt(val)}</div>
+      <div class="kpi-sub">${s.unit} · ${sub}</div>
+    </div>`;
+  });
+  document.getElementById('kpi-grid').innerHTML = chips.join('');
+}
+
+function renderRegionDist() {
+  const regional = DATA.streams.filter(s => s.regional && s.by_region);
+  const REGIONS  = ['EMEA','APAC','NORAM','LATAM','Other'];
+  let html = '';
+  for (const s of regional) {
+    const totByReg = {};
+    REGIONS.forEach(r => { totByReg[r] = s.by_region[r] || 0; });
+    const grand = REGIONS.reduce((sum, r) => sum + totByReg[r], 0);
+    if (!grand) continue;
+    const bars = REGIONS.map(r => {
+      const pct = grand ? totByReg[r]/grand*100 : 0;
+      return pct > 0 ? `<div class="bar-seg" style="width:${pct.toFixed(1)}%;background:${REGION_COLORS[r]}" title="${r}: ${fmt(totByReg[r])}"></div>` : '';
+    }).join('');
+    html += `<div style="display:grid;grid-template-columns:160px 1fr 80px;gap:12px;align-items:center;margin:8px 0;">
+      <div style="font-size:12px;font-weight:600">${s.label}</div>
+      <div class="bar-wrap">${bars}</div>
+      <div style="font-size:11px;color:#9d9d9d;text-align:right">${fmtK(grand)} total</div>
+    </div>`;
+  }
+  if (!html) { html = '<div class="empty">No regional breakdown available for the selected period.</div>'; }
+  else {
+    const legend = REGIONS.map(r =>
+      `<span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:#6d6d6c">
+        <span style="width:9px;height:9px;border-radius:2px;background:${REGION_COLORS[r]};display:inline-block"></span>${r}
+      </span>`
+    ).join('');
+    html = `<div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:12px;">${legend}</div>` + html;
+  }
+  document.getElementById('region-dist').innerHTML = html;
+}
+
+function renderSeriesTable() {
+  document.getElementById('series-title').textContent =
+    'Monthly activity' + (REGION !== 'All' ? ` — ${REGION}` : ' — all regions');
+
+  // Collect all months across streams that have by_month
+  const monthStreams = DATA.streams.filter(s => s.by_month);
+  const monthSet = new Set();
+  monthStreams.forEach(s => Object.keys(s.by_month).forEach(m => monthSet.add(m)));
+  const months = [...monthSet].sort().reverse().slice(0, 36); // last 3 years
+
+  if (!months.length) {
+    document.getElementById('series-table').innerHTML = '<div class="empty">No monthly data available.</div>';
+    return;
+  }
+
+  let html = '<table><thead><tr><th>Month</th>';
+  monthStreams.forEach(s => { html += `<th class="num">${s.label}</th>`; });
+  html += '</tr></thead><tbody>';
+  for (const m of months) {
+    html += `<tr><td style="font-variant-numeric:tabular-nums;white-space:nowrap">${m}</td>`;
+    monthStreams.forEach(s => {
+      const v = (s.by_month[m] || 0);
+      html += `<td class="num">${v ? fmt(v) : '<span style="color:#e0e0e0">—</span>'}</td>`;
+    });
+    html += '</tr>';
+  }
+  html += '</tbody></table>';
+  document.getElementById('series-table').innerHTML = html;
+}
+
+function renderRunsMarket() {
+  const s = DATA.streams.find(x => x.key === 'software');
+  if (!s || !s.by_market) { document.getElementById('runs-market').innerHTML = '<div class="empty">No data.</div>'; return; }
+
+  const entries = Object.entries(s.by_market)
+    .sort((a,b) => b[1]-a[1])
+    .filter(([,v]) => v > 0);
+  if (!entries.length) { document.getElementById('runs-market').innerHTML = '<div class="empty">No runs data.</div>'; return; }
+  const grand = entries.reduce((sum,[,v])=>sum+v,0);
+
+  let html = '<table><thead><tr><th>Model Region</th><th class="num">Total Runs</th><th style="min-width:120px">Share</th></tr></thead><tbody>';
+  for (const [mkt, cnt] of entries) {
+    const pct = grand ? cnt/grand*100 : 0;
+    html += `<tr>
+      <td>${esc(mkt)}</td>
+      <td class="num">${fmt(cnt)}</td>
+      <td style="min-width:120px">
+        <div style="display:flex;align-items:center;gap:6px">
+          <div style="flex:1;height:8px;border-radius:3px;background:#e0f0fb;overflow:hidden">
+            <div style="width:${pct.toFixed(1)}%;height:100%;background:#288184;border-radius:3px"></div>
+          </div>
+          <span style="font-size:11px;color:#9d9d9d;min-width:34px;text-align:right">${pct.toFixed(0)}%</span>
+        </div>
+      </td>
+    </tr>`;
+  }
+  html += '</tbody></table>';
+  document.getElementById('runs-market').innerHTML = html;
+}
+
+function renderEventsMarket() {
+  const web = DATA.streams.find(x => x.key === 'webinars');
+  const gm  = DATA.streams.find(x => x.key === 'gm');
+
+  // Merge both markets
+  const combined = {};
+  if (web?.by_market) Object.entries(web.by_market).forEach(([m,v]) => {
+    if (!combined[m]) combined[m] = { web:0, gm:0 };
+    combined[m].web += v;
+  });
+  if (gm?.by_market) Object.entries(gm.by_market).forEach(([m,v]) => {
+    if (!combined[m]) combined[m] = { web:0, gm:0 };
+    combined[m].gm += v;
+  });
+
+  const entries = Object.entries(combined)
+    .map(([m,v]) => [m, v.web+v.gm, v.web, v.gm])
+    .sort((a,b) => b[1]-a[1]);
+
+  if (!entries.length) { document.getElementById('events-market').innerHTML = '<div class="empty">No events data.</div>'; return; }
+
+  let html = '<table><thead><tr><th>Market</th><th class="num">Webinar Attendees</th><th class="num">GM Attendees</th><th class="num">Total</th></tr></thead><tbody>';
+  for (const [mkt, total, w, g] of entries.slice(0, 50)) {
+    html += `<tr>
+      <td>${esc(mkt)}</td>
+      <td class="num">${w ? fmt(w) : '<span style="color:#e0e0e0">—</span>'}</td>
+      <td class="num">${g ? fmt(g) : '<span style="color:#e0e0e0">—</span>'}</td>
+      <td class="num" style="font-weight:600">${fmt(total)}</td>
+    </tr>`;
+  }
+  html += '</tbody></table>';
+  document.getElementById('events-market').innerHTML = html;
+}
+
+function esc(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+async function loadData() {
+  try {
+    const resp = await fetch('/api/eos-engagement');
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    DATA = await resp.json();
+    document.getElementById('snap-date').textContent = DATA.snapshot || '—';
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('main').style.display    = '';
+    render();
+  } catch (e) {
+    document.getElementById('loading').innerHTML =
+      `<div style="color:#c62828;font-size:13px">Failed to load: ${e.message}</div>`;
+  }
+}
+
+if (new URLSearchParams(location.search).get('embed') === '1') {
+  document.documentElement.classList.add('embed-mode');
+}
+loadData();
+</script>
+</body>
+</html>
