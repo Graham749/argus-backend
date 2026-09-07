@@ -124,7 +124,9 @@ tfoot td{font-size:11px;color:#9d9d9d;padding:6px 10px;border-top:1px solid #e6e
     <span id="live-dot" style="display:none;font-size:10px;font-weight:700;letter-spacing:.06em;color:#2e7d32;white-space:nowrap;">● LIVE</span>
     <span id="demo-dot" style="display:none;font-size:10px;font-weight:700;letter-spacing:.06em;color:#e65100;white-space:nowrap;">● DEMO</span>
   </div>
-  <div class="page-tab" id="eng-tab" onclick="switchTab('engagement')">Total Client Engagement</div>
+  <div class="page-tab" id="eng-tab" onclick="switchTab('engagement')">Total Client Engagement
+    <span id="eng-live-dot" style="display:none;font-size:10px;font-weight:700;letter-spacing:.06em;color:#2e7d32;white-space:nowrap;">● LIVE</span>
+  </div>
   <div class="page-tab soon">Subscription Analytics Health <span class="page-tab-badge">Coming soon</span></div>
 </div>
 
@@ -248,15 +250,17 @@ tfoot td{font-size:11px;color:#9d9d9d;padding:6px 10px;border-top:1px solid #e6e
       </select>
       <span id="eng-market-note" style="font-size:11px;color:#9d9d9d;margin-left:8px">drills the market-detail table below</span>
     </div>
-    <div class="filter-bar" style="margin-bottom:0">
-      <span class="filter-label">Period:</span>
-      <label style="font-size:12px;color:#6d6d6c">From <input type="month" id="eng-start-m" style="background:#fff;border:1px solid #e6e6e5;color:#3c3c3b;border-radius:6px;padding:4px 8px;font-size:12px;font-family:inherit"></label>
-      <label style="font-size:12px;color:#6d6d6c">To <input type="month" id="eng-end-m" style="background:#fff;border:1px solid #e6e6e5;color:#3c3c3b;border-radius:6px;padding:4px 8px;font-size:12px;font-family:inherit"></label>
-      <span style="width:10px"></span>
-      <div class="pill" onclick="engPreset('all')">All time</div>
-      <div class="pill" onclick="engPreset('12m')">Last 12 months</div>
-      <div class="pill" onclick="engPreset('ytd')">This year (YTD)</div>
-      <div class="pill" onclick="engPreset('2025')">2025</div>
+    <div id="eng-year-bar" class="filter-bar" style="margin-bottom:0">
+      <span class="filter-label">Year:</span>
+      <div class="pill active" onclick="engSetYear(this,'all')">All time</div>
+      <div class="pill" onclick="engSetYear(this,'2019')">2019</div>
+      <div class="pill" onclick="engSetYear(this,'2020')">2020</div>
+      <div class="pill" onclick="engSetYear(this,'2021')">2021</div>
+      <div class="pill" onclick="engSetYear(this,'2022')">2022</div>
+      <div class="pill" onclick="engSetYear(this,'2023')">2023</div>
+      <div class="pill" onclick="engSetYear(this,'2024')">2024</div>
+      <div class="pill" onclick="engSetYear(this,'2025')">2025</div>
+      <div class="pill" onclick="engSetYear(this,'2026')">2026</div>
     </div>
     <div id="eng-scopebar" style="color:#9d9d9d;font-size:12px;margin-top:10px"></div>
   </div>
@@ -308,13 +312,13 @@ tfoot td{font-size:11px;color:#9d9d9d;padding:6px 10px;border-top:1px solid #e6e
         <div class="card">
           <div style="font-size:13px;font-weight:700;color:#3c3c3b;margin-bottom:12px">Notes &amp; data sources</div>
           <ul style="font-size:12px;color:#9d9d9d;padding-left:18px">
-            <li style="margin:5px 0"><b>Software runs</b> are native at market level (e.g. Great Britain, Australia NEM, ERCOT); figures are all completed runs. Period filtering is not available for software runs (no monthly grain in source view).</li>
-            <li style="margin:5px 0"><b>EOS downloads</b> are from the EOS Usage silver view; all downloads with a valid date are counted. No regional breakdown is available at this grain.</li>
-            <li style="margin:5px 0"><b>Video plays</b> are not linked to a region or market in the source, so they appear only as an all-regions total and are excluded from the market detail.</li>
-            <li style="margin:5px 0"><b>Support cases</b> come from the SF Cases silver view; no regional breakdown is available at case grain.</li>
+            <li style="margin:5px 0"><b>Software runs</b> are all-time totals (no monthly grain in source view); the year filter does not apply to software runs — they always show the all-time figure.</li>
+            <li style="margin:5px 0"><b>EOS downloads</b> are from the EOS Usage silver view. Regional breakdown is approximate: each account is assigned its primary simulation market (most runs) to derive a region.</li>
+            <li style="margin:5px 0"><b>Video plays</b> are not linked to a region or market in the source — they show an all-regions total and are excluded from the regional breakdown and market detail.</li>
+            <li style="margin:5px 0"><b>Workshops</b> include SF case types Workshop and Content_workshop. <b>Email Support Cases</b> covers all other case types (Analyst_support, General Support, etc.). Regional breakdown uses each account's primary simulation market.</li>
             <li style="margin:5px 0"><b>Webinar &amp; Group Meeting</b> markets carry their own labels; regional figures use the market-to-region mapping.</li>
-            <li style="margin:5px 0"><b>Regional filtering</b> for EOS downloads, video plays, and support cases is not available — these streams show all-region totals regardless of region filter. For webinars and group meetings, the regional split is applied proportionally to the monthly totals (approximate).</li>
-            <li style="margin:5px 0"><b>Market detail</b> is available for software runs, webinars and group meetings only. Markets are ranked by cross-stream prominence score (share sum across available streams). Figures are all-time totals; year-by-year resolution is not available in the live view.</li>
+            <li style="margin:5px 0"><b>Regional filter</b> applies proportionally for downloads, workshops and email cases (all-time regional share applied to the filtered period total). Exact month-by-region data is not pre-computed.</li>
+            <li style="margin:5px 0"><b>Market detail</b> is available for software runs, webinars and group meetings only. Figures are all-time totals.</li>
             <li style="margin:5px 0">Live data from Fabric — served with a 1-hour server cache. Use <code>?bust=1</code> to force refresh.</li>
           </ul>
         </div>
@@ -1318,11 +1322,12 @@ function engWindowYears() {
 function engValKey(s) {
   if (s.key==='videos') return 'plays';
   if (s.key==='webinars'||s.key==='gm') return 'attendees';
-  return 'cnt';
+  return 'cnt'; // downloads, workshops, email_cases
 }
 
 function engSumStream(s, region, months) {
-  if (s.key === 'software') {
+  // Static streams (e.g. software runs) have no monthly grain — always all-time
+  if (s.static) {
     if (region === "All") return s.total;
     return (s.by_region && s.by_region[region]) || 0;
   }
@@ -1362,13 +1367,9 @@ async function loadEngagement() {
     E_MIN = allM[0] || "2019-01";
     E_MAX = allM[allM.length-1] || new Date().toISOString().slice(0,7);
     E_START = E_MIN; E_END = E_MAX;
-    var si = document.getElementById('eng-start-m'), ei = document.getElementById('eng-end-m');
-    si.min = ei.min = E_MIN; si.max = ei.max = E_MAX;
-    si.value = E_START; ei.value = E_END;
-    si.onchange = function(){ E_START = si.value||E_MIN; engRender(); };
-    ei.onchange = function(){ E_END = ei.value||E_MAX; engRender(); };
     engRenderFilter();
     engPopulateMarketSelect();
+    document.getElementById('eng-live-dot').style.display = '';
     document.getElementById('eng-loading').style.display = 'none';
     document.getElementById('eng-content').style.display = '';
     engRender();
@@ -1395,14 +1396,11 @@ function engSetRegion(r) {
   engRender();
 }
 
-function engPreset(p) {
-  var si = document.getElementById('eng-start-m'), ei = document.getElementById('eng-end-m');
-  var now = E_MAX || new Date().toISOString().slice(0,7);
-  if (p==='all') { E_START=E_MIN; E_END=E_MAX; }
-  else if (p==='12m') { E_END=now; E_START=engAddMonths(now,-11); }
-  else if (p==='ytd') { E_START=now.slice(0,4)+"-01"; E_END=now; }
-  else if (p==='2025') { E_START="2025-01"; E_END="2025-12"; }
-  si.value=E_START; ei.value=E_END;
+function engSetYear(el, yr) {
+  document.querySelectorAll('#eng-year-bar .pill').forEach(function(p){ p.classList.remove('active'); });
+  el.classList.add('active');
+  if (yr === 'all') { E_START = E_MIN; E_END = E_MAX; }
+  else { E_START = yr + '-01'; E_END = yr + '-12'; }
   engRender();
 }
 
@@ -1443,9 +1441,10 @@ function engPopulateMarketSelect() {
 function engUpdateScope() {
   var scopeR=E_REGION==="All"?"All regions":E_REGION;
   var scopeM=E_MARKET!=="All"?" &middot; "+E_MARKET:"";
+  var yearLabel = (E_START===E_MIN&&E_END===E_MAX) ? "all time" : E_START.slice(0,4)+(E_START.slice(0,4)!==E_END.slice(0,4)?" &ndash; "+E_END.slice(0,4):"");
   document.getElementById('eng-scopebar').innerHTML=
-    "Showing <b>"+scopeR+scopeM+"</b> &middot; "+E_START+" to "+E_END
-    +". Region filter applies to software, webinars &amp; group meetings. EOS downloads, video plays and support cases are all-regions only.";
+    "Showing <b>"+scopeR+scopeM+"</b> &middot; <b>"+yearLabel+"</b>"
+    +". Software runs always show all-time total. Video plays have no regional breakdown.";
 }
 
 function engRender() {
@@ -1463,14 +1462,16 @@ function engRender() {
 function engRenderKPIs(streams,wm){
   document.getElementById('eng-kpis').innerHTML=streams.map(function(s){
     var v=engSumStream(s,E_REGION,wm), tot=engSumStream(s,"All",wm);
-    var sub=!s.regional?"All regions &middot; "+s.unit
-      :E_REGION==="All"?"Total &middot; "+s.unit
-      :s.unit+" &middot; "+(tot?Math.round(v/tot*1000)/10:0)+"% of total";
+    var regionLabel = s.static ? "All regions" : (!s.regional ? "All regions" : (E_REGION==="All" ? "Total" : E_REGION));
+    var sub = regionLabel + ' &middot; ' + s.unit;
+    if (s.static) sub += ' &middot; all time';
     var bdr=!s.regional?'border-style:dashed':'';
+    var src=s.source?'<div style="font-size:10px;color:#c0c0be;margin-top:5px">'+s.source+'</div>':'';
     return '<div class="kpi" style="'+bdr+'">'
       +'<div style="font-size:11px;color:#9d9d9d;font-weight:600;min-height:2.4em;margin-bottom:4px">'+s.label+'</div>'
       +'<div style="font-size:1.55rem;font-weight:700;letter-spacing:-.02em;margin:2px 0;color:#3c3c3b">'+engFmt(v)+'</div>'
       +'<div style="font-size:11px;color:#9d9d9d">'+sub+'</div>'
+      +src
       +'</div>';
   }).join('');
 }
@@ -1518,20 +1519,20 @@ function engRenderTable(streams,wm){
 }
 
 function engRenderTimeTable(streams,wm){
-  var useMonths=wm.length<=12, buckets;
-  if(useMonths){
-    buckets=wm.map(function(m){return{key:m,label:m,months:[m]};});
-  } else {
-    var yrs={}; wm.forEach(function(m){yrs[m.slice(0,4)]=true;});
-    buckets=Object.keys(yrs).sort().map(function(y){return{key:y,label:y,months:wm.filter(function(m){return m.startsWith(y);})};});
-  }
+  // Always bucket by year
+  var yrs={}; wm.forEach(function(m){yrs[m.slice(0,4)]=true;});
+  var buckets=Object.keys(yrs).sort().map(function(y){
+    return{key:y,label:y,months:wm.filter(function(m){return m.startsWith(y);})};
+  });
   document.getElementById('eng-time-hint').textContent=
-    "for "+(E_REGION==="All"?"all regions":E_REGION)+" — by "+(useMonths?"month":"year");
-  var head='<tr><th>'+(useMonths?"Month":"Year")+'</th>'+streams.map(function(s){
-    return '<th class="num">'+s.label+(!s.regional?" *":"")+'</th>';
+    "for "+(E_REGION==="All"?"all regions":E_REGION)+" — by year";
+  var head='<tr><th>Year</th>'+streams.map(function(s){
+    var note=s.static?' ‡':(!s.regional?' *':'');
+    return '<th class="num">'+s.label+note+'</th>';
   }).join('')+'</tr>';
   var rows=buckets.map(function(b){
     return '<tr><td>'+b.label+'</td>'+streams.map(function(s){
+      if(s.static) return '<td class="num" style="color:#c0c0be">&mdash;</td>';
       return '<td class="num">'+engFmt(engSumStream(s,E_REGION,b.months))+'</td>';
     }).join('')+'</tr>';
   }).join('');
@@ -1540,7 +1541,10 @@ function engRenderTimeTable(streams,wm){
   }).join('')+'</tr>';
   document.getElementById('eng-timetable').innerHTML=
     '<table><thead>'+head+'</thead><tbody>'+rows+'</tbody><tfoot>'+foot+'</tfoot></table>'
-    +'<div style="font-size:11px;color:#9d9d9d;margin-top:6px">* Not region-specific — shown as all-regions total.</div>';
+    +'<div style="font-size:11px;color:#9d9d9d;margin-top:6px">'
+    +'* All-regions total (no regional breakdown). '
+    +'‡ All-time total (year filter does not apply — no monthly grain in source).'
+    +'</div>';
 }
 
 function engRenderMarketDrill(){
