@@ -498,7 +498,8 @@ function setGroupBy(el, gb) {
 
 function setStage(s) {
   STAGE = (STAGE === s) ? 'all' : s;
-  renderKPIs(); renderClients(); updateClearAllState();
+  HEALTH = 'all';
+  renderHealthBar(); renderKPIs(); renderClients(); updateClearAllState();
 }
 
 function filteredTIP() {
@@ -536,6 +537,7 @@ function clientHealthBucket(client) {
 
 function setHealth(key) {
   HEALTH = key;
+  STAGE = 'all';
   renderHealthBar();
   renderKPIs(); renderClients(); updateClearAllState();
 }
