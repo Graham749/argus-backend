@@ -40,20 +40,25 @@ module.exports = async function eosEngagement(req, res) {
     if (cached && !req.query.bust) return res.json(cached);
 
     const [runsRows, dlRows, vidRows, caseRows, webinarRows, gmRows, acctRegionRows, dlAcctRows, caseAcctRows] = await Promise.all([
-      // 1. Software runs by year + product_region (excl internal)
+      // 1. Software runs by year + product_region (excl internal; known MDM accounts only)
       query(`
-        SELECT YEAR(launch_time) AS yr, product_region, COUNT(*) AS cnt
-        FROM dbo.v_silver_eos_runs
-        WHERE is_internal = 0 AND launch_time IS NOT NULL
-        GROUP BY YEAR(launch_time), product_region
+        SELECT YEAR(r.launch_time) AS yr, r.product_region, COUNT(*) AS cnt
+        FROM dbo.v_silver_eos_runs r
+        INNER JOIN dbo.gold_mdm_account mdm ON mdm.sf_account_code = r.account_id
+        WHERE r.is_internal = 0
+          AND r.launch_time IS NOT NULL
+        GROUP BY YEAR(r.launch_time), r.product_region
         ORDER BY yr
       `),
 
-      // 2. EOS downloads by month (all-time)
+      // 2. EOS downloads by month — excl scenarioExplorer, COUNT DISTINCT tracking_id (matches PBI 840K)
       query(`
-        SELECT FORMAT(CAST(download_date AS DATE), 'yyyy-MM') AS month, COUNT(*) AS cnt
+        SELECT FORMAT(CAST(download_date AS DATE), 'yyyy-MM') AS month,
+               COUNT(DISTINCT tracking_id) AS cnt
         FROM dbo.v_silver_eos_downloads
         WHERE download_date IS NOT NULL
+          AND tracking_id IS NOT NULL
+          AND COALESCE(product, '') != 'scenarioExplorer'
         GROUP BY FORMAT(CAST(download_date AS DATE), 'yyyy-MM')
         ORDER BY month
       `),
@@ -110,11 +115,14 @@ module.exports = async function eosEngagement(req, res) {
         ) x WHERE rn = 1
       `),
 
-      // 8. Downloads by account (for regional split)
+      // 8. Downloads by account (for regional split) — same filters as query 2
       query(`
-        SELECT sf_account_code, COUNT(*) AS cnt
+        SELECT sf_account_code,
+               COUNT(DISTINCT tracking_id) AS cnt
         FROM dbo.v_silver_eos_downloads
         WHERE download_date IS NOT NULL AND sf_account_code IS NOT NULL
+          AND tracking_id IS NOT NULL
+          AND COALESCE(product, '') != 'scenarioExplorer'
         GROUP BY sf_account_code
       `),
 
