@@ -40,9 +40,9 @@ module.exports = async function eosEngagement(req, res) {
     if (cached && !req.query.bust) return res.json(cached);
 
     const [runsRows, dlRows, vidRows, caseRows, webinarRows, gmRows, acctRegionRows, dlAcctRows, caseAcctRows] = await Promise.all([
-      // 1. Software runs by year + product_region (excl internal; known MDM accounts only)
+      // 1. Software runs by year + product_region — DISTINCT simulation_id (matches PBI DAX measure)
       query(`
-        SELECT YEAR(r.launch_time) AS yr, r.product_region, COUNT(*) AS cnt
+        SELECT YEAR(r.launch_time) AS yr, r.product_region, COUNT(DISTINCT r.simulation_id) AS cnt
         FROM dbo.v_silver_eos_runs r
         INNER JOIN dbo.gold_mdm_account mdm ON mdm.sf_account_code = r.account_id
         WHERE r.is_internal = 0
