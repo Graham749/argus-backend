@@ -250,17 +250,15 @@ tfoot td{font-size:11px;color:#9d9d9d;padding:6px 10px;border-top:1px solid #e6e
       </select>
       <span id="eng-market-note" style="font-size:11px;color:#9d9d9d;margin-left:8px">drills the market-detail table below</span>
     </div>
-    <div id="eng-year-bar" class="filter-bar" style="margin-bottom:0">
-      <span class="filter-label">Year:</span>
-      <div class="pill active" onclick="engSetYear(this,'all')">All time</div>
-      <div class="pill" onclick="engSetYear(this,'2019')">2019</div>
-      <div class="pill" onclick="engSetYear(this,'2020')">2020</div>
-      <div class="pill" onclick="engSetYear(this,'2021')">2021</div>
-      <div class="pill" onclick="engSetYear(this,'2022')">2022</div>
-      <div class="pill" onclick="engSetYear(this,'2023')">2023</div>
-      <div class="pill" onclick="engSetYear(this,'2024')">2024</div>
-      <div class="pill" onclick="engSetYear(this,'2025')">2025</div>
-      <div class="pill" onclick="engSetYear(this,'2026')">2026</div>
+    <div class="filter-bar" style="margin-bottom:0">
+      <span class="filter-label">Period:</span>
+      <label style="font-size:12px;color:#6d6d6c">From <input type="month" id="eng-start-m" style="margin-left:4px;height:28px;border:1px solid #e6e6e5;border-radius:6px;padding:0 6px;font-size:12px;outline:none" onchange="engDateChange()"></label>
+      <label style="font-size:12px;color:#6d6d6c">To <input type="month" id="eng-end-m" style="margin-left:4px;height:28px;border:1px solid #e6e6e5;border-radius:6px;padding:0 6px;font-size:12px;outline:none" onchange="engDateChange()"></label>
+      <span style="width:10px"></span>
+      <div class="pill" id="eng-preset-all" onclick="engPreset('all')">All time</div>
+      <div class="pill" id="eng-preset-12m" onclick="engPreset('12m')">Last 12 months</div>
+      <div class="pill" id="eng-preset-ytd" onclick="engPreset('ytd')">This year (YTD)</div>
+      <div class="pill" id="eng-preset-2025" onclick="engPreset('2025')">2025</div>
     </div>
     <div id="eng-scopebar" style="color:#9d9d9d;font-size:12px;margin-top:10px"></div>
   </div>
@@ -1326,8 +1324,7 @@ function engValKey(s) {
 }
 
 function engSumStream(s, region, months) {
-  // Static streams (e.g. software runs) have no monthly grain — always all-time
-  if (s.static) {
+  if (!s.by_month || !s.by_month.length) {
     if (region === "All") return s.total;
     return (s.by_region && s.by_region[region]) || 0;
   }
@@ -1364,9 +1361,14 @@ async function loadEngagement() {
     var allM = [];
     (ENG_DATA.streams||[]).forEach(function(s){ (s.by_month||[]).forEach(function(x){ allM.push(x.month); }); });
     allM.sort();
-    E_MIN = allM[0] || "2019-01";
+    E_MIN = "2019-01"; // always start from 2019
     E_MAX = allM[allM.length-1] || new Date().toISOString().slice(0,7);
     E_START = E_MIN; E_END = E_MAX;
+    var sm = document.getElementById('eng-start-m');
+    var em = document.getElementById('eng-end-m');
+    if (sm) { sm.min = E_MIN; sm.max = E_MAX; sm.value = E_START; }
+    if (em) { em.min = E_MIN; em.max = E_MAX; em.value = E_END; }
+    engUpdatePresetHighlight();
     engRenderFilter();
     engPopulateMarketSelect();
     document.getElementById('eng-live-dot').style.display = '';
@@ -1396,12 +1398,43 @@ function engSetRegion(r) {
   engRender();
 }
 
-function engSetYear(el, yr) {
-  document.querySelectorAll('#eng-year-bar .pill').forEach(function(p){ p.classList.remove('active'); });
-  el.classList.add('active');
-  if (yr === 'all') { E_START = E_MIN; E_END = E_MAX; }
-  else { E_START = yr + '-01'; E_END = yr + '-12'; }
+function engPreset(p) {
+  var now = new Date();
+  var curM = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+  if (p === 'all')  { E_START = E_MIN; E_END = E_MAX; }
+  else if (p === '12m') {
+    var d = new Date(now); d.setMonth(d.getMonth()-11);
+    E_START = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); E_END = curM;
+  }
+  else if (p === 'ytd') { E_START = now.getFullYear()+'-01'; E_END = curM; }
+  else { E_START = p+'-01'; E_END = p+'-12'; }
+  document.getElementById('eng-start-m').value = E_START;
+  document.getElementById('eng-end-m').value   = E_END;
+  engUpdatePresetHighlight();
   engRender();
+}
+
+function engDateChange() {
+  E_START = document.getElementById('eng-start-m').value || E_MIN;
+  E_END   = document.getElementById('eng-end-m').value   || E_MAX;
+  engUpdatePresetHighlight();
+  engRender();
+}
+
+function engUpdatePresetHighlight() {
+  var now = new Date();
+  var curM = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+  var d12  = new Date(now); d12.setMonth(d12.getMonth()-11);
+  var s12  = d12.getFullYear()+'-'+String(d12.getMonth()+1).padStart(2,'0');
+  ['all','12m','ytd','2025'].forEach(function(p){
+    var el = document.getElementById('eng-preset-'+p); if (!el) return;
+    var match = false;
+    if (p==='all')  match = E_START===E_MIN && E_END===E_MAX;
+    else if (p==='12m') match = E_START===s12 && E_END===curM;
+    else if (p==='ytd') match = E_START===now.getFullYear()+'-01' && E_END===curM;
+    else match = E_START===p+'-01' && E_END===p+'-12';
+    el.classList.toggle('active', match);
+  });
 }
 
 function engPopulateMarketSelect() {
@@ -1444,7 +1477,7 @@ function engUpdateScope() {
   var yearLabel = (E_START===E_MIN&&E_END===E_MAX) ? "all time" : E_START.slice(0,4)+(E_START.slice(0,4)!==E_END.slice(0,4)?" &ndash; "+E_END.slice(0,4):"");
   document.getElementById('eng-scopebar').innerHTML=
     "Showing <b>"+scopeR+scopeM+"</b> &middot; <b>"+yearLabel+"</b>"
-    +". Software runs always show all-time total. Video plays have no regional breakdown.";
+    +". Video plays have no regional breakdown.";
 }
 
 function engRender() {
@@ -1462,9 +1495,8 @@ function engRender() {
 function engRenderKPIs(streams,wm){
   document.getElementById('eng-kpis').innerHTML=streams.map(function(s){
     var v=engSumStream(s,E_REGION,wm), tot=engSumStream(s,"All",wm);
-    var regionLabel = s.static ? "All regions" : (!s.regional ? "All regions" : (E_REGION==="All" ? "Total" : E_REGION));
+    var regionLabel = !s.regional ? "All regions" : (E_REGION==="All" ? "Total" : E_REGION);
     var sub = regionLabel + ' &middot; ' + s.unit;
-    if (s.static) sub += ' &middot; all time';
     var bdr=!s.regional?'border-style:dashed':'';
     var src=s.source?'<div style="font-size:10px;color:#c0c0be;margin-top:5px">'+s.source+'</div>':'';
     return '<div class="kpi" style="'+bdr+'">'
@@ -1527,12 +1559,11 @@ function engRenderTimeTable(streams,wm){
   document.getElementById('eng-time-hint').textContent=
     "for "+(E_REGION==="All"?"all regions":E_REGION)+" — by year";
   var head='<tr><th>Year</th>'+streams.map(function(s){
-    var note=s.static?' ‡':(!s.regional?' *':'');
+    var note=!s.regional?' *':'';
     return '<th class="num">'+s.label+note+'</th>';
   }).join('')+'</tr>';
   var rows=buckets.map(function(b){
     return '<tr><td>'+b.label+'</td>'+streams.map(function(s){
-      if(s.static) return '<td class="num" style="color:#c0c0be">&mdash;</td>';
       return '<td class="num">'+engFmt(engSumStream(s,E_REGION,b.months))+'</td>';
     }).join('')+'</tr>';
   }).join('');

@@ -40,13 +40,13 @@ module.exports = async function eosEngagement(req, res) {
     if (cached && !req.query.bust) return res.json(cached);
 
     const [runsRows, dlRows, vidRows, caseRows, webinarRows, gmRows, acctRegionRows, dlAcctRows, caseAcctRows] = await Promise.all([
-      // 1. Software runs by product_region (all-time — no monthly grain in source)
+      // 1. Software runs by year + product_region (excl internal)
       query(`
-        SELECT product_region, SUM(total_runs) AS total, SUM(runs_last_3m) AS last_3m, SUM(runs_last_12m) AS last_12m
-        FROM dbo.v_gold_mdm_eos_runs
-        WHERE sf_account_code IS NOT NULL
-        GROUP BY product_region
-        ORDER BY total DESC
+        SELECT YEAR(launch_time) AS yr, product_region, COUNT(*) AS cnt
+        FROM dbo.v_silver_eos_runs
+        WHERE is_internal = 0 AND launch_time IS NOT NULL
+        GROUP BY YEAR(launch_time), product_region
+        ORDER BY yr
       `),
 
       // 2. EOS downloads by month (all-time)
@@ -135,18 +135,25 @@ module.exports = async function eosEngagement(req, res) {
     }
 
     // ── Process runs ─────────────────────────────────────────────────────────
-    const runsByRegion = {}, runsByMarket = {};
+    // Yearly grain from v_silver_eos_runs — distribute each year evenly across
+    // 12 synthetic months so the existing month-window filter logic works.
+    const runsByRegion = {}, runsByMarket = {}, runsByMonth = {};
     let runsTotal = 0;
     for (const r of runsRows) {
       const region = regionOf(r.product_region);
       const mkt    = r.product_region || 'Unmapped';
-      const t = Number(r.total) || 0;
-      runsTotal += t;
-      runsByRegion[region] = (runsByRegion[region] || 0) + t;
-      if (!runsByMarket[mkt]) runsByMarket[mkt] = { total: 0, last_3m: 0, last_12m: 0, region };
-      runsByMarket[mkt].total    += t;
-      runsByMarket[mkt].last_3m  += Number(r.last_3m)  || 0;
-      runsByMarket[mkt].last_12m += Number(r.last_12m) || 0;
+      const yr     = String(r.yr);
+      const cnt    = Number(r.cnt) || 0;
+      runsTotal += cnt;
+      runsByRegion[region] = (runsByRegion[region] || 0) + cnt;
+      if (!runsByMarket[mkt]) runsByMarket[mkt] = { total: 0, region };
+      runsByMarket[mkt].total += cnt;
+      // Distribute yearly total evenly across 12 months
+      const perMonth = Math.round(cnt / 12);
+      for (let m = 1; m <= 12; m++) {
+        const key = yr + '-' + String(m).padStart(2, '0');
+        runsByMonth[key] = (runsByMonth[key] || 0) + perMonth;
+      }
     }
     const runsMktArr = Object.entries(runsByMarket)
       .map(([market, v]) => ({ market, ...v }))
@@ -234,7 +241,7 @@ module.exports = async function eosEngagement(req, res) {
       snapshot: new Date().toISOString().slice(0, 10),
       streams: [
         { key: 'downloads',   label: 'EOS Report Downloads',              unit: 'downloads', source: 'EOS Usage',                  total: dlTotal,       regional: true,  by_region: dlByRegion,       by_month: toMonthArr(dlByMonth,       'cnt') },
-        { key: 'software',    label: 'Software Usage (Runs) excl internal', unit: 'runs',   source: 'Software Usage',              total: runsTotal,     regional: true,  by_region: runsByRegion,     by_market: runsMktArr, static: true },
+        { key: 'software',    label: 'Software Usage (Runs) excl internal', unit: 'runs',   source: 'Software Usage',              total: runsTotal,     regional: true,  by_region: runsByRegion,     by_month: toMonthArr(runsByMonth, 'cnt'), by_market: runsMktArr },
         { key: 'webinars',    label: 'Webinar Attendance',                unit: 'attendees', source: 'Integrated Research Tracker', total: webTotal,      regional: true,  by_region: webByRegion,      by_month: toMonthArr(webByMonth,      'attendees'), by_market: webMktArr },
         { key: 'gm',          label: 'Group Meeting Attendance',          unit: 'attendees', source: 'Integrated Research Tracker', total: gmTotal,       regional: true,  by_region: gmByRegion,       by_month: toMonthArr(gmByMonth,       'attendees'), by_market: gmMktArr },
         { key: 'videos',      label: 'EOS Video Plays',                   unit: 'plays',     source: 'EOS Usage',                  total: vidTotal,      regional: false,                              by_month: toMonthArr(vidByMonth,      'plays'), watch_mins_total: Math.round(secsTotal / 60) },
