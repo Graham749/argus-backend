@@ -1430,9 +1430,12 @@ function engSetMarket(m) {
 
 function engClearFilters() {
   E_REGION = 'All'; E_MARKET = 'All';
+  E_START = '2025-01'; E_END = E_MAX;
   engRenderFilter();
   engPopulateMarketBar();
-  engPreset('all');
+  engUpdatePresetHighlight();
+  engSyncMonthInputs();
+  engRender();
 }
 
 function engPreset(p) {
