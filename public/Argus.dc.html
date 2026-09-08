@@ -763,8 +763,7 @@ input{font-family:inherit;}
             <!-- Summary view -->
             <div id="eosEngSummary" style="display:none;">
               <div id="eosEngStatsGrid" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;"></div>
-              <div id="eosEngKpiRow" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin-top:10px;"></div>
-              <div id="eosEngLastActive" style="font-size:11px;color:#6d6d6c;padding:6px 0 2px;border-top:1px solid #f0f0ef;margin-top:8px;"></div>
+              <div id="eosEngLastActive" style="font-size:11px;color:#6d6d6c;padding:6px 0 2px;border-top:1px solid #f0f0ef;margin-top:10px;"></div>
             </div>
             <!-- Drill view -->
             <div id="eosEngDrill" style="display:none;margin-top:4px;">
@@ -6119,48 +6118,31 @@ class Component extends DCLogic {
     var fmt  = function(n){ return Number(n||0).toLocaleString('en-GB'); };
     var fmtK = function(n){ n = Number(n||0); return n >= 1000 ? (n/1000).toFixed(1)+'k' : String(n); };
 
-    // Area sparkline SVG — matches Zendesk mini-trend style
-    var spark = function(pts, color, h) {
-      h = h || 32;
-      if (!pts || pts.length < 2) return '';
+    // Monthly bar chart SVG — clicking opens drill view
+    var barChart = function(pts, color, h, drillType) {
+      h = h || 48;
+      if (!pts || !pts.length) return '';
       var max = Math.max.apply(null, pts.map(function(p){ return p.v; })) || 1;
-      var n = pts.length;
-      var xOf = function(i){ return 4 + (i/(n-1))*492; };
-      var yOf = function(v){ return (h-4) - (v/max)*(h-8); };
-      var coords = pts.map(function(p,i){ return xOf(i).toFixed(1)+','+yOf(p.v).toFixed(1); }).join(' ');
-      var area = 'M'+xOf(0).toFixed(1)+','+h+' '+coords+' L'+xOf(n-1).toFixed(1)+','+h+' Z';
-      var gid = 'esg'+color.replace('#','');
-      return '<svg width="100%" viewBox="0 0 500 '+h+'" preserveAspectRatio="none" style="display:block;height:'+h+'px">'
-        +'<defs><linearGradient id="'+gid+'" x1="0" x2="0" y1="0" y2="1">'
-        +'<stop offset="0%" stop-color="'+color+'" stop-opacity=".18"/>'
-        +'<stop offset="100%" stop-color="'+color+'" stop-opacity="0"/>'
-        +'</linearGradient></defs>'
-        +'<path d="'+area+'" fill="url(#'+gid+')"/>'
-        +'<polyline points="'+coords+'" fill="none" stroke="'+color+'" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>'
-        +'</svg>';
+      var n = pts.length, W = 500, gap = 3;
+      var bw = Math.max(1, (W - gap*(n-1)) / n);
+      var bars = pts.map(function(p, i) {
+        var x = i * (bw + gap);
+        var bh = Math.max(2, (p.v / max) * (h - 4));
+        return '<rect x="'+x.toFixed(1)+'" y="'+(h-bh).toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+bh.toFixed(1)+'" fill="'+color+'" rx="1.5" opacity="0.85"/>';
+      }).join('');
+      var click = drillType ? ' onclick="window.eosEngShowDrill(\''+drillType+'\')" style="cursor:pointer;"' : '';
+      return '<svg width="100%" viewBox="0 0 '+W+' '+h+'" preserveAspectRatio="none"'+click+' style="display:block;height:'+h+'px'+(drillType?';cursor:pointer':'')+'">'
+        +bars+'</svg>';
     };
 
-    // Summary stat tile — clickable to drill (matches Zendesk stat card with mini sparkline)
+    // Summary stat tile — bar chart is the clickable drill trigger
     var statTile = function(label, bigNum, sub, pts, color, drillType) {
-      var s = spark(pts, color, 32);
-      var clickAttr = drillType
-        ? ' onclick="window.eosEngShowDrill(\''+drillType+'\')" style="cursor:pointer;background:#f7f7f6;border-radius:8px;padding:10px 12px;"'
-        : ' style="background:#f7f7f6;border-radius:8px;padding:10px 12px;"';
-      return '<div'+clickAttr+'>'
-        +'<div style="font-size:10px;color:#6d6d6c;margin-bottom:3px">'+label
-          +(drillType ? ' <span style="color:#288184;font-size:9px;font-weight:600">▶ view all</span>' : '')+'</div>'
+      var chart = barChart(pts, color, 48, drillType);
+      return '<div style="background:#f7f7f6;border-radius:8px;padding:10px 12px;">'
+        +'<div style="font-size:10px;color:#6d6d6c;margin-bottom:3px;">'+label+'</div>'
         +'<div style="font-size:16px;font-weight:700;">'+bigNum+'</div>'
-        +'<div style="font-size:10px;color:#9d9d9d;margin-top:1px;">'+sub+'</div>'
-        +(s ? '<div style="margin-top:6px;">'+s+'</div>' : '')
-        +'</div>';
-    };
-
-    // Smaller KPI chip (API, Videos, Flex — no sparkline)
-    var kpiChip = function(label, val, sub, color, fg) {
-      return '<div style="background:'+color+';border-radius:8px;padding:8px 10px;">'
-        +'<div style="font-size:9px;font-weight:700;color:'+fg+';text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px;">'+label+'</div>'
-        +'<div style="font-size:15px;font-weight:700;color:'+fg+';">'+fmt(val)+'</div>'
-        +'<div style="font-size:10px;color:'+fg+';opacity:.75;">'+sub+'</div>'
+        +'<div style="font-size:10px;color:#9d9d9d;margin-top:1px;margin-bottom:6px;">'+sub+'</div>'
+        +(chart || '')
         +'</div>';
     };
 
@@ -6232,18 +6214,12 @@ class Component extends DCLogic {
         var runsMAU = (trends.runs      || []).reduce(function(mx,x){ return Math.max(mx, x.users||0); }, 0);
         var dlMAU   = (trends.downloads || []).reduce(function(mx,x){ return Math.max(mx, x.users||0); }, 0);
 
-        // 3-col stat grid: Runs, Downloads, Video Plays — all with sparklines where available
+        // 3-col stat grid: Runs, Downloads, Video Plays — bar charts clickable to drill
         var statsGrid = document.getElementById('eosEngStatsGrid');
         if (statsGrid) statsGrid.innerHTML =
           statTile('Completed Runs',   fmtK(d.runs.total),      fmt(d.runs.last_3m)+' last 3m · MAU: '+fmtK(runsMAU), runsPts, '#288184', 'runs')
         + statTile('Report Downloads', fmtK(d.downloads.total), fmt(d.downloads.last_3m)+' last 3m · MAU: '+fmtK(dlMAU), dlPts, '#546e7a', 'downloads')
         + statTile('Video Plays',      fmtK(d.videos.total),    Math.round(d.videos.watch_mins_total||0).toLocaleString('en-GB')+'m watched', [], '#880e4f', null);
-
-        // Smaller KPI chips for API, Flex
-        var kpiRow = document.getElementById('eosEngKpiRow');
-        if (kpiRow) kpiRow.innerHTML =
-          kpiChip('API Calls',   d.api.calls_total,   fmt(d.api.calls_30d)+' last 30d',   '#fff3e0','#e65100')
-        + kpiChip('Flex Events', d.flex.events_total, fmt(d.flex.events_30d)+' last 30d', '#f3e5f5','#6a1b9a');
 
         // Last-active row
         var streams = [
@@ -6267,22 +6243,23 @@ class Component extends DCLogic {
           ? fmt(d.runs.last_3m)+' runs · '+fmt(d.downloads.last_3m)+' downloads · '+fmt(d.flex.events_30d)+' Flex events (last 30d)'
           : 'No activity recorded';
 
-        // Inject sparklines into Engagement Pulse widget
+        // Inject bar charts into Engagement Pulse widget
         var epTrends = document.getElementById('eosEpTrends');
-        if (epTrends && (runsPts.length >= 2 || dlPts.length >= 2)) {
-          var makeEpCard = function(label, total, sub, pts, color) {
-            if (pts.length < 2) return '';
+        if (epTrends && (runsPts.length || dlPts.length)) {
+          var makeEpCard = function(label, total, sub, pts, color, drillType) {
+            var chart = barChart(pts, color, 40, drillType);
+            if (!chart) return '';
             return '<div style="background:#f7f7f6;border-radius:8px;padding:10px 12px;">'
               +'<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:1px;">'
               +'<span style="font-size:11px;font-weight:600;color:#6d6d6c;">'+label+'</span>'
               +'<span style="font-size:15px;font-weight:700;color:#3c3c3b;">'+fmtK(total)+'</span>'
               +'</div>'
               +'<div style="font-size:10px;color:#9d9d9d;margin-bottom:4px;">'+sub+'</div>'
-              +spark(pts, color, 36)
+              +chart
               +'</div>';
           };
-          var c1 = makeEpCard('Completed Runs',   d.runs.total,      'Peak MAU: '+fmtK(runsMAU), runsPts, '#288184');
-          var c2 = makeEpCard('Report Downloads', d.downloads.total, 'Peak MAU: '+fmtK(dlMAU),   dlPts,   '#546e7a');
+          var c1 = makeEpCard('Completed Runs',   d.runs.total,      'Peak MAU: '+fmtK(runsMAU), runsPts, '#288184', 'runs');
+          var c2 = makeEpCard('Report Downloads', d.downloads.total, 'Peak MAU: '+fmtK(dlMAU),   dlPts,   '#546e7a', 'downloads');
           var epHtml = [c1,c2].filter(Boolean).join('');
           if (epHtml) {
             epTrends.innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">'+epHtml+'</div>';
