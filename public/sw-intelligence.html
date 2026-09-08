@@ -296,7 +296,11 @@ tfoot td{font-size:11px;color:#9d9d9d;padding:6px 10px;border-top:1px solid #e6e
             <div style="font-size:1.55rem;font-weight:700;color:#c0c0be">—</div>
             <div style="font-size:11px;color:#c0c0be">Coming soon</div>
           </div>
-          <div id="eng-usage-panel" style="grid-column:3/7;grid-row:2;background:#fff;border:1px solid #e6e6e5;border-radius:10px;padding:12px 16px"></div>
+        </div>
+        <!-- Activity panels — own row below KPI/AI grid -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px">
+          <div id="eng-runs-panel" style="background:#fff;border:1px solid #e6e6e5;border-radius:10px;padding:12px 16px"></div>
+          <div id="eng-dl-panel" style="background:#fff;border:1px solid #e6e6e5;border-radius:10px;padding:12px 16px"></div>
         </div>
       </section>
 
@@ -1521,7 +1525,8 @@ function engRender() {
   if(E_START>E_END){ var t=E_START; E_START=E_END; E_END=t; }
   var wm=engWindowMonths(), streams=ENG_DATA.streams||[];
   engRenderKPIs(streams,wm);
-  engRenderUsagePanel(wm);
+  engRenderRunsPanel(wm);
+  engRenderDlPanel(wm);
   engRenderMix(streams,wm);
   engRenderTable(streams,wm);
   engRenderTimeTable(streams);
@@ -1608,8 +1613,8 @@ function engSparkOut() {
   document.querySelectorAll('.eng-spark-cross').forEach(function(el){ el.style.display='none'; });
 }
 
-function engRenderUsagePanel(wm) {
-  var panel = document.getElementById('eng-usage-panel');
+function engRenderRunsPanel(wm) {
+  var panel = document.getElementById('eng-runs-panel');
   if (!panel) return;
   var pt = (ENG_DATA || {}).product_trends;
   if (!pt || !Object.keys(pt).length) { panel.innerHTML = ''; return; }
@@ -1617,7 +1622,6 @@ function engRenderUsagePanel(wm) {
   var products = Object.keys(pt).sort();
   var allProds = E_PRODUCT === 'All' ? products : [E_PRODUCT];
 
-  // Aggregate runs and users per month, filtered by market > region > all
   var runsMap = {}, usersMap = {};
   var pm_all = (ENG_DATA || {}).product_markets || {};
   if (E_MARKET !== 'All') {
@@ -1653,41 +1657,13 @@ function engRenderUsagePanel(wm) {
     });
   }
 
-  // Aggregate downloads per month, filtered by market > region > all (no product split)
-  var dlMap = {};
-  var dlStream = (ENG_DATA.streams || []).find(function(s){ return s.key === 'downloads'; });
-  if (dlStream) {
-    if (E_MARKET !== 'All') {
-      var dlMkt = (dlStream.by_market || []).find(function(x){ return x.market === E_MARKET; });
-      if (dlMkt) {
-        var dlBm = dlMkt.by_month || {};
-        wm.forEach(function(m){ dlMap[m] = (dlBm[m] || 0); });
-      }
-    } else if (E_REGION !== 'All') {
-      (dlStream.by_market || []).forEach(function(x) {
-        if ((x.region || 'Other') !== E_REGION) return;
-        var dlBm = x.by_month || {};
-        wm.forEach(function(m){ dlMap[m] = (dlMap[m] || 0) + (dlBm[m] || 0); });
-      });
-    } else {
-      var dlMonthMap = {};
-      (dlStream.by_month || []).forEach(function(x){ dlMonthMap[x.month] = x.cnt || 0; });
-      wm.forEach(function(m){ dlMap[m] = dlMonthMap[m] || 0; });
-    }
-  }
-
   var runsPts  = wm.map(function(m){ return {m:m, v: runsMap[m]  || 0}; });
   var usersPts = wm.map(function(m){ return {m:m, v: usersMap[m] || 0}; });
-  var dlPts    = wm.map(function(m){ return {m:m, v: dlMap[m]    || 0}; });
-
   var totalRuns  = runsPts.reduce(function(s,p){return s+p.v;},0);
   var totalUsers = Math.max.apply(null, usersPts.map(function(p){return p.v;}));
-  var totalDl    = dlPts.reduce(function(s,p){return s+p.v;},0);
-
   var col = PROD_COLORS[E_PRODUCT] || PROD_COLORS.All;
-  var dlCol = '#546e7a';
+  var fmt = function(n){ return n >= 1000 ? (n/1000).toFixed(1)+'k' : String(n); };
 
-  // Product pills
   var pills = ['All'].concat(products).map(function(p) {
     var active = p === E_PRODUCT;
     var c = PROD_COLORS[p] || '#9d9d9d';
@@ -1696,15 +1672,12 @@ function engRenderUsagePanel(wm) {
       + ';font-size:11px;font-weight:600;white-space:nowrap">' + p + '</div>';
   }).join('');
 
-  var fmt = function(n){ return n >= 1000 ? (n/1000).toFixed(1)+'k' : String(n); };
-
   panel.innerHTML =
     '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap">'
     + '<span style="font-size:11px;font-weight:600;color:#9d9d9d;text-transform:uppercase;letter-spacing:.06em;white-space:nowrap">Product</span>'
     + pills
     + '</div>'
-    + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px">'
-    // Runs chart
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">'
     + '<div>'
     +   '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px">'
     +     '<span style="font-size:11px;font-weight:600;color:#6d6d6c">Completed Runs</span>'
@@ -1712,7 +1685,6 @@ function engRenderUsagePanel(wm) {
     +   '</div>'
     +   engSparkLine(runsPts, col, 'runs')
     + '</div>'
-    // Users chart
     + '<div>'
     +   '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px">'
     +     '<span style="font-size:11px;font-weight:600;color:#6d6d6c">Peak Monthly Active Users</span>'
@@ -1720,16 +1692,53 @@ function engRenderUsagePanel(wm) {
     +   '</div>'
     +   engSparkLine(usersPts, col, 'users')
     + '</div>'
-    // Downloads chart
+    + '</div>';
+}
+
+function engRenderDlPanel(wm) {
+  var panel = document.getElementById('eng-dl-panel');
+  if (!panel) return;
+  var dlStream = (ENG_DATA.streams || []).find(function(s){ return s.key === 'downloads'; });
+  if (!dlStream) { panel.innerHTML = ''; return; }
+  var fmt = function(n){ return n >= 1000 ? (n/1000).toFixed(1)+'k' : String(n); };
+
+  var dlMap = {};
+  if (E_MARKET !== 'All') {
+    var dlMkt = (dlStream.by_market || []).find(function(x){ return x.market === E_MARKET; });
+    if (dlMkt) {
+      var dlBm = dlMkt.by_month || {};
+      wm.forEach(function(m){ dlMap[m] = dlBm[m] || 0; });
+    }
+  } else if (E_REGION !== 'All') {
+    (dlStream.by_market || []).forEach(function(x) {
+      if ((x.region || 'Other') !== E_REGION) return;
+      var dlBm = x.by_month || {};
+      wm.forEach(function(m){ dlMap[m] = (dlMap[m] || 0) + (dlBm[m] || 0); });
+    });
+  } else {
+    var dlMonthMap = {};
+    (dlStream.by_month || []).forEach(function(x){ dlMonthMap[x.month] = x.cnt || 0; });
+    wm.forEach(function(m){ dlMap[m] = dlMonthMap[m] || 0; });
+  }
+
+  var dlPts   = wm.map(function(m){ return {m:m, v: dlMap[m] || 0}; });
+  var totalDl = dlPts.reduce(function(s,p){return s+p.v;},0);
+  var dlCol   = '#546e7a';
+
+  var regionLabel = E_MARKET !== 'All' ? E_MARKET : (E_REGION !== 'All' ? E_REGION : 'All regions');
+
+  panel.innerHTML =
+    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">'
+    + '<span style="font-size:11px;font-weight:600;color:#9d9d9d;text-transform:uppercase;letter-spacing:.06em">EOS Report Downloads</span>'
+    + '<span style="font-size:11px;color:#9d9d9d">' + regionLabel + '</span>'
+    + '</div>'
     + '<div>'
     +   '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px">'
-    +     '<span style="font-size:11px;font-weight:600;color:#6d6d6c">Report Downloads</span>'
+    +     '<span style="font-size:11px;font-weight:600;color:#6d6d6c">Total Downloads</span>'
     +     '<span style="font-size:18px;font-weight:700;color:#3c3c3b">' + fmt(totalDl) + '</span>'
     +   '</div>'
     +   engSparkLine(dlPts, dlCol, 'downloads')
-    + '</div>'
     + '</div>';
-
 }
 
 function engSetProduct(p) {
