@@ -6094,29 +6094,100 @@ class Component extends DCLogic {
     if (noMatch) noMatch.style.display = 'none';
     if (content) content.style.display = 'none';
 
-    // Clear Engagement Pulse trends slot (no longer used)
-    var epTrends = document.getElementById('eosEpTrends');
-    if (epTrends) { epTrends.innerHTML = ''; epTrends.style.display = 'none'; }
+    var esc   = function(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); };
+    var fmt   = function(n){ return Number(n||0).toLocaleString('en-GB'); };
+    var fmtSh = function(n){ return n >= 1000 ? (n/1000).toFixed(0)+'k' : String(n); };
+    var FONT  = 'Lato,Helvetica Neue,Arial,sans-serif';
+    var svgNS = 'http://www.w3.org/2000/svg';
 
-    var esc  = function(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); };
-    var fmt  = function(n){ return Number(n||0).toLocaleString('en-GB'); };
+    // SF-style bar chart — rendered into an existing DOM element after HTML injection
+    // (two-pass: inject mount div first, then call this with measured width)
+    var renderBarChart = function(mountId, pts, color) {
+      var mount = document.getElementById(mountId);
+      if (!mount) return;
+      mount.innerHTML = '';
+      if (!pts || !pts.length) {
+        var empty = document.createElement('div');
+        empty.style.cssText = 'height:80px;display:flex;align-items:center;justify-content:center;color:#c0c0c0;font-size:11px;font-family:'+FONT;
+        empty.textContent = 'No trend data';
+        mount.appendChild(empty);
+        return;
+      }
+      var W        = Math.max(mount.offsetWidth || 500, 200);
+      var H        = 88;
+      var LABEL_H  = 14, COUNT_H = 11, BAR_AREA = H - LABEL_H - COUNT_H;
+      var n        = pts.length;
+      var COL_W    = Math.floor(W / n);
+      var gap      = Math.max(1, Math.min(3, Math.floor(COL_W / 6)));
+      var BAR_W    = Math.max(COL_W - gap, 2);
+      var max      = Math.max.apply(null, pts.map(function(p){ return p.v; })) || 1;
+      var step     = n <= 12 ? 1 : n <= 18 ? 2 : 3;  // label density
 
-    // Full-width monthly bar chart — wrapper div handles click, chart never hides
-    var barChart = function(pts, color, h) {
-      h = h || 64;
-      if (!pts || !pts.length) return '<div style="height:'+h+'px;display:flex;align-items:center;justify-content:center;color:#c0c0c0;font-size:11px;">No trend data</div>';
-      var max = Math.max.apply(null, pts.map(function(p){ return p.v; })) || 1;
-      var n = pts.length, W = 500, gap = 2;
-      var bw = Math.max(1, (W - gap*(n-1)) / n);
-      var bars = pts.map(function(p, i) {
-        var x = i * (bw + gap);
-        var bh = Math.max(2, (p.v / max) * (h - 6));
-        return '<rect x="'+x.toFixed(1)+'" y="'+(h-bh).toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+bh.toFixed(1)+'" fill="'+color+'" rx="1" opacity="0.85"><title>'+(p.label||'')+': '+p.v+'</title></rect>';
-      }).join('');
-      return '<svg width="100%" viewBox="0 0 '+W+' '+h+'" preserveAspectRatio="none" style="display:block;height:'+h+'px;">'+bars+'</svg>';
+      var mk = function(tag, attrs) {
+        var el = document.createElementNS(svgNS, tag);
+        Object.keys(attrs).forEach(function(k){ el.setAttribute(k, attrs[k]); });
+        return el;
+      };
+      var mkTxt = function(attrs, txt) {
+        var el = mk('text', attrs); el.textContent = String(txt); return el;
+      };
+
+      var svg = mk('svg', { width:W, height:H });
+      svg.style.cssText = 'display:block;overflow:visible;';
+
+      pts.forEach(function(p, i) {
+        var x   = i * COL_W;
+        var cx  = x + COL_W / 2;
+        var bh  = p.v > 0 ? Math.max(4, Math.round((p.v / max) * (BAR_AREA - 2))) : 0;
+        var barY = COUNT_H + BAR_AREA - bh;
+
+        var g = mk('g', {});
+
+        // Track background (same tint pattern as SF widget)
+        g.appendChild(mk('rect', { x:x+1, y:COUNT_H, width:BAR_W, height:BAR_AREA, fill:'#f0f0ef', rx:2 }));
+
+        if (bh > 0) {
+          var bar = mk('rect', { x:x+1, y:barY, width:BAR_W, height:bh, fill:color, rx:2, opacity:'0.88' });
+          bar.addEventListener('mouseenter', function(){ bar.setAttribute('opacity','1'); });
+          bar.addEventListener('mouseleave', function(){ bar.setAttribute('opacity','0.88'); });
+          g.appendChild(bar);
+
+          // Count label above bar (skip if bar is at max — label would overlap edge)
+          if (barY > COUNT_H + 2) {
+            g.appendChild(mkTxt({ x:cx, y:Math.max(COUNT_H-1, barY-2), 'text-anchor':'middle',
+              'font-size':7, fill:'#6d6d6c', 'font-family':FONT }, fmtSh(p.v)));
+          }
+        }
+
+        // Month label below — abbreviated, Jan shown as 'yy
+        if (p.label && i % step === 0) {
+          var mo  = String(p.label).slice(5,7);
+          var yr  = String(p.label).slice(2,4);
+          var lbl = mo === '01' ? ("'"+yr) : (mo === '07' ? 'Jul' : String(parseInt(mo,10)));
+          g.appendChild(mkTxt({ x:cx, y:H-1, 'text-anchor':'middle',
+            'font-size':7, fill:'#9d9d9d', 'font-family':FONT }, lbl));
+        }
+
+        var tip = document.createElementNS(svgNS, 'title');
+        tip.textContent = (p.label||'') + ': ' + p.v;
+        g.appendChild(tip);
+        svg.appendChild(g);
+      });
+
+      mount.appendChild(svg);
     };
 
-    // Render drill table body — chart stays visible, only tbody is replaced
+    // Derive per-month pts from drill rows (used when a product filter is active)
+    var drillToPts = function(rows) {
+      var byMonth = {};
+      rows.forEach(function(r){
+        var m = String(r.date||'').slice(0,7);
+        if (m) byMonth[m] = (byMonth[m]||0) + 1;
+      });
+      return Object.keys(byMonth).sort().map(function(m){ return { v: byMonth[m], label: m }; });
+    };
+
+    // Render drill table tbody — called both on initial load and on filter change
     var renderDrillRows = function(type, rows) {
       var tbody = document.getElementById('eos'+type+'DrillBody');
       if (!tbody) return;
@@ -6143,52 +6214,55 @@ class Component extends DCLogic {
       }
     };
 
-    // Toggle drill table below chart — chart never moves or hides
+    // Toggle drill panel — chart never hides
     window.eosToggleDrill = function(type) {
       var id = 'eos' + type.charAt(0).toUpperCase() + type.slice(1) + 'Drill';
-      var drillDiv = document.getElementById(id);
-      if (!drillDiv) return;
-      drillDiv.style.display = drillDiv.style.display === 'none' ? 'block' : 'none';
+      var el = document.getElementById(id);
+      if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
     };
 
-    // Runs product filter buttons — re-renders drill body only
+    // Runs filter — updates chart AND drill table (matching SF widget behaviour)
     window.eosRunsFilter = function(prod) {
       window.__eosRunsActiveProd = prod;
       document.querySelectorAll('.eos-runs-filter-btn').forEach(function(b){
-        var active = b.dataset.prod === prod;
-        b.style.background = active ? '#288184' : '#f0f0ef';
-        b.style.color      = active ? '#fff' : '#3c3c3b';
-        b.style.borderColor = active ? '#288184' : '#d0d0d0';
+        var on = b.dataset.prod === prod;
+        b.style.background  = on ? '#288184' : '#f0f0ef';
+        b.style.color       = on ? '#fff'    : '#3c3c3b';
+        b.style.borderColor = on ? '#288184' : '#d0d0d0';
       });
-      var all = ((window.__eosEngDrill || {}).runs) || [];
-      renderDrillRows('Runs', prod === 'All' ? all : all.filter(function(r){ return (r.product||'') === prod; }));
+      var all  = ((window.__eosEngDrill || {}).runs) || [];
+      var rows = prod === 'All' ? all : all.filter(function(r){ return (r.product||'') === prod; });
+      // Chart: full API trend when 'All', derived from drill rows when filtered
+      renderBarChart('eosRunsChart', prod === 'All' ? window.__eosRunsPts : drillToPts(rows), '#288184');
+      renderDrillRows('Runs', rows);
     };
 
-    // Downloads product dropdown filter
+    // Downloads filter — updates chart AND drill table
     window.eosDlFilter = function(prod) {
-      var all = ((window.__eosEngDrill || {}).downloads) || [];
-      renderDrillRows('Downloads', (!prod || prod === 'All') ? all : all.filter(function(r){ return (r.product||'') === prod; }));
+      var all  = ((window.__eosEngDrill || {}).downloads) || [];
+      var rows = (!prod || prod === 'All') ? all : all.filter(function(r){ return (r.product||'') === prod; });
+      renderBarChart('eosDlChart', (!prod || prod === 'All') ? window.__eosDlPts : drillToPts(rows), '#546e7a');
+      renderDrillRows('Downloads', rows);
     };
 
-    // Build one full-width section (runs or downloads)
-    var buildSection = function(idKey, label, total3m, color, chartPts, filterHtml, drillCols) {
-      var idU = idKey.charAt(0).toUpperCase() + idKey.slice(1); // 'Runs' | 'Downloads'
+    // Build one full-width section — chart mount is an empty div filled after injection
+    var buildSection = function(idKey, label, total3m, drillCols) {
+      var idU    = idKey.charAt(0).toUpperCase() + idKey.slice(1);
       var colHtml = drillCols.map(function(c){
         return '<th style="padding:8px 10px;text-align:left;font-weight:700;color:#3c3c3b;white-space:nowrap;font-size:11px;position:sticky;top:0;background:#f7f7f6;border-bottom:1px solid #e6e6e5;z-index:1;">'+c+'</th>';
       }).join('');
       return '<div style="margin-bottom:18px;">'
-        // Section header: label + total + filter controls
         +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;">'
         +'<span style="font-size:12px;font-weight:700;color:#3c3c3b;">'+label+'</span>'
-        +'<span style="font-size:11px;color:#9d9d9d;">'+fmt(total3m)+' last 3m</span>'
-        +'<div style="margin-left:auto;display:flex;gap:4px;flex-wrap:wrap;align-items:center;">'+filterHtml+'</div>'
+        +'<span id="eos'+idU+'Sub" style="font-size:11px;color:#9d9d9d;">'+fmt(total3m)+' last 3m</span>'
+        +'<div id="eos'+idU+'Filters" style="margin-left:auto;display:flex;gap:4px;flex-wrap:wrap;align-items:center;"></div>'
         +'</div>'
-        // Full-width bar chart in a clickable wrapper — chart persists when drill opens
-        +'<div onclick="window.eosToggleDrill(\''+idKey+'\')" style="cursor:pointer;border-radius:6px;overflow:hidden;background:#f7f7f6;padding:8px 8px 4px;" title="Click to expand detail">'
-        +barChart(chartPts, color, 64)
-        +'</div>'
-        +'<div style="font-size:9px;color:#b8b8b6;text-align:center;margin-top:2px;margin-bottom:6px;">Click chart to expand · '+fmt(chartPts.length)+' months</div>'
-        // Drill table — hidden by default, appears below chart when clicked
+        // Clickable chart wrapper — chart persists when drill opens below
+        +'<div id="eos'+idU+'Chart" onclick="window.eosToggleDrill(\''+idKey+'\')" '
+        +'style="cursor:pointer;border-radius:6px;overflow:hidden;background:#f7f7f6;padding:6px 6px 2px;" '
+        +'title="Click to expand detail · 24 months trend"></div>'
+        +'<div style="font-size:9px;color:#b8b8b6;text-align:center;margin-top:1px;margin-bottom:6px;">Click to expand detail</div>'
+        // Drill panel — hidden by default, appears below chart
         +'<div id="eos'+idU+'Drill" style="display:none;margin-top:6px;border:1px solid #e6e6e5;border-radius:8px;overflow:hidden;">'
         +'<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:#f7f7f6;border-bottom:1px solid #e6e6e5;">'
         +'<button onclick="window.eosToggleDrill(\''+idKey+'\')" style="padding:4px 10px;border-radius:5px;border:1px solid #e6e6e5;background:#fff;color:#288184;font-size:11px;font-weight:700;cursor:pointer;">← Collapse</button>'
@@ -6198,10 +6272,7 @@ class Component extends DCLogic {
         +'<table style="width:100%;border-collapse:collapse;">'
         +'<thead><tr>'+colHtml+'</tr></thead>'
         +'<tbody id="eos'+idU+'DrillBody"></tbody>'
-        +'</table>'
-        +'</div>'
-        +'</div>'
-        +'</div>';
+        +'</table></div></div></div>';
     };
 
     var enc = encodeURIComponent(accountName);
@@ -6214,47 +6285,81 @@ class Component extends DCLogic {
           return;
         }
 
-        window.__eosEngDrill    = d.drill || {};
+        window.__eosEngDrill       = d.drill || {};
         window.__eosRunsActiveProd = 'All';
 
-        var trends  = d.trends || {};
-        var runsPts = (trends.runs      || []).map(function(x){ return { v: x.cnt, label: x.month }; });
-        var dlPts   = (trends.downloads || []).map(function(x){ return { v: x.cnt, label: x.month }; });
+        var trends = d.trends || {};
+        window.__eosRunsPts = (trends.runs      || []).map(function(x){ return { v:x.cnt, label:x.month }; });
+        window.__eosDlPts   = (trends.downloads || []).map(function(x){ return { v:x.cnt, label:x.month }; });
 
-        // Unique products from drill rows for runs filter buttons
-        var btnStyle = 'padding:3px 8px;border-radius:4px;border:1px solid;font-size:10px;font-weight:600;cursor:pointer;transition:background .15s,color .15s;';
-        var runsProds = ['All'];
-        (d.drill.runs || []).forEach(function(r){ if (r.product && runsProds.indexOf(r.product)<0) runsProds.push(r.product); });
-        runsProds.sort(function(a,b){ return a==='All'?-1:b==='All'?1:a.localeCompare(b); });
-        var runsBtns = runsProds.map(function(p){
-          var active = p === 'All';
-          return '<button class="eos-runs-filter-btn" data-prod="'+esc(p)+'" onclick="window.eosRunsFilter(\''+p.replace(/'/g,"\\'")+'\')" style="'+btnStyle+'background:'+(active?'#288184':'#f0f0ef')+';color:'+(active?'#fff':'#3c3c3b')+';border-color:'+(active?'#288184':'#d0d0d0')+';">'+esc(p)+'</button>';
-        }).join('');
-
-        // Unique products for downloads dropdown
-        var dlProds = [];
-        (d.drill.downloads || []).forEach(function(r){ if (r.product && dlProds.indexOf(r.product)<0) dlProds.push(r.product); });
-        dlProds.sort();
-        var dlOpts = dlProds.map(function(p){ return '<option value="'+esc(p)+'">'+esc(p)+'</option>'; }).join('');
-        var dlSelect = '<select onchange="window.eosDlFilter(this.value)" style="font-size:10px;padding:3px 8px;border-radius:4px;border:1px solid #d0d0d0;background:#f0f0ef;cursor:pointer;color:#3c3c3b;">'
-          +'<option value="All">All products</option>'+dlOpts+'</select>';
-
-        var html = buildSection('runs', 'Completed Runs', d.runs.last_3m, '#288184', runsPts, runsBtns,
-          ['Date','User','Product','Title','Status']);
-        html    += buildSection('downloads', 'Report Downloads', d.downloads.last_3m, '#546e7a', dlPts, dlSelect,
-          ['Date','User','Product','Filename']);
+        // Build HTML skeletons (chart mounts are empty — filled after injection)
+        var html = buildSection('runs',      'Completed Runs',    d.runs.last_3m,      ['Date','User','Product','Title','Status']);
+        html    += buildSection('downloads', 'Report Downloads',  d.downloads.last_3m, ['Date','User','Product','Filename']);
 
         var lastParts = [
-          d.runs.last_run      ? 'Last run: '      + String(d.runs.last_run).slice(0,10)      : '',
-          d.downloads.last_date ? 'Last download: ' + String(d.downloads.last_date).slice(0,10) : '',
+          d.runs.last_run       ? 'Last run: '+String(d.runs.last_run).slice(0,10)            : '',
+          d.downloads.last_date ? 'Last download: '+String(d.downloads.last_date).slice(0,10) : '',
         ].filter(Boolean);
         if (lastParts.length) html += '<div style="font-size:10px;color:#9d9d9d;padding-top:8px;border-top:1px solid #f0f0ef;">'+lastParts.join(' &nbsp;·&nbsp; ')+'</div>';
 
         if (content) { content.innerHTML = html; content.style.display = 'block'; }
 
-        // Populate drill table bodies after DOM injection
+        // Inject filter controls (after DOM exists)
+        var btnStyle = 'padding:4px 9px;border-radius:5px;border:1px solid;font-size:10px;font-weight:600;cursor:pointer;transition:background .12s,color .12s;';
+        var runsProds = ['All'];
+        (d.drill.runs||[]).forEach(function(r){ if (r.product && runsProds.indexOf(r.product)<0) runsProds.push(r.product); });
+        runsProds.sort(function(a,b){ return a==='All'?-1:b==='All'?1:a.localeCompare(b); });
+        var runsFiltersEl = document.getElementById('eosRunsFilters');
+        if (runsFiltersEl) runsFiltersEl.innerHTML = runsProds.map(function(p){
+          var on = p === 'All';
+          return '<button class="eos-runs-filter-btn" data-prod="'+esc(p)+'" onclick="window.eosRunsFilter(\''+p.replace(/'/g,"\\'")+'\');" style="'+btnStyle+'background:'+(on?'#288184':'#f0f0ef')+';color:'+(on?'#fff':'#3c3c3b')+';border-color:'+(on?'#288184':'#d0d0d0')+';">'+esc(p)+'</button>';
+        }).join('');
+
+        var dlProds = [];
+        (d.drill.downloads||[]).forEach(function(r){ if (r.product && dlProds.indexOf(r.product)<0) dlProds.push(r.product); });
+        dlProds.sort();
+        var dlFiltersEl = document.getElementById('eosDownloadsFilters');
+        if (dlFiltersEl && dlProds.length) {
+          dlFiltersEl.innerHTML = '<select onchange="window.eosDlFilter(this.value);" style="font-size:10px;padding:4px 8px;border-radius:5px;border:1px solid #d0d0d0;background:#f0f0ef;cursor:pointer;color:#3c3c3b;font-family:'+FONT+';">'
+            +'<option value="All">All products</option>'
+            +dlProds.map(function(p){ return '<option value="'+esc(p)+'">'+esc(p)+'</option>'; }).join('')
+            +'</select>';
+        }
+
+        // Render charts (two-pass — DOM now laid out, offsetWidth is real)
+        requestAnimationFrame(function(){
+          renderBarChart('eosRunsChart', window.__eosRunsPts, '#288184');
+          renderBarChart('eosDlChart',   window.__eosDlPts,   '#546e7a');
+        });
+
+        // Populate drill tables
         renderDrillRows('Runs',      d.drill.runs      || []);
         renderDrillRows('Downloads', d.drill.downloads || []);
+
+        // Restore Engagement Pulse bar charts — full-width rows, same style
+        var epTrends = document.getElementById('eosEpTrends');
+        if (epTrends) {
+          epTrends.innerHTML = '';
+          var makeEpRow = function(label, pts, color, total3m, chartId) {
+            if (!pts || !pts.length) return;
+            var row = document.createElement('div');
+            row.style.cssText = 'margin-bottom:8px;';
+            var header = document.createElement('div');
+            header.style.cssText = 'display:flex;align-items:baseline;gap:6px;margin-bottom:3px;';
+            header.innerHTML = '<span style="font-size:11px;font-weight:700;color:#3c3c3b;">'+label+'</span>'
+              +'<span style="font-size:10px;color:#9d9d9d;">'+fmt(total3m)+' last 3m</span>';
+            var mount = document.createElement('div');
+            mount.id = chartId;
+            mount.style.cssText = 'border-radius:5px;overflow:hidden;background:#f7f7f6;padding:5px 5px 1px;';
+            row.appendChild(header);
+            row.appendChild(mount);
+            epTrends.appendChild(row);
+            requestAnimationFrame(function(){ renderBarChart(chartId, pts, color); });
+          };
+          makeEpRow('Completed Runs',   window.__eosRunsPts, '#288184', d.runs.last_3m,      'eosEpRunsChart');
+          makeEpRow('Report Downloads', window.__eosDlPts,   '#546e7a', d.downloads.last_3m, 'eosEpDlChart');
+          epTrends.style.display = 'block';
+        }
 
         if (subtitle) subtitle.textContent = fmt(d.runs.last_3m)+' runs · '+fmt(d.downloads.last_3m)+' downloads (last 3m)';
       })
