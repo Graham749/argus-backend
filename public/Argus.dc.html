@@ -734,25 +734,25 @@ input{font-family:inherit;}
           </div><!-- /phCardBody -->
         </div>
 
-        <!-- EOS Engagement Card -->
+        <!-- Engagement History Card -->
         <div id="eosEngCard" style="display:none;background:#fff;border:1px solid #e6e6e5;border-radius:12px;padding:20px;box-shadow:0 1px 3px rgba(60,60,59,0.07);margin-bottom:8px;">
           <div id="eosEngHeader" style="display:flex;align-items:center;gap:10px;margin-bottom:16px;cursor:pointer;user-select:none;" onclick="
             var b=document.getElementById('eosEngBody');
             var c=document.getElementById('eosEngChev');
-            var collapsed=this._collapsed;
-            b.style.display=collapsed?'block':'none';
-            c.textContent=collapsed?'▾':'▾';
-            this._collapsed=!collapsed;
+            var col=this._collapsed;
+            b.style.display=col?'block':'none';
+            c.textContent=col?'▾':'▾';
+            this._collapsed=!col;
           ">
             <div style="width:44px;height:44px;flex-shrink:0;background:#e6f4f4;border-radius:8px;display:flex;align-items:center;justify-content:center;">
               <svg viewBox="0 0 24 24" fill="none" stroke="#288184" stroke-width="2" style="width:22px;height:22px;"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
             </div>
             <div style="flex:1;">
               <div style="display:flex;align-items:center;gap:8px;">
-                <div style="font-size:13px;font-weight:700;">EOS Engagement</div>
+                <div style="font-size:13px;font-weight:700;">Engagement History</div>
                 <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:#00be86;font-weight:600;"><span style="font-size:12px;line-height:1;">●</span>Live data</div>
               </div>
-              <div id="eosEngSubtitle" style="font-size:11px;color:#9d9d9d;margin-top:2px;">Product usage across EOS platform</div>
+              <div id="eosEngSubtitle" style="font-size:11px;color:#9d9d9d;margin-top:2px;">Software runs &amp; report downloads</div>
             </div>
             <span id="eosEngChev" style="font-size:16px;color:#9d9d9d;flex-shrink:0;margin-left:8px;">▾</span>
           </div>
@@ -760,26 +760,7 @@ input{font-family:inherit;}
           <div id="eosEngBody">
             <div id="eosEngLoading" style="padding:20px 0;text-align:center;color:#9d9d9d;font-size:13px;font-style:italic;">Loading engagement data…</div>
             <div id="eosEngNoMatch" style="display:none;padding:16px;background:#f7f7f6;border-radius:8px;font-size:12px;color:#9d9d9d;text-align:center;">No EOS engagement data found for this account</div>
-            <!-- Summary view -->
-            <div id="eosEngSummary" style="display:none;">
-              <div id="eosEngStatsGrid" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;"></div>
-              <div id="eosEngLastActive" style="font-size:11px;color:#6d6d6c;padding:6px 0 2px;border-top:1px solid #f0f0ef;margin-top:10px;"></div>
-            </div>
-            <!-- Drill view -->
-            <div id="eosEngDrill" style="display:none;margin-top:4px;">
-              <div style="margin-bottom:12px;display:flex;align-items:center;gap:12px;">
-                <button onclick="window.eosEngBack()" style="padding:6px 12px;border-radius:6px;border:1px solid #e6e6e5;background:#fff;color:#288184;font-size:11px;font-weight:700;cursor:pointer;">← Back to Summary</button>
-                <span id="eosEngDrillTitle" style="font-size:12px;color:#6d6d6c;"></span>
-              </div>
-              <div style="overflow-x:auto;border:1px solid #e6e6e5;border-radius:8px;max-height:400px;overflow-y:auto;">
-                <table style="width:100%;border-collapse:collapse;font-size:12px;">
-                  <thead style="background:#f7f7f6;border-bottom:1px solid #e6e6e5;position:sticky;top:0;z-index:1;">
-                    <tr id="eosEngDrillHead"></tr>
-                  </thead>
-                  <tbody id="eosEngDrillBody"></tbody>
-                </table>
-              </div>
-            </div>
+            <div id="eosEngContent" style="display:none;"></div>
           </div>
         </div><!-- /eosEngCard -->
 
@@ -6105,94 +6086,122 @@ class Component extends DCLogic {
     var card     = document.getElementById('eosEngCard');
     var loading  = document.getElementById('eosEngLoading');
     var noMatch  = document.getElementById('eosEngNoMatch');
-    var summary  = document.getElementById('eosEngSummary');
+    var content  = document.getElementById('eosEngContent');
     var subtitle = document.getElementById('eosEngSubtitle');
     if (!card) return;
     card.style.display = 'block';
     if (loading) { loading.style.display = 'block'; loading.textContent = 'Loading engagement data…'; }
-    if (noMatch)  noMatch.style.display  = 'none';
-    if (summary)  summary.style.display  = 'none';
-    document.getElementById('eosEngDrill').style.display = 'none';
+    if (noMatch) noMatch.style.display = 'none';
+    if (content) content.style.display = 'none';
+
+    // Clear Engagement Pulse trends slot (no longer used)
+    var epTrends = document.getElementById('eosEpTrends');
+    if (epTrends) { epTrends.innerHTML = ''; epTrends.style.display = 'none'; }
 
     var esc  = function(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); };
     var fmt  = function(n){ return Number(n||0).toLocaleString('en-GB'); };
-    var fmtK = function(n){ n = Number(n||0); return n >= 1000 ? (n/1000).toFixed(1)+'k' : String(n); };
 
-    // Monthly bar chart SVG — clicking opens drill view
-    var barChart = function(pts, color, h, drillType) {
-      h = h || 48;
-      if (!pts || !pts.length) return '';
+    // Full-width monthly bar chart — wrapper div handles click, chart never hides
+    var barChart = function(pts, color, h) {
+      h = h || 64;
+      if (!pts || !pts.length) return '<div style="height:'+h+'px;display:flex;align-items:center;justify-content:center;color:#c0c0c0;font-size:11px;">No trend data</div>';
       var max = Math.max.apply(null, pts.map(function(p){ return p.v; })) || 1;
-      var n = pts.length, W = 500, gap = 3;
+      var n = pts.length, W = 500, gap = 2;
       var bw = Math.max(1, (W - gap*(n-1)) / n);
       var bars = pts.map(function(p, i) {
         var x = i * (bw + gap);
-        var bh = Math.max(2, (p.v / max) * (h - 4));
-        return '<rect x="'+x.toFixed(1)+'" y="'+(h-bh).toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+bh.toFixed(1)+'" fill="'+color+'" rx="1.5" opacity="0.85"/>';
+        var bh = Math.max(2, (p.v / max) * (h - 6));
+        return '<rect x="'+x.toFixed(1)+'" y="'+(h-bh).toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+bh.toFixed(1)+'" fill="'+color+'" rx="1" opacity="0.85"><title>'+(p.label||'')+': '+p.v+'</title></rect>';
       }).join('');
-      var click = drillType ? ' onclick="window.eosEngShowDrill(\''+drillType+'\')" style="cursor:pointer;"' : '';
-      return '<svg width="100%" viewBox="0 0 '+W+' '+h+'" preserveAspectRatio="none"'+click+' style="display:block;height:'+h+'px'+(drillType?';cursor:pointer':'')+'">'
-        +bars+'</svg>';
+      return '<svg width="100%" viewBox="0 0 '+W+' '+h+'" preserveAspectRatio="none" style="display:block;height:'+h+'px;">'+bars+'</svg>';
     };
 
-    // Summary stat tile — bar chart is the clickable drill trigger
-    var statTile = function(label, bigNum, sub, pts, color, drillType) {
-      var chart = barChart(pts, color, 48, drillType);
-      return '<div style="background:#f7f7f6;border-radius:8px;padding:10px 12px;">'
-        +'<div style="font-size:10px;color:#6d6d6c;margin-bottom:3px;">'+label+'</div>'
-        +'<div style="font-size:16px;font-weight:700;">'+bigNum+'</div>'
-        +'<div style="font-size:10px;color:#9d9d9d;margin-top:1px;margin-bottom:6px;">'+sub+'</div>'
-        +(chart || '')
-        +'</div>';
-    };
-
-    // Drill navigation (global — called from onclick in dynamic HTML)
-    window.eosEngShowDrill = function(type) {
-      var sm  = document.getElementById('eosEngSummary');
-      var dr  = document.getElementById('eosEngDrill');
-      var ttl = document.getElementById('eosEngDrillTitle');
-      var hd  = document.getElementById('eosEngDrillHead');
-      var bd  = document.getElementById('eosEngDrillBody');
-      if (!sm || !dr || !hd || !bd) return;
-      var rows = (window.__eosEngDrill || {})[type] || [];
-      if (type === 'downloads') {
-        ttl.textContent = 'Recent Downloads · ' + rows.length + ' rows';
-        hd.innerHTML = ['Date','User','Product','Filename'].map(function(c){
-          return '<th style="padding:10px 12px;text-align:left;font-weight:700;color:#3c3c3b;white-space:nowrap;">'+c+'</th>';
-        }).join('');
-        bd.innerHTML = rows.length ? rows.map(function(r){
-          return '<tr style="border-bottom:1px solid #e6e6e5;">'
-            +'<td style="padding:8px 12px;white-space:nowrap;color:#6d6d6c;">'+esc(r.date)+'</td>'
-            +'<td style="padding:8px 12px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="'+esc(r.user)+'">'+esc(r.user)+'</td>'
-            +'<td style="padding:8px 12px;white-space:nowrap;">'+esc(r.product)+'</td>'
-            +'<td style="padding:8px 12px;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="'+esc(r.filename)+'">'+esc(r.filename)+'</td>'
-            +'</tr>';
-        }).join('') : '<tr><td colspan="4" style="padding:20px;text-align:center;color:#9d9d9d;">No data</td></tr>';
-      } else if (type === 'runs') {
-        ttl.textContent = 'Recent Runs · ' + rows.length + ' rows';
-        hd.innerHTML = ['Date','User','Product','Title','Status'].map(function(c){
-          return '<th style="padding:10px 12px;text-align:left;font-weight:700;color:#3c3c3b;white-space:nowrap;">'+c+'</th>';
-        }).join('');
-        bd.innerHTML = rows.length ? rows.map(function(r){
+    // Render drill table body — chart stays visible, only tbody is replaced
+    var renderDrillRows = function(type, rows) {
+      var tbody = document.getElementById('eos'+type+'DrillBody');
+      if (!tbody) return;
+      if (type === 'Runs') {
+        tbody.innerHTML = rows.length ? rows.map(function(r){
           var sc = r.status === 'Complete' ? '#2e7d32' : r.status === 'Incomplete' ? '#c2600f' : '#6d6d6c';
-          return '<tr style="border-bottom:1px solid #e6e6e5;">'
-            +'<td style="padding:8px 12px;white-space:nowrap;color:#6d6d6c;">'+esc(r.date)+'</td>'
-            +'<td style="padding:8px 12px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="'+esc(r.user)+'">'+esc(r.user)+'</td>'
-            +'<td style="padding:8px 12px;white-space:nowrap;">'+esc(r.product)+'</td>'
-            +'<td style="padding:8px 12px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="'+esc(r.title)+'">'+esc(r.title)+'</td>'
-            +'<td style="padding:8px 12px;white-space:nowrap;font-weight:600;color:'+sc+';">'+esc(r.status)+'</td>'
+          return '<tr style="border-bottom:1px solid #f0f0ef;">'
+            +'<td style="padding:7px 10px;white-space:nowrap;color:#6d6d6c;font-size:11px;">'+esc(r.date)+'</td>'
+            +'<td style="padding:7px 10px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;" title="'+esc(r.user)+'">'+esc(r.user)+'</td>'
+            +'<td style="padding:7px 10px;white-space:nowrap;font-size:11px;">'+esc(r.product)+'</td>'
+            +'<td style="padding:7px 10px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;" title="'+esc(r.title)+'">'+esc(r.title)+'</td>'
+            +'<td style="padding:7px 10px;white-space:nowrap;font-size:11px;font-weight:600;color:'+sc+';">'+esc(r.status)+'</td>'
             +'</tr>';
-        }).join('') : '<tr><td colspan="5" style="padding:20px;text-align:center;color:#9d9d9d;">No data</td></tr>';
+        }).join('') : '<tr><td colspan="5" style="padding:20px;text-align:center;color:#9d9d9d;font-size:11px;">No data</td></tr>';
+      } else {
+        tbody.innerHTML = rows.length ? rows.map(function(r){
+          return '<tr style="border-bottom:1px solid #f0f0ef;">'
+            +'<td style="padding:7px 10px;white-space:nowrap;color:#6d6d6c;font-size:11px;">'+esc(r.date)+'</td>'
+            +'<td style="padding:7px 10px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;" title="'+esc(r.user)+'">'+esc(r.user)+'</td>'
+            +'<td style="padding:7px 10px;white-space:nowrap;font-size:11px;">'+esc(r.product)+'</td>'
+            +'<td style="padding:7px 10px;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;" title="'+esc(r.filename)+'">'+esc(r.filename)+'</td>'
+            +'</tr>';
+        }).join('') : '<tr><td colspan="4" style="padding:20px;text-align:center;color:#9d9d9d;font-size:11px;">No data</td></tr>';
       }
-      sm.style.display = 'none';
-      dr.style.display = 'block';
     };
 
-    window.eosEngBack = function() {
-      var sm = document.getElementById('eosEngSummary');
-      var dr = document.getElementById('eosEngDrill');
-      if (sm) sm.style.display = 'block';
-      if (dr) dr.style.display = 'none';
+    // Toggle drill table below chart — chart never moves or hides
+    window.eosToggleDrill = function(type) {
+      var id = 'eos' + type.charAt(0).toUpperCase() + type.slice(1) + 'Drill';
+      var drillDiv = document.getElementById(id);
+      if (!drillDiv) return;
+      drillDiv.style.display = drillDiv.style.display === 'none' ? 'block' : 'none';
+    };
+
+    // Runs product filter buttons — re-renders drill body only
+    window.eosRunsFilter = function(prod) {
+      window.__eosRunsActiveProd = prod;
+      document.querySelectorAll('.eos-runs-filter-btn').forEach(function(b){
+        var active = b.dataset.prod === prod;
+        b.style.background = active ? '#288184' : '#f0f0ef';
+        b.style.color      = active ? '#fff' : '#3c3c3b';
+        b.style.borderColor = active ? '#288184' : '#d0d0d0';
+      });
+      var all = ((window.__eosEngDrill || {}).runs) || [];
+      renderDrillRows('Runs', prod === 'All' ? all : all.filter(function(r){ return (r.product||'') === prod; }));
+    };
+
+    // Downloads product dropdown filter
+    window.eosDlFilter = function(prod) {
+      var all = ((window.__eosEngDrill || {}).downloads) || [];
+      renderDrillRows('Downloads', (!prod || prod === 'All') ? all : all.filter(function(r){ return (r.product||'') === prod; }));
+    };
+
+    // Build one full-width section (runs or downloads)
+    var buildSection = function(idKey, label, total3m, color, chartPts, filterHtml, drillCols) {
+      var idU = idKey.charAt(0).toUpperCase() + idKey.slice(1); // 'Runs' | 'Downloads'
+      var colHtml = drillCols.map(function(c){
+        return '<th style="padding:8px 10px;text-align:left;font-weight:700;color:#3c3c3b;white-space:nowrap;font-size:11px;position:sticky;top:0;background:#f7f7f6;border-bottom:1px solid #e6e6e5;z-index:1;">'+c+'</th>';
+      }).join('');
+      return '<div style="margin-bottom:18px;">'
+        // Section header: label + total + filter controls
+        +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;">'
+        +'<span style="font-size:12px;font-weight:700;color:#3c3c3b;">'+label+'</span>'
+        +'<span style="font-size:11px;color:#9d9d9d;">'+fmt(total3m)+' last 3m</span>'
+        +'<div style="margin-left:auto;display:flex;gap:4px;flex-wrap:wrap;align-items:center;">'+filterHtml+'</div>'
+        +'</div>'
+        // Full-width bar chart in a clickable wrapper — chart persists when drill opens
+        +'<div onclick="window.eosToggleDrill(\''+idKey+'\')" style="cursor:pointer;border-radius:6px;overflow:hidden;background:#f7f7f6;padding:8px 8px 4px;" title="Click to expand detail">'
+        +barChart(chartPts, color, 64)
+        +'</div>'
+        +'<div style="font-size:9px;color:#b8b8b6;text-align:center;margin-top:2px;margin-bottom:6px;">Click chart to expand · '+fmt(chartPts.length)+' months</div>'
+        // Drill table — hidden by default, appears below chart when clicked
+        +'<div id="eos'+idU+'Drill" style="display:none;margin-top:6px;border:1px solid #e6e6e5;border-radius:8px;overflow:hidden;">'
+        +'<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:#f7f7f6;border-bottom:1px solid #e6e6e5;">'
+        +'<button onclick="window.eosToggleDrill(\''+idKey+'\')" style="padding:4px 10px;border-radius:5px;border:1px solid #e6e6e5;background:#fff;color:#288184;font-size:11px;font-weight:700;cursor:pointer;">← Collapse</button>'
+        +'<span style="font-size:11px;color:#6d6d6c;">'+label+' · most recent 100</span>'
+        +'</div>'
+        +'<div style="max-height:360px;overflow-y:auto;">'
+        +'<table style="width:100%;border-collapse:collapse;">'
+        +'<thead><tr>'+colHtml+'</tr></thead>'
+        +'<tbody id="eos'+idU+'DrillBody"></tbody>'
+        +'</table>'
+        +'</div>'
+        +'</div>'
+        +'</div>';
     };
 
     var enc = encodeURIComponent(accountName);
@@ -6205,70 +6214,52 @@ class Component extends DCLogic {
           return;
         }
 
-        // Store drill data globally for onclick handlers
-        window.__eosEngDrill = d.drill || {};
+        window.__eosEngDrill    = d.drill || {};
+        window.__eosRunsActiveProd = 'All';
 
-        var trends = d.trends || {};
-        var runsPts = (trends.runs      || []).map(function(x){ return {v: x.cnt}; });
-        var dlPts   = (trends.downloads || []).map(function(x){ return {v: x.cnt}; });
-        var runsMAU = (trends.runs      || []).reduce(function(mx,x){ return Math.max(mx, x.users||0); }, 0);
-        var dlMAU   = (trends.downloads || []).reduce(function(mx,x){ return Math.max(mx, x.users||0); }, 0);
+        var trends  = d.trends || {};
+        var runsPts = (trends.runs      || []).map(function(x){ return { v: x.cnt, label: x.month }; });
+        var dlPts   = (trends.downloads || []).map(function(x){ return { v: x.cnt, label: x.month }; });
 
-        // 3-col stat grid: Runs, Downloads, Video Plays — bar charts clickable to drill
-        var statsGrid = document.getElementById('eosEngStatsGrid');
-        if (statsGrid) statsGrid.innerHTML =
-          statTile('Completed Runs',   fmtK(d.runs.total),      fmt(d.runs.last_3m)+' last 3m · MAU: '+fmtK(runsMAU), runsPts, '#288184', 'runs')
-        + statTile('Report Downloads', fmtK(d.downloads.total), fmt(d.downloads.last_3m)+' last 3m · MAU: '+fmtK(dlMAU), dlPts, '#546e7a', 'downloads')
-        + statTile('Video Plays',      fmtK(d.videos.total),    Math.round(d.videos.watch_mins_total||0).toLocaleString('en-GB')+'m watched', [], '#880e4f', null);
+        // Unique products from drill rows for runs filter buttons
+        var btnStyle = 'padding:3px 8px;border-radius:4px;border:1px solid;font-size:10px;font-weight:600;cursor:pointer;transition:background .15s,color .15s;';
+        var runsProds = ['All'];
+        (d.drill.runs || []).forEach(function(r){ if (r.product && runsProds.indexOf(r.product)<0) runsProds.push(r.product); });
+        runsProds.sort(function(a,b){ return a==='All'?-1:b==='All'?1:a.localeCompare(b); });
+        var runsBtns = runsProds.map(function(p){
+          var active = p === 'All';
+          return '<button class="eos-runs-filter-btn" data-prod="'+esc(p)+'" onclick="window.eosRunsFilter(\''+p.replace(/'/g,"\\'")+'\')" style="'+btnStyle+'background:'+(active?'#288184':'#f0f0ef')+';color:'+(active?'#fff':'#3c3c3b')+';border-color:'+(active?'#288184':'#d0d0d0')+';">'+esc(p)+'</button>';
+        }).join('');
 
-        // Last-active row
-        var streams = [
-          { label:'Runs',      last: d.runs.last_run },
-          { label:'Downloads', last: d.downloads.last_date },
-          { label:'Videos',    last: d.videos.last_date },
-          { label:'API',       last: d.api.last_seen },
-          { label:'Flex',      last: d.flex.last_seen },
-        ];
-        var lastActive = streams.filter(function(s){ return s.last; })
-          .map(function(s){ return s.label+': '+String(s.last).slice(0,10); }).join(' &nbsp;·&nbsp; ');
-        if (d.flex && d.flex.top_feature) lastActive += ' &nbsp;·&nbsp; Top Flex: <strong>'+esc(d.flex.top_feature)+'</strong>';
-        var laEl = document.getElementById('eosEngLastActive');
-        if (laEl) laEl.innerHTML = lastActive;
+        // Unique products for downloads dropdown
+        var dlProds = [];
+        (d.drill.downloads || []).forEach(function(r){ if (r.product && dlProds.indexOf(r.product)<0) dlProds.push(r.product); });
+        dlProds.sort();
+        var dlOpts = dlProds.map(function(p){ return '<option value="'+esc(p)+'">'+esc(p)+'</option>'; }).join('');
+        var dlSelect = '<select onchange="window.eosDlFilter(this.value)" style="font-size:10px;padding:3px 8px;border-radius:4px;border:1px solid #d0d0d0;background:#f0f0ef;cursor:pointer;color:#3c3c3b;">'
+          +'<option value="All">All products</option>'+dlOpts+'</select>';
 
-        if (summary) summary.style.display = 'block';
+        var html = buildSection('runs', 'Completed Runs', d.runs.last_3m, '#288184', runsPts, runsBtns,
+          ['Date','User','Product','Title','Status']);
+        html    += buildSection('downloads', 'Report Downloads', d.downloads.last_3m, '#546e7a', dlPts, dlSelect,
+          ['Date','User','Product','Filename']);
 
-        // Subtitle
-        var any = d.runs.total > 0 || d.downloads.total > 0 || d.flex.events_total > 0;
-        if (subtitle) subtitle.textContent = any
-          ? fmt(d.runs.last_3m)+' runs · '+fmt(d.downloads.last_3m)+' downloads · '+fmt(d.flex.events_30d)+' Flex events (last 30d)'
-          : 'No activity recorded';
+        var lastParts = [
+          d.runs.last_run      ? 'Last run: '      + String(d.runs.last_run).slice(0,10)      : '',
+          d.downloads.last_date ? 'Last download: ' + String(d.downloads.last_date).slice(0,10) : '',
+        ].filter(Boolean);
+        if (lastParts.length) html += '<div style="font-size:10px;color:#9d9d9d;padding-top:8px;border-top:1px solid #f0f0ef;">'+lastParts.join(' &nbsp;·&nbsp; ')+'</div>';
 
-        // Inject bar charts into Engagement Pulse widget
-        var epTrends = document.getElementById('eosEpTrends');
-        if (epTrends && (runsPts.length || dlPts.length)) {
-          var makeEpCard = function(label, total, sub, pts, color, drillType) {
-            var chart = barChart(pts, color, 40, drillType);
-            if (!chart) return '';
-            return '<div style="background:#f7f7f6;border-radius:8px;padding:10px 12px;">'
-              +'<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:1px;">'
-              +'<span style="font-size:11px;font-weight:600;color:#6d6d6c;">'+label+'</span>'
-              +'<span style="font-size:15px;font-weight:700;color:#3c3c3b;">'+fmtK(total)+'</span>'
-              +'</div>'
-              +'<div style="font-size:10px;color:#9d9d9d;margin-bottom:4px;">'+sub+'</div>'
-              +chart
-              +'</div>';
-          };
-          var c1 = makeEpCard('Completed Runs',   d.runs.total,      'Peak MAU: '+fmtK(runsMAU), runsPts, '#288184', 'runs');
-          var c2 = makeEpCard('Report Downloads', d.downloads.total, 'Peak MAU: '+fmtK(dlMAU),   dlPts,   '#546e7a', 'downloads');
-          var epHtml = [c1,c2].filter(Boolean).join('');
-          if (epHtml) {
-            epTrends.innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">'+epHtml+'</div>';
-            epTrends.style.display = 'block';
-          }
-        }
+        if (content) { content.innerHTML = html; content.style.display = 'block'; }
+
+        // Populate drill table bodies after DOM injection
+        renderDrillRows('Runs',      d.drill.runs      || []);
+        renderDrillRows('Downloads', d.drill.downloads || []);
+
+        if (subtitle) subtitle.textContent = fmt(d.runs.last_3m)+' runs · '+fmt(d.downloads.last_3m)+' downloads (last 3m)';
       })
       .catch(function(e) {
-        if (loading) { loading.style.display = 'block'; loading.textContent = 'Failed to load EOS data: ' + e.message; }
+        if (loading) { loading.style.display = 'block'; loading.textContent = 'Failed to load EOS data: '+e.message; }
       });
   }
 
