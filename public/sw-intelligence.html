@@ -1607,10 +1607,20 @@ function engRenderUsagePanel(wm) {
   var products = Object.keys(pt).sort();
   var allProds = E_PRODUCT === 'All' ? products : [E_PRODUCT];
 
-  // Aggregate runs and users per month over window, filtered by E_REGION if set
+  // Aggregate runs and users per month, filtered by market > region > all
   var runsMap = {}, usersMap = {};
   var pm_all = (ENG_DATA || {}).product_markets || {};
-  if (E_REGION !== 'All') {
+  if (E_MARKET !== 'All') {
+    allProds.forEach(function(p) {
+      var pm = pm_all[p]; if (!pm) return;
+      var mkd = pm[E_MARKET]; if (!mkd) return;
+      var bm = mkd.by_month || {}, bu = mkd.by_month_users || {};
+      wm.forEach(function(m) {
+        runsMap[m]  = (runsMap[m]  || 0) + (bm[m] || 0);
+        usersMap[m] = (usersMap[m] || 0) + (bu[m] || 0);
+      });
+    });
+  } else if (E_REGION !== 'All') {
     allProds.forEach(function(p) {
       var pm = pm_all[p]; if (!pm) return;
       Object.keys(pm).forEach(function(mkt) {
@@ -1720,29 +1730,19 @@ function engRenderMix(streams,wm){
   }).join('');
 
   var makeBar = function(reg, label) {
-    var grandTot = E_REGIONS.reduce(function(a,r){return a+(+reg[r]||0);},0);
-    if (!grandTot) return '';
-    var displayReg = E_REGION !== 'All' ? [E_REGION] : E_REGIONS.filter(function(r){return (reg[r]||0)>0;});
-    var displayTot = displayReg.reduce(function(a,r){return a+(+reg[r]||0);},0);
-    if (!displayTot) return '';
-    var bar = displayReg.map(function(r){
-      var v = reg[r]||0, pct = displayTot ? v/displayTot*100 : 0;
+    var tot = E_REGIONS.reduce(function(a,r){return a+(+reg[r]||0);},0);
+    if (!tot) return '';
+    var bar = E_REGIONS.filter(function(r){return (reg[r]||0)>0;}).map(function(r){
+      var v = reg[r]||0, pct = tot ? v/tot*100 : 0;
       return '<span style="display:block;height:100%;width:'+pct.toFixed(1)+'%;background:'+E_RC[r]+'" title="'+r+': '+Math.round(v).toLocaleString('en-GB')+' ('+pct.toFixed(1)+'%)"></span>';
     }).join('');
     return '<div style="display:grid;grid-template-columns:220px 1fr;gap:14px;align-items:center;margin:10px 0">'
       +'<div style="font-size:13px;font-weight:600;display:flex;justify-content:space-between;padding-right:10px">'
-      +'<span>'+label+'</span><span style="color:#9d9d9d;font-weight:600">'+engFmt(displayTot)+'</span></div>'
+      +'<span>'+label+'</span><span style="color:#9d9d9d;font-weight:600">'+engFmt(tot)+'</span></div>'
       +'<div style="display:flex;height:22px;border-radius:6px;overflow:hidden;background:#f1f1f0">'+bar+'</div></div>';
   };
 
-  if (E_PRODUCT !== 'All' && ENG_DATA.product_markets && ENG_DATA.product_markets[E_PRODUCT]) {
-    var prodReg = engProdRegionTotals(wm);
-    document.getElementById('eng-mix').innerHTML =
-      makeBar(prodReg, 'Software Usage (' + E_PRODUCT + ')')
-      + '<div style="font-size:11px;color:#c0c0be;margin-top:4px">Other streams not broken down by product</div>';
-    return;
-  }
-
+  // Regional Distribution ignores region/product filters — date window only
   document.getElementById('eng-mix').innerHTML=streams.filter(function(s){return s.regional;}).map(function(s){
     return makeBar(s.by_region||{}, s.label);
   }).join('');
