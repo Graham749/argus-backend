@@ -1642,7 +1642,7 @@ function engRenderUsagePanel(wm) {
     '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap">'
     + '<span style="font-size:11px;font-weight:600;color:#9d9d9d;text-transform:uppercase;letter-spacing:.06em;white-space:nowrap">Product</span>'
     + pills
-    + '<span style="font-size:10px;color:#c0c0be;margin-left:4px">&#9432; filters these charts only</span>'
+    + '<span style="font-size:10px;color:#c0c0be;margin-left:4px">&#9432; also filters market detail &amp; regional distribution</span>'
     + '</div>'
     + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">'
     // Runs chart
@@ -1667,8 +1667,7 @@ function engRenderUsagePanel(wm) {
 
 function engSetProduct(p) {
   E_PRODUCT = p;
-  var wm = engWindowMonths();
-  engRenderUsagePanel(wm);
+  engRender();
 }
 
 function engRenderKPIs(streams,wm){
@@ -1687,13 +1686,26 @@ function engRenderKPIs(streams,wm){
   }).join('');
 }
 
+function engProdRegionTotals(wm) {
+  // Compute windowed regional totals from product_markets for the selected product(s)
+  var pm = (ENG_DATA.product_markets || {})[E_PRODUCT];
+  var byRegion = {};
+  if (!pm) return byRegion;
+  Object.keys(pm).forEach(function(mkt) {
+    var region = pm[mkt].region || 'Other';
+    var bm = pm[mkt].by_month || {};
+    wm.forEach(function(m) { if (bm[m]) byRegion[region] = (byRegion[region]||0) + bm[m]; });
+  });
+  return byRegion;
+}
+
 function engRenderMix(streams,wm){
   document.getElementById('eng-legend').innerHTML=E_REGIONS.map(function(r){
     return '<span style="display:inline-flex;align-items:center;gap:6px">'
       +'<span style="width:11px;height:11px;border-radius:3px;background:'+E_RC[r]+';display:inline-block"></span>'+r+'</span>';
   }).join('');
-  document.getElementById('eng-mix').innerHTML=streams.filter(function(s){return s.regional;}).map(function(s){
-    var reg=s.by_region||{};
+
+  var makeBar = function(reg, label) {
     var tot=E_REGIONS.reduce(function(a,r){return a+(+reg[r]||0);},0);
     if(!tot) return '';
     var bar=E_REGIONS.filter(function(r){return (reg[r]||0)>0;}).map(function(r){
@@ -1703,8 +1715,20 @@ function engRenderMix(streams,wm){
     }).join('');
     return '<div style="display:grid;grid-template-columns:220px 1fr;gap:14px;align-items:center;margin:10px 0">'
       +'<div style="font-size:13px;font-weight:600;display:flex;justify-content:space-between;padding-right:10px">'
-      +'<span>'+s.label+'</span><span style="color:#9d9d9d;font-weight:600">'+engFmt(tot)+'</span></div>'
+      +'<span>'+label+'</span><span style="color:#9d9d9d;font-weight:600">'+engFmt(tot)+'</span></div>'
       +'<div style="display:flex;height:22px;border-radius:6px;overflow:hidden;background:#f1f1f0">'+bar+'</div></div>';
+  };
+
+  if (E_PRODUCT !== 'All' && ENG_DATA.product_markets && ENG_DATA.product_markets[E_PRODUCT]) {
+    var prodReg = engProdRegionTotals(wm);
+    document.getElementById('eng-mix').innerHTML =
+      makeBar(prodReg, 'Software Usage (' + E_PRODUCT + ')')
+      + '<div style="font-size:11px;color:#c0c0be;margin-top:4px">Other streams not broken down by product</div>';
+    return;
+  }
+
+  document.getElementById('eng-mix').innerHTML=streams.filter(function(s){return s.regional;}).map(function(s){
+    return makeBar(s.by_region||{}, s.label);
   }).join('');
 }
 
@@ -1789,10 +1813,25 @@ function engRenderMarketDrill(wm) {
   if (!ENG_DATA) return;
   wm = wm || engWindowMonths();
 
+  // When a product is selected, build a synthetic single stream from product_markets
+  if (E_PRODUCT !== 'All' && ENG_DATA.product_markets && ENG_DATA.product_markets[E_PRODUCT]) {
+    var pm = ENG_DATA.product_markets[E_PRODUCT];
+    var syntheticByMarket = Object.keys(pm).filter(function(mk){return mk!=='Other';}).map(function(mk){
+      return { market: mk, region: pm[mk].region, total: pm[mk].total_runs, by_month: pm[mk].by_month };
+    });
+    var mktStreams = [{ key:'software', label:'Runs (' + E_PRODUCT + ')', unit:'runs', by_market: syntheticByMarket }];
+    engRenderMarketDrillInner(mktStreams, wm);
+    return;
+  }
+
   var mktStreams = (ENG_DATA.streams || []).filter(function(s) {
     return s.by_market && s.by_market.length > 0;
   });
 
+  engRenderMarketDrillInner(mktStreams, wm);
+}
+
+function engRenderMarketDrillInner(mktStreams, wm) {
   if (!mktStreams.length) {
     document.getElementById('eng-marketdrill').innerHTML =
       '<div style=”padding:24px;color:#9d9d9d;font-size:13px”>No market-level data available.</div>';

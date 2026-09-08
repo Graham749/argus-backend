@@ -345,20 +345,22 @@ module.exports = async function eosEngagement(req, res) {
         SELECT sf_account_code, energy_region AS region FROM primary_region WHERE rn = 1
       `).catch(e => { console.warn('[eos-engagement] sub-region fallback skipped:', e.message); return []; }),
 
-      // 13. Completed runs + unique active users by product + month (for usage trend charts)
+      // 13. Completed runs + unique active users by product + market + month
+      //     market = product_region from v_silver_eos_runs (already mapped to canonical names)
       query(`
         SELECT
           r.software_product,
-          FORMAT(r.launch_time, 'yyyy-MM') AS month,
-          COUNT(DISTINCT r.simulation_id) AS runs,
-          COUNT(DISTINCT r.user_email)    AS users
+          COALESCE(r.product_region, 'Other') AS market,
+          FORMAT(r.launch_time, 'yyyy-MM')    AS month,
+          COUNT(DISTINCT r.simulation_id)     AS runs,
+          COUNT(DISTINCT r.user_email)        AS users
         FROM dbo.v_silver_eos_runs r
         INNER JOIN dbo.gold_mdm_account mdm ON mdm.sf_account_code = r.account_id
         WHERE r.is_internal = 0
           AND r.execution_status = 'Complete'
           AND r.launch_time IS NOT NULL
-        GROUP BY r.software_product, FORMAT(r.launch_time, 'yyyy-MM')
-        ORDER BY month, r.software_product
+        GROUP BY r.software_product, COALESCE(r.product_region, 'Other'), FORMAT(r.launch_time, 'yyyy-MM')
+        ORDER BY r.software_product, market, month
       `).catch(e => { console.warn('[eos-engagement] product-trends skipped:', e.message); return []; }),
     ]);
 
@@ -569,19 +571,34 @@ module.exports = async function eosEngagement(req, res) {
     const gmMktArr  = Object.entries(gmByMarket).map(([market, v]) => ({ market, ...v })).sort((a, b) => b.attendees - a.attendees);
 
     // ── Product trend charts (query 13) ──────────────────────────────────────
-    // { product → { month → { runs, users } } }
-    const prodTrends = {};
+    // prodTrends:  { product → { month → { runs, users } } }  (monthly totals)
+    // prodMarkets: { product → { market → { region, total_runs, by_month: { month → runs } } } }
+    const prodTrends = {}, prodMarkets = {};
     for (const r of productTrendRows) {
-      const p = r.software_product || 'Other';
-      const m = r.month;
+      const p  = r.software_product || 'Other';
+      const mk = r.market || 'Other';
+      const m  = r.month;
+      const runs  = Number(r.runs)  || 0;
+      const users = Number(r.users) || 0;
+      // Monthly totals (sum over all markets)
       if (!prodTrends[p]) prodTrends[p] = {};
-      if (m) prodTrends[p][m] = { runs: Number(r.runs) || 0, users: Number(r.users) || 0 };
+      if (m) {
+        if (!prodTrends[p][m]) prodTrends[p][m] = { runs: 0, users: 0 };
+        prodTrends[p][m].runs  += runs;
+        prodTrends[p][m].users += users;
+      }
+      // Per-market breakdown
+      if (!prodMarkets[p]) prodMarkets[p] = {};
+      if (!prodMarkets[p][mk]) prodMarkets[p][mk] = { region: regionOf(mk), total_runs: 0, by_month: {} };
+      prodMarkets[p][mk].total_runs += runs;
+      if (m) prodMarkets[p][mk].by_month[m] = (prodMarkets[p][mk].by_month[m] || 0) + runs;
     }
 
     // Streams in display order: downloads, software, webinars, gm, videos, workshops, email_cases
     const payload = {
       snapshot: new Date().toISOString().slice(0, 10),
       product_trends: prodTrends,
+      product_markets: prodMarkets,
       streams: [
         { key: 'downloads',   label: 'EOS Report Downloads',              unit: 'downloads', source: 'EOS Usage',                  total: dlTotal,       regional: true,  by_region: dlByRegion,       by_month: toMonthArr(dlByMonth,       'cnt'), by_market: dlMktArr },
         { key: 'software',    label: 'Software Usage (Runs)',               unit: 'runs',   source: 'Software Usage',              total: runsTotal,     regional: true,  by_region: runsByRegion,     by_month: toMonthArr(runsByMonth, 'cnt'), by_market: runsMktArr },
