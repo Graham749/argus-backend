@@ -6242,7 +6242,7 @@ class Component extends DCLogic {
     window.eosDlFilter = function(prod) {
       var all  = ((window.__eosEngDrill || {}).downloads) || [];
       var rows = (!prod || prod === 'All') ? all : all.filter(function(r){ return (r.product||'') === prod; });
-      renderBarChart('eosDlChart', (!prod || prod === 'All') ? window.__eosDlPts : drillToPts(rows, window.__eosDlPts), '#546e7a');
+      renderBarChart('eosDownloadsChart', (!prod || prod === 'All') ? window.__eosDlPts : drillToPts(rows, window.__eosDlPts), '#546e7a');
       renderDrillRows('Downloads', rows);
     };
 
@@ -6330,7 +6330,7 @@ class Component extends DCLogic {
         // Render charts (two-pass — DOM now laid out, offsetWidth is real)
         requestAnimationFrame(function(){
           renderBarChart('eosRunsChart', window.__eosRunsPts, '#288184');
-          renderBarChart('eosDlChart',   window.__eosDlPts,   '#546e7a');
+          renderBarChart('eosDownloadsChart',   window.__eosDlPts,   '#546e7a');
         });
 
         // Populate drill tables

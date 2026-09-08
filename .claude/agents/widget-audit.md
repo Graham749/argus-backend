@@ -45,6 +45,7 @@ var drillToPts = function(rows, fullPts) {
 - [ ] Collapse button: `← Collapse` (not "← Back to Summary"); collapses drill only
 - [ ] Table has `position:sticky; top:0` thead and `max-height:360px` scrollable tbody
 - [ ] Toggle function caps/un-caps correctly: `'runs'` → `eosRunsDrill`, `'downloads'` → `eosDownloadsDrill`
+- [ ] **Chart mount IDs are consistent**: `buildSection(idKey)` creates `eos{IdKey}Chart` (e.g. `eosDownloadsChart`). Every `renderBarChart(...)` call must use that exact ID — not an abbreviation like `eosDlChart`
 
 ### 4. Engagement Pulse integration (if widget provides EP charts)
 - [ ] EP charts injected into `#eosEpTrends` inside `fetchEngagementTimeline` or `fetchEosEngagement`
