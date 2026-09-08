@@ -1518,23 +1518,84 @@ function engRender() {
   engRenderMarketDrill(wm);
 }
 
-function engSparkLine(pts, color) {
+// Encode pts array into a compact attribute string (month|value pairs)
+function engEncodePts(pts) {
+  return pts.map(function(p){ return p.m + '|' + p.v; }).join(',');
+}
+
+function engSparkLine(pts, color, unit) {
   var VW = 500, VH = 60, pad = 4;
-  if (!pts || pts.length < 2) return '<svg width="100%" viewBox="0 0 '+VW+' '+VH+'" preserveAspectRatio="none" style="display:block;height:60px"></svg>';
+  var encoded = 'data-pts="' + engEncodePts(pts) + '" data-unit="' + (unit||'') + '" data-color="' + color + '"';
+  if (!pts || pts.length < 2) return '<svg width="100%" viewBox="0 0 '+VW+' '+VH+'" preserveAspectRatio="none" style="display:block;height:60px" '+encoded+'></svg>';
   var max = Math.max.apply(null, pts.map(function(p){return p.v;})) || 1;
   var n = pts.length;
-  var coords = pts.map(function(p, i) {
-    var x = pad + (i / (n - 1)) * (VW - pad * 2);
-    var y = (VH - pad) - (p.v / max) * (VH - pad * 2);
-    return x.toFixed(1) + ',' + y.toFixed(1);
-  }).join(' ');
-  var last = pts[pts.length - 1];
-  var lcx = (VW - pad).toFixed(1);
-  var lcy = ((VH - pad) - (last.v / max) * (VH - pad * 2)).toFixed(1);
-  return '<svg width="100%" viewBox="0 0 '+VW+' '+VH+'" preserveAspectRatio="none" style="display:block;height:60px;overflow:visible">'
-    + '<polyline points="' + coords + '" fill="none" stroke="' + color + '" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>'
-    + '<circle cx="' + lcx + '" cy="' + lcy + '" r="4" fill="' + color + '" vector-effect="non-scaling-stroke"/>'
+  var xOf = function(i){ return pad + (i / (n-1)) * (VW - pad*2); };
+  var yOf = function(v){ return (VH - pad) - (v / max) * (VH - pad*2); };
+  var coords = pts.map(function(p, i){ return xOf(i).toFixed(1)+','+yOf(p.v).toFixed(1); }).join(' ');
+  var last = pts[n-1];
+  return '<svg width="100%" viewBox="0 0 '+VW+' '+VH+'" preserveAspectRatio="none"'
+    + ' style="display:block;height:60px;overflow:visible;cursor:crosshair"'
+    + ' '+encoded
+    + ' onmousemove="engSparkHover(event,this)" onmouseleave="engSparkOut()">'
+    + '<polyline points="'+coords+'" fill="none" stroke="'+color+'" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>'
+    + '<line class="eng-spark-cross" x1="0" y1="0" x2="0" y2="'+VH+'" stroke="#9d9d9d" stroke-width="1" stroke-dasharray="3,2" vector-effect="non-scaling-stroke" style="display:none"/>'
+    + '<circle class="eng-spark-dot" cx="'+xOf(n-1).toFixed(1)+'" cy="'+yOf(last.v).toFixed(1)+'" r="3" fill="'+color+'" vector-effect="non-scaling-stroke"/>'
+    + '<rect width="'+VW+'" height="'+VH+'" fill="transparent"/>'
     + '</svg>';
+}
+
+// Global tooltip div (created once)
+function engGetTip() {
+  var t = document.getElementById('eng-spark-tip');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'eng-spark-tip';
+    t.style.cssText = 'position:fixed;pointer-events:none;background:#3c3c3b;color:#fff;font-size:11px;padding:5px 9px;border-radius:6px;white-space:nowrap;z-index:9999;display:none;line-height:1.4';
+    document.body.appendChild(t);
+  }
+  return t;
+}
+
+function engSparkHover(e, svg) {
+  var encoded = svg.getAttribute('data-pts');
+  if (!encoded) return;
+  var unit = svg.getAttribute('data-unit') || '';
+  var color = svg.getAttribute('data-color') || '#288184';
+  var pts = encoded.split(',').map(function(s){ var p=s.split('|'); return {m:p[0],v:+p[1]}; });
+  var n = pts.length;
+  if (n < 2) return;
+
+  var VW = 500, pad = 4;
+  var rect = svg.getBoundingClientRect();
+  var fracX = (e.clientX - rect.left) / rect.width;
+  var idx = Math.round(fracX * (n-1));
+  idx = Math.max(0, Math.min(n-1, idx));
+  var pt = pts[idx];
+
+  // Move crosshair
+  var cross = svg.querySelector('.eng-spark-cross');
+  var dot   = svg.querySelector('.eng-spark-dot');
+  var max = Math.max.apply(null, pts.map(function(p){return p.v;})) || 1;
+  var xOf = function(i){ return pad + (i/(n-1))*(VW-pad*2); };
+  var yOf = function(v){ return (60-pad) - (v/max)*(60-pad*2); };
+  if (cross) { cross.setAttribute('x1', xOf(idx).toFixed(1)); cross.setAttribute('x2', xOf(idx).toFixed(1)); cross.style.display=''; }
+  if (dot)   { dot.setAttribute('cx', xOf(idx).toFixed(1)); dot.setAttribute('cy', yOf(pt.v).toFixed(1)); dot.setAttribute('r','3'); dot.setAttribute('fill', color); }
+
+  // Show tooltip
+  var d = new Date(pt.m + '-01');
+  var label = d.toLocaleDateString('en-GB', {month:'short', year:'numeric'});
+  var val = pt.v >= 1000 ? pt.v.toLocaleString('en-GB') : String(pt.v);
+  var tip = engGetTip();
+  tip.innerHTML = '<b>' + label + '</b><br>' + val + (unit ? ' ' + unit : '');
+  tip.style.display = 'block';
+  tip.style.left = (e.clientX + 12) + 'px';
+  tip.style.top  = (e.clientY - 28) + 'px';
+}
+
+function engSparkOut() {
+  var tip = document.getElementById('eng-spark-tip');
+  if (tip) tip.style.display = 'none';
+  document.querySelectorAll('.eng-spark-cross').forEach(function(el){ el.style.display='none'; });
 }
 
 function engRenderUsagePanel(wm) {
@@ -1590,7 +1651,7 @@ function engRenderUsagePanel(wm) {
     +     '<span style="font-size:11px;font-weight:600;color:#6d6d6c">Completed Runs</span>'
     +     '<span style="font-size:18px;font-weight:700;color:#3c3c3b">' + fmt(totalRuns) + '</span>'
     +   '</div>'
-    +   engSparkLine(runsPts, col)
+    +   engSparkLine(runsPts, col, 'runs')
     + '</div>'
     // Users chart
     + '<div>'
@@ -1598,7 +1659,7 @@ function engRenderUsagePanel(wm) {
     +     '<span style="font-size:11px;font-weight:600;color:#6d6d6c">Peak Monthly Active Users</span>'
     +     '<span style="font-size:18px;font-weight:700;color:#3c3c3b">' + fmt(totalUsers) + '</span>'
     +   '</div>'
-    +   engSparkLine(usersPts, col)
+    +   engSparkLine(usersPts, col, 'users')
     + '</div>'
     + '</div>';
 
