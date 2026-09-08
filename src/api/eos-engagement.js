@@ -73,7 +73,7 @@ module.exports = async function eosEngagement(req, res) {
     const cached = cacheGet(CACHE_KEY);
     if (cached && !req.query.bust) return res.json(cached);
 
-    const [runsRows, dlRows, vidRows, caseRows, webinarRows, gmRows, acctRegionRows, dlAcctRows, caseAcctRows, dlMktRows, caseMktRows, subRegionRows] = await Promise.all([
+    const [runsRows, dlRows, vidRows, caseRows, webinarRows, gmRows, acctRegionRows, dlAcctRows, caseAcctRows, dlMktRows, caseMktRows, subRegionRows, productTrendRows] = await Promise.all([
       // 1. Software runs by year + product_region — DISTINCT simulation_id (matches PBI DAX measure)
       query(`
         SELECT YEAR(r.launch_time) AS yr, r.product_region, COUNT(DISTINCT r.simulation_id) AS cnt
@@ -344,6 +344,22 @@ module.exports = async function eosEngagement(req, res) {
         )
         SELECT sf_account_code, energy_region AS region FROM primary_region WHERE rn = 1
       `).catch(e => { console.warn('[eos-engagement] sub-region fallback skipped:', e.message); return []; }),
+
+      // 13. Completed runs + unique active users by product + month (for usage trend charts)
+      query(`
+        SELECT
+          r.software_product,
+          FORMAT(r.launch_time, 'yyyy-MM') AS month,
+          COUNT(DISTINCT r.simulation_id) AS runs,
+          COUNT(DISTINCT r.user_email)    AS users
+        FROM dbo.v_silver_eos_runs r
+        INNER JOIN dbo.gold_mdm_account mdm ON mdm.sf_account_code = r.account_id
+        WHERE r.is_internal = 0
+          AND r.execution_status = 'Complete'
+          AND r.launch_time IS NOT NULL
+        GROUP BY r.software_product, FORMAT(r.launch_time, 'yyyy-MM')
+        ORDER BY month, r.software_product
+      `).catch(e => { console.warn('[eos-engagement] product-trends skipped:', e.message); return []; }),
     ]);
 
     // ── Build account → primary region + market lookup ───────────────────────
@@ -552,9 +568,20 @@ module.exports = async function eosEngagement(req, res) {
     const webMktArr = Object.entries(webByMarket).map(([market, v]) => ({ market, ...v })).sort((a, b) => b.attendees - a.attendees);
     const gmMktArr  = Object.entries(gmByMarket).map(([market, v]) => ({ market, ...v })).sort((a, b) => b.attendees - a.attendees);
 
+    // ── Product trend charts (query 13) ──────────────────────────────────────
+    // { product → { month → { runs, users } } }
+    const prodTrends = {};
+    for (const r of productTrendRows) {
+      const p = r.software_product || 'Other';
+      const m = r.month;
+      if (!prodTrends[p]) prodTrends[p] = {};
+      if (m) prodTrends[p][m] = { runs: Number(r.runs) || 0, users: Number(r.users) || 0 };
+    }
+
     // Streams in display order: downloads, software, webinars, gm, videos, workshops, email_cases
     const payload = {
       snapshot: new Date().toISOString().slice(0, 10),
+      product_trends: prodTrends,
       streams: [
         { key: 'downloads',   label: 'EOS Report Downloads',              unit: 'downloads', source: 'EOS Usage',                  total: dlTotal,       regional: true,  by_region: dlByRegion,       by_month: toMonthArr(dlByMonth,       'cnt'), by_market: dlMktArr },
         { key: 'software',    label: 'Software Usage (Runs)',               unit: 'runs',   source: 'Software Usage',              total: runsTotal,     regional: true,  by_region: runsByRegion,     by_month: toMonthArr(runsByMonth, 'cnt'), by_market: runsMktArr },

@@ -289,7 +289,10 @@ tfoot td{font-size:11px;color:#9d9d9d;padding:6px 10px;border-top:1px solid #e6e
       <!-- 1. Engagement summary -->
       <section style="margin-bottom:24px">
         <div style="font-size:13px;font-weight:700;color:#3c3c3b;margin-bottom:12px">Engagement summary</div>
-        <div id="eng-kpis" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:12px"></div>
+        <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:12px">
+          <div id="eng-kpis" style="display:contents"></div>
+          <div id="eng-usage-panel" style="grid-column:2/7;grid-row:2;background:#fff;border:1px solid #e6e6e5;border-radius:10px;padding:12px 16px"></div>
+        </div>
       </section>
 
       <!-- 2. Regional distribution by stream -->
@@ -1315,8 +1318,10 @@ if (new URLSearchParams(location.search).get('embed') === '1') {
 // ── Client Engagement tab ─────────────────────────────────────────────────
 var ENG_DATA = null, engLoaded = false;
 var E_REGION = "All", E_MARKET = "All", E_START = null, E_END = null, E_MIN = null, E_MAX = null;
+var E_PRODUCT = "All";
 var E_REGIONS = ["EMEA","APAC","NORAM","LATAM","Other"];
 var E_RC = {EMEA:"#2563eb",APAC:"#0891b2",NORAM:"#7c3aed",LATAM:"#ea580c",Other:"#94a3b8"};
+var PROD_COLORS = {Chronos:"#288184",Amun:"#7c3aed",Origin:"#e65100",Solaris:"#d97706",Lumus:"#0891b2",All:"#3c3c3b"};
 
 function engAddMonths(ym, n) {
   var p = ym.split("-"), y = +p[0], m = +p[1]; m += n;
@@ -1506,10 +1511,103 @@ function engRender() {
   if(E_START>E_END){ var t=E_START; E_START=E_END; E_END=t; }
   var wm=engWindowMonths(), streams=ENG_DATA.streams||[];
   engRenderKPIs(streams,wm);
+  engRenderUsagePanel(wm);
   engRenderMix(streams,wm);
   engRenderTable(streams,wm);
   engRenderTimeTable(streams,wm);
   engRenderMarketDrill(wm);
+}
+
+function engSparkLine(pts, color) {
+  var VW = 500, VH = 60, pad = 4;
+  if (!pts || pts.length < 2) return '<svg width="100%" viewBox="0 0 '+VW+' '+VH+'" preserveAspectRatio="none" style="display:block;height:60px"></svg>';
+  var max = Math.max.apply(null, pts.map(function(p){return p.v;})) || 1;
+  var n = pts.length;
+  var coords = pts.map(function(p, i) {
+    var x = pad + (i / (n - 1)) * (VW - pad * 2);
+    var y = (VH - pad) - (p.v / max) * (VH - pad * 2);
+    return x.toFixed(1) + ',' + y.toFixed(1);
+  }).join(' ');
+  var last = pts[pts.length - 1];
+  var lcx = (VW - pad).toFixed(1);
+  var lcy = ((VH - pad) - (last.v / max) * (VH - pad * 2)).toFixed(1);
+  return '<svg width="100%" viewBox="0 0 '+VW+' '+VH+'" preserveAspectRatio="none" style="display:block;height:60px;overflow:visible">'
+    + '<polyline points="' + coords + '" fill="none" stroke="' + color + '" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>'
+    + '<circle cx="' + lcx + '" cy="' + lcy + '" r="4" fill="' + color + '" vector-effect="non-scaling-stroke"/>'
+    + '</svg>';
+}
+
+function engRenderUsagePanel(wm) {
+  var panel = document.getElementById('eng-usage-panel');
+  if (!panel) return;
+  var pt = (ENG_DATA || {}).product_trends;
+  if (!pt || !Object.keys(pt).length) { panel.innerHTML = ''; return; }
+
+  var products = Object.keys(pt).sort();
+  var allProds = E_PRODUCT === 'All' ? products : [E_PRODUCT];
+
+  // Aggregate runs and users per month over window, for selected product(s)
+  var runsMap = {}, usersMap = {};
+  allProds.forEach(function(p) {
+    if (!pt[p]) return;
+    wm.forEach(function(m) {
+      var d = pt[p][m];
+      if (!d) return;
+      runsMap[m]  = (runsMap[m]  || 0) + d.runs;
+      usersMap[m] = (usersMap[m] || 0) + d.users;
+    });
+  });
+
+  var runsPts  = wm.map(function(m){ return {m:m, v: runsMap[m]  || 0}; });
+  var usersPts = wm.map(function(m){ return {m:m, v: usersMap[m] || 0}; });
+
+  var totalRuns  = runsPts.reduce(function(s,p){return s+p.v;},0);
+  var totalUsers = Math.max.apply(null, usersPts.map(function(p){return p.v;}));
+
+  var col = PROD_COLORS[E_PRODUCT] || PROD_COLORS.All;
+
+  // Product pills
+  var pills = ['All'].concat(products).map(function(p) {
+    var active = p === E_PRODUCT;
+    var c = PROD_COLORS[p] || '#9d9d9d';
+    return '<div onclick="engSetProduct(\'' + p + '\')" style="cursor:pointer;padding:3px 10px;border-radius:100px;border:1px solid '
+      + (active ? c : '#e6e6e5') + ';background:' + (active ? c : '#fff') + ';color:' + (active ? '#fff' : '#6d6d6c')
+      + ';font-size:11px;font-weight:600;white-space:nowrap">' + p + '</div>';
+  }).join('');
+
+  var fmt = function(n){ return n >= 1000 ? (n/1000).toFixed(1)+'k' : String(n); };
+
+  panel.innerHTML =
+    '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap">'
+    + '<span style="font-size:11px;font-weight:600;color:#9d9d9d;text-transform:uppercase;letter-spacing:.06em;white-space:nowrap">Product</span>'
+    + pills
+    + '<span style="font-size:10px;color:#c0c0be;margin-left:4px">&#9432; filters these charts only</span>'
+    + '</div>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">'
+    // Runs chart
+    + '<div>'
+    +   '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px">'
+    +     '<span style="font-size:11px;font-weight:600;color:#6d6d6c">Completed Runs</span>'
+    +     '<span style="font-size:18px;font-weight:700;color:#3c3c3b">' + fmt(totalRuns) + '</span>'
+    +   '</div>'
+    +   engSparkLine(runsPts, col)
+    + '</div>'
+    // Users chart
+    + '<div>'
+    +   '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px">'
+    +     '<span style="font-size:11px;font-weight:600;color:#6d6d6c">Peak Monthly Active Users</span>'
+    +     '<span style="font-size:18px;font-weight:700;color:#3c3c3b">' + fmt(totalUsers) + '</span>'
+    +   '</div>'
+    +   engSparkLine(usersPts, col)
+    + '</div>'
+    + '</div>';
+
+}
+
+function engSetProduct(p) {
+  E_PRODUCT = p;
+  var wm = engWindowMonths();
+  engRenderUsagePanel(wm);
 }
 
 function engRenderKPIs(streams,wm){
