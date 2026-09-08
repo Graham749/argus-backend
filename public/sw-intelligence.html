@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="color-scheme" content="only light">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Region Intelligence · Software Health</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
@@ -9,6 +10,7 @@
 @font-face{font-family:'Lato';src:url('assets/fonts/lato-regular.woff2') format('woff2');font-weight:400;font-style:normal;font-display:swap;}
 @font-face{font-family:'Lato';src:url('assets/fonts/lato-bold.woff2') format('woff2');font-weight:700;font-style:normal;font-display:swap;}
 @font-face{font-family:'Lato';src:url('assets/fonts/lato-black.woff2') format('woff2');font-weight:900;font-style:normal;font-display:swap;}
+:root{color-scheme:only light}
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Lato','Helvetica Neue',Arial,sans-serif;background:#f7f7f6;color:#3c3c3b;font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;}
 input,select,button,textarea{font-family:inherit;}
@@ -21,12 +23,14 @@ nav{background:#fff;border-bottom:1px solid #e6e6e5;padding:0 24px;display:flex;
 .embed-mode .nav-tab{padding:0 14px;height:44px;display:flex;align-items:center;font-size:13px;}
 .embed-mode main{padding:16px 20px 24px;}
 .embed-mode body{background:#f7f7f6}
+.embed-mode .page-tabs{top:0}
+.embed-mode #eng-filter-pane{top:44px!important;z-index:200}
 .nav-brand{font-size:14px;font-weight:700;margin-right:28px;white-space:nowrap;color:#3c3c3b;letter-spacing:-0.01em}
 .nav-tabs{display:flex;height:100%;flex:1}
 .nav-tab{padding:0 14px;font-size:13px;border-bottom:2px solid #288184;color:#3c3c3b;white-space:nowrap;display:flex;align-items:center;font-weight:600}
 
 /* ── Page-level section tabs ── */
-.page-tabs{background:#fff;border-bottom:1px solid #e6e6e5;padding:0 24px;display:flex;gap:0;}
+.page-tabs{background:#fff;border-bottom:1px solid #e6e6e5;padding:0 24px;display:flex;gap:0;position:sticky;top:48px;z-index:150;height:44px;}
 .page-tab{padding:12px 20px;font-size:13px;font-weight:600;color:#9d9d9d;border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:8px;margin-bottom:-1px;}
 .page-tab.active{color:#3c3c3b;border-bottom-color:#288184;}
 .page-tab.soon{opacity:0.4;cursor:not-allowed;pointer-events:none;}
@@ -60,10 +64,16 @@ main{max-width:1320px;margin:0 auto;padding:24px}
 select{padding:0 8px;border:1px solid #e6e6e5;border-radius:6px;font-size:12px;background:#fff;outline:none;cursor:pointer;color:#3c3c3b;height:30px}
 input[type=search]{padding:0 10px;border:1px solid #e6e6e5;border-radius:6px;font-size:13px;outline:none;color:#3c3c3b;height:30px;width:200px}
 input[type=search]:focus{border-color:#288184;outline:none}
+input[type=month]{padding:0 8px;border:1px solid #e6e6e5;border-radius:6px;font-size:12px;background:#fff;outline:none;color:#3c3c3b;height:30px}
+input[type=month]:focus{border-color:#288184}
 .toggle-group{display:flex;border:1px solid #e6e6e5;border-radius:6px;overflow:hidden}
 .toggle-btn{padding:5px 10px;font-size:12px;cursor:pointer;background:#fff;color:#6d6d6c;border:none;border-right:1px solid #e6e6e5}
 .toggle-btn:last-child{border-right:none}
 .toggle-btn.active{background:#3c3c3b;color:#fff}
+
+/* ── Region pill badge (forced-color-adjust:none prevents high-contrast/Edge dark-mode stripping the background) ── */
+.rpill{display:inline-block;font-size:.68rem;font-weight:700;color:#fff;border-radius:5px;padding:1px 7px;background:var(--rpill-bg,#94a3b8)}
+@media(prefers-color-scheme:dark){.rpill{background:var(--rpill-bg,#94a3b8)!important;color:#fff!important}}
 
 /* ── Table ── */
 table{width:100%;border-collapse:collapse;font-size:13px}
@@ -231,6 +241,7 @@ tfoot td{font-size:11px;color:#9d9d9d;padding:6px 10px;border-top:1px solid #e6e
     <div class="pill"        id="oppf-none"   onclick="setOPPFilter(this,'none')">No Opportunity</div>
   </div>
 
+
   <div class="card" style="padding:0;overflow:hidden;overflow-x:auto">
     <table id="client-table"></table>
   </div>
@@ -243,7 +254,7 @@ tfoot td{font-size:11px;color:#9d9d9d;padding:6px 10px;border-top:1px solid #e6e
 <div id="engagement-section" style="display:none">
 
   <!-- Controls -->
-  <div style="background:#fff;border-bottom:1px solid #e6e6e5;padding:10px 24px">
+  <div id="eng-filter-pane" style="background:#fff;border-bottom:1px solid #e6e6e5;padding:10px 24px;position:sticky;top:92px;z-index:200">
     <div class="filter-bar">
       <span class="filter-label">Energy Market:</span>
       <div id="eng-filter" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
@@ -254,10 +265,15 @@ tfoot td{font-size:11px;color:#9d9d9d;padding:6px 10px;border-top:1px solid #e6e
     </div>
     <div class="filter-bar">
       <span class="filter-label">Period:</span>
+      <label style="font-size:11px;color:#9d9d9d">From <input type="month" id="eng-start-m" onchange="engMonthChange()"></label>
+      <label style="font-size:11px;color:#9d9d9d">To <input type="month" id="eng-end-m" onchange="engMonthChange()"></label>
+      <span style="width:6px"></span>
       <div class="pill active" id="eng-preset-all" onclick="engPreset('all')">All time</div>
       <div class="pill" id="eng-preset-12m" onclick="engPreset('12m')">Last 12 months</div>
       <div class="pill" id="eng-preset-ytd" onclick="engPreset('ytd')">This year (YTD)</div>
       <div class="pill" id="eng-preset-2025" onclick="engPreset('2025')">2025</div>
+      <span style="width:6px"></span>
+      <button onclick="engClearFilters()" style="padding:0 12px;height:30px;border-radius:100px;border:1px solid #e6e6e5;background:#fff;font-size:12px;cursor:pointer;color:#6d6d6c" onmouseover="this.style.borderColor='#9d9d9d'" onmouseout="this.style.borderColor='#e6e6e5'">Clear all</button>
     </div>
   </div>
 
@@ -294,7 +310,7 @@ tfoot td{font-size:11px;color:#9d9d9d;padding:6px 10px;border-top:1px solid #e6e
       <!-- 4. Breakdown over time -->
       <section style="margin-bottom:24px">
         <div style="font-size:13px;font-weight:700;color:#3c3c3b;margin-bottom:12px">Breakdown over time <span id="eng-time-hint" style="font-size:11px;color:#9d9d9d;font-weight:400"></span></div>
-        <div class="card" style="padding:0"><div id="eng-timetable"></div></div>
+        <div class="card" style="padding:0;overflow:hidden"><div id="eng-timetable"></div></div>
       </section>
 
       <!-- 5. Market detail -->
@@ -1343,7 +1359,10 @@ function switchTab(tab) {
   document.getElementById('eng-tab').classList.toggle('active', !isSW);
   document.getElementById('curr-bar-row').style.display = isSW ? '' : 'none';
   document.getElementById('engagement-section').style.display = isSW ? 'none' : '';
-  if (!isSW) {
+  if (isSW) {
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('main-content').style.display = 'block';
+  } else {
     document.getElementById('loading').style.display = 'none';
     document.getElementById('main-content').style.display = 'none';
     if (!engLoaded) loadEngagement(); else engRender();
@@ -1363,6 +1382,7 @@ async function loadEngagement() {
     E_MAX = allM[allM.length-1] || new Date().toISOString().slice(0,7);
     E_START = E_MIN; E_END = E_MAX;
     engUpdatePresetHighlight();
+    engSyncMonthInputs();
     engRenderFilter();
     engPopulateMarketBar();
     document.getElementById('eng-live-dot').style.display = '';
@@ -1398,6 +1418,13 @@ function engSetMarket(m) {
   engRender();
 }
 
+function engClearFilters() {
+  E_REGION = 'All'; E_MARKET = 'All';
+  engRenderFilter();
+  engPopulateMarketBar();
+  engPreset('all');
+}
+
 function engPreset(p) {
   var now = new Date();
   var curM = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
@@ -1409,6 +1436,7 @@ function engPreset(p) {
   else if (p === 'ytd') { E_START = now.getFullYear()+'-01'; E_END = curM; }
   else { E_START = p+'-01'; E_END = p+'-12'; }
   engUpdatePresetHighlight();
+  engSyncMonthInputs();
   engRender();
 }
 
@@ -1426,6 +1454,26 @@ function engUpdatePresetHighlight() {
     else match = E_START===p+'-01' && E_END===p+'-12';
     el.classList.toggle('active', match);
   });
+}
+
+function engSyncMonthInputs() {
+  var s = document.getElementById('eng-start-m');
+  var e = document.getElementById('eng-end-m');
+  if (!s || !e) return;
+  if (E_MIN) { s.min = E_MIN; e.min = E_MIN; }
+  if (E_MAX) { s.max = E_MAX; e.max = E_MAX; }
+  if (E_START) s.value = E_START;
+  if (E_END)   e.value = E_END;
+}
+
+function engMonthChange() {
+  var s = document.getElementById('eng-start-m');
+  var e = document.getElementById('eng-end-m');
+  if (!s.value || !e.value) return;
+  E_START = s.value;
+  E_END   = e.value;
+  engUpdatePresetHighlight();
+  engRender();
 }
 
 function engPopulateMarketBar() {
@@ -1519,7 +1567,8 @@ function engRenderTable(streams,wm){
       return '<td class="num" style="'+hl+'">'+engFmt(v)+'</td>';
     }).join('')+'</tr>';
   }).join('');
-  document.getElementById('eng-table').innerHTML='<table><thead>'+head+'</thead><tbody>'+rows+'</tbody></table>';
+  document.getElementById('eng-table').innerHTML='<table><thead>'+head+'</thead><tbody>'+rows+'</tbody></table>'
+    +'<div style="font-size:11px;color:#9d9d9d;padding:6px 16px 14px">* Video plays are not region-specific — shown as an all-regions total.</div>';
 }
 
 function engFmtZ(n){
@@ -1559,98 +1608,140 @@ function engRenderTimeTable(streams,wm){
     +'</style>';
   document.getElementById('eng-timetable').innerHTML= ttStyle
     +'<div style="overflow-x:auto"><table><thead>'+head+'</thead><tbody>'+rows+'</tbody><tfoot>'+foot+'</tfoot></table></div>'
-    +'<div style="font-size:11px;color:#9d9d9d;padding:8px 16px 14px">'
-    +'* Video plays are not region-specific — shown as an all-regions total.'
-    +'</div>';
+    ;
 }
 
-function engRenderMarketDrill(){
-  if(!ENG_DATA) return;
-  var mktStreams=['software','webinars','gm'].map(function(k){
-    return (ENG_DATA.streams||[]).find(function(s){return s.key===k;});
-  }).filter(Boolean);
-  var mkMap={};
-  mktStreams.forEach(function(s){
-    (s.by_market||[]).forEach(function(m){
-      if(!m.market) return;
-      if(!mkMap[m.market]) mkMap[m.market]={region:m.region||"Other"};
-      if(s.key==='software') mkMap[m.market].software=m.total||0;
-      else if(s.key==='webinars') mkMap[m.market].webinars=m.attendees||0;
-      else if(s.key==='gm') mkMap[m.market].gm=m.attendees||0;
-    });
+function engMktVal(stream, mktData) {
+  if (!mktData) return undefined;
+  if (stream.key === 'webinars' || stream.key === 'gm') return mktData.attendees;
+  return mktData.total;
+}
+
+function engRenderMarketDrill() {
+  if (!ENG_DATA) return;
+
+  var mktStreams = (ENG_DATA.streams || []).filter(function(s) {
+    return s.by_market && s.by_market.length > 0;
   });
-  var filtMkts=Object.keys(mkMap).filter(function(mk){
-    return E_REGION==="All"||mkMap[mk].region===E_REGION;
-  });
-  if(E_MARKET!=="All"){
-    var mk=E_MARKET, d=mkMap[mk]||{};
-    document.getElementById('eng-mkt-hint').innerHTML="("+mk+" &middot; "+(d.region||"—")+" &middot; all-time totals)";
-    var head='<tr><th>Stream</th><th class="num">Total</th></tr>';
-    var rows=[{l:'Software Runs',v:d.software},{l:'Webinar Attendance',v:d.webinars},{l:'Group Meeting Attendance',v:d.gm}]
-      .map(function(r){return '<tr><td>'+r.l+'</td><td class="num">'+engFmt(r.v)+'</td></tr>';}).join('');
-    document.getElementById('eng-marketdrill').innerHTML=
-      '<table><thead>'+head+'</thead><tbody>'+rows+'</tbody></table>'
-      +'<div style="font-size:11px;color:#9d9d9d;margin-top:6px">Each row uses its own unit. Not additive. Annual resolution not available in live view.</div>';
+
+  if (!mktStreams.length) {
+    document.getElementById('eng-marketdrill').innerHTML =
+      '<div style=”padding:24px;color:#9d9d9d;font-size:13px”>No market-level data available.</div>';
     return;
   }
-  var totals={software:0,webinars:0,gm:0};
-  filtMkts.forEach(function(mk){
-    var d=mkMap[mk];
-    totals.software+=(d.software||0); totals.webinars+=(d.webinars||0); totals.gm+=(d.gm||0);
+
+  // Per-stream market index: stream.key → { market → row }
+  var mktIndex = {};
+  mktStreams.forEach(function(s) {
+    mktIndex[s.key] = {};
+    (s.by_market || []).forEach(function(m) { if (m.market) mktIndex[s.key][m.market] = m; });
   });
-  var scored=filtMkts.map(function(mk){
-    var d=mkMap[mk], sc=0;
-    mktStreams.forEach(function(s){
-      var v=s.key==='software'?d.software||0:s.key==='webinars'?d.webinars||0:d.gm||0;
-      var t=s.key==='software'?totals.software:s.key==='webinars'?totals.webinars:totals.gm;
-      if(v&&t) sc+=v/t;
-    });
-    return{mk:mk,sc:sc,d:d};
-  }).filter(function(o){return o.sc>0;});
-  scored.sort(function(a,b){return b.sc-a.sc;});
-  var TOPN=18, top=scored.slice(0,TOPN), rest=scored.slice(TOPN), showReg=E_REGION==="All";
-  document.getElementById('eng-mkt-hint').innerHTML=
-    "("+(E_REGION==="All"?"all regions":E_REGION)+" &middot; all-time totals &middot; top "+TOPN+" by prominence)";
-  if(!scored.length){
-    document.getElementById('eng-marketdrill').innerHTML=
-      '<div style="padding:24px;color:#9d9d9d;font-size:13px">No market-level data'+(E_REGION!=="All"?" for "+E_REGION:"")+'.</div>';
+
+  // Shared inline style block (matches time table pattern)
+  var mdStyle = '<style>'
+    + '#eng-marketdrill table{width:100%;border-collapse:collapse;font-size:13px}'
+    + '#eng-marketdrill th{padding:9px 10px;font-size:11px;font-weight:600;color:#9d9d9d;text-transform:uppercase;letter-spacing:.04em;white-space:normal;word-break:break-word;vertical-align:bottom;line-height:1.3;border-bottom:1px solid #e6e6e5;background:#fff}'
+    + '#eng-marketdrill th:first-child,#eng-marketdrill th:nth-child(2){white-space:nowrap}'
+    + '#eng-marketdrill td{padding:9px 10px;border-bottom:1px solid rgba(230,230,229,.55);vertical-align:middle}'
+    + '#eng-marketdrill tfoot td{font-size:14px;font-weight:700;color:#3c3c3b;padding:9px 10px;border-top:2px solid #d8d8d7;border-bottom:none}'
+    + '</style>';
+
+  // Single market selected — show per-stream totals for that market
+  if (E_MARKET !== 'All') {
+    var mk = E_MARKET, sampleReg = '';
+    mktStreams.forEach(function(s) { if (mktIndex[s.key][mk]) sampleReg = mktIndex[s.key][mk].region || ''; });
+    document.getElementById('eng-mkt-hint').innerHTML =
+      '(' + mk + (sampleReg ? ' &middot; ' + sampleReg : '') + ' &middot; all-time totals)';
+    var head = '<tr><th>Stream</th><th class=”num”>Total</th></tr>';
+    var rows = mktStreams.map(function(s) {
+      var v = engMktVal(s, mktIndex[s.key][mk]);
+      return '<tr><td>' + s.label + '</td><td class=”num”>' + engFmt(v) + '</td></tr>';
+    }).join('');
+    document.getElementById('eng-marketdrill').innerHTML = mdStyle
+      + '<div style=”overflow-x:auto”><table><thead>' + head + '</thead><tbody>' + rows + '</tbody></table></div>'
+      + '<div style=”font-size:11px;color:#9d9d9d;padding:6px 18px 14px;line-height:1.5”>Each row uses its own unit — not additive. All-time totals.</div>';
     return;
   }
-  var head='<tr><th>Market</th>'+(showReg?'<th>Region</th>':'')+mktStreams.map(function(s){
-    return '<th class="num">'+s.label+'</th>';
-  }).join('')+'</tr>';
-  function mkRow(o){
-    var r=o.d.region||"Other";
-    var rp=showReg?'<td><span style="display:inline-block;font-size:11px;font-weight:700;color:#fff;border-radius:4px;padding:1px 6px;background:'+(E_RC[r]||E_RC.Other)+'">'+r+'</span></td>':'';
-    return '<tr><td>'+o.mk+'</td>'+rp+mktStreams.map(function(s){
-      var v=s.key==='software'?o.d.software:s.key==='webinars'?o.d.webinars:o.d.gm;
-      return '<td class="num">'+engFmt(v)+'</td>';
-    }).join('')+'</tr>';
+
+  // Build unified market registry (respecting region filter)
+  var allMkts = {};
+  mktStreams.forEach(function(s) {
+    (s.by_market || []).forEach(function(m) {
+      if (!m.market) return;
+      var region = m.region || 'Other';
+      if (E_REGION !== 'All' && region !== E_REGION) return;
+      if (!allMkts[m.market]) allMkts[m.market] = { region: region };
+    });
+  });
+
+  // Stream totals (within region filter) for prominence scoring
+  var streamTotals = {};
+  mktStreams.forEach(function(s) {
+    var t = 0;
+    Object.keys(allMkts).forEach(function(mk) { t += engMktVal(s, mktIndex[s.key][mk]) || 0; });
+    streamTotals[s.key] = t;
+  });
+
+  // Score and rank
+  var scored = Object.keys(allMkts).map(function(mk) {
+    var sc = 0;
+    mktStreams.forEach(function(s) {
+      var v = engMktVal(s, mktIndex[s.key][mk]) || 0;
+      var t = streamTotals[s.key];
+      if (v && t) sc += v / t;
+    });
+    return { mk: mk, sc: sc, region: allMkts[mk].region };
+  }).filter(function(o) { return o.sc > 0; });
+  scored.sort(function(a, b) { return b.sc - a.sc; });
+
+  if (!scored.length) {
+    document.getElementById('eng-marketdrill').innerHTML =
+      '<div style=”padding:24px;color:#9d9d9d;font-size:13px”>No market-level data' + (E_REGION !== 'All' ? ' for ' + E_REGION : '') + '.</div>';
+    document.getElementById('eng-mkt-hint').innerHTML = '';
+    return;
   }
-  var body=top.map(mkRow).join('');
-  var otherRow='';
-  if(rest.length){
-    var oth={software:0,webinars:0,gm:0};
-    rest.forEach(function(o){oth.software+=(o.d.software||0);oth.webinars+=(o.d.webinars||0);oth.gm+=(o.d.gm||0);});
-    otherRow='<tr style="color:#9d9d9d;font-style:italic"><td>Other markets ('+rest.length+')</td>'
-      +(showReg?'<td></td>':'')+mktStreams.map(function(s){
-        var v=s.key==='software'?oth.software:s.key==='webinars'?oth.webinars:oth.gm;
-        return '<td class="num">'+engFmt(v)+'</td>';
-      }).join('')+'</tr>';
+
+  var top = scored, showReg = true;
+  document.getElementById('eng-mkt-hint').innerHTML =
+    '(' + (E_REGION === 'All' ? 'all regions' : E_REGION) + ' &middot; all-time totals &middot; ' + scored.length + ' markets)';
+
+  var head = '<tr>'
+    + '<th style=”min-width:140px”>Market</th>'
+    + (showReg ? '<th style=”min-width:64px”>Region</th>' : '')
+    + mktStreams.map(function(s) { return '<th class=”num” style=”min-width:80px”>' + s.label + '</th>'; }).join('')
+    + '</tr>';
+
+  function mkRow(o, muted) {
+    var reg = o.region || 'n/a';
+    var rc = E_RC[reg] || E_RC.Other;
+    var rp = showReg
+      ? '<td><span class=”rpill” style=”--rpill-bg:' + rc + '”>' + reg + '</span></td>'
+      : '';
+    var style = muted ? ' style=”color:#9d9d9d;font-style:italic”' : '';
+    return '<tr' + style + '><td>' + o.mk + '</td>' + rp
+      + mktStreams.map(function(s) { return '<td class=”num”>' + engFmt(engMktVal(s, mktIndex[s.key][o.mk])) + '</td>'; }).join('')
+      + '</tr>';
   }
-  var foot='<tr><td><b>'+(E_REGION==="All"?"All markets":E_REGION+" total")+'</b></td>'
-    +(showReg?'<td></td>':'')+mktStreams.map(function(s){
-      var v=s.key==='software'?totals.software:s.key==='webinars'?totals.webinars:totals.gm;
-      return '<td class="num"><b>'+engFmt(v)+'</b></td>';
-    }).join('')+'</tr>';
-  document.getElementById('eng-marketdrill').innerHTML=
-    '<table><thead>'+head+'</thead><tbody>'+body+otherRow+'</tbody><tfoot>'+foot+'</tfoot></table>'
-    +'<div style="font-size:11px;color:#9d9d9d;margin-top:8px">Markets ranked by cross-stream prominence; top '+TOPN+' shown, remainder grouped as “Other markets”. Each column uses its own unit — not additive across columns.</div>';
+
+  var body = top.map(function(o) { return mkRow(o, false); }).join('');
+
+  var foot = '<tr><td><b>' + (E_REGION === 'All' ? 'All markets' : E_REGION + ' total') + '</b></td>'
+    + (showReg ? '<td></td>' : '')
+    + mktStreams.map(function(s) {
+        var tot = E_REGION === 'All' ? (s.total || 0) : ((s.by_region || {})[E_REGION] || 0);
+        return '<td class=”num”><b>' + engFmt(tot) + '</b></td>';
+      }).join('')
+    + '</tr>';
+
+  document.getElementById('eng-marketdrill').innerHTML = mdStyle
+    + '<div style=”overflow-x:auto;max-height:560px”><table><thead style=”position:sticky;top:0;background:#fff;z-index:1”>' + head + '</thead><tbody>' + body + '</tbody><tfoot>' + foot + '</tfoot></table></div>'
+    + '<div style=”font-size:11px;color:#9d9d9d;padding:6px 16px 14px”>Markets ranked by cross-stream prominence. Each column uses its own unit &mdash; not additive across columns.</div>';
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 
 loadData();
+loadEngagement();
 </script>
 </body>
 </html>

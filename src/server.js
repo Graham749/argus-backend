@@ -92,8 +92,8 @@ app.get('/api/sf-cases',          sfCases);
 app.get('/api/sf-opportunities',  sfOpportunities);
 app.get('/api/eos-engagement',         eosEngagement);
 app.get('/api/eos-engagement-account', eosEngagementAccount);
-app.get('/sw-intelligence',   (req, res) => res.sendFile(path.join(argusPath, 'sw-intelligence.html')));
-app.get('/eos-engagement',    (req, res) => res.sendFile(path.join(argusPath, 'eos-engagement.html')));
+app.get('/sw-intelligence',   (req, res) => { res.set('Cache-Control', 'no-store'); res.sendFile(path.join(argusPath, 'sw-intelligence.html')); });
+app.get('/eos-engagement',    (req, res) => { res.set('Cache-Control', 'no-store'); res.sendFile(path.join(argusPath, 'eos-engagement.html')); });
 
 // Serve Argus dashboard at root
 app.get('/', (req, res) => {

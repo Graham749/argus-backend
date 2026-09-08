@@ -10,25 +10,59 @@ const MARKET_TO_REGION = {
   'Ireland': 'EMEA', 'Belgium': 'EMEA', 'Romania': 'EMEA', 'Greece': 'EMEA',
   'Baltics': 'EMEA', 'Bulgaria': 'EMEA', 'Hungary': 'EMEA', 'Croatia': 'EMEA',
   'Serbia': 'EMEA', 'Switzerland': 'EMEA', 'Austria': 'EMEA', 'Czechia': 'EMEA',
-  'Slovakia': 'EMEA', 'South Africa': 'EMEA', 'Pan-European': 'EMEA',
+  'Slovakia': 'EMEA', 'Slovenia': 'EMEA', 'South Africa': 'EMEA', 'Pan-European': 'EMEA',
   'Global Energy': 'EMEA', 'Hydrogen': 'EMEA', 'Commodities': 'EMEA',
   'Western Balkans': 'EMEA', 'Banking Roundtable': 'EMEA',
+  'EU Hydrogen': 'EMEA', 'Pan-European': 'EMEA',
+  'SEE': 'EMEA', 'Benelux': 'EMEA',
   // APAC
   'Australia (NEM)': 'APAC', 'Australia (WEM)': 'APAC', 'Japan': 'APAC',
   'Australia NEM': 'APAC', 'Australia WEM': 'APAC',
   'India': 'APAC', 'South Korea': 'APAC', 'Philippines': 'APAC',
-  'Singapore': 'APAC', 'Malaysia': 'APAC', 'APAC': 'APAC',
+  'Singapore': 'APAC', 'Malaysia': 'APAC', 'APAC': 'APAC', 'Taiwan': 'APAC',
+  'APAC Hydrogen': 'APAC',
   // NORAM
   'ERCOT': 'NORAM', 'PJM': 'NORAM', 'CAISO': 'NORAM', 'MISO': 'NORAM',
   'WECC': 'NORAM', 'Alberta': 'NORAM', 'NYISO': 'NORAM', 'ISO-NE': 'NORAM',
-  'SPP': 'NORAM', 'Pan-NORAM': 'NORAM', 'SERC': 'NORAM', 'Ontario': 'NORAM',
+  'NYISO/ISO-NE': 'NORAM', 'SPP': 'NORAM', 'Pan-NORAM': 'NORAM',
+  'SERC': 'NORAM', 'Ontario': 'NORAM', 'AIES': 'NORAM',
   // LATAM
-  'Brazil': 'LATAM', 'Chile': 'LATAM', 'Mexico': 'LATAM',
+  'Brazil': 'LATAM', 'Chile': 'LATAM', 'Mexico': 'LATAM', 'Peru': 'LATAM',
 };
+
+// Normalise market names from alternate spellings/abbreviations used across systems
+const MARKET_NORM = {
+  'GB': 'Great Britain', 'UK': 'Great Britain', 'United Kingdom': 'Great Britain',
+  'Aus NEM': 'Australia NEM', 'AUS NEM': 'Australia NEM', 'AUS-NEM': 'Australia NEM',
+  'Aus WEM': 'Australia WEM', 'AUS WEM': 'Australia WEM', 'AUS-WEM': 'Australia WEM',
+  // Webinar/GM abbreviations → canonical SF product market names
+  'PanEU': 'Pan-European', 'Pan EU': 'Pan-European',
+  'PanNORAM': 'Pan-NORAM', 'Pan NORAM': 'Pan-NORAM', 'Pan-USA': 'Pan-NORAM',
+  'Hydrogen': 'EU Hydrogen',
+  'AIES': 'Alberta',
+  'Melbourne (or other AUS city)': 'Australia NEM',
+  'Sydney': 'Australia NEM',
+  'ISO-NE, NYISO': 'ISO-NE',
+};
+
+const VALID_REGIONS = new Set(['EMEA', 'APAC', 'NORAM', 'LATAM']);
+
+function normalizeMarket(m) {
+  if (!m) return m;
+  const t = m.trim();
+  return MARKET_NORM[t] || t;
+}
 
 function regionOf(market) {
   if (!market) return 'Other';
-  return MARKET_TO_REGION[market] || 'Other';
+  return MARKET_TO_REGION[normalizeMarket(market)] || 'Other';
+}
+
+// Determine region from a raw region string (may be 'EMEA', 'APAC', etc.)
+// Falls back to market-name lookup if region string is not a valid region code.
+function regionFromRaw(regionRaw, marketRaw) {
+  if (regionRaw && VALID_REGIONS.has(regionRaw.trim())) return regionRaw.trim();
+  return regionOf(marketRaw);
 }
 
 // Workshop case types (everything else = email/analyst support)
@@ -39,7 +73,7 @@ module.exports = async function eosEngagement(req, res) {
     const cached = cacheGet(CACHE_KEY);
     if (cached && !req.query.bust) return res.json(cached);
 
-    const [runsRows, dlRows, vidRows, caseRows, webinarRows, gmRows, acctRegionRows, dlAcctRows, caseAcctRows] = await Promise.all([
+    const [runsRows, dlRows, vidRows, caseRows, webinarRows, gmRows, acctRegionRows, dlAcctRows, caseAcctRows, dlMktRows, caseMktRows, subRegionRows] = await Promise.all([
       // 1. Software runs by year + product_region — DISTINCT simulation_id (matches PBI DAX measure)
       query(`
         SELECT YEAR(r.launch_time) AS yr, r.product_region, COUNT(DISTINCT r.simulation_id) AS cnt
@@ -88,21 +122,21 @@ module.exports = async function eosEngagement(req, res) {
         ORDER BY month
       `),
 
-      // 5. Webinars by market + month
+      // 5. Webinars by market + month (region_raw for direct region assignment)
       query(`
-        SELECT market_raw, FORMAT(event_date, 'yyyy-MM') AS month, SUM(COALESCE(attendees, 0)) AS attendees, COUNT(*) AS event_count
+        SELECT market_raw, region_raw, FORMAT(event_date, 'yyyy-MM') AS month, SUM(COALESCE(attendees, 0)) AS attendees, COUNT(*) AS event_count
         FROM dbo.v_silver_webinar_schedule
         WHERE event_date IS NOT NULL AND COALESCE(attendees, 0) > 0
-        GROUP BY market_raw, FORMAT(event_date, 'yyyy-MM')
+        GROUP BY market_raw, region_raw, FORMAT(event_date, 'yyyy-MM')
         ORDER BY month DESC
       `),
 
-      // 6. Group meetings by market + month
+      // 6. Group meetings by market + month (region for direct region assignment)
       query(`
-        SELECT market_raw, FORMAT(event_date, 'yyyy-MM') AS month, SUM(COALESCE(attendees, 0)) AS attendees, COUNT(*) AS event_count
+        SELECT market_raw, region AS region_raw, FORMAT(event_date, 'yyyy-MM') AS month, SUM(COALESCE(attendees, 0)) AS attendees, COUNT(*) AS event_count
         FROM dbo.v_silver_gm_annual_plan
         WHERE event_date IS NOT NULL AND COALESCE(attendees, 0) > 0
-        GROUP BY market_raw, FORMAT(event_date, 'yyyy-MM')
+        GROUP BY market_raw, region, FORMAT(event_date, 'yyyy-MM')
         ORDER BY month DESC
       `),
 
@@ -130,7 +164,7 @@ module.exports = async function eosEngagement(req, res) {
               OR LOWER(product) LIKE 'mis%'   OR LOWER(product) LIKE 'isone%'
               OR LOWER(product) LIKE 'ny%'    OR LOWER(product) LIKE 'ne%'
               OR LOWER(product) LIKE 'alb%'   OR LOWER(product) LIKE 'abt%'  OR LOWER(product) LIKE 'ont%'
-              OR LOWER(product) LIKE 'spp%'   OR LOWER(product) LIKE 'wecc%' THEN 'NORAM'
+              OR LOWER(product) LIKE 'spp%'   OR LOWER(product) LIKE 'wecc%' OR LOWER(product) LIKE 'aies%' THEN 'NORAM'
             WHEN LOWER(product) LIKE 'aus%'   OR LOWER(product) LIKE 'ais%'
               OR LOWER(product) LIKE 'nsw%'   OR LOWER(product) LIKE 'vic%'
               OR LOWER(product) LIKE 'saa%'   OR LOWER(product) LIKE 'qld%'  OR LOWER(product) LIKE 'tas%'
@@ -156,7 +190,7 @@ module.exports = async function eosEngagement(req, res) {
               OR LOWER(product) LIKE 'mis%'   OR LOWER(product) LIKE 'isone%'
               OR LOWER(product) LIKE 'ny%'    OR LOWER(product) LIKE 'ne%'
               OR LOWER(product) LIKE 'alb%'   OR LOWER(product) LIKE 'abt%'  OR LOWER(product) LIKE 'ont%'
-              OR LOWER(product) LIKE 'spp%'   OR LOWER(product) LIKE 'wecc%' THEN 'NORAM'
+              OR LOWER(product) LIKE 'spp%'   OR LOWER(product) LIKE 'wecc%' OR LOWER(product) LIKE 'aies%' THEN 'NORAM'
             WHEN LOWER(product) LIKE 'aus%'   OR LOWER(product) LIKE 'ais%'
               OR LOWER(product) LIKE 'nsw%'   OR LOWER(product) LIKE 'vic%'
               OR LOWER(product) LIKE 'saa%'   OR LOWER(product) LIKE 'qld%'  OR LOWER(product) LIKE 'tas%'
@@ -178,12 +212,150 @@ module.exports = async function eosEngagement(req, res) {
         WHERE TRY_CAST(c.date_of_work AS DATE) IS NOT NULL AND c.account_id IS NOT NULL
         GROUP BY mdm.sf_account_code, COALESCE(c.case_type, 'Other')
       `),
+
+      // 10. Downloads by market — product code prefix → market name
+      //     LATAM/NORAM/APAC mapped directly; EMEA broken out to individual markets.
+      //     NORAM checked before APAC (wecc% before wec%/wem%); ita_nor% before ita%.
+      //     NULL market = unrecognised code → excluded from market drill via WHERE.
+      query(`
+        WITH dl AS (
+          SELECT
+            CASE
+              -- LATAM
+              WHEN LOWER(product) LIKE 'bra%' THEN 'Brazil'
+              WHEN LOWER(product) LIKE 'chl%' THEN 'Chile'
+              WHEN LOWER(product) LIKE 'mex%' THEN 'Mexico'
+              WHEN LOWER(product) LIKE 'per%' THEN 'Peru'
+              -- NORAM (wecc% before wec% to avoid Australia WEM cross-match)
+              WHEN LOWER(product) LIKE 'erc%'   THEN 'ERCOT'
+              WHEN LOWER(product) LIKE 'pjm%'   THEN 'PJM'
+              WHEN LOWER(product) LIKE 'cai%' OR LOWER(product) LIKE 'cas%'
+                OR LOWER(product) LIKE 'sp15%' OR LOWER(product) LIKE 'zp26%'
+                OR LOWER(product) LIKE 'np15%' THEN 'CAISO'
+              WHEN LOWER(product) LIKE 'mis%'   THEN 'MISO'
+              WHEN LOWER(product) LIKE 'isone%' OR LOWER(product) LIKE 'ne%' THEN 'ISO-NE'
+              WHEN LOWER(product) LIKE 'ny%'    THEN 'NYISO'
+              WHEN LOWER(product) LIKE 'alb%' OR LOWER(product) LIKE 'abt%' THEN 'Alberta'
+              WHEN LOWER(product) LIKE 'ont%' OR LOWER(product) LIKE 'ieso%' THEN 'Ontario'
+              WHEN LOWER(product) LIKE 'spp%'   THEN 'SPP'
+              WHEN LOWER(product) LIKE 'serc%'  THEN 'SERC'
+              WHEN LOWER(product) LIKE 'wecc%'  THEN 'WECC'
+              -- APAC (waa%/wem%/wec% before aus% to avoid NEM cross-match)
+              WHEN LOWER(product) LIKE 'waa%' OR LOWER(product) LIKE 'wem%'
+                OR LOWER(product) LIKE 'wec%' THEN 'Australia WEM'
+              WHEN LOWER(product) LIKE 'aus%' OR LOWER(product) LIKE 'ais%'
+                OR LOWER(product) LIKE 'nsw%' OR LOWER(product) LIKE 'vic%'
+                OR LOWER(product) LIKE 'saa%' OR LOWER(product) LIKE 'qld%'
+                OR LOWER(product) LIKE 'tas%' THEN 'Australia NEM'
+              WHEN LOWER(product) LIKE 'jpn%' OR LOWER(product) LIKE 'jap%' THEN 'Japan'
+              WHEN LOWER(product) LIKE 'phl%'   THEN 'Philippines'
+              WHEN LOWER(product) LIKE 'sin%' OR LOWER(product) LIKE 'sgp%' THEN 'Singapore'
+              WHEN LOWER(product) LIKE 'kor%'   THEN 'South Korea'
+              WHEN LOWER(product) LIKE 'tw%'    THEN 'Taiwan'
+              WHEN LOWER(product) LIKE 'ind%'   THEN 'India'
+              WHEN LOWER(product) LIKE 'mys%'   THEN 'Malaysia'
+              -- EMEA — market-level (ita_nor% before ita%)
+              WHEN LOWER(product) LIKE 'gbr%'   THEN 'Great Britain'
+              WHEN LOWER(product) LIKE 'deu%'   THEN 'Germany'
+              WHEN LOWER(product) LIKE 'ita_nor%' OR LOWER(product) LIKE 'ita_cnor%' THEN 'Nordics'
+              WHEN LOWER(product) LIKE 'ita%'   THEN 'Italy'
+              WHEN LOWER(product) LIKE 'fra%'   THEN 'France'
+              WHEN LOWER(product) LIKE 'esp%' OR LOWER(product) LIKE 'ibe%'
+                OR LOWER(product) LIKE 'ibr%' OR LOWER(product) LIKE 'prt%' THEN 'Iberia'
+              WHEN LOWER(product) LIKE 'nld%'   THEN 'Netherlands'
+              WHEN LOWER(product) LIKE 'nor%' OR LOWER(product) LIKE 'swe%'
+                OR LOWER(product) LIKE 'fin%' OR LOWER(product) LIKE 'den%'
+                OR LOWER(product) LIKE 'dnk%' OR LOWER(product) LIKE 'nod%' THEN 'Nordics'
+              WHEN LOWER(product) LIKE 'pol%'   THEN 'Poland'
+              WHEN LOWER(product) LIKE 'irl%' OR LOWER(product) LIKE 'irx%' THEN 'Ireland'
+              WHEN LOWER(product) LIKE 'bel%'   THEN 'Belgium'
+              WHEN LOWER(product) LIKE 'rou%'   THEN 'Romania'
+              WHEN LOWER(product) LIKE 'grc%'   THEN 'Greece'
+              WHEN LOWER(product) LIKE 'est%' OR LOWER(product) LIKE 'ltu%'
+                OR LOWER(product) LIKE 'lva%' OR LOWER(product) LIKE 'bal%' THEN 'Baltics'
+              WHEN LOWER(product) LIKE 'bgr%'   THEN 'Bulgaria'
+              WHEN LOWER(product) LIKE 'hun%'   THEN 'Hungary'
+              WHEN LOWER(product) LIKE 'hrv%'   THEN 'Croatia'
+              WHEN LOWER(product) LIKE 'srb%'   THEN 'Serbia'
+              WHEN LOWER(product) LIKE 'che%'   THEN 'Switzerland'
+              WHEN LOWER(product) LIKE 'aut%'   THEN 'Austria'
+              WHEN LOWER(product) LIKE 'cze%'   THEN 'Czechia'
+              WHEN LOWER(product) LIKE 'svk%'   THEN 'Slovakia'
+              WHEN LOWER(product) LIKE 'svn%'   THEN 'Slovenia'
+              WHEN LOWER(product) LIKE 'zaf%'   THEN 'South Africa'
+              WHEN LOWER(product) LIKE 'see%'   THEN 'SEE'
+              WHEN LOWER(product) LIKE 'wbl%' OR LOWER(product) LIKE 'wbal%' THEN 'Western Balkans'
+              WHEN LOWER(product) LIKE 'glo%'   THEN 'Global Energy'
+              -- NORAM — AIES (Alberta Interconnected Electrical System)
+              WHEN LOWER(product) LIKE 'aies%'  THEN 'Alberta'
+              -- Hydrogen products
+              WHEN LOWER(product) LIKE 'eurhydrogen%' THEN 'EU Hydrogen'
+              WHEN LOWER(product) LIKE 'apachydrogen%' THEN 'APAC Hydrogen'
+              ELSE NULL
+            END AS market,
+            tracking_id
+          FROM dbo.v_silver_eos_downloads
+          WHERE download_date IS NOT NULL
+            AND tracking_id IS NOT NULL
+            AND COALESCE(product, '') != 'scenarioExplorer'
+        )
+        SELECT market, COUNT(DISTINCT tracking_id) AS cnt
+        FROM dl
+        WHERE market IS NOT NULL
+        GROUP BY market
+        ORDER BY cnt DESC
+      `),
+
+      // 11. Cases by product market+region — joins via product_id_sf (SF record ID)
+      query(`
+        SELECT
+          COALESCE(c.case_type, 'Other') AS case_type,
+          COALESCE(p.Energy_Market__c, 'Other') AS market,
+          COALESCE(p.Energy_Market_Region__c, 'Other') AS region,
+          COUNT(*) AS cnt
+        FROM dbo.v_silver_sf_cases c
+        LEFT JOIN dbo.v_silver_sf_products p ON p.product_id_sf = c.product_id
+        WHERE TRY_CAST(c.date_of_work AS DATE) IS NOT NULL
+          AND c.account_id IS NOT NULL
+        GROUP BY COALESCE(c.case_type, 'Other'), COALESCE(p.Energy_Market__c, 'Other'), COALESCE(p.Energy_Market_Region__c, 'Other')
+        ORDER BY cnt DESC
+      `).catch(e => {
+        console.warn('[eos-engagement] cases-by-mkt (product join) skipped:', e.message);
+        return [];
+      }),
+
+      // 12. Subscription-based primary region per account — fallback for LATAM and other
+      //     accounts that have few/no EOS runs (Brazil, Chile accounts don't run EOS heavily)
+      query(`
+        WITH sub_region AS (
+          SELECT mdm.sf_account_code, sub.energy_region, COUNT(*) AS cnt
+          FROM dbo.v_silver_sf_subscriptions sub
+          INNER JOIN dbo.gold_mdm_account mdm ON mdm.sf_account_name = sub.account_name
+          WHERE sub.energy_region IN ('EMEA','APAC','NORAM','LATAM')
+            AND sub.status IN ('Active', 'Termination in Progress')
+            AND mdm.sf_account_code IS NOT NULL
+          GROUP BY mdm.sf_account_code, sub.energy_region
+        ),
+        primary_region AS (
+          SELECT sf_account_code, energy_region,
+            ROW_NUMBER() OVER (PARTITION BY sf_account_code ORDER BY cnt DESC) AS rn
+          FROM sub_region
+        )
+        SELECT sf_account_code, energy_region AS region FROM primary_region WHERE rn = 1
+      `).catch(e => { console.warn('[eos-engagement] sub-region fallback skipped:', e.message); return []; }),
     ]);
 
-    // ── Build account → primary region lookup ─────────────────────────────────
-    const accountRegion = {};
+    // ── Build account → primary region + market lookup ───────────────────────
+    const accountRegion = {}, accountMarket = {};
     for (const r of acctRegionRows) {
       accountRegion[r.sf_account_code] = regionOf(r.product_region);
+      accountMarket[r.sf_account_code] = r.product_region || 'Other';
+    }
+    // Supplement with subscription-based region for accounts not in EOS runs (e.g. LATAM clients)
+    for (const r of subRegionRows) {
+      if (!accountRegion[r.sf_account_code] && VALID_REGIONS.has(r.region)) {
+        accountRegion[r.sf_account_code] = r.region;
+      }
     }
 
     // ── Process runs ─────────────────────────────────────────────────────────
@@ -224,6 +396,12 @@ module.exports = async function eosEngagement(req, res) {
     }
     const dlTotal = Object.values(dlByMonth).reduce((s, v) => s + v, 0);
 
+    // ── Downloads by market (product code → market name) ─────────────────────
+    const dlMktArr = dlMktRows
+      .filter(r => r.market)
+      .map(r => ({ market: r.market, total: Number(r.cnt) || 0, region: regionOf(r.market) }))
+      .sort((a, b) => b.total - a.total);
+
     // ── Process videos ────────────────────────────────────────────────────────
     const vidByMonth = {};
     let secsTotal = 0, vidTotal = 0;
@@ -255,17 +433,85 @@ module.exports = async function eosEngagement(req, res) {
     const workshopTotal = Object.values(workshopByMonth).reduce((s, v) => s + v, 0);
     const emailTotal    = Object.values(emailByMonth).reduce((s, v) => s + v, 0);
 
+    // ── Cases by market (account's primary market from runs) ──────────────────
+    const workshopByMarket = {}, emailByMarket = {};
+    for (const r of caseAcctRows) {
+      const mkt = accountMarket[r.sf_account_code] || 'Other';
+      if (mkt === 'Other') continue; // skip accounts with no EOS run market
+      const region = regionOf(mkt);
+      const cnt = Number(r.cnt) || 0;
+      if (WORKSHOP_TYPES.has(r.case_type)) {
+        if (!workshopByMarket[mkt]) workshopByMarket[mkt] = { total: 0, region };
+        workshopByMarket[mkt].total += cnt;
+      } else {
+        if (!emailByMarket[mkt]) emailByMarket[mkt] = { total: 0, region };
+        emailByMarket[mkt].total += cnt;
+      }
+    }
+    let workshopMktArr = Object.entries(workshopByMarket)
+      .map(([market, v]) => ({ market, ...v })).sort((a, b) => b.total - a.total);
+    let emailMktArr = Object.entries(emailByMarket)
+      .map(([market, v]) => ({ market, ...v })).sort((a, b) => b.total - a.total);
+
+    // ── Cases by product market+region (query 11) — preferred over account-based ────
+    // product_id_sf join gives both Energy_Market__c and Energy_Market_Region__c directly from SF.
+    if (caseMktRows.length > 0) {
+      const wsByMkt = {}, emByMkt = {}, wsByReg = {}, emByReg = {};
+      for (const r of caseMktRows) {
+        const mkt = normalizeMarket(r.market || 'Other');
+        const region = VALID_REGIONS.has(r.region) ? r.region : regionOf(mkt);
+        const cnt = Number(r.cnt) || 0;
+        // Regional totals — include even unattributed-market rows (region still known from product)
+        if (VALID_REGIONS.has(region)) {
+          if (WORKSHOP_TYPES.has(r.case_type)) {
+            wsByReg[region] = (wsByReg[region] || 0) + cnt;
+          } else {
+            emByReg[region] = (emByReg[region] || 0) + cnt;
+          }
+        }
+        // Market breakdown — skip rows with no product (market=Other)
+        if (mkt === 'Other') continue;
+        if (WORKSHOP_TYPES.has(r.case_type)) {
+          if (!wsByMkt[mkt]) wsByMkt[mkt] = { total: 0, region };
+          wsByMkt[mkt].total += cnt;
+        } else {
+          if (!emByMkt[mkt]) emByMkt[mkt] = { total: 0, region };
+          emByMkt[mkt].total += cnt;
+        }
+      }
+      const wsArr = Object.entries(wsByMkt).map(([market, v]) => ({ market, ...v })).sort((a, b) => b.total - a.total);
+      const emArr = Object.entries(emByMkt).map(([market, v]) => ({ market, ...v })).sort((a, b) => b.total - a.total);
+      if (wsArr.length > 0) workshopMktArr = wsArr;
+      if (emArr.length > 0) emailMktArr    = emArr;
+      // Replace account-based regional breakdown with product-based (matches PBI exactly)
+      if (Object.keys(wsByReg).length > 0) {
+        Object.keys(workshopByRegion).forEach(k => delete workshopByRegion[k]);
+        Object.assign(workshopByRegion, wsByReg);
+      }
+      if (Object.keys(emByReg).length > 0) {
+        Object.keys(emailByRegion).forEach(k => delete emailByRegion[k]);
+        Object.assign(emailByRegion, emByReg);
+      }
+    }
+
     // ── Process webinars ──────────────────────────────────────────────────────
+    // market_raw can be pipe-separated (e.g. "Great Britain|France"); split for
+    // by_market but keep totals/months un-split to avoid double-counting.
     const webByMonth = {}, webByRegion = {}, webByMarket = {};
     for (const r of webinarRows) {
       const m = r.month; const att = Number(r.attendees) || 0; const evCnt = Number(r.event_count) || 0;
-      const region = regionOf(r.market_raw);
-      const mkt    = r.market_raw || 'Other';
+      const region = regionFromRaw(r.region_raw, r.market_raw);
       if (m) webByMonth[m] = (webByMonth[m] || 0) + att;
       webByRegion[region] = (webByRegion[region] || 0) + att;
-      if (!webByMarket[mkt]) webByMarket[mkt] = { attendees: 0, event_count: 0, region };
-      webByMarket[mkt].attendees   += att;
-      webByMarket[mkt].event_count += evCnt;
+      // Split pipe-separated markets for the drill-down table
+      const mkts = (r.market_raw || '').split('|').map(s => normalizeMarket(s.trim())).filter(Boolean);
+      const mktList = mkts.length ? mkts : ['Other'];
+      mktList.forEach(function(mkt) {
+        const mktReg = regionOf(mkt) !== 'Other' ? regionOf(mkt) : region;
+        if (!webByMarket[mkt]) webByMarket[mkt] = { attendees: 0, event_count: 0, region: mktReg };
+        webByMarket[mkt].attendees   += att;
+        webByMarket[mkt].event_count += evCnt;
+      });
     }
     const webTotal = Object.values(webByMonth).reduce((s, v) => s + v, 0);
 
@@ -273,13 +519,17 @@ module.exports = async function eosEngagement(req, res) {
     const gmByMonth = {}, gmByRegion = {}, gmByMarket = {};
     for (const r of gmRows) {
       const m = r.month; const att = Number(r.attendees) || 0; const evCnt = Number(r.event_count) || 0;
-      const region = regionOf(r.market_raw);
-      const mkt    = r.market_raw || 'Other';
+      const region = regionFromRaw(r.region_raw, r.market_raw);
       if (m) gmByMonth[m] = (gmByMonth[m] || 0) + att;
       gmByRegion[region] = (gmByRegion[region] || 0) + att;
-      if (!gmByMarket[mkt]) gmByMarket[mkt] = { attendees: 0, event_count: 0, region };
-      gmByMarket[mkt].attendees   += att;
-      gmByMarket[mkt].event_count += evCnt;
+      const mkts = (r.market_raw || '').split('|').map(s => normalizeMarket(s.trim())).filter(Boolean);
+      const mktList = mkts.length ? mkts : ['Other'];
+      mktList.forEach(function(mkt) {
+        const mktReg = regionOf(mkt) !== 'Other' ? regionOf(mkt) : region;
+        if (!gmByMarket[mkt]) gmByMarket[mkt] = { attendees: 0, event_count: 0, region: mktReg };
+        gmByMarket[mkt].attendees   += att;
+        gmByMarket[mkt].event_count += evCnt;
+      });
     }
     const gmTotal = Object.values(gmByMonth).reduce((s, v) => s + v, 0);
 
@@ -292,13 +542,13 @@ module.exports = async function eosEngagement(req, res) {
     const payload = {
       snapshot: new Date().toISOString().slice(0, 10),
       streams: [
-        { key: 'downloads',   label: 'EOS Report Downloads',              unit: 'downloads', source: 'EOS Usage',                  total: dlTotal,       regional: true,  by_region: dlByRegion,       by_month: toMonthArr(dlByMonth,       'cnt') },
-        { key: 'software',    label: 'Software Usage (Runs) excl internal', unit: 'runs',   source: 'Software Usage',              total: runsTotal,     regional: true,  by_region: runsByRegion,     by_month: toMonthArr(runsByMonth, 'cnt'), by_market: runsMktArr },
+        { key: 'downloads',   label: 'EOS Report Downloads',              unit: 'downloads', source: 'EOS Usage',                  total: dlTotal,       regional: true,  by_region: dlByRegion,       by_month: toMonthArr(dlByMonth,       'cnt'), by_market: dlMktArr },
+        { key: 'software',    label: 'Software Usage (Runs)',               unit: 'runs',   source: 'Software Usage',              total: runsTotal,     regional: true,  by_region: runsByRegion,     by_month: toMonthArr(runsByMonth, 'cnt'), by_market: runsMktArr },
         { key: 'webinars',    label: 'Webinar Attendance',                unit: 'attendees', source: 'Integrated Research Tracker', total: webTotal,      regional: true,  by_region: webByRegion,      by_month: toMonthArr(webByMonth,      'attendees'), by_market: webMktArr },
         { key: 'gm',          label: 'Group Meeting Attendance',          unit: 'attendees', source: 'Integrated Research Tracker', total: gmTotal,       regional: true,  by_region: gmByRegion,       by_month: toMonthArr(gmByMonth,       'attendees'), by_market: gmMktArr },
         { key: 'videos',      label: 'EOS Video Plays',                   unit: 'plays',     source: 'EOS Usage',                  total: vidTotal,      regional: false,                              by_month: toMonthArr(vidByMonth,      'plays'), watch_mins_total: Math.round(secsTotal / 60) },
-        { key: 'workshops',   label: 'Workshops (Support)',               unit: 'workshops', source: 'Cases',                      total: workshopTotal, regional: true,  by_region: workshopByRegion, by_month: toMonthArr(workshopByMonth, 'cnt') },
-        { key: 'email_cases', label: 'Email Support Cases',              unit: 'cases',     source: 'Cases',                      total: emailTotal,    regional: true,  by_region: emailByRegion,    by_month: toMonthArr(emailByMonth,    'cnt') },
+        { key: 'workshops',   label: 'Workshops (Support)',               unit: 'workshops', source: 'Cases',                      total: workshopTotal, regional: true,  by_region: workshopByRegion, by_month: toMonthArr(workshopByMonth, 'cnt'), by_market: workshopMktArr },
+        { key: 'email_cases', label: 'Email Support Cases',              unit: 'cases',     source: 'Cases',                      total: emailTotal,    regional: true,  by_region: emailByRegion,    by_month: toMonthArr(emailByMonth,    'cnt'), by_market: emailMktArr },
       ],
     };
 
