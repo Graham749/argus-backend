@@ -589,9 +589,13 @@ module.exports = async function eosEngagement(req, res) {
       }
       // Per-market breakdown
       if (!prodMarkets[p]) prodMarkets[p] = {};
-      if (!prodMarkets[p][mk]) prodMarkets[p][mk] = { region: regionOf(mk), total_runs: 0, by_month: {} };
-      prodMarkets[p][mk].total_runs += runs;
-      if (m) prodMarkets[p][mk].by_month[m] = (prodMarkets[p][mk].by_month[m] || 0) + runs;
+      if (!prodMarkets[p][mk]) prodMarkets[p][mk] = { region: regionOf(mk), total_runs: 0, total_users: 0, by_month: {}, by_month_users: {} };
+      prodMarkets[p][mk].total_runs  += runs;
+      prodMarkets[p][mk].total_users += users;
+      if (m) {
+        prodMarkets[p][mk].by_month[m]       = (prodMarkets[p][mk].by_month[m]       || 0) + runs;
+        prodMarkets[p][mk].by_month_users[m]  = (prodMarkets[p][mk].by_month_users[m]  || 0) + users;
+      }
     }
 
     // Streams in display order: downloads, software, webinars, gm, videos, workshops, email_cases

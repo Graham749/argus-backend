@@ -1385,7 +1385,7 @@ async function loadEngagement() {
     allM.sort();
     E_MIN = "2019-01"; // always start from 2019
     E_MAX = allM[allM.length-1] || new Date().toISOString().slice(0,7);
-    E_START = E_MIN; E_END = E_MAX;
+    E_START = '2025-01'; E_END = E_MAX;
     engUpdatePresetHighlight();
     engSyncMonthInputs();
     engRenderFilter();
@@ -1607,17 +1607,31 @@ function engRenderUsagePanel(wm) {
   var products = Object.keys(pt).sort();
   var allProds = E_PRODUCT === 'All' ? products : [E_PRODUCT];
 
-  // Aggregate runs and users per month over window, for selected product(s)
+  // Aggregate runs and users per month over window, filtered by E_REGION if set
   var runsMap = {}, usersMap = {};
-  allProds.forEach(function(p) {
-    if (!pt[p]) return;
-    wm.forEach(function(m) {
-      var d = pt[p][m];
-      if (!d) return;
-      runsMap[m]  = (runsMap[m]  || 0) + d.runs;
-      usersMap[m] = (usersMap[m] || 0) + d.users;
+  var pm_all = (ENG_DATA || {}).product_markets || {};
+  if (E_REGION !== 'All') {
+    allProds.forEach(function(p) {
+      var pm = pm_all[p]; if (!pm) return;
+      Object.keys(pm).forEach(function(mkt) {
+        if ((pm[mkt].region || 'Other') !== E_REGION) return;
+        var bm = pm[mkt].by_month || {}, bu = pm[mkt].by_month_users || {};
+        wm.forEach(function(m) {
+          runsMap[m]  = (runsMap[m]  || 0) + (bm[m] || 0);
+          usersMap[m] = (usersMap[m] || 0) + (bu[m] || 0);
+        });
+      });
     });
-  });
+  } else {
+    allProds.forEach(function(p) {
+      if (!pt[p]) return;
+      wm.forEach(function(m) {
+        var d = pt[p][m]; if (!d) return;
+        runsMap[m]  = (runsMap[m]  || 0) + d.runs;
+        usersMap[m] = (usersMap[m] || 0) + d.users;
+      });
+    });
+  }
 
   var runsPts  = wm.map(function(m){ return {m:m, v: runsMap[m]  || 0}; });
   var usersPts = wm.map(function(m){ return {m:m, v: usersMap[m] || 0}; });
@@ -1706,16 +1720,18 @@ function engRenderMix(streams,wm){
   }).join('');
 
   var makeBar = function(reg, label) {
-    var tot=E_REGIONS.reduce(function(a,r){return a+(+reg[r]||0);},0);
-    if(!tot) return '';
-    var bar=E_REGIONS.filter(function(r){return (reg[r]||0)>0;}).map(function(r){
-      var v=reg[r]||0, pct=tot?v/tot*100:0;
-      var dim=(E_REGION!=="All"&&r!==E_REGION)?"opacity:.22":"";
-      return '<span style="display:block;height:100%;width:'+pct.toFixed(1)+'%;background:'+E_RC[r]+';'+dim+'" title="'+r+': '+Math.round(v).toLocaleString('en-GB')+' ('+pct.toFixed(1)+'%)"></span>';
+    var grandTot = E_REGIONS.reduce(function(a,r){return a+(+reg[r]||0);},0);
+    if (!grandTot) return '';
+    var displayReg = E_REGION !== 'All' ? [E_REGION] : E_REGIONS.filter(function(r){return (reg[r]||0)>0;});
+    var displayTot = displayReg.reduce(function(a,r){return a+(+reg[r]||0);},0);
+    if (!displayTot) return '';
+    var bar = displayReg.map(function(r){
+      var v = reg[r]||0, pct = displayTot ? v/displayTot*100 : 0;
+      return '<span style="display:block;height:100%;width:'+pct.toFixed(1)+'%;background:'+E_RC[r]+'" title="'+r+': '+Math.round(v).toLocaleString('en-GB')+' ('+pct.toFixed(1)+'%)"></span>';
     }).join('');
     return '<div style="display:grid;grid-template-columns:220px 1fr;gap:14px;align-items:center;margin:10px 0">'
       +'<div style="font-size:13px;font-weight:600;display:flex;justify-content:space-between;padding-right:10px">'
-      +'<span>'+label+'</span><span style="color:#9d9d9d;font-weight:600">'+engFmt(tot)+'</span></div>'
+      +'<span>'+label+'</span><span style="color:#9d9d9d;font-weight:600">'+engFmt(displayTot)+'</span></div>'
       +'<div style="display:flex;height:22px;border-radius:6px;overflow:hidden;background:#f1f1f0">'+bar+'</div></div>';
   };
 
