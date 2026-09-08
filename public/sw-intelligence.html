@@ -1433,7 +1433,7 @@ function engClearFilters() {
 function engPreset(p) {
   var now = new Date();
   var curM = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
-  if (p === 'all')  { E_START = E_MIN; E_END = E_MAX; }
+  if (p === 'all')  { E_START = '2025-01'; E_END = E_MAX; }
   else if (p === '12m') {
     var d = new Date(now); d.setMonth(d.getMonth()-11);
     E_START = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); E_END = curM;
