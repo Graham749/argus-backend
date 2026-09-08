@@ -1300,7 +1300,9 @@ async function loadData(currency) {
       if (barEl2) { barEl2.style.width = '100%'; }
       setTimeout(function() {
         document.getElementById('loading').style.display = 'none';
-        document.getElementById('main-content').style.display = 'block';
+        if (document.getElementById('sw-tab').classList.contains('active')) {
+          document.getElementById('main-content').style.display = 'block';
+        }
         document.getElementById(isMock ? 'demo-dot' : 'live-dot').style.display = '';
       }, 300);
     }
