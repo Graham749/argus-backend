@@ -1653,13 +1653,39 @@ function engRenderUsagePanel(wm) {
     });
   }
 
+  // Aggregate downloads per month, filtered by market > region > all (no product split)
+  var dlMap = {};
+  var dlStream = (ENG_DATA.streams || []).find(function(s){ return s.key === 'downloads'; });
+  if (dlStream) {
+    if (E_MARKET !== 'All') {
+      var dlMkt = (dlStream.by_market || []).find(function(x){ return x.market === E_MARKET; });
+      if (dlMkt) {
+        var dlBm = dlMkt.by_month || {};
+        wm.forEach(function(m){ dlMap[m] = (dlBm[m] || 0); });
+      }
+    } else if (E_REGION !== 'All') {
+      (dlStream.by_market || []).forEach(function(x) {
+        if ((x.region || 'Other') !== E_REGION) return;
+        var dlBm = x.by_month || {};
+        wm.forEach(function(m){ dlMap[m] = (dlMap[m] || 0) + (dlBm[m] || 0); });
+      });
+    } else {
+      var dlMonthMap = {};
+      (dlStream.by_month || []).forEach(function(x){ dlMonthMap[x.month] = x.cnt || 0; });
+      wm.forEach(function(m){ dlMap[m] = dlMonthMap[m] || 0; });
+    }
+  }
+
   var runsPts  = wm.map(function(m){ return {m:m, v: runsMap[m]  || 0}; });
   var usersPts = wm.map(function(m){ return {m:m, v: usersMap[m] || 0}; });
+  var dlPts    = wm.map(function(m){ return {m:m, v: dlMap[m]    || 0}; });
 
   var totalRuns  = runsPts.reduce(function(s,p){return s+p.v;},0);
   var totalUsers = Math.max.apply(null, usersPts.map(function(p){return p.v;}));
+  var totalDl    = dlPts.reduce(function(s,p){return s+p.v;},0);
 
   var col = PROD_COLORS[E_PRODUCT] || PROD_COLORS.All;
+  var dlCol = '#546e7a';
 
   // Product pills
   var pills = ['All'].concat(products).map(function(p) {
@@ -1676,9 +1702,8 @@ function engRenderUsagePanel(wm) {
     '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap">'
     + '<span style="font-size:11px;font-weight:600;color:#9d9d9d;text-transform:uppercase;letter-spacing:.06em;white-space:nowrap">Product</span>'
     + pills
-    + ''
     + '</div>'
-    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px">'
     // Runs chart
     + '<div>'
     +   '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px">'
@@ -1694,6 +1719,14 @@ function engRenderUsagePanel(wm) {
     +     '<span style="font-size:18px;font-weight:700;color:#3c3c3b">' + fmt(totalUsers) + '</span>'
     +   '</div>'
     +   engSparkLine(usersPts, col, 'users')
+    + '</div>'
+    // Downloads chart
+    + '<div>'
+    +   '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px">'
+    +     '<span style="font-size:11px;font-weight:600;color:#6d6d6c">Report Downloads</span>'
+    +     '<span style="font-size:18px;font-weight:700;color:#3c3c3b">' + fmt(totalDl) + '</span>'
+    +   '</div>'
+    +   engSparkLine(dlPts, dlCol, 'downloads')
     + '</div>'
     + '</div>';
 
