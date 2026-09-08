@@ -1709,24 +1709,22 @@ function engRenderDlPanel(wm) {
   var fmt = function(n){ return n >= 1000 ? (n/1000).toFixed(1)+'k' : String(n); };
 
   var byProduct = dlStream.by_product || {};
-  var dlProducts = Object.keys(byProduct).sort();
+  // Sort products by all-time download total descending
+  var dlProducts = Object.keys(byProduct).sort(function(a,b){
+    var ta = Object.values(byProduct[a]).reduce(function(s,x){return s+(x.cnt||0);},0);
+    var tb = Object.values(byProduct[b]).reduce(function(s,x){return s+(x.cnt||0);},0);
+    return tb - ta;
+  });
 
   var dlMap = {}, usersMap = {};
   var prod = E_DL_PRODUCT;
 
   if (prod !== 'All' && byProduct[prod]) {
-    // Product selected: aggregate selected product's markets filtered by region/market
-    var prodMarkets = byProduct[prod];
-    Object.keys(prodMarkets).forEach(function(mkt) {
-      var mktRegion = (dlStream.by_market || []).find(function(x){ return x.market === mkt; });
-      var mktReg = mktRegion ? (mktRegion.region || 'Other') : 'Other';
-      if (E_MARKET !== 'All' && mkt !== E_MARKET) return;
-      if (E_REGION !== 'All' && E_MARKET === 'All' && mktReg !== E_REGION) return;
-      var mdata = prodMarkets[mkt] || {};
-      wm.forEach(function(m) {
-        dlMap[m]    = (dlMap[m]    || 0) + ((mdata[m] || {}).cnt   || 0);
-        usersMap[m] = (usersMap[m] || 0) + ((mdata[m] || {}).users || 0);
-      });
+    // Product selected: use the raw product's month data (market filter not available at product level)
+    var prodData = byProduct[prod];
+    wm.forEach(function(m) {
+      dlMap[m]    = (prodData[m] || {}).cnt   || 0;
+      usersMap[m] = (prodData[m] || {}).users || 0;
     });
   } else if (E_MARKET !== 'All') {
     var dlMkt = (dlStream.by_market || []).find(function(x){ return x.market === E_MARKET; });
@@ -1756,12 +1754,12 @@ function engRenderDlPanel(wm) {
   var peakUsers = Math.max.apply(null, usersPts.map(function(p){return p.v;})) || 0;
   var dlCol     = '#546e7a';
 
-  // Product dropdown
-  var ddOptions = ['<option value="All"' + (prod==='All'?' selected':'') + '>All content</option>']
+  // Product dropdown — sorted by all-time volume (most popular first)
+  var ddOptions = ['<option value="All"' + (prod==='All'?' selected':'') + '>All products</option>']
     .concat(dlProducts.map(function(p) {
       return '<option value="' + p + '"' + (p===prod?' selected':'') + '>' + p + '</option>';
     })).join('');
-  var dropdown = '<select onchange="engSetDlProduct(this.value)" style="font-size:11px;font-weight:600;color:#6d6d6c;border:1px solid #e6e6e5;border-radius:6px;padding:2px 6px;background:#fff;cursor:pointer">'
+  var dropdown = '<select onchange="engSetDlProduct(this.value)" style="font-size:11px;font-weight:600;color:#6d6d6c;border:1px solid #e6e6e5;border-radius:6px;padding:2px 6px;background:#fff;cursor:pointer;max-width:180px">'
     + ddOptions + '</select>';
 
   panel.innerHTML =
