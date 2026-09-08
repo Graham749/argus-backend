@@ -1438,7 +1438,7 @@ function engClearFilters() {
 function engPreset(p) {
   var now = new Date();
   var curM = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
-  if (p === 'all')  { E_START = '2025-01'; E_END = E_MAX; }
+  if (p === 'all')  { E_START = E_MIN; E_END = E_MAX; }
   else if (p === '12m') {
     var d = new Date(now); d.setMonth(d.getMonth()-11);
     E_START = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); E_END = curM;
@@ -1519,7 +1519,7 @@ function engRender() {
   engRenderUsagePanel(wm);
   engRenderMix(streams,wm);
   engRenderTable(streams,wm);
-  engRenderTimeTable(streams,wm);
+  engRenderTimeTable(streams);
   engRenderMarketDrill(wm);
 }
 
@@ -1729,17 +1729,12 @@ function engProdRegionTotals(wm) {
 }
 
 function engWindowedByRegion(s, wm) {
-  var byReg = {}, hasMonthly = false;
-  (s.by_market || []).forEach(function(mk) {
-    var reg = mk.region || 'Other';
-    var bm = mk.by_month || {};
-    wm.forEach(function(m) { if (bm[m]) { byReg[reg] = (byReg[reg]||0) + bm[m]; hasMonthly = true; } });
-  });
-  if (hasMonthly) return byReg;
-  // Fallback: scale all-time by_region proportionally to the windowed total
+  // Scale all-time regional proportions to the windowed total so the bar total
+  // always matches the KPI card total (engSumStream uses the same windowed total).
   var windowedTot = engSumStream(s, 'All', wm);
   var allTot = Object.values(s.by_region||{}).reduce(function(a,b){return a+(+b||0);},0) || 1;
   var scale = windowedTot / allTot;
+  var byReg = {};
   Object.keys(s.by_region||{}).forEach(function(r) {
     var v = Math.round((s.by_region[r]||0) * scale);
     if (v) byReg[r] = v;
@@ -1799,13 +1794,15 @@ function engFmtZ(n){
   if(n==null||n===undefined||isNaN(+n)) return '&mdash;';
   return Math.round(+n).toLocaleString('en-GB');
 }
-function engRenderTimeTable(streams,wm){
-  var yrs={}; wm.forEach(function(m){yrs[m.slice(0,4)]=true;});
-  var buckets=Object.keys(yrs).sort().map(function(y){
-    return{key:y,label:y,months:wm.filter(function(m){return m.startsWith(y);})};
+function engRenderTimeTable(streams){
+  // Always shows all years — ignores period filter
+  var allWm = engMonthList(E_MIN, E_MAX);
+  var yrs = {}; allWm.forEach(function(m){ yrs[m.slice(0,4)] = true; });
+  var buckets = Object.keys(yrs).sort().map(function(y){
+    return { key:y, label:y, months: allWm.filter(function(m){ return m.startsWith(y); }) };
   });
-  document.getElementById('eng-time-hint').textContent=
-    "for "+(E_REGION==="All"?"all regions":E_REGION)+" — by year";
+  document.getElementById('eng-time-hint').textContent =
+    "for "+(E_REGION==="All"?"all regions":E_REGION)+" — by year (all time)";
 
   var head='<tr><th>Year</th>'+streams.map(function(s){
     var note=!s.regional?' *':'';
@@ -1819,7 +1816,7 @@ function engRenderTimeTable(streams,wm){
   }).join('');
 
   var foot='<tr><td><b>Total</b></td>'+streams.map(function(s){
-    return '<td class="num"><b>'+engFmtZ(engSumStream(s,E_REGION,wm))+'</b></td>';
+    return '<td class="num"><b>'+engFmtZ(engSumStream(s,E_REGION,allWm))+'</b></td>';
   }).join('')+'</tr>';
 
   var ttStyle='<style>'
