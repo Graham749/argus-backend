@@ -1105,8 +1105,8 @@ document.getElementById('client-table').addEventListener('click', function(e) {
 });
 
 // ── Searchable dropdown helper ────────────────────────────────────────────
-window.makeSearchableSelect = window.makeSearchableSelect || function(wrapperId, options, allValue, allLabel, onChange) {
-  var state = { val: allValue };
+window.makeSearchableSelect = window.makeSearchableSelect || function(wrapperId, options, allValue, allLabel, onChange, initialValue) {
+  var state = { val: (initialValue !== undefined ? initialValue : allValue) };
   var _opts = options;
   var wrap = document.getElementById(wrapperId);
   if (!wrap) return state;
@@ -1754,21 +1754,10 @@ function engRenderDlPanel(wm) {
   var peakUsers = Math.max.apply(null, usersPts.map(function(p){return p.v;})) || 0;
   var dlCol     = '#546e7a';
 
-  // Searchable product input — datalist gives native browser search/autocomplete
-  var datalistOpts = dlProducts.map(function(p){ return '<option value="'+p+'">'; }).join('');
-  var dropdown =
-    '<input list="eng-dl-prod-list" id="eng-dl-search"'
-    + ' placeholder="All products"'
-    + ' value="' + (prod !== 'All' ? prod : '') + '"'
-    + ' onchange="engSetDlProduct(this.value||\'All\')"'
-    + ' oninput="if(!this.value)engSetDlProduct(\'All\')"'
-    + ' style="font-size:11px;font-weight:600;color:#6d6d6c;border:1px solid #e6e6e5;border-radius:6px;padding:3px 8px;background:#fff;width:160px;outline:none">'
-    + '<datalist id="eng-dl-prod-list">' + datalistOpts + '</datalist>';
-
   panel.innerHTML =
     '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:6px">'
     + '<span style="font-size:11px;font-weight:600;color:#9d9d9d;text-transform:uppercase;letter-spacing:.06em">EOS Report Downloads</span>'
-    + dropdown
+    + '<div id="eng-dl-prod-wrap" style="display:inline-block"></div>'
     + '</div>'
     + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">'
     + '<div>'
@@ -1786,6 +1775,12 @@ function engRenderDlPanel(wm) {
     +   engSparkLine(usersPts, dlCol, 'users')
     + '</div>'
     + '</div>';
+
+  // Wire up searchable product dropdown into the wrapper div just rendered
+  makeSearchableSelect('eng-dl-prod-wrap', dlProducts, 'All', 'All products', function(v) {
+    E_DL_PRODUCT = v;
+    engRender();
+  }, E_DL_PRODUCT);
 }
 
 function engSetProduct(p) {
