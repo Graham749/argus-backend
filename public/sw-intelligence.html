@@ -1738,7 +1738,8 @@ function engRenderMarketDrill(wm) {
   var foot = '<tr><td><b>' + (E_REGION === 'All' ? 'All markets' : E_REGION + ' total') + '</b></td>'
     + (showReg ? '<td></td>' : '')
     + mktStreams.map(function(s) {
-        var tot = engSumStream(s, E_REGION, wm);
+        var tot = 0;
+        top.forEach(function(o) { tot += engMktValWindowed(s, mktIndex[s.key][o.mk], wm) || 0; });
         return '<td class=”num”><b>' + engFmt(tot) + '</b></td>';
       }).join('')
     + '</tr>';
