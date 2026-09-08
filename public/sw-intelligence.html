@@ -1400,7 +1400,7 @@ function engFmt(n) {
 }
 
 function engRenderFilter() {
-  document.getElementById('eng-filter').innerHTML = ["All","APAC","EMEA","LATAM","NORAM"].map(function(r){
+  document.getElementById('eng-filter').innerHTML = ["All","APAC","EMEA","LATAM","NORAM","Other"].map(function(r){
     return '<div class="pill'+(r===E_REGION?' active':'')+'" onclick="engSetRegion(\''+r+'\')">'+(r==="All"?"All Markets":r)+'</div>';
   }).join('');
 }
