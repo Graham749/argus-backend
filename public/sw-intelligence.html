@@ -1702,28 +1702,34 @@ function engRenderDlPanel(wm) {
   if (!dlStream) { panel.innerHTML = ''; return; }
   var fmt = function(n){ return n >= 1000 ? (n/1000).toFixed(1)+'k' : String(n); };
 
-  var dlMap = {};
+  var dlMap = {}, usersMap = {};
   if (E_MARKET !== 'All') {
     var dlMkt = (dlStream.by_market || []).find(function(x){ return x.market === E_MARKET; });
     if (dlMkt) {
-      var dlBm = dlMkt.by_month || {};
-      wm.forEach(function(m){ dlMap[m] = dlBm[m] || 0; });
+      var dlBm = dlMkt.by_month || {}, dlBu = dlMkt.by_month_users || {};
+      wm.forEach(function(m){ dlMap[m] = dlBm[m] || 0; usersMap[m] = dlBu[m] || 0; });
     }
   } else if (E_REGION !== 'All') {
     (dlStream.by_market || []).forEach(function(x) {
       if ((x.region || 'Other') !== E_REGION) return;
-      var dlBm = x.by_month || {};
-      wm.forEach(function(m){ dlMap[m] = (dlMap[m] || 0) + (dlBm[m] || 0); });
+      var dlBm = x.by_month || {}, dlBu = x.by_month_users || {};
+      wm.forEach(function(m){
+        dlMap[m]    = (dlMap[m]    || 0) + (dlBm[m] || 0);
+        usersMap[m] = (usersMap[m] || 0) + (dlBu[m] || 0);
+      });
     });
   } else {
-    var dlMonthMap = {};
-    (dlStream.by_month || []).forEach(function(x){ dlMonthMap[x.month] = x.cnt || 0; });
-    wm.forEach(function(m){ dlMap[m] = dlMonthMap[m] || 0; });
+    var dlMonthMap = {}, dlUsersMap = {};
+    (dlStream.by_month       || []).forEach(function(x){ dlMonthMap[x.month] = x.cnt || 0; });
+    (dlStream.by_month_users || []).forEach(function(x){ dlUsersMap[x.month] = x.cnt || 0; });
+    wm.forEach(function(m){ dlMap[m] = dlMonthMap[m] || 0; usersMap[m] = dlUsersMap[m] || 0; });
   }
 
-  var dlPts   = wm.map(function(m){ return {m:m, v: dlMap[m] || 0}; });
-  var totalDl = dlPts.reduce(function(s,p){return s+p.v;},0);
-  var dlCol   = '#546e7a';
+  var dlPts    = wm.map(function(m){ return {m:m, v: dlMap[m]    || 0}; });
+  var usersPts = wm.map(function(m){ return {m:m, v: usersMap[m] || 0}; });
+  var totalDl    = dlPts.reduce(function(s,p){return s+p.v;},0);
+  var peakUsers  = Math.max.apply(null, usersPts.map(function(p){return p.v;})) || 0;
+  var dlCol      = '#546e7a';
 
   var regionLabel = E_MARKET !== 'All' ? E_MARKET : (E_REGION !== 'All' ? E_REGION : 'All regions');
 
@@ -1732,12 +1738,21 @@ function engRenderDlPanel(wm) {
     + '<span style="font-size:11px;font-weight:600;color:#9d9d9d;text-transform:uppercase;letter-spacing:.06em">EOS Report Downloads</span>'
     + '<span style="font-size:11px;color:#9d9d9d">' + regionLabel + '</span>'
     + '</div>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">'
     + '<div>'
     +   '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px">'
     +     '<span style="font-size:11px;font-weight:600;color:#6d6d6c">Total Downloads</span>'
     +     '<span style="font-size:18px;font-weight:700;color:#3c3c3b">' + fmt(totalDl) + '</span>'
     +   '</div>'
     +   engSparkLine(dlPts, dlCol, 'downloads')
+    + '</div>'
+    + '<div>'
+    +   '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px">'
+    +     '<span style="font-size:11px;font-weight:600;color:#6d6d6c">Peak Monthly Active Users</span>'
+    +     '<span style="font-size:18px;font-weight:700;color:#3c3c3b">' + fmt(peakUsers) + '</span>'
+    +   '</div>'
+    +   engSparkLine(usersPts, dlCol, 'users')
+    + '</div>'
     + '</div>';
 }
 

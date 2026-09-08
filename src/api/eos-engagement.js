@@ -88,7 +88,8 @@ module.exports = async function eosEngagement(req, res) {
       // 2. EOS downloads by month — excl scenarioExplorer, COUNT DISTINCT tracking_id (matches PBI 840K)
       query(`
         SELECT FORMAT(CAST(download_date AS DATE), 'yyyy-MM') AS month,
-               COUNT(DISTINCT tracking_id) AS cnt
+               COUNT(DISTINCT tracking_id) AS cnt,
+               COUNT(DISTINCT user_email)  AS users
         FROM dbo.v_silver_eos_downloads
         WHERE download_date IS NOT NULL
           AND tracking_id IS NOT NULL
@@ -293,13 +294,14 @@ module.exports = async function eosEngagement(req, res) {
               ELSE NULL
             END AS market,
             tracking_id,
+            user_email,
             FORMAT(CAST(download_date AS DATE), 'yyyy-MM') AS month
           FROM dbo.v_silver_eos_downloads
           WHERE download_date IS NOT NULL
             AND tracking_id IS NOT NULL
             AND COALESCE(product, '') != 'scenarioExplorer'
         )
-        SELECT market, month, COUNT(DISTINCT tracking_id) AS cnt
+        SELECT market, month, COUNT(DISTINCT tracking_id) AS cnt, COUNT(DISTINCT user_email) AS users
         FROM dl
         WHERE market IS NOT NULL
         GROUP BY market, month
@@ -406,11 +408,16 @@ module.exports = async function eosEngagement(req, res) {
       .sort((a, b) => b.total - a.total);
 
     // ── Process downloads ─────────────────────────────────────────────────────
-    const dlByMonth = {};
+    const dlByMonth = {}, dlByMonthUsers = {};
     const dlByRegion = {};
     for (const r of dlRows) {
-      const m = r.month; const cnt = Number(r.cnt) || 0;
-      if (m) dlByMonth[m] = (dlByMonth[m] || 0) + cnt;
+      const m = r.month;
+      const cnt = Number(r.cnt) || 0;
+      const users = Number(r.users) || 0;
+      if (m) {
+        dlByMonth[m]      = (dlByMonth[m]      || 0) + cnt;
+        dlByMonthUsers[m] = (dlByMonthUsers[m] || 0) + users;
+      }
     }
     for (const r of dlAcctRows) {
       dlByRegion[r.region || 'Other'] = (dlByRegion[r.region || 'Other'] || 0) + (Number(r.cnt) || 0);
@@ -421,10 +428,15 @@ module.exports = async function eosEngagement(req, res) {
     const dlByMarket = {};
     for (const r of dlMktRows) {
       if (!r.market) continue;
-      const cnt = Number(r.cnt) || 0;
-      if (!dlByMarket[r.market]) dlByMarket[r.market] = { total: 0, region: regionOf(r.market), by_month: {} };
-      dlByMarket[r.market].total += cnt;
-      if (r.month) dlByMarket[r.market].by_month[r.month] = (dlByMarket[r.market].by_month[r.month] || 0) + cnt;
+      const cnt   = Number(r.cnt)   || 0;
+      const users = Number(r.users) || 0;
+      if (!dlByMarket[r.market]) dlByMarket[r.market] = { total: 0, total_users: 0, region: regionOf(r.market), by_month: {}, by_month_users: {} };
+      dlByMarket[r.market].total       += cnt;
+      dlByMarket[r.market].total_users += users;
+      if (r.month) {
+        dlByMarket[r.market].by_month[r.month]       = (dlByMarket[r.market].by_month[r.month]       || 0) + cnt;
+        dlByMarket[r.market].by_month_users[r.month] = (dlByMarket[r.market].by_month_users[r.month] || 0) + users;
+      }
     }
     const dlMktArr = Object.entries(dlByMarket)
       .map(([market, v]) => ({ market, ...v }))
@@ -604,7 +616,7 @@ module.exports = async function eosEngagement(req, res) {
       product_trends: prodTrends,
       product_markets: prodMarkets,
       streams: [
-        { key: 'downloads',   label: 'EOS Report Downloads',              unit: 'downloads', source: 'EOS Usage',                  total: dlTotal,       regional: true,  by_region: dlByRegion,       by_month: toMonthArr(dlByMonth,       'cnt'), by_market: dlMktArr },
+        { key: 'downloads',   label: 'EOS Report Downloads',              unit: 'downloads', source: 'EOS Usage',                  total: dlTotal,       regional: true,  by_region: dlByRegion,       by_month: toMonthArr(dlByMonth, 'cnt'), by_month_users: toMonthArr(dlByMonthUsers, 'cnt'), by_market: dlMktArr },
         { key: 'software',    label: 'Software Usage (Runs)',               unit: 'runs',   source: 'Software Usage',              total: runsTotal,     regional: true,  by_region: runsByRegion,     by_month: toMonthArr(runsByMonth, 'cnt'), by_market: runsMktArr },
         { key: 'webinars',    label: 'Webinar Attendance',                unit: 'attendees', source: 'Integrated Research Tracker', total: webTotal,      regional: true,  by_region: webByRegion,      by_month: toMonthArr(webByMonth,      'attendees'), by_market: webMktArr },
         { key: 'gm',          label: 'Group Meeting Attendance',          unit: 'attendees', source: 'Integrated Research Tracker', total: gmTotal,       regional: true,  by_region: gmByRegion,       by_month: toMonthArr(gmByMonth,       'attendees'), by_market: gmMktArr },
