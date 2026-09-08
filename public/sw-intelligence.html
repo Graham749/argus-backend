@@ -1674,7 +1674,7 @@ function engRenderUsagePanel(wm) {
     '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap">'
     + '<span style="font-size:11px;font-weight:600;color:#9d9d9d;text-transform:uppercase;letter-spacing:.06em;white-space:nowrap">Product</span>'
     + pills
-    + '<span style="font-size:10px;color:#c0c0be;margin-left:4px">&#9432; also filters market detail</span>'
+    + ''
     + '</div>'
     + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">'
     // Runs chart
@@ -1856,17 +1856,6 @@ function engMktValWindowed(stream, mktData, wm) {
 function engRenderMarketDrill(wm) {
   if (!ENG_DATA) return;
   wm = wm || engWindowMonths();
-
-  // When a product is selected, build a synthetic single stream from product_markets
-  if (E_PRODUCT !== 'All' && ENG_DATA.product_markets && ENG_DATA.product_markets[E_PRODUCT]) {
-    var pm = ENG_DATA.product_markets[E_PRODUCT];
-    var syntheticByMarket = Object.keys(pm).filter(function(mk){return mk!=='Other';}).map(function(mk){
-      return { market: mk, region: pm[mk].region, total: pm[mk].total_runs, by_month: pm[mk].by_month };
-    });
-    var mktStreams = [{ key:'software', label:'Runs (' + E_PRODUCT + ')', unit:'runs', by_market: syntheticByMarket }];
-    engRenderMarketDrillInner(mktStreams, wm);
-    return;
-  }
 
   var mktStreams = (ENG_DATA.streams || []).filter(function(s) {
     return s.by_market && s.by_market.length > 0;
