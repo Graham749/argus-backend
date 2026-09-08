@@ -2065,11 +2065,12 @@ function engRenderMarketDrillInner(mktStreams, wm) {
 
   var body = top.map(function(o) { return mkRow(o, false); }).join('');
 
+  // Use KPI totals for footer so it matches the headline cards.
+  // Market-row sums differ (webinars double-count multi-market events; downloads/cases miss unattributed events).
   var foot = '<tr><td><b>' + (E_REGION === 'All' ? 'All markets' : E_REGION + ' total') + '</b></td>'
     + (showReg ? '<td></td>' : '')
     + mktStreams.map(function(s) {
-        var tot = 0;
-        top.forEach(function(o) { tot += engMktValWindowed(s, mktIndex[s.key][o.mk], wm) || 0; });
+        var tot = engSumStream(s, E_REGION, wm);
         return '<td class=”num”><b>' + engFmt(tot) + '</b></td>';
       }).join('')
     + '</tr>';
