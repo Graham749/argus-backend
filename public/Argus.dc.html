@@ -6105,7 +6105,8 @@ class Component extends DCLogic {
     // opts: { tracks: true, h: 88 }
     // tracks=false used by Engagement Pulse (matches EP's own SVG style — no per-column boxes)
     var renderBarChart = function(mountId, pts, color, opts) {
-      var showTracks = !opts || opts.tracks !== false;
+      var showTracks = true;
+      if (opts && opts.tracks === false) showTracks = false;
       var mount = document.getElementById(mountId);
       if (!mount) return;
       mount.innerHTML = '';
@@ -6138,6 +6139,11 @@ class Component extends DCLogic {
       var svg = mk('svg', { width:W, height:H });
       svg.style.cssText = 'display:block;overflow:visible;';
 
+      // Register bar-click handler globally so SVG inline onclick can call it (no IIFE/closure needed)
+      if (opts && opts.onBarClick) {
+        window['__onBarClick_' + mountId] = opts.onBarClick;
+      }
+
       pts.forEach(function(p, i) {
         var x   = i * COL_W;
         var cx  = x + COL_W / 2;
@@ -6155,6 +6161,12 @@ class Component extends DCLogic {
           var bar = mk('rect', { x:x+1, y:barY, width:BAR_W, height:bh, fill:color, rx:2, opacity:'0.88' });
           bar.addEventListener('mouseenter', function(){ bar.setAttribute('opacity','1'); });
           bar.addEventListener('mouseleave', function(){ bar.setAttribute('opacity','0.88'); });
+          // Per-month drill: clicking a bar filters to that month (SF-style)
+          // Embed month string directly — no this/getAttribute needed in SVG onclick
+          if (opts && opts.onBarClick) {
+            bar.style.cursor = 'pointer';
+            bar.setAttribute('onclick', 'event.stopPropagation();var __f=window["__onBarClick_' + mountId + '"];if(__f)__f("' + p.label + '");');
+          }
           g.appendChild(bar);
 
           // Count label above bar (skip if bar is at max — label would overlap edge)
@@ -6164,8 +6176,8 @@ class Component extends DCLogic {
           }
         }
 
-        // Month label below — abbreviated, Jan shown as 'yy
-        if (p.label && i % step === 0) {
+        // Month label below — abbreviated, Jan shown as 'yy (suppressed in EP via noMonthLabels)
+        if (p.label && i % step === 0 && !(opts && opts.noMonthLabels)) {
           var mo  = String(p.label).slice(5,7);
           var yr  = String(p.label).slice(2,4);
           var lbl = mo === '01' ? ("'"+yr) : (mo === '07' ? 'Jul' : String(parseInt(mo,10)));
@@ -6220,35 +6232,84 @@ class Component extends DCLogic {
       }
     };
 
-    // Toggle drill panel — chart never hides
-    window.eosToggleDrill = function(type) {
+    // Expose renderDrillRows globally so bar-click global handlers can call it without closure
+    window.eosRenderDrillRows = renderDrillRows;
+
+    // Chart background click — shows ALL rows (respects active product filter for Runs) then opens panel
+    window.eosShowAllDrill = function(type) {
+      if (type === 'runs') {
+        var all  = ((window.__eosEngDrill || {}).runs) || [];
+        var prod = window.__eosRunsActiveProd || 'All';
+        var rows = prod === 'All' ? all : all.filter(function(r){ return (r.product||'') === prod; });
+        (window.eosRenderDrillRows || renderDrillRows)('Runs', rows);
+      } else {
+        var allDl = ((window.__eosEngDrill || {}).downloads) || [];
+        (window.eosRenderDrillRows || renderDrillRows)('Downloads', allDl);
+      }
+      window.eosShowDrill(type);
+    };
+
+    // Open drill panel — clicking chart always opens, never closes (PostHog pattern)
+    window.eosShowDrill = function(type) {
       var id = 'eos' + type.charAt(0).toUpperCase() + type.slice(1) + 'Drill';
       var el = document.getElementById(id);
-      if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+      if (el) el.style.display = 'block';
+    };
+    // Close drill panel — only the Collapse button calls this
+    window.eosCollapseDrill = function(type) {
+      var id = 'eos' + type.charAt(0).toUpperCase() + type.slice(1) + 'Drill';
+      var el = document.getElementById(id);
+      if (el) el.style.display = 'none';
+    };
+
+    // Build the onBarClick handler for a given type — filters drill to clicked month (SF-style)
+    var makeBarClickHandler = function(type) {
+      return function(month) {
+        var rows;
+        if (type === 'Runs') {
+          var allRuns = ((window.__eosEngDrill || {}).runs) || [];
+          var prod    = window.__eosRunsActiveProd || 'All';
+          var base    = prod === 'All' ? allRuns : allRuns.filter(function(r){ return (r.product||'') === prod; });
+          rows = base.filter(function(r){ return String(r.date||'').slice(0,7) === month; });
+        } else {
+          var allDl = ((window.__eosEngDrill || {}).downloads) || [];
+          rows = allDl.filter(function(r){ return String(r.date||'').slice(0,7) === month; });
+        }
+        (window.eosRenderDrillRows || renderDrillRows)(type, rows);
+        window.eosShowDrill(type.toLowerCase());
+      };
     };
 
     // Runs filter — updates chart AND drill table (matching SF widget behaviour)
+    // Re-attaches per-month bar click handler after each re-render
     window.eosRunsFilter = function(prod) {
-      window.__eosRunsActiveProd = prod;
-      document.querySelectorAll('.eos-runs-filter-btn').forEach(function(b){
-        var on = b.dataset.prod === prod;
-        b.style.background  = on ? '#288184' : '#f0f0ef';
-        b.style.color       = on ? '#fff'    : '#3c3c3b';
-        b.style.borderColor = on ? '#288184' : '#d0d0d0';
-      });
-      var all  = ((window.__eosEngDrill || {}).runs) || [];
-      var rows = prod === 'All' ? all : all.filter(function(r){ return (r.product||'') === prod; });
-      // Chart: full API trend when 'All'; filtered uses same month spine, zeroed where no data
-      renderBarChart('eosRunsChart', prod === 'All' ? window.__eosRunsPts : drillToPts(rows, window.__eosRunsPts), '#288184');
-      renderDrillRows('Runs', rows);
+      try {
+        window.__eosRunsActiveProd = prod;
+        document.querySelectorAll('.eos-runs-filter-btn').forEach(function(b){
+          var on = b.dataset.prod === prod;
+          b.style.background  = on ? '#288184' : '#f0f0ef';
+          b.style.color       = on ? '#fff'    : '#3c3c3b';
+          b.style.borderColor = on ? '#288184' : '#d0d0d0';
+        });
+        var all  = ((window.__eosEngDrill || {}).runs) || [];
+        var rows = prod === 'All' ? all : all.filter(function(r){ return (r.product||'') === prod; });
+        var pts  = prod === 'All' ? window.__eosRunsPts : drillToPts(rows, window.__eosRunsPts);
+        renderBarChart('eosRunsChart', pts, '#288184', { onBarClick: makeBarClickHandler('Runs') });
+        (window.eosRenderDrillRows || renderDrillRows)('Runs', rows);
+        window.eosShowDrill('runs');   // auto-open drill so filtered result is immediately visible
+      } catch(err) { console.error('[eosRunsFilter]', err); }
     };
 
     // Downloads filter — updates chart AND drill table
     window.eosDlFilter = function(prod) {
-      var all  = ((window.__eosEngDrill || {}).downloads) || [];
-      var rows = (!prod || prod === 'All') ? all : all.filter(function(r){ return (r.product||'') === prod; });
-      renderBarChart('eosDownloadsChart', (!prod || prod === 'All') ? window.__eosDlPts : drillToPts(rows, window.__eosDlPts), '#546e7a');
-      renderDrillRows('Downloads', rows);
+      try {
+        var all  = ((window.__eosEngDrill || {}).downloads) || [];
+        var rows = (!prod || prod === 'All') ? all : all.filter(function(r){ return (r.product||'') === prod; });
+        var pts  = (!prod || prod === 'All') ? window.__eosDlPts : drillToPts(rows, window.__eosDlPts);
+        renderBarChart('eosDownloadsChart', pts, '#546e7a', { onBarClick: makeBarClickHandler('Downloads') });
+        (window.eosRenderDrillRows || renderDrillRows)('Downloads', rows);
+        window.eosShowDrill('downloads');  // auto-open drill so filtered result is immediately visible
+      } catch(err) { console.error('[eosDlFilter]', err); }
     };
 
     // Build one full-width section — chart mount is an empty div filled after injection
@@ -6263,15 +6324,15 @@ class Component extends DCLogic {
         +'<span id="eos'+idU+'Sub" style="font-size:11px;color:#9d9d9d;">'+fmt(total3m)+' last 3m</span>'
         +'<div id="eos'+idU+'Filters" style="margin-left:auto;display:flex;gap:4px;flex-wrap:wrap;align-items:center;"></div>'
         +'</div>'
-        // Clickable chart wrapper — chart persists when drill opens below
-        +'<div id="eos'+idU+'Chart" onclick="window.eosToggleDrill(\''+idKey+'\')" '
+        // Clickable chart wrapper — background click shows ALL rows; bar click filters to that month
+        +'<div id="eos'+idU+'Chart" onclick="window.eosShowAllDrill(\''+idKey+'\')" '
         +'style="cursor:pointer;border-radius:6px;overflow:hidden;background:#f7f7f6;padding:6px 6px 2px;" '
-        +'title="Click to expand detail · 24 months trend"></div>'
-        +'<div style="font-size:9px;color:#b8b8b6;text-align:center;margin-top:1px;margin-bottom:6px;">Click to expand detail</div>'
+        +'title="Click a bar for that month · click background for all"></div>'
+        +'<div style="font-size:9px;color:#b8b8b6;text-align:center;margin-top:1px;margin-bottom:6px;">Click a bar to filter by month · click background for all</div>'
         // Drill panel — hidden by default, appears below chart
         +'<div id="eos'+idU+'Drill" style="display:none;margin-top:6px;border:1px solid #e6e6e5;border-radius:8px;overflow:hidden;">'
         +'<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:#f7f7f6;border-bottom:1px solid #e6e6e5;">'
-        +'<button onclick="window.eosToggleDrill(\''+idKey+'\')" style="padding:4px 10px;border-radius:5px;border:1px solid #e6e6e5;background:#fff;color:#288184;font-size:11px;font-weight:700;cursor:pointer;">← Collapse</button>'
+        +'<button onclick="window.eosCollapseDrill(\''+idKey+'\')" style="padding:4px 10px;border-radius:5px;border:1px solid #e6e6e5;background:#fff;color:#288184;font-size:11px;font-weight:700;cursor:pointer;">← Collapse</button>'
         +'<span style="font-size:11px;color:#6d6d6c;">'+label+' · most recent 100</span>'
         +'</div>'
         +'<div style="max-height:360px;overflow-y:auto;">'
@@ -6333,9 +6394,10 @@ class Component extends DCLogic {
         }
 
         // Render charts (two-pass — DOM now laid out, offsetWidth is real)
+        // Per-month bar click opens drill filtered to that month (SF-style)
         requestAnimationFrame(function(){
-          renderBarChart('eosRunsChart', window.__eosRunsPts, '#288184');
-          renderBarChart('eosDownloadsChart',   window.__eosDlPts,   '#546e7a');
+          renderBarChart('eosRunsChart',      window.__eosRunsPts, '#288184', { onBarClick: makeBarClickHandler('Runs') });
+          renderBarChart('eosDownloadsChart', window.__eosDlPts,   '#546e7a', { onBarClick: makeBarClickHandler('Downloads') });
         });
 
         // Populate drill tables
@@ -6348,23 +6410,29 @@ class Component extends DCLogic {
         var epTrends = document.getElementById('eosEpTrends');
         if (epTrends) {
           epTrends.innerHTML = '';
+          var epCharts = [];  // collect {id, pts, color} for batch render after display:block
+          // EP rows use the same 76px label column as the EP SVG (LBL_W=76, RHS_W=76)
+          // so the bar area aligns with the EP timeline bar columns
           var makeEpRow = function(label, pts, color, total3m, chartId) {
             if (!pts || !pts.length) return;
+            // Flex row: [76px label col] [chart area, flex:1] [76px right spacer]
+            // matches EP SVG coordinate system exactly
             var row = document.createElement('div');
-            row.style.cssText = 'margin-bottom:10px;';
-            // Header matches EP section labels: uppercase, 10px, #6d6d6c, letter-spacing
-            var header = document.createElement('div');
-            header.style.cssText = 'display:flex;align-items:baseline;gap:8px;margin-bottom:3px;';
-            header.innerHTML = '<span style="font-size:10px;font-weight:700;color:#6d6d6c;letter-spacing:0.04em;text-transform:uppercase;">'+label+'</span>'
-              +'<span style="font-size:10px;color:#9d9d9d;">'+fmt(total3m)+' last 3m</span>';
-            // Mount: no background box — chart sits directly in card like EP's SVG rows
+            row.style.cssText = 'display:flex;align-items:center;margin-bottom:6px;';
+            var lbl = document.createElement('div');
+            lbl.style.cssText = 'width:76px;flex-shrink:0;padding-right:6px;box-sizing:border-box;';
+            lbl.innerHTML = '<div style="font-size:10px;font-weight:700;color:#6d6d6c;letter-spacing:0.04em;text-transform:uppercase;line-height:1.2;">'+label+'</div>'
+              +'<div style="font-size:10px;color:#9d9d9d;">'+fmt(total3m)+' last 3m</div>';
             var mount = document.createElement('div');
             mount.id = chartId;
-            mount.style.cssText = 'width:100%;';
-            row.appendChild(header);
+            mount.style.cssText = 'flex:1;min-width:0;';
+            var rhs = document.createElement('div');
+            rhs.style.cssText = 'width:76px;flex-shrink:0;';
+            row.appendChild(lbl);
             row.appendChild(mount);
+            row.appendChild(rhs);
             epTrends.appendChild(row);
-            requestAnimationFrame(function(){ renderBarChart(chartId, pts, color, {tracks:false}); });
+            epCharts.push({id:chartId, pts:pts, color:color});
           };
           makeEpRow('Completed Runs',   window.__eosRunsPts, '#288184', d.runs.last_3m,      'eosEpRunsChart');
           makeEpRow('Report Downloads', window.__eosDlPts,   '#546e7a', d.downloads.last_3m, 'eosEpDlChart');
@@ -6373,6 +6441,11 @@ class Component extends DCLogic {
           sep.style.cssText = 'border-top:1px solid #f0f0ef;margin-bottom:10px;';
           epTrends.appendChild(sep);
           epTrends.style.display = 'block';
+          // Single rAF AFTER display:block so offsetWidth is real (batch render all EP charts)
+          // h:64 matches EP SVG ROW_H=68 — compact, consistent with EP's own row heights
+          requestAnimationFrame(function(){
+            epCharts.forEach(function(c){ renderBarChart(c.id, c.pts, c.color, {tracks:false, h:64, noMonthLabels:true}); });
+          });
         }
 
         if (subtitle) subtitle.textContent = fmt(d.runs.last_3m)+' runs · '+fmt(d.downloads.last_3m)+' downloads (last 3m)';
