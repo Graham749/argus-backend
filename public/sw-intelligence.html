@@ -1754,13 +1754,16 @@ function engRenderDlPanel(wm) {
   var peakUsers = Math.max.apply(null, usersPts.map(function(p){return p.v;})) || 0;
   var dlCol     = '#546e7a';
 
-  // Product dropdown — sorted by all-time volume (most popular first)
-  var ddOptions = ['<option value="All"' + (prod==='All'?' selected':'') + '>All products</option>']
-    .concat(dlProducts.map(function(p) {
-      return '<option value="' + p + '"' + (p===prod?' selected':'') + '>' + p + '</option>';
-    })).join('');
-  var dropdown = '<select onchange="engSetDlProduct(this.value)" style="font-size:11px;font-weight:600;color:#6d6d6c;border:1px solid #e6e6e5;border-radius:6px;padding:2px 6px;background:#fff;cursor:pointer;max-width:180px">'
-    + ddOptions + '</select>';
+  // Searchable product input — datalist gives native browser search/autocomplete
+  var datalistOpts = dlProducts.map(function(p){ return '<option value="'+p+'">'; }).join('');
+  var dropdown =
+    '<input list="eng-dl-prod-list" id="eng-dl-search"'
+    + ' placeholder="All products"'
+    + ' value="' + (prod !== 'All' ? prod : '') + '"'
+    + ' onchange="engSetDlProduct(this.value||\'All\')"'
+    + ' oninput="if(!this.value)engSetDlProduct(\'All\')"'
+    + ' style="font-size:11px;font-weight:600;color:#6d6d6c;border:1px solid #e6e6e5;border-radius:6px;padding:3px 8px;background:#fff;width:160px;outline:none">'
+    + '<datalist id="eng-dl-prod-list">' + datalistOpts + '</datalist>';
 
   panel.innerHTML =
     '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:6px">'
