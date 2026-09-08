@@ -73,7 +73,7 @@ module.exports = async function eosEngagement(req, res) {
     const cached = cacheGet(CACHE_KEY);
     if (cached && !req.query.bust) return res.json(cached);
 
-    const [runsRows, dlRows, vidRows, caseRows, webinarRows, gmRows, acctRegionRows, dlAcctRows, caseAcctRows, dlMktRows, caseMktRows, subRegionRows, productTrendRows] = await Promise.all([
+    const [runsRows, dlRows, vidRows, caseRows, webinarRows, gmRows, acctRegionRows, dlAcctRows, caseAcctRows, dlMktRows, caseMktRows, subRegionRows, productTrendRows, dlProductRows] = await Promise.all([
       // 1. Software runs by year + product_region — DISTINCT simulation_id (matches PBI DAX measure)
       query(`
         SELECT YEAR(r.launch_time) AS yr, r.product_region, COUNT(DISTINCT r.simulation_id) AS cnt
@@ -86,13 +86,14 @@ module.exports = async function eosEngagement(req, res) {
       `),
 
       // 2. EOS downloads by month — excl scenarioExplorer, COUNT DISTINCT tracking_id (matches PBI 840K)
+      //    tracking_id IS NOT NULL removed from WHERE: COUNT(DISTINCT) ignores NULLs so cnt stays the
+      //    same, but removing the filter lets user_email count include records where tracking_id is NULL.
       query(`
         SELECT FORMAT(CAST(download_date AS DATE), 'yyyy-MM') AS month,
                COUNT(DISTINCT tracking_id) AS cnt,
                COUNT(DISTINCT user_email)  AS users
         FROM dbo.v_silver_eos_downloads
         WHERE download_date IS NOT NULL
-          AND tracking_id IS NOT NULL
           AND COALESCE(product, '') != 'scenarioExplorer'
         GROUP BY FORMAT(CAST(download_date AS DATE), 'yyyy-MM')
         ORDER BY month
@@ -298,7 +299,6 @@ module.exports = async function eosEngagement(req, res) {
             FORMAT(CAST(download_date AS DATE), 'yyyy-MM') AS month
           FROM dbo.v_silver_eos_downloads
           WHERE download_date IS NOT NULL
-            AND tracking_id IS NOT NULL
             AND COALESCE(product, '') != 'scenarioExplorer'
         )
         SELECT market, month, COUNT(DISTINCT tracking_id) AS cnt, COUNT(DISTINCT user_email) AS users
@@ -364,6 +364,87 @@ module.exports = async function eosEngagement(req, res) {
         GROUP BY r.software_product, COALESCE(r.product_region, 'Other'), FORMAT(r.launch_time, 'yyyy-MM')
         ORDER BY r.software_product, market, month
       `).catch(e => { console.warn('[eos-engagement] product-trends skipped:', e.message); return []; }),
+
+      // 14. Downloads by software product × market × month — software product derived from content code.
+      //     Most download codes are market prefixes (gbr%, deu%, etc.); if the product field also
+      //     contains a software product name it takes priority, otherwise falls through to 'Research'.
+      query(`
+        WITH dl AS (
+          SELECT
+            CASE
+              WHEN LOWER(product) LIKE '%chronos%' THEN 'Chronos'
+              WHEN LOWER(product) LIKE '%origin%' OR LOWER(product) LIKE '%lumus%' THEN 'Origin'
+              WHEN LOWER(product) LIKE '%amun%'   THEN 'Amun'
+              WHEN LOWER(product) LIKE '%solaris%' THEN 'Solaris'
+              ELSE 'Research'
+            END AS software_product,
+            CASE
+              WHEN LOWER(product) LIKE 'bra%' THEN 'Brazil'
+              WHEN LOWER(product) LIKE 'chl%' THEN 'Chile'
+              WHEN LOWER(product) LIKE 'mex%' THEN 'Mexico'
+              WHEN LOWER(product) LIKE 'per%' THEN 'Peru'
+              WHEN LOWER(product) LIKE 'erc%'   THEN 'ERCOT'
+              WHEN LOWER(product) LIKE 'pjm%'   THEN 'PJM'
+              WHEN LOWER(product) LIKE 'cai%' OR LOWER(product) LIKE 'cas%'
+                OR LOWER(product) LIKE 'sp15%' OR LOWER(product) LIKE 'zp26%'
+                OR LOWER(product) LIKE 'np15%' THEN 'CAISO'
+              WHEN LOWER(product) LIKE 'mis%'   THEN 'MISO'
+              WHEN LOWER(product) LIKE 'isone%' OR LOWER(product) LIKE 'ne%' THEN 'ISO-NE'
+              WHEN LOWER(product) LIKE 'ny%'    THEN 'NYISO'
+              WHEN LOWER(product) LIKE 'alb%' OR LOWER(product) LIKE 'abt%' THEN 'Alberta'
+              WHEN LOWER(product) LIKE 'ont%' OR LOWER(product) LIKE 'ieso%' THEN 'Ontario'
+              WHEN LOWER(product) LIKE 'spp%'   THEN 'SPP'
+              WHEN LOWER(product) LIKE 'wec%'   THEN 'WECC'
+              WHEN LOWER(product) LIKE 'waa%' OR LOWER(product) LIKE 'wem%' THEN 'Australia WEM'
+              WHEN LOWER(product) LIKE 'aus%' OR LOWER(product) LIKE 'ais%'
+                OR LOWER(product) LIKE 'nsw%' OR LOWER(product) LIKE 'vic%'
+                OR LOWER(product) LIKE 'saa%' OR LOWER(product) LIKE 'qld%'
+                OR LOWER(product) LIKE 'tas%' THEN 'Australia NEM'
+              WHEN LOWER(product) LIKE 'jpn%' OR LOWER(product) LIKE 'jap%' THEN 'Japan'
+              WHEN LOWER(product) LIKE 'phl%'   THEN 'Philippines'
+              WHEN LOWER(product) LIKE 'sin%' OR LOWER(product) LIKE 'sgp%' THEN 'Singapore'
+              WHEN LOWER(product) LIKE 'kor%'   THEN 'South Korea'
+              WHEN LOWER(product) LIKE 'tw%'    THEN 'Taiwan'
+              WHEN LOWER(product) LIKE 'ind%'   THEN 'India'
+              WHEN LOWER(product) LIKE 'mys%'   THEN 'Malaysia'
+              WHEN LOWER(product) LIKE 'gbr%'   THEN 'Great Britain'
+              WHEN LOWER(product) LIKE 'deu%'   THEN 'Germany'
+              WHEN LOWER(product) LIKE 'ita_nor%' OR LOWER(product) LIKE 'ita_cnor%' THEN 'Nordics'
+              WHEN LOWER(product) LIKE 'ita%'   THEN 'Italy'
+              WHEN LOWER(product) LIKE 'fra%'   THEN 'France'
+              WHEN LOWER(product) LIKE 'esp%' OR LOWER(product) LIKE 'ibe%'
+                OR LOWER(product) LIKE 'ibr%' OR LOWER(product) LIKE 'prt%' THEN 'Iberia'
+              WHEN LOWER(product) LIKE 'nld%'   THEN 'Netherlands'
+              WHEN LOWER(product) LIKE 'nor%' OR LOWER(product) LIKE 'swe%'
+                OR LOWER(product) LIKE 'fin%' OR LOWER(product) LIKE 'den%'
+                OR LOWER(product) LIKE 'dnk%' OR LOWER(product) LIKE 'nod%' THEN 'Nordics'
+              WHEN LOWER(product) LIKE 'pol%'   THEN 'Poland'
+              WHEN LOWER(product) LIKE 'irl%' OR LOWER(product) LIKE 'irx%' THEN 'Ireland'
+              WHEN LOWER(product) LIKE 'bel%'   THEN 'Belgium'
+              WHEN LOWER(product) LIKE 'rou%'   THEN 'Romania'
+              WHEN LOWER(product) LIKE 'grc%'   THEN 'Greece'
+              WHEN LOWER(product) LIKE 'est%' OR LOWER(product) LIKE 'ltu%'
+                OR LOWER(product) LIKE 'lva%' OR LOWER(product) LIKE 'bal%' THEN 'Baltics'
+              WHEN LOWER(product) LIKE 'bgr%'   THEN 'Bulgaria'
+              WHEN LOWER(product) LIKE 'hun%'   THEN 'Hungary'
+              WHEN LOWER(product) LIKE 'zaf%'   THEN 'South Africa'
+              WHEN LOWER(product) LIKE 'aies%'  THEN 'Alberta'
+              ELSE NULL
+            END AS market,
+            tracking_id,
+            user_email,
+            FORMAT(CAST(download_date AS DATE), 'yyyy-MM') AS month
+          FROM dbo.v_silver_eos_downloads
+          WHERE download_date IS NOT NULL
+            AND COALESCE(product, '') != 'scenarioExplorer'
+        )
+        SELECT software_product, market, month,
+               COUNT(DISTINCT tracking_id) AS cnt,
+               COUNT(DISTINCT user_email)  AS users
+        FROM dl
+        GROUP BY software_product, market, month
+        ORDER BY software_product, market, month
+      `).catch(e => { console.warn('[eos-engagement] dl-by-product skipped:', e.message); return []; }),
     ]);
 
     // ── Build account → primary region + market lookup ───────────────────────
@@ -441,6 +522,20 @@ module.exports = async function eosEngagement(req, res) {
     const dlMktArr = Object.entries(dlByMarket)
       .map(([market, v]) => ({ market, ...v }))
       .sort((a, b) => b.total - a.total);
+
+    // ── Downloads by software product × market × month ────────────────────────
+    // Structure: { 'Chronos': { 'Great Britain': { '2025-01': { cnt, users } } } }
+    const dlByProduct = {};
+    for (const r of dlProductRows) {
+      const prod  = r.software_product || 'Research';
+      const mkt   = r.market || null;
+      const month = r.month;
+      if (!dlByProduct[prod]) dlByProduct[prod] = {};
+      if (mkt) {
+        if (!dlByProduct[prod][mkt]) dlByProduct[prod][mkt] = {};
+        if (month) dlByProduct[prod][mkt][month] = { cnt: Number(r.cnt) || 0, users: Number(r.users) || 0 };
+      }
+    }
 
     // ── Process videos ────────────────────────────────────────────────────────
     const vidByMonth = {};
@@ -616,7 +711,7 @@ module.exports = async function eosEngagement(req, res) {
       product_trends: prodTrends,
       product_markets: prodMarkets,
       streams: [
-        { key: 'downloads',   label: 'EOS Report Downloads',              unit: 'downloads', source: 'EOS Usage',                  total: dlTotal,       regional: true,  by_region: dlByRegion,       by_month: toMonthArr(dlByMonth, 'cnt'), by_month_users: toMonthArr(dlByMonthUsers, 'cnt'), by_market: dlMktArr },
+        { key: 'downloads',   label: 'EOS Report Downloads',              unit: 'downloads', source: 'EOS Usage',                  total: dlTotal,       regional: true,  by_region: dlByRegion,       by_month: toMonthArr(dlByMonth, 'cnt'), by_month_users: toMonthArr(dlByMonthUsers, 'cnt'), by_market: dlMktArr, by_product: dlByProduct },
         { key: 'software',    label: 'Software Usage (Runs)',               unit: 'runs',   source: 'Software Usage',              total: runsTotal,     regional: true,  by_region: runsByRegion,     by_month: toMonthArr(runsByMonth, 'cnt'), by_market: runsMktArr },
         { key: 'webinars',    label: 'Webinar Attendance',                unit: 'attendees', source: 'Integrated Research Tracker', total: webTotal,      regional: true,  by_region: webByRegion,      by_month: toMonthArr(webByMonth,      'attendees'), by_market: webMktArr },
         { key: 'gm',          label: 'Group Meeting Attendance',          unit: 'attendees', source: 'Integrated Research Tracker', total: gmTotal,       regional: true,  by_region: gmByRegion,       by_month: toMonthArr(gmByMonth,       'attendees'), by_market: gmMktArr },

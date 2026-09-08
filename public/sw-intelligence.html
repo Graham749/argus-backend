@@ -1330,6 +1330,7 @@ if (new URLSearchParams(location.search).get('embed') === '1') {
 var ENG_DATA = null, engLoaded = false;
 var E_REGION = "All", E_MARKET = "All", E_START = null, E_END = null, E_MIN = null, E_MAX = null;
 var E_PRODUCT = "All";
+var E_DL_PRODUCT = "All";
 var E_REGIONS = ["EMEA","APAC","NORAM","LATAM","Other"];
 var E_RC = {EMEA:"#2563eb",APAC:"#0891b2",NORAM:"#7c3aed",LATAM:"#ea580c",Other:"#94a3b8"};
 var PROD_COLORS = {Chronos:"#288184",Amun:"#7c3aed",Origin:"#e65100",Solaris:"#d97706",Lumus:"#0891b2",All:"#3c3c3b"};
@@ -1435,7 +1436,7 @@ function engSetMarket(m) {
 }
 
 function engClearFilters() {
-  E_REGION = 'All'; E_MARKET = 'All';
+  E_REGION = 'All'; E_MARKET = 'All'; E_DL_PRODUCT = 'All';
   E_START = '2025-01'; E_END = E_MAX;
   engRenderFilter();
   engPopulateMarketBar();
@@ -1695,6 +1696,11 @@ function engRenderRunsPanel(wm) {
     + '</div>';
 }
 
+function engSetDlProduct(p) {
+  E_DL_PRODUCT = p;
+  engRender();
+}
+
 function engRenderDlPanel(wm) {
   var panel = document.getElementById('eng-dl-panel');
   if (!panel) return;
@@ -1702,8 +1708,27 @@ function engRenderDlPanel(wm) {
   if (!dlStream) { panel.innerHTML = ''; return; }
   var fmt = function(n){ return n >= 1000 ? (n/1000).toFixed(1)+'k' : String(n); };
 
+  var byProduct = dlStream.by_product || {};
+  var dlProducts = Object.keys(byProduct).sort();
+
   var dlMap = {}, usersMap = {};
-  if (E_MARKET !== 'All') {
+  var prod = E_DL_PRODUCT;
+
+  if (prod !== 'All' && byProduct[prod]) {
+    // Product selected: aggregate selected product's markets filtered by region/market
+    var prodMarkets = byProduct[prod];
+    Object.keys(prodMarkets).forEach(function(mkt) {
+      var mktRegion = (dlStream.by_market || []).find(function(x){ return x.market === mkt; });
+      var mktReg = mktRegion ? (mktRegion.region || 'Other') : 'Other';
+      if (E_MARKET !== 'All' && mkt !== E_MARKET) return;
+      if (E_REGION !== 'All' && E_MARKET === 'All' && mktReg !== E_REGION) return;
+      var mdata = prodMarkets[mkt] || {};
+      wm.forEach(function(m) {
+        dlMap[m]    = (dlMap[m]    || 0) + ((mdata[m] || {}).cnt   || 0);
+        usersMap[m] = (usersMap[m] || 0) + ((mdata[m] || {}).users || 0);
+      });
+    });
+  } else if (E_MARKET !== 'All') {
     var dlMkt = (dlStream.by_market || []).find(function(x){ return x.market === E_MARKET; });
     if (dlMkt) {
       var dlBm = dlMkt.by_month || {}, dlBu = dlMkt.by_month_users || {};
@@ -1719,24 +1744,30 @@ function engRenderDlPanel(wm) {
       });
     });
   } else {
-    var dlMonthMap = {}, dlUsersMap = {};
-    (dlStream.by_month       || []).forEach(function(x){ dlMonthMap[x.month] = x.cnt || 0; });
-    (dlStream.by_month_users || []).forEach(function(x){ dlUsersMap[x.month] = x.cnt || 0; });
-    wm.forEach(function(m){ dlMap[m] = dlMonthMap[m] || 0; usersMap[m] = dlUsersMap[m] || 0; });
+    var dlMonthMap = {}, dlUsersMonthMap = {};
+    (dlStream.by_month       || []).forEach(function(x){ dlMonthMap[x.month]      = x.cnt || 0; });
+    (dlStream.by_month_users || []).forEach(function(x){ dlUsersMonthMap[x.month] = x.cnt || 0; });
+    wm.forEach(function(m){ dlMap[m] = dlMonthMap[m] || 0; usersMap[m] = dlUsersMonthMap[m] || 0; });
   }
 
   var dlPts    = wm.map(function(m){ return {m:m, v: dlMap[m]    || 0}; });
   var usersPts = wm.map(function(m){ return {m:m, v: usersMap[m] || 0}; });
-  var totalDl    = dlPts.reduce(function(s,p){return s+p.v;},0);
-  var peakUsers  = Math.max.apply(null, usersPts.map(function(p){return p.v;})) || 0;
-  var dlCol      = '#546e7a';
+  var totalDl   = dlPts.reduce(function(s,p){return s+p.v;},0);
+  var peakUsers = Math.max.apply(null, usersPts.map(function(p){return p.v;})) || 0;
+  var dlCol     = '#546e7a';
 
-  var regionLabel = E_MARKET !== 'All' ? E_MARKET : (E_REGION !== 'All' ? E_REGION : 'All regions');
+  // Product dropdown
+  var ddOptions = ['<option value="All"' + (prod==='All'?' selected':'') + '>All content</option>']
+    .concat(dlProducts.map(function(p) {
+      return '<option value="' + p + '"' + (p===prod?' selected':'') + '>' + p + '</option>';
+    })).join('');
+  var dropdown = '<select onchange="engSetDlProduct(this.value)" style="font-size:11px;font-weight:600;color:#6d6d6c;border:1px solid #e6e6e5;border-radius:6px;padding:2px 6px;background:#fff;cursor:pointer">'
+    + ddOptions + '</select>';
 
   panel.innerHTML =
-    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">'
+    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:6px">'
     + '<span style="font-size:11px;font-weight:600;color:#9d9d9d;text-transform:uppercase;letter-spacing:.06em">EOS Report Downloads</span>'
-    + '<span style="font-size:11px;color:#9d9d9d">' + regionLabel + '</span>'
+    + dropdown
     + '</div>'
     + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">'
     + '<div>'
