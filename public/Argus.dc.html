@@ -6102,7 +6102,10 @@ class Component extends DCLogic {
 
     // SF-style bar chart — rendered into an existing DOM element after HTML injection
     // (two-pass: inject mount div first, then call this with measured width)
-    var renderBarChart = function(mountId, pts, color) {
+    // opts: { tracks: true, h: 88 }
+    // tracks=false used by Engagement Pulse (matches EP's own SVG style — no per-column boxes)
+    var renderBarChart = function(mountId, pts, color, opts) {
+      var showTracks = !opts || opts.tracks !== false;
       var mount = document.getElementById(mountId);
       if (!mount) return;
       mount.innerHTML = '';
@@ -6114,7 +6117,7 @@ class Component extends DCLogic {
         return;
       }
       var W        = Math.max(mount.offsetWidth || 500, 200);
-      var H        = 88;
+      var H        = (opts && opts.h) || 88;
       var LABEL_H  = 14, COUNT_H = 11, BAR_AREA = H - LABEL_H - COUNT_H;
       var n        = pts.length;
       var COL_W    = Math.floor(W / n);
@@ -6143,8 +6146,10 @@ class Component extends DCLogic {
 
         var g = mk('g', {});
 
-        // Track background (same tint pattern as SF widget)
-        g.appendChild(mk('rect', { x:x+1, y:COUNT_H, width:BAR_W, height:BAR_AREA, fill:'#f0f0ef', rx:2 }));
+        // Track background — only for Engagement History (SF-style); suppressed in EP
+        if (showTracks) {
+          g.appendChild(mk('rect', { x:x+1, y:COUNT_H, width:BAR_W, height:BAR_AREA, fill:'#f0f0ef', rx:2 }));
+        }
 
         if (bh > 0) {
           var bar = mk('rect', { x:x+1, y:barY, width:BAR_W, height:bh, fill:color, rx:2, opacity:'0.88' });
@@ -6359,7 +6364,7 @@ class Component extends DCLogic {
             row.appendChild(header);
             row.appendChild(mount);
             epTrends.appendChild(row);
-            requestAnimationFrame(function(){ renderBarChart(chartId, pts, color); });
+            requestAnimationFrame(function(){ renderBarChart(chartId, pts, color, {tracks:false}); });
           };
           makeEpRow('Completed Runs',   window.__eosRunsPts, '#288184', d.runs.last_3m,      'eosEpRunsChart');
           makeEpRow('Report Downloads', window.__eosDlPts,   '#546e7a', d.downloads.last_3m, 'eosEpDlChart');
