@@ -472,13 +472,12 @@ module.exports = async function eosEngagement(req, res) {
         const region = VALID_REGIONS.has(r.region) ? r.region : regionOf(mkt);
         const cnt = Number(r.cnt) || 0;
         const mo = r.month;
-        // Regional totals — include even unattributed-market rows (region still known from product)
-        if (VALID_REGIONS.has(region)) {
-          if (WORKSHOP_TYPES.has(r.case_type)) {
-            wsByReg[region] = (wsByReg[region] || 0) + cnt;
-          } else {
-            emByReg[region] = (emByReg[region] || 0) + cnt;
-          }
+        // Regional totals — track all regions including Other (so KPI / distribution bar work)
+        const regKey = VALID_REGIONS.has(region) ? region : 'Other';
+        if (WORKSHOP_TYPES.has(r.case_type)) {
+          wsByReg[regKey] = (wsByReg[regKey] || 0) + cnt;
+        } else {
+          emByReg[regKey] = (emByReg[regKey] || 0) + cnt;
         }
         // Market breakdown — skip rows with no product (market=Other)
         if (mkt === 'Other') continue;
