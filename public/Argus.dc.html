@@ -171,6 +171,7 @@ input{font-family:inherit;}
             <div id="epLoading" style="height:130px;display:flex;align-items:center;justify-content:center;color:#9d9d9d;font-size:12px;">
               <span style="font-style:italic;">Building timeline…</span>
             </div>
+            <div id="eosEpTrends" style="display:none;margin-bottom:10px;"></div>
             <div id="epWrap" style="display:none;width:100%;min-height:140px;"></div>
           </div>
         </div>
@@ -734,27 +735,51 @@ input{font-family:inherit;}
         </div>
 
         <!-- EOS Engagement Card -->
-        <div id="eosEngCard" style="display:none;background:#fff;border:1px solid #e6e6e5;border-radius:12px;padding:12px 16px;box-shadow:0 1px 3px rgba(60,60,59,0.07);margin-bottom:8px;">
-          <div id="eosEngHeader" style="display:flex;align-items:center;gap:10px;margin-bottom:8px;cursor:pointer;user-select:none;" onclick="
+        <div id="eosEngCard" style="display:none;background:#fff;border:1px solid #e6e6e5;border-radius:12px;padding:20px;box-shadow:0 1px 3px rgba(60,60,59,0.07);margin-bottom:8px;">
+          <div id="eosEngHeader" style="display:flex;align-items:center;gap:10px;margin-bottom:16px;cursor:pointer;user-select:none;" onclick="
             var b=document.getElementById('eosEngBody');
             var c=document.getElementById('eosEngChev');
             var collapsed=this._collapsed;
             b.style.display=collapsed?'block':'none';
-            c.textContent=collapsed?'▴':'▾';
+            c.textContent=collapsed?'▾':'▾';
             this._collapsed=!collapsed;
           ">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#288184" stroke-width="2" style="width:20px;height:20px;flex-shrink:0;"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-            <span style="font-size:13px;font-weight:700;color:#3c3c3b;">EOS Engagement</span>
-            <span id="eosEngSubtitle" style="font-size:11px;color:#9d9d9d;flex:1;"></span>
-            <span id="eosEngChev" style="font-size:13px;color:#9d9d9d;flex-shrink:0;">▴</span>
+            <div style="width:44px;height:44px;flex-shrink:0;background:#e6f4f4;border-radius:8px;display:flex;align-items:center;justify-content:center;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#288184" stroke-width="2" style="width:22px;height:22px;"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            </div>
+            <div style="flex:1;">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <div style="font-size:13px;font-weight:700;">EOS Engagement</div>
+                <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:#00be86;font-weight:600;"><span style="font-size:12px;line-height:1;">●</span>Live data</div>
+              </div>
+              <div id="eosEngSubtitle" style="font-size:11px;color:#9d9d9d;margin-top:2px;">Product usage across EOS platform</div>
+            </div>
+            <span id="eosEngChev" style="font-size:16px;color:#9d9d9d;flex-shrink:0;margin-left:8px;">▾</span>
           </div>
+          <div id="eosEngCompact" class="hc-compact"></div>
           <div id="eosEngBody">
-            <div id="eosEngLoading" style="padding:12px 0;text-align:center;color:#9d9d9d;font-size:12px;font-style:italic;">Loading engagement data…</div>
-            <div id="eosEngContent" style="display:none;">
-              <!-- 5 stream KPI tiles -->
-              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:10px;" id="eosEngTiles"></div>
-              <!-- Last active + detail row -->
-              <div id="eosEngDetail" style="font-size:11px;color:#6d6d6c;padding:6px 0 2px;border-top:1px solid #f0f0ef;margin-top:4px;"></div>
+            <div id="eosEngLoading" style="padding:20px 0;text-align:center;color:#9d9d9d;font-size:13px;font-style:italic;">Loading engagement data…</div>
+            <div id="eosEngNoMatch" style="display:none;padding:16px;background:#f7f7f6;border-radius:8px;font-size:12px;color:#9d9d9d;text-align:center;">No EOS engagement data found for this account</div>
+            <!-- Summary view -->
+            <div id="eosEngSummary" style="display:none;">
+              <div id="eosEngStatsGrid" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;"></div>
+              <div id="eosEngKpiRow" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin-top:10px;"></div>
+              <div id="eosEngLastActive" style="font-size:11px;color:#6d6d6c;padding:6px 0 2px;border-top:1px solid #f0f0ef;margin-top:8px;"></div>
+            </div>
+            <!-- Drill view -->
+            <div id="eosEngDrill" style="display:none;margin-top:4px;">
+              <div style="margin-bottom:12px;display:flex;align-items:center;gap:12px;">
+                <button onclick="window.eosEngBack()" style="padding:6px 12px;border-radius:6px;border:1px solid #e6e6e5;background:#fff;color:#288184;font-size:11px;font-weight:700;cursor:pointer;">← Back to Summary</button>
+                <span id="eosEngDrillTitle" style="font-size:12px;color:#6d6d6c;"></span>
+              </div>
+              <div style="overflow-x:auto;border:1px solid #e6e6e5;border-radius:8px;max-height:400px;overflow-y:auto;">
+                <table style="width:100%;border-collapse:collapse;font-size:12px;">
+                  <thead style="background:#f7f7f6;border-bottom:1px solid #e6e6e5;position:sticky;top:0;z-index:1;">
+                    <tr id="eosEngDrillHead"></tr>
+                  </thead>
+                  <tbody id="eosEngDrillBody"></tbody>
+                </table>
+              </div>
             </div>
           </div>
         </div><!-- /eosEngCard -->
@@ -6080,169 +6105,193 @@ class Component extends DCLogic {
   fetchEosEngagement(accountName) {
     var card     = document.getElementById('eosEngCard');
     var loading  = document.getElementById('eosEngLoading');
-    var content  = document.getElementById('eosEngContent');
+    var noMatch  = document.getElementById('eosEngNoMatch');
+    var summary  = document.getElementById('eosEngSummary');
     var subtitle = document.getElementById('eosEngSubtitle');
     if (!card) return;
     card.style.display = 'block';
-    if (loading) loading.style.display = 'block';
-    if (content) content.style.display = 'none';
+    if (loading) { loading.style.display = 'block'; loading.textContent = 'Loading engagement data…'; }
+    if (noMatch)  noMatch.style.display  = 'none';
+    if (summary)  summary.style.display  = 'none';
+    document.getElementById('eosEngDrill').style.display = 'none';
 
-    // Global drill-toggle used by onclick handlers in dynamically rendered HTML
-    window.eosToggleDrill = function(id) {
-      var el  = document.getElementById(id);
-      var btn = document.getElementById(id + '-btn');
-      if (!el) return;
-      var opening = el.style.display === 'none' || el.style.display === '';
-      // first render: display starts as 'none' from inline style
-      if (!el._eosInitDone) { el._eosInitDone = true; opening = true; }
-      el.style.display = opening ? 'block' : 'none';
-      if (btn) btn.innerHTML = btn.innerHTML.replace(/[▶▼]/, opening ? '▼' : '▶');
+    var esc  = function(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); };
+    var fmt  = function(n){ return Number(n||0).toLocaleString('en-GB'); };
+    var fmtK = function(n){ n = Number(n||0); return n >= 1000 ? (n/1000).toFixed(1)+'k' : String(n); };
+
+    // Area sparkline SVG — matches Zendesk mini-trend style
+    var spark = function(pts, color, h) {
+      h = h || 32;
+      if (!pts || pts.length < 2) return '';
+      var max = Math.max.apply(null, pts.map(function(p){ return p.v; })) || 1;
+      var n = pts.length;
+      var xOf = function(i){ return 4 + (i/(n-1))*492; };
+      var yOf = function(v){ return (h-4) - (v/max)*(h-8); };
+      var coords = pts.map(function(p,i){ return xOf(i).toFixed(1)+','+yOf(p.v).toFixed(1); }).join(' ');
+      var area = 'M'+xOf(0).toFixed(1)+','+h+' '+coords+' L'+xOf(n-1).toFixed(1)+','+h+' Z';
+      var gid = 'esg'+color.replace('#','');
+      return '<svg width="100%" viewBox="0 0 500 '+h+'" preserveAspectRatio="none" style="display:block;height:'+h+'px">'
+        +'<defs><linearGradient id="'+gid+'" x1="0" x2="0" y1="0" y2="1">'
+        +'<stop offset="0%" stop-color="'+color+'" stop-opacity=".18"/>'
+        +'<stop offset="100%" stop-color="'+color+'" stop-opacity="0"/>'
+        +'</linearGradient></defs>'
+        +'<path d="'+area+'" fill="url(#'+gid+')"/>'
+        +'<polyline points="'+coords+'" fill="none" stroke="'+color+'" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>'
+        +'</svg>';
+    };
+
+    // Summary stat tile — clickable to drill (matches Zendesk stat card with mini sparkline)
+    var statTile = function(label, bigNum, sub, pts, color, drillType) {
+      var s = spark(pts, color, 32);
+      var clickAttr = drillType
+        ? ' onclick="window.eosEngShowDrill(\''+drillType+'\')" style="cursor:pointer;background:#f7f7f6;border-radius:8px;padding:10px 12px;"'
+        : ' style="background:#f7f7f6;border-radius:8px;padding:10px 12px;"';
+      return '<div'+clickAttr+'>'
+        +'<div style="font-size:10px;color:#6d6d6c;margin-bottom:3px">'+label
+          +(drillType ? ' <span style="color:#288184;font-size:9px;font-weight:600">▶ view all</span>' : '')+'</div>'
+        +'<div style="font-size:16px;font-weight:700;">'+bigNum+'</div>'
+        +'<div style="font-size:10px;color:#9d9d9d;margin-top:1px;">'+sub+'</div>'
+        +(s ? '<div style="margin-top:6px;">'+s+'</div>' : '')
+        +'</div>';
+    };
+
+    // Smaller KPI chip (API, Videos, Flex — no sparkline)
+    var kpiChip = function(label, val, sub, color, fg) {
+      return '<div style="background:'+color+';border-radius:8px;padding:8px 10px;">'
+        +'<div style="font-size:9px;font-weight:700;color:'+fg+';text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px;">'+label+'</div>'
+        +'<div style="font-size:15px;font-weight:700;color:'+fg+';">'+fmt(val)+'</div>'
+        +'<div style="font-size:10px;color:'+fg+';opacity:.75;">'+sub+'</div>'
+        +'</div>';
+    };
+
+    // Drill navigation (global — called from onclick in dynamic HTML)
+    window.eosEngShowDrill = function(type) {
+      var sm  = document.getElementById('eosEngSummary');
+      var dr  = document.getElementById('eosEngDrill');
+      var ttl = document.getElementById('eosEngDrillTitle');
+      var hd  = document.getElementById('eosEngDrillHead');
+      var bd  = document.getElementById('eosEngDrillBody');
+      if (!sm || !dr || !hd || !bd) return;
+      var rows = (window.__eosEngDrill || {})[type] || [];
+      if (type === 'downloads') {
+        ttl.textContent = 'Recent Downloads · ' + rows.length + ' rows';
+        hd.innerHTML = ['Date','User','Product','Filename'].map(function(c){
+          return '<th style="padding:10px 12px;text-align:left;font-weight:700;color:#3c3c3b;white-space:nowrap;">'+c+'</th>';
+        }).join('');
+        bd.innerHTML = rows.length ? rows.map(function(r){
+          return '<tr style="border-bottom:1px solid #e6e6e5;">'
+            +'<td style="padding:8px 12px;white-space:nowrap;color:#6d6d6c;">'+esc(r.date)+'</td>'
+            +'<td style="padding:8px 12px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="'+esc(r.user)+'">'+esc(r.user)+'</td>'
+            +'<td style="padding:8px 12px;white-space:nowrap;">'+esc(r.product)+'</td>'
+            +'<td style="padding:8px 12px;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="'+esc(r.filename)+'">'+esc(r.filename)+'</td>'
+            +'</tr>';
+        }).join('') : '<tr><td colspan="4" style="padding:20px;text-align:center;color:#9d9d9d;">No data</td></tr>';
+      } else if (type === 'runs') {
+        ttl.textContent = 'Recent Runs · ' + rows.length + ' rows';
+        hd.innerHTML = ['Date','User','Product','Title','Status'].map(function(c){
+          return '<th style="padding:10px 12px;text-align:left;font-weight:700;color:#3c3c3b;white-space:nowrap;">'+c+'</th>';
+        }).join('');
+        bd.innerHTML = rows.length ? rows.map(function(r){
+          var sc = r.status === 'Complete' ? '#2e7d32' : r.status === 'Incomplete' ? '#c2600f' : '#6d6d6c';
+          return '<tr style="border-bottom:1px solid #e6e6e5;">'
+            +'<td style="padding:8px 12px;white-space:nowrap;color:#6d6d6c;">'+esc(r.date)+'</td>'
+            +'<td style="padding:8px 12px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="'+esc(r.user)+'">'+esc(r.user)+'</td>'
+            +'<td style="padding:8px 12px;white-space:nowrap;">'+esc(r.product)+'</td>'
+            +'<td style="padding:8px 12px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="'+esc(r.title)+'">'+esc(r.title)+'</td>'
+            +'<td style="padding:8px 12px;white-space:nowrap;font-weight:600;color:'+sc+';">'+esc(r.status)+'</td>'
+            +'</tr>';
+        }).join('') : '<tr><td colspan="5" style="padding:20px;text-align:center;color:#9d9d9d;">No data</td></tr>';
+      }
+      sm.style.display = 'none';
+      dr.style.display = 'block';
+    };
+
+    window.eosEngBack = function() {
+      var sm = document.getElementById('eosEngSummary');
+      var dr = document.getElementById('eosEngDrill');
+      if (sm) sm.style.display = 'block';
+      if (dr) dr.style.display = 'none';
     };
 
     var enc = encodeURIComponent(accountName);
     fetch('/api/eos-engagement-account?account=' + enc)
       .then(function(r) { return r.json(); })
       .then(function(d) {
+        if (loading) loading.style.display = 'none';
         if (!d || !d.matched || !d.has_data) {
-          if (loading) loading.textContent = 'No EOS engagement data found for this account.';
+          if (noMatch) noMatch.style.display = 'block';
           return;
         }
-        if (loading) loading.style.display = 'none';
-        if (content) content.style.display = 'block';
 
-        var fmt  = function(n) { return Number(n||0).toLocaleString('en-GB'); };
-        var fmtK = function(n) { n = Number(n||0); return n >= 1000 ? (n/1000).toFixed(1)+'k' : String(n); };
-
-        // Compact area sparkline (self-contained SVG)
-        var spark = function(pts, color) {
-          if (!pts || pts.length < 2) return '';
-          var max = Math.max.apply(null, pts.map(function(p){ return p.v; })) || 1;
-          var n = pts.length;
-          var xOf = function(i){ return 4 + (i / (n - 1)) * 492; };
-          var yOf = function(v){ return 36 - (v / max) * 32; };
-          var lineCoords = pts.map(function(p, i){ return xOf(i).toFixed(1)+','+yOf(p.v).toFixed(1); }).join(' ');
-          var areaPath = 'M'+xOf(0).toFixed(1)+',40 '
-            + pts.map(function(p, i){ return xOf(i).toFixed(1)+','+yOf(p.v).toFixed(1); }).join(' ')
-            + ' L'+xOf(n-1).toFixed(1)+',40 Z';
-          var gid = 'esg' + color.replace('#','');
-          return '<svg width="100%" viewBox="0 0 500 40" preserveAspectRatio="none" style="display:block;height:40px">'
-            + '<defs><linearGradient id="'+gid+'" x1="0" x2="0" y1="0" y2="1">'
-            + '<stop offset="0%" stop-color="'+color+'" stop-opacity=".2"/>'
-            + '<stop offset="100%" stop-color="'+color+'" stop-opacity="0"/>'
-            + '</linearGradient></defs>'
-            + '<path d="'+areaPath+'" fill="url(#'+gid+')"/>'
-            + '<polyline points="'+lineCoords+'" fill="none" stroke="'+color+'" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>'
-            + '</svg>';
-        };
-
-        var sparkCard = function(label, total, sub, pts, color) {
-          var s = spark(pts, color);
-          if (!s) return '';
-          return '<div style="background:#f9f9f8;border-radius:8px;padding:10px 12px;">'
-            + '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:1px">'
-            +   '<span style="font-size:11px;font-weight:600;color:#6d6d6c">'+label+'</span>'
-            +   '<span style="font-size:16px;font-weight:700;color:#3c3c3b">'+fmtK(total)+'</span>'
-            + '</div>'
-            + '<div style="font-size:10px;color:#9d9d9d;margin-bottom:4px">'+sub+'</div>'
-            + s
-            + '</div>';
-        };
+        // Store drill data globally for onclick handlers
+        window.__eosEngDrill = d.drill || {};
 
         var trends = d.trends || {};
-        var runsPts = (trends.runs      || []).map(function(x){ return {m:x.month, v:x.cnt}; });
-        var dlPts   = (trends.downloads || []).map(function(x){ return {m:x.month, v:x.cnt}; });
-        var runsUsersPeak = (trends.runs      || []).reduce(function(mx,x){ return Math.max(mx, x.users||0); }, 0);
-        var dlUsersPeak   = (trends.downloads || []).reduce(function(mx,x){ return Math.max(mx, x.users||0); }, 0);
+        var runsPts = (trends.runs      || []).map(function(x){ return {v: x.cnt}; });
+        var dlPts   = (trends.downloads || []).map(function(x){ return {v: x.cnt}; });
+        var runsMAU = (trends.runs      || []).reduce(function(mx,x){ return Math.max(mx, x.users||0); }, 0);
+        var dlMAU   = (trends.downloads || []).reduce(function(mx,x){ return Math.max(mx, x.users||0); }, 0);
 
-        var sc1 = sparkCard('Completed Runs',    d.runs.total,      'Peak MAU: '+fmtK(runsUsersPeak), runsPts, '#288184');
-        var sc2 = sparkCard('Report Downloads',  d.downloads.total, 'Peak MAU: '+fmtK(dlUsersPeak),   dlPts,   '#546e7a');
-        var sparkHtml = (sc1 || sc2)
-          ? '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">'+sc1+sc2+'</div>'
-          : '';
+        // 3-col stat grid: Runs, Downloads, Video Plays — all with sparklines where available
+        var statsGrid = document.getElementById('eosEngStatsGrid');
+        if (statsGrid) statsGrid.innerHTML =
+          statTile('Completed Runs',   fmtK(d.runs.total),      fmt(d.runs.last_3m)+' last 3m · MAU: '+fmtK(runsMAU), runsPts, '#288184', 'runs')
+        + statTile('Report Downloads', fmtK(d.downloads.total), fmt(d.downloads.last_3m)+' last 3m · MAU: '+fmtK(dlMAU), dlPts, '#546e7a', 'downloads')
+        + statTile('Video Plays',      fmtK(d.videos.total),    Math.round(d.videos.watch_mins_total||0).toLocaleString('en-GB')+'m watched', [], '#880e4f', null);
 
-        // Drill table builder
-        var drillTable = function(id, label, rows, cols, rowFn) {
-          var count = rows && rows.length;
-          var head = '<tr>'+cols.map(function(c){
-            return '<th style="padding:5px 8px;text-align:left;font-size:10px;font-weight:600;color:#9d9d9d;text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid #e6e6e5;position:sticky;top:0;background:#fff;white-space:nowrap">'+c+'</th>';
-          }).join('')+'</tr>';
-          var body = count
-            ? rows.map(rowFn).join('')
-            : '<tr><td colspan="'+cols.length+'" style="padding:12px;text-align:center;color:#9d9d9d;font-size:11px">No data</td></tr>';
-          return '<div style="margin-top:4px">'
-            + '<button id="'+id+'-btn" onclick="eosToggleDrill(\''+id+'\')" style="background:none;border:none;cursor:pointer;font-size:11px;font-weight:600;color:#288184;padding:4px 0;display:flex;align-items:center;gap:5px">'
-            + '▶ '+label+(count ? ' ('+count+')' : '')+'</button>'
-            + '<div id="'+id+'" style="display:none;max-height:280px;overflow-y:auto;border:1px solid #e6e6e5;border-radius:6px;margin-top:3px">'
-            + '<table style="width:100%;border-collapse:collapse;font-size:11px">'
-            + '<thead>'+head+'</thead><tbody>'+body+'</tbody></table></div></div>';
-        };
+        // Smaller KPI chips for API, Flex
+        var kpiRow = document.getElementById('eosEngKpiRow');
+        if (kpiRow) kpiRow.innerHTML =
+          kpiChip('API Calls',   d.api.calls_total,   fmt(d.api.calls_30d)+' last 30d',   '#fff3e0','#e65100')
+        + kpiChip('Flex Events', d.flex.events_total, fmt(d.flex.events_30d)+' last 30d', '#f3e5f5','#6a1b9a');
 
-        var esc = function(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); };
-
-        var drill = d.drill || {};
-        var dlDrillHtml = drillTable(
-          'eosDrillDl', 'Downloads', drill.downloads || [],
-          ['Date','User','Product','Filename'],
-          function(r) {
-            return '<tr style="border-bottom:1px solid #f5f5f4">'
-              +'<td style="padding:4px 8px;white-space:nowrap;color:#6d6d6c">'+esc(r.date)+'</td>'
-              +'<td style="padding:4px 8px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+esc(r.user)+'">'+esc(r.user)+'</td>'
-              +'<td style="padding:4px 8px;white-space:nowrap">'+esc(r.product)+'</td>'
-              +'<td style="padding:4px 8px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+esc(r.filename)+'">'+esc(r.filename)+'</td>'
-              +'</tr>';
-          }
-        );
-
-        var runsDrillHtml = drillTable(
-          'eosDrillRuns', 'Runs', drill.runs || [],
-          ['Date','User','Product','Title','Status'],
-          function(r) {
-            var sc = r.status === 'Complete' ? '#2e7d32' : r.status === 'Incomplete' ? '#c2600f' : '#6d6d6c';
-            return '<tr style="border-bottom:1px solid #f5f5f4">'
-              +'<td style="padding:4px 8px;white-space:nowrap;color:#6d6d6c">'+esc(r.date)+'</td>'
-              +'<td style="padding:4px 8px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+esc(r.user)+'">'+esc(r.user)+'</td>'
-              +'<td style="padding:4px 8px;white-space:nowrap">'+esc(r.product)+'</td>'
-              +'<td style="padding:4px 8px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+esc(r.title)+'">'+esc(r.title)+'</td>'
-              +'<td style="padding:4px 8px;white-space:nowrap;font-weight:600;color:'+sc+'">'+esc(r.status)+'</td>'
-              +'</tr>';
-          }
-        );
-
-        // KPI tiles (keep existing)
-        var STREAMS = [
-          { key:'runs',      label:'Software Runs',  color:'#e3f0fb', fg:'#0c447c', val: d.runs.total,        sub: fmt(d.runs.last_3m)+' last 3m',     last: d.runs.last_run },
-          { key:'api',       label:'API Calls',      color:'#fff3e0', fg:'#e65100', val: d.api.calls_total,   sub: fmt(d.api.calls_30d)+' last 30d',    last: d.api.last_seen },
-          { key:'downloads', label:'Downloads',      color:'#e0f7f0', fg:'#0e6b4a', val: d.downloads.total,   sub: fmt(d.downloads.last_3m)+' last 3m', last: d.downloads.last_date },
-          { key:'videos',    label:'Video Plays',    color:'#fce4ec', fg:'#880e4f', val: d.videos.total,      sub: fmt(d.videos.watch_mins_total)+'m watched', last: d.videos.last_date },
-          { key:'flex',      label:'Flex Events',    color:'#f3e5f5', fg:'#6a1b9a', val: d.flex.events_total, sub: fmt(d.flex.events_30d)+' last 30d',  last: d.flex.last_seen },
+        // Last-active row
+        var streams = [
+          { label:'Runs',      last: d.runs.last_run },
+          { label:'Downloads', last: d.downloads.last_date },
+          { label:'Videos',    last: d.videos.last_date },
+          { label:'API',       last: d.api.last_seen },
+          { label:'Flex',      last: d.flex.last_seen },
         ];
-        var tilesHtml = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:8px">'
-          + STREAMS.map(function(s) {
-              return '<div style="background:'+s.color+';border-radius:8px;padding:10px 12px">'
-                +'<div style="font-size:10px;font-weight:700;color:'+s.fg+';text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">'+s.label+'</div>'
-                +'<div style="font-size:20px;font-weight:700;color:'+s.fg+'">'+fmt(s.val)+'</div>'
-                +'<div style="font-size:10px;color:'+s.fg+';opacity:.75;margin-top:2px">'+s.sub+'</div>'
-                +'</div>';
-            }).join('')
-          + '</div>';
-
-        var lastActive = STREAMS.filter(function(s){ return s.last; })
+        var lastActive = streams.filter(function(s){ return s.last; })
           .map(function(s){ return s.label+': '+String(s.last).slice(0,10); }).join(' &nbsp;·&nbsp; ');
-        if (d.flex && d.flex.top_feature) lastActive += ' &nbsp;·&nbsp; Top Flex feature: <strong>'+esc(d.flex.top_feature)+'</strong>';
+        if (d.flex && d.flex.top_feature) lastActive += ' &nbsp;·&nbsp; Top Flex: <strong>'+esc(d.flex.top_feature)+'</strong>';
+        var laEl = document.getElementById('eosEngLastActive');
+        if (laEl) laEl.innerHTML = lastActive;
 
-        // Render full layout: sparklines → tiles → last-active → drill tables
-        content.innerHTML = sparkHtml
-          + tilesHtml
-          + '<div style="font-size:11px;color:#6d6d6c;padding:6px 0 4px;border-top:1px solid #f0f0ef;margin-top:2px">'+lastActive+'</div>'
-          + '<div style="margin-top:6px">'+dlDrillHtml+runsDrillHtml+'</div>';
+        if (summary) summary.style.display = 'block';
 
-        var any = STREAMS.some(function(s){ return s.val > 0; });
+        // Subtitle
+        var any = d.runs.total > 0 || d.downloads.total > 0 || d.flex.events_total > 0;
         if (subtitle) subtitle.textContent = any
           ? fmt(d.runs.last_3m)+' runs · '+fmt(d.downloads.last_3m)+' downloads · '+fmt(d.flex.events_30d)+' Flex events (last 30d)'
           : 'No activity recorded';
+
+        // Inject sparklines into Engagement Pulse widget
+        var epTrends = document.getElementById('eosEpTrends');
+        if (epTrends && (runsPts.length >= 2 || dlPts.length >= 2)) {
+          var makeEpCard = function(label, total, sub, pts, color) {
+            if (pts.length < 2) return '';
+            return '<div style="background:#f7f7f6;border-radius:8px;padding:10px 12px;">'
+              +'<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:1px;">'
+              +'<span style="font-size:11px;font-weight:600;color:#6d6d6c;">'+label+'</span>'
+              +'<span style="font-size:15px;font-weight:700;color:#3c3c3b;">'+fmtK(total)+'</span>'
+              +'</div>'
+              +'<div style="font-size:10px;color:#9d9d9d;margin-bottom:4px;">'+sub+'</div>'
+              +spark(pts, color, 36)
+              +'</div>';
+          };
+          var c1 = makeEpCard('Completed Runs',   d.runs.total,      'Peak MAU: '+fmtK(runsMAU), runsPts, '#288184');
+          var c2 = makeEpCard('Report Downloads', d.downloads.total, 'Peak MAU: '+fmtK(dlMAU),   dlPts,   '#546e7a');
+          var epHtml = [c1,c2].filter(Boolean).join('');
+          if (epHtml) {
+            epTrends.innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">'+epHtml+'</div>';
+            epTrends.style.display = 'block';
+          }
+        }
       })
       .catch(function(e) {
-        if (loading) loading.textContent = 'Failed to load EOS data: ' + e.message;
+        if (loading) { loading.style.display = 'block'; loading.textContent = 'Failed to load EOS data: ' + e.message; }
       });
   }
 
