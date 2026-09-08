@@ -1849,7 +1849,8 @@ function engRenderMix(streams,wm){
     if (!tot) return '';
     var bar = E_REGIONS.filter(function(r){return (reg[r]||0)>0;}).map(function(r){
       var v = reg[r]||0, pct = tot ? v/tot*100 : 0;
-      return '<span style="display:block;height:100%;width:'+pct.toFixed(1)+'%;background:'+E_RC[r]+'" title="'+r+': '+Math.round(v).toLocaleString('en-GB')+' ('+pct.toFixed(1)+'%)"></span>';
+      var dim = E_REGION !== 'All' && r !== E_REGION ? 'opacity:0.2;' : '';
+      return '<span style="display:block;height:100%;width:'+pct.toFixed(1)+'%;background:'+E_RC[r]+';transition:opacity .2s;'+dim+'" title="'+r+': '+Math.round(v).toLocaleString('en-GB')+' ('+pct.toFixed(1)+'%)"></span>';
     }).join('');
     return '<div style="display:grid;grid-template-columns:220px 1fr;gap:14px;align-items:center;margin:10px 0">'
       +'<div style="font-size:13px;font-weight:600;display:flex;justify-content:space-between;padding-right:10px">'
