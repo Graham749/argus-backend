@@ -6177,14 +6177,15 @@ class Component extends DCLogic {
       mount.appendChild(svg);
     };
 
-    // Derive per-month pts from drill rows (used when a product filter is active)
-    var drillToPts = function(rows) {
+    // Derive per-month pts from drill rows — preserves full month spine so zero-months
+    // still render as empty tracks (matching SF widget behaviour, never drops columns)
+    var drillToPts = function(rows, fullPts) {
       var byMonth = {};
       rows.forEach(function(r){
         var m = String(r.date||'').slice(0,7);
         if (m) byMonth[m] = (byMonth[m]||0) + 1;
       });
-      return Object.keys(byMonth).sort().map(function(m){ return { v: byMonth[m], label: m }; });
+      return (fullPts||[]).map(function(p){ return { v: byMonth[p.label] || 0, label: p.label }; });
     };
 
     // Render drill table tbody — called both on initial load and on filter change
@@ -6232,8 +6233,8 @@ class Component extends DCLogic {
       });
       var all  = ((window.__eosEngDrill || {}).runs) || [];
       var rows = prod === 'All' ? all : all.filter(function(r){ return (r.product||'') === prod; });
-      // Chart: full API trend when 'All', derived from drill rows when filtered
-      renderBarChart('eosRunsChart', prod === 'All' ? window.__eosRunsPts : drillToPts(rows), '#288184');
+      // Chart: full API trend when 'All'; filtered uses same month spine, zeroed where no data
+      renderBarChart('eosRunsChart', prod === 'All' ? window.__eosRunsPts : drillToPts(rows, window.__eosRunsPts), '#288184');
       renderDrillRows('Runs', rows);
     };
 
@@ -6241,7 +6242,7 @@ class Component extends DCLogic {
     window.eosDlFilter = function(prod) {
       var all  = ((window.__eosEngDrill || {}).downloads) || [];
       var rows = (!prod || prod === 'All') ? all : all.filter(function(r){ return (r.product||'') === prod; });
-      renderBarChart('eosDlChart', (!prod || prod === 'All') ? window.__eosDlPts : drillToPts(rows), '#546e7a');
+      renderBarChart('eosDlChart', (!prod || prod === 'All') ? window.__eosDlPts : drillToPts(rows, window.__eosDlPts), '#546e7a');
       renderDrillRows('Downloads', rows);
     };
 
@@ -6337,20 +6338,24 @@ class Component extends DCLogic {
         renderDrillRows('Downloads', d.drill.downloads || []);
 
         // Restore Engagement Pulse bar charts — full-width rows, same style
+        // EP bar charts — no card-within-card; match EP's own section label style
+        // (uppercase, small, muted; charts are borderless, same as EP's inline SVG sections)
         var epTrends = document.getElementById('eosEpTrends');
         if (epTrends) {
           epTrends.innerHTML = '';
           var makeEpRow = function(label, pts, color, total3m, chartId) {
             if (!pts || !pts.length) return;
             var row = document.createElement('div');
-            row.style.cssText = 'margin-bottom:8px;';
+            row.style.cssText = 'margin-bottom:10px;';
+            // Header matches EP section labels: uppercase, 10px, #6d6d6c, letter-spacing
             var header = document.createElement('div');
-            header.style.cssText = 'display:flex;align-items:baseline;gap:6px;margin-bottom:3px;';
-            header.innerHTML = '<span style="font-size:11px;font-weight:700;color:#3c3c3b;">'+label+'</span>'
+            header.style.cssText = 'display:flex;align-items:baseline;gap:8px;margin-bottom:3px;';
+            header.innerHTML = '<span style="font-size:10px;font-weight:700;color:#6d6d6c;letter-spacing:0.04em;text-transform:uppercase;">'+label+'</span>'
               +'<span style="font-size:10px;color:#9d9d9d;">'+fmt(total3m)+' last 3m</span>';
+            // Mount: no background box — chart sits directly in card like EP's SVG rows
             var mount = document.createElement('div');
             mount.id = chartId;
-            mount.style.cssText = 'border-radius:5px;overflow:hidden;background:#f7f7f6;padding:5px 5px 1px;';
+            mount.style.cssText = 'width:100%;';
             row.appendChild(header);
             row.appendChild(mount);
             epTrends.appendChild(row);
@@ -6358,6 +6363,10 @@ class Component extends DCLogic {
           };
           makeEpRow('Completed Runs',   window.__eosRunsPts, '#288184', d.runs.last_3m,      'eosEpRunsChart');
           makeEpRow('Report Downloads', window.__eosDlPts,   '#546e7a', d.downloads.last_3m, 'eosEpDlChart');
+          // Thin separator before main EP timeline (matches EP section spacing)
+          var sep = document.createElement('div');
+          sep.style.cssText = 'border-top:1px solid #f0f0ef;margin-bottom:10px;';
+          epTrends.appendChild(sep);
           epTrends.style.display = 'block';
         }
 
