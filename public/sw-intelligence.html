@@ -1509,7 +1509,7 @@ function engRender() {
   engRenderMix(streams,wm);
   engRenderTable(streams,wm);
   engRenderTimeTable(streams,wm);
-  engRenderMarketDrill();
+  engRenderMarketDrill(wm);
 }
 
 function engRenderKPIs(streams,wm){
@@ -1617,8 +1617,18 @@ function engMktVal(stream, mktData) {
   return mktData.total;
 }
 
-function engRenderMarketDrill() {
+function engMktValWindowed(stream, mktData, wm) {
+  if (!mktData) return undefined;
+  var bm = mktData.by_month;
+  if (!bm) return engMktVal(stream, mktData);
+  var sum = 0;
+  wm.forEach(function(m) { sum += bm[m] || 0; });
+  return sum || undefined;
+}
+
+function engRenderMarketDrill(wm) {
   if (!ENG_DATA) return;
+  wm = wm || engWindowMonths();
 
   var mktStreams = (ENG_DATA.streams || []).filter(function(s) {
     return s.by_market && s.by_market.length > 0;
@@ -1651,15 +1661,15 @@ function engRenderMarketDrill() {
     var mk = E_MARKET, sampleReg = '';
     mktStreams.forEach(function(s) { if (mktIndex[s.key][mk]) sampleReg = mktIndex[s.key][mk].region || ''; });
     document.getElementById('eng-mkt-hint').innerHTML =
-      '(' + mk + (sampleReg ? ' &middot; ' + sampleReg : '') + ' &middot; all-time totals)';
+      '(' + mk + (sampleReg ? ' &middot; ' + sampleReg : '') + ')';
     var head = '<tr><th>Stream</th><th class=”num”>Total</th></tr>';
     var rows = mktStreams.map(function(s) {
-      var v = engMktVal(s, mktIndex[s.key][mk]);
+      var v = engMktValWindowed(s, mktIndex[s.key][mk], wm);
       return '<tr><td>' + s.label + '</td><td class=”num”>' + engFmt(v) + '</td></tr>';
     }).join('');
     document.getElementById('eng-marketdrill').innerHTML = mdStyle
       + '<div style=”overflow-x:auto”><table><thead>' + head + '</thead><tbody>' + rows + '</tbody></table></div>'
-      + '<div style=”font-size:11px;color:#9d9d9d;padding:6px 18px 14px;line-height:1.5”>Each row uses its own unit — not additive. All-time totals.</div>';
+      + '<div style=”font-size:11px;color:#9d9d9d;padding:6px 18px 14px;line-height:1.5”>Each row uses its own unit — not additive.</div>';
     return;
   }
 
@@ -1678,7 +1688,7 @@ function engRenderMarketDrill() {
   var streamTotals = {};
   mktStreams.forEach(function(s) {
     var t = 0;
-    Object.keys(allMkts).forEach(function(mk) { t += engMktVal(s, mktIndex[s.key][mk]) || 0; });
+    Object.keys(allMkts).forEach(function(mk) { t += engMktValWindowed(s, mktIndex[s.key][mk], wm) || 0; });
     streamTotals[s.key] = t;
   });
 
@@ -1686,7 +1696,7 @@ function engRenderMarketDrill() {
   var scored = Object.keys(allMkts).map(function(mk) {
     var sc = 0;
     mktStreams.forEach(function(s) {
-      var v = engMktVal(s, mktIndex[s.key][mk]) || 0;
+      var v = engMktValWindowed(s, mktIndex[s.key][mk], wm) || 0;
       var t = streamTotals[s.key];
       if (v && t) sc += v / t;
     });
@@ -1703,7 +1713,7 @@ function engRenderMarketDrill() {
 
   var top = scored, showReg = true;
   document.getElementById('eng-mkt-hint').innerHTML =
-    '(' + (E_REGION === 'All' ? 'all regions' : E_REGION) + ' &middot; all-time totals &middot; ' + scored.length + ' markets)';
+    '(' + (E_REGION === 'All' ? 'all regions' : E_REGION) + ' &middot; ' + scored.length + ' markets)';
 
   var head = '<tr>'
     + '<th style=”min-width:140px”>Market</th>'
@@ -1719,7 +1729,7 @@ function engRenderMarketDrill() {
       : '';
     var style = muted ? ' style=”color:#9d9d9d;font-style:italic”' : '';
     return '<tr' + style + '><td>' + o.mk + '</td>' + rp
-      + mktStreams.map(function(s) { return '<td class=”num”>' + engFmt(engMktVal(s, mktIndex[s.key][o.mk])) + '</td>'; }).join('')
+      + mktStreams.map(function(s) { return '<td class=”num”>' + engFmt(engMktValWindowed(s, mktIndex[s.key][o.mk], wm)) + '</td>'; }).join('')
       + '</tr>';
   }
 
@@ -1728,14 +1738,14 @@ function engRenderMarketDrill() {
   var foot = '<tr><td><b>' + (E_REGION === 'All' ? 'All markets' : E_REGION + ' total') + '</b></td>'
     + (showReg ? '<td></td>' : '')
     + mktStreams.map(function(s) {
-        var tot = E_REGION === 'All' ? (s.total || 0) : ((s.by_region || {})[E_REGION] || 0);
+        var tot = engSumStream(s, E_REGION, wm);
         return '<td class=”num”><b>' + engFmt(tot) + '</b></td>';
       }).join('')
     + '</tr>';
 
   document.getElementById('eng-marketdrill').innerHTML = mdStyle
     + '<div style=”overflow-x:auto;max-height:560px”><table><thead style=”position:sticky;top:0;background:#fff;z-index:1”>' + head + '</thead><tbody>' + body + '</tbody><tfoot>' + foot + '</tfoot></table></div>'
-    + '<div style=”font-size:11px;color:#9d9d9d;padding:6px 16px 14px”>Markets ranked by cross-stream prominence. Each column uses its own unit &mdash; not additive across columns.</div>';
+    + '';
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

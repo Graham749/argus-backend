@@ -153,7 +153,7 @@ module.exports = async function eosEngagement(req, res) {
       `),
 
       // 8. Downloads by region — derived from product code (what was downloaded), not account region
-      //    NORAM evaluated before APAC so wecc% is caught before wec% (Australia WEM)
+      //    NORAM evaluated before APAC so wec% (WECC) is caught before wem%/waa% (Australia WEM)
       query(`
         SELECT
           CASE
@@ -164,11 +164,11 @@ module.exports = async function eosEngagement(req, res) {
               OR LOWER(product) LIKE 'mis%'   OR LOWER(product) LIKE 'isone%'
               OR LOWER(product) LIKE 'ny%'    OR LOWER(product) LIKE 'ne%'
               OR LOWER(product) LIKE 'alb%'   OR LOWER(product) LIKE 'abt%'  OR LOWER(product) LIKE 'ont%'
-              OR LOWER(product) LIKE 'spp%'   OR LOWER(product) LIKE 'wecc%' OR LOWER(product) LIKE 'aies%' THEN 'NORAM'
+              OR LOWER(product) LIKE 'spp%'   OR LOWER(product) LIKE 'wec%'   OR LOWER(product) LIKE 'aies%' THEN 'NORAM'
             WHEN LOWER(product) LIKE 'aus%'   OR LOWER(product) LIKE 'ais%'
               OR LOWER(product) LIKE 'nsw%'   OR LOWER(product) LIKE 'vic%'
               OR LOWER(product) LIKE 'saa%'   OR LOWER(product) LIKE 'qld%'  OR LOWER(product) LIKE 'tas%'
-              OR LOWER(product) LIKE 'waa%'   OR LOWER(product) LIKE 'wem%'  OR LOWER(product) LIKE 'wec%'
+              OR LOWER(product) LIKE 'waa%'   OR LOWER(product) LIKE 'wem%'
               OR LOWER(product) LIKE 'jpn%'   OR LOWER(product) LIKE 'jap%'
               OR LOWER(product) LIKE 'phl%'   OR LOWER(product) LIKE 'sin%'  OR LOWER(product) LIKE 'sgp%'
               OR LOWER(product) LIKE 'kor%'   OR LOWER(product) LIKE 'tw%'
@@ -190,11 +190,11 @@ module.exports = async function eosEngagement(req, res) {
               OR LOWER(product) LIKE 'mis%'   OR LOWER(product) LIKE 'isone%'
               OR LOWER(product) LIKE 'ny%'    OR LOWER(product) LIKE 'ne%'
               OR LOWER(product) LIKE 'alb%'   OR LOWER(product) LIKE 'abt%'  OR LOWER(product) LIKE 'ont%'
-              OR LOWER(product) LIKE 'spp%'   OR LOWER(product) LIKE 'wecc%' OR LOWER(product) LIKE 'aies%' THEN 'NORAM'
+              OR LOWER(product) LIKE 'spp%'   OR LOWER(product) LIKE 'wec%'   OR LOWER(product) LIKE 'aies%' THEN 'NORAM'
             WHEN LOWER(product) LIKE 'aus%'   OR LOWER(product) LIKE 'ais%'
               OR LOWER(product) LIKE 'nsw%'   OR LOWER(product) LIKE 'vic%'
               OR LOWER(product) LIKE 'saa%'   OR LOWER(product) LIKE 'qld%'  OR LOWER(product) LIKE 'tas%'
-              OR LOWER(product) LIKE 'waa%'   OR LOWER(product) LIKE 'wem%'  OR LOWER(product) LIKE 'wec%'
+              OR LOWER(product) LIKE 'waa%'   OR LOWER(product) LIKE 'wem%'
               OR LOWER(product) LIKE 'jpn%'   OR LOWER(product) LIKE 'jap%'
               OR LOWER(product) LIKE 'phl%'   OR LOWER(product) LIKE 'sin%'  OR LOWER(product) LIKE 'sgp%'
               OR LOWER(product) LIKE 'kor%'   OR LOWER(product) LIKE 'tw%'
@@ -226,7 +226,7 @@ module.exports = async function eosEngagement(req, res) {
               WHEN LOWER(product) LIKE 'chl%' THEN 'Chile'
               WHEN LOWER(product) LIKE 'mex%' THEN 'Mexico'
               WHEN LOWER(product) LIKE 'per%' THEN 'Peru'
-              -- NORAM (wecc% before wec% to avoid Australia WEM cross-match)
+              -- NORAM (wec% before wem%/waa% to avoid Australia WEM cross-match)
               WHEN LOWER(product) LIKE 'erc%'   THEN 'ERCOT'
               WHEN LOWER(product) LIKE 'pjm%'   THEN 'PJM'
               WHEN LOWER(product) LIKE 'cai%' OR LOWER(product) LIKE 'cas%'
@@ -239,10 +239,9 @@ module.exports = async function eosEngagement(req, res) {
               WHEN LOWER(product) LIKE 'ont%' OR LOWER(product) LIKE 'ieso%' THEN 'Ontario'
               WHEN LOWER(product) LIKE 'spp%'   THEN 'SPP'
               WHEN LOWER(product) LIKE 'serc%'  THEN 'SERC'
-              WHEN LOWER(product) LIKE 'wecc%'  THEN 'WECC'
-              -- APAC (waa%/wem%/wec% before aus% to avoid NEM cross-match)
-              WHEN LOWER(product) LIKE 'waa%' OR LOWER(product) LIKE 'wem%'
-                OR LOWER(product) LIKE 'wec%' THEN 'Australia WEM'
+              WHEN LOWER(product) LIKE 'wec%'   THEN 'WECC'
+              -- APAC (waa%/wem% before aus% to avoid NEM cross-match)
+              WHEN LOWER(product) LIKE 'waa%' OR LOWER(product) LIKE 'wem%' THEN 'Australia WEM'
               WHEN LOWER(product) LIKE 'aus%' OR LOWER(product) LIKE 'ais%'
                 OR LOWER(product) LIKE 'nsw%' OR LOWER(product) LIKE 'vic%'
                 OR LOWER(product) LIKE 'saa%' OR LOWER(product) LIKE 'qld%'
@@ -293,17 +292,18 @@ module.exports = async function eosEngagement(req, res) {
               WHEN LOWER(product) LIKE 'apachydrogen%' THEN 'APAC Hydrogen'
               ELSE NULL
             END AS market,
-            tracking_id
+            tracking_id,
+            FORMAT(CAST(download_date AS DATE), 'yyyy-MM') AS month
           FROM dbo.v_silver_eos_downloads
           WHERE download_date IS NOT NULL
             AND tracking_id IS NOT NULL
             AND COALESCE(product, '') != 'scenarioExplorer'
         )
-        SELECT market, COUNT(DISTINCT tracking_id) AS cnt
+        SELECT market, month, COUNT(DISTINCT tracking_id) AS cnt
         FROM dl
         WHERE market IS NOT NULL
-        GROUP BY market
-        ORDER BY cnt DESC
+        GROUP BY market, month
+        ORDER BY market, month
       `),
 
       // 11. Cases by product market+region — joins via product_id_sf (SF record ID)
@@ -312,12 +312,13 @@ module.exports = async function eosEngagement(req, res) {
           COALESCE(c.case_type, 'Other') AS case_type,
           COALESCE(p.Energy_Market__c, 'Other') AS market,
           COALESCE(p.Energy_Market_Region__c, 'Other') AS region,
+          FORMAT(TRY_CAST(c.date_of_work AS DATE), 'yyyy-MM') AS month,
           COUNT(*) AS cnt
         FROM dbo.v_silver_sf_cases c
         LEFT JOIN dbo.v_silver_sf_products p ON p.product_id_sf = c.product_id
         WHERE TRY_CAST(c.date_of_work AS DATE) IS NOT NULL
           AND c.account_id IS NOT NULL
-        GROUP BY COALESCE(c.case_type, 'Other'), COALESCE(p.Energy_Market__c, 'Other'), COALESCE(p.Energy_Market_Region__c, 'Other')
+        GROUP BY COALESCE(c.case_type, 'Other'), COALESCE(p.Energy_Market__c, 'Other'), COALESCE(p.Energy_Market_Region__c, 'Other'), FORMAT(TRY_CAST(c.date_of_work AS DATE), 'yyyy-MM')
         ORDER BY cnt DESC
       `).catch(e => {
         console.warn('[eos-engagement] cases-by-mkt (product join) skipped:', e.message);
@@ -370,14 +371,16 @@ module.exports = async function eosEngagement(req, res) {
       const cnt    = Number(r.cnt) || 0;
       runsTotal += cnt;
       runsByRegion[region] = (runsByRegion[region] || 0) + cnt;
-      if (!runsByMarket[mkt]) runsByMarket[mkt] = { total: 0, region };
+      if (!runsByMarket[mkt]) runsByMarket[mkt] = { total: 0, region, by_month: {} };
       runsByMarket[mkt].total += cnt;
       // Distribute yearly total across 12 months; remainder goes to month 12 so sum is exact
       const perMonth = Math.floor(cnt / 12);
       const remainder = cnt - perMonth * 12;
       for (let m = 1; m <= 12; m++) {
         const key = yr + '-' + String(m).padStart(2, '0');
-        runsByMonth[key] = (runsByMonth[key] || 0) + (m === 12 ? perMonth + remainder : perMonth);
+        const val = m === 12 ? perMonth + remainder : perMonth;
+        runsByMonth[key] = (runsByMonth[key] || 0) + val;
+        runsByMarket[mkt].by_month[key] = (runsByMarket[mkt].by_month[key] || 0) + val;
       }
     }
     const runsMktArr = Object.entries(runsByMarket)
@@ -397,9 +400,16 @@ module.exports = async function eosEngagement(req, res) {
     const dlTotal = Object.values(dlByMonth).reduce((s, v) => s + v, 0);
 
     // ── Downloads by market (product code → market name) ─────────────────────
-    const dlMktArr = dlMktRows
-      .filter(r => r.market)
-      .map(r => ({ market: r.market, total: Number(r.cnt) || 0, region: regionOf(r.market) }))
+    const dlByMarket = {};
+    for (const r of dlMktRows) {
+      if (!r.market) continue;
+      const cnt = Number(r.cnt) || 0;
+      if (!dlByMarket[r.market]) dlByMarket[r.market] = { total: 0, region: regionOf(r.market), by_month: {} };
+      dlByMarket[r.market].total += cnt;
+      if (r.month) dlByMarket[r.market].by_month[r.month] = (dlByMarket[r.market].by_month[r.month] || 0) + cnt;
+    }
+    const dlMktArr = Object.entries(dlByMarket)
+      .map(([market, v]) => ({ market, ...v }))
       .sort((a, b) => b.total - a.total);
 
     // ── Process videos ────────────────────────────────────────────────────────
@@ -461,6 +471,7 @@ module.exports = async function eosEngagement(req, res) {
         const mkt = normalizeMarket(r.market || 'Other');
         const region = VALID_REGIONS.has(r.region) ? r.region : regionOf(mkt);
         const cnt = Number(r.cnt) || 0;
+        const mo = r.month;
         // Regional totals — include even unattributed-market rows (region still known from product)
         if (VALID_REGIONS.has(region)) {
           if (WORKSHOP_TYPES.has(r.case_type)) {
@@ -472,11 +483,13 @@ module.exports = async function eosEngagement(req, res) {
         // Market breakdown — skip rows with no product (market=Other)
         if (mkt === 'Other') continue;
         if (WORKSHOP_TYPES.has(r.case_type)) {
-          if (!wsByMkt[mkt]) wsByMkt[mkt] = { total: 0, region };
+          if (!wsByMkt[mkt]) wsByMkt[mkt] = { total: 0, region, by_month: {} };
           wsByMkt[mkt].total += cnt;
+          if (mo) wsByMkt[mkt].by_month[mo] = (wsByMkt[mkt].by_month[mo] || 0) + cnt;
         } else {
-          if (!emByMkt[mkt]) emByMkt[mkt] = { total: 0, region };
+          if (!emByMkt[mkt]) emByMkt[mkt] = { total: 0, region, by_month: {} };
           emByMkt[mkt].total += cnt;
+          if (mo) emByMkt[mkt].by_month[mo] = (emByMkt[mkt].by_month[mo] || 0) + cnt;
         }
       }
       const wsArr = Object.entries(wsByMkt).map(([market, v]) => ({ market, ...v })).sort((a, b) => b.total - a.total);
@@ -508,9 +521,10 @@ module.exports = async function eosEngagement(req, res) {
       const mktList = mkts.length ? mkts : ['Other'];
       mktList.forEach(function(mkt) {
         const mktReg = regionOf(mkt) !== 'Other' ? regionOf(mkt) : region;
-        if (!webByMarket[mkt]) webByMarket[mkt] = { attendees: 0, event_count: 0, region: mktReg };
+        if (!webByMarket[mkt]) webByMarket[mkt] = { attendees: 0, event_count: 0, region: mktReg, by_month: {} };
         webByMarket[mkt].attendees   += att;
         webByMarket[mkt].event_count += evCnt;
+        if (m) webByMarket[mkt].by_month[m] = (webByMarket[mkt].by_month[m] || 0) + att;
       });
     }
     const webTotal = Object.values(webByMonth).reduce((s, v) => s + v, 0);
@@ -526,9 +540,10 @@ module.exports = async function eosEngagement(req, res) {
       const mktList = mkts.length ? mkts : ['Other'];
       mktList.forEach(function(mkt) {
         const mktReg = regionOf(mkt) !== 'Other' ? regionOf(mkt) : region;
-        if (!gmByMarket[mkt]) gmByMarket[mkt] = { attendees: 0, event_count: 0, region: mktReg };
+        if (!gmByMarket[mkt]) gmByMarket[mkt] = { attendees: 0, event_count: 0, region: mktReg, by_month: {} };
         gmByMarket[mkt].attendees   += att;
         gmByMarket[mkt].event_count += evCnt;
+        if (m) gmByMarket[mkt].by_month[m] = (gmByMarket[mkt].by_month[m] || 0) + att;
       });
     }
     const gmTotal = Object.values(gmByMonth).reduce((s, v) => s + v, 0);
