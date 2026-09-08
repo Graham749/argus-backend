@@ -1396,7 +1396,10 @@ async function loadEngagement() {
     (ENG_DATA.streams||[]).forEach(function(s){ (s.by_month||[]).forEach(function(x){ allM.push(x.month); }); });
     allM.sort();
     E_MIN = "2019-01"; // always start from 2019
-    E_MAX = allM[allM.length-1] || new Date().toISOString().slice(0,7);
+    var _curM = new Date().toISOString().slice(0,7);
+    var _prevM = engAddMonths(_curM, -1);
+    E_MAX = allM[allM.length-1] || _prevM;
+    if (E_MAX >= _curM) E_MAX = _prevM; // cap at last complete month — current month is partial
     E_START = '2025-01'; E_END = E_MAX;
     engUpdatePresetHighlight();
     engSyncMonthInputs();
