@@ -68,12 +68,35 @@ function regionFromRaw(regionRaw, marketRaw) {
 // Workshop case types (everything else = email/analyst support)
 const WORKSHOP_TYPES = new Set(['Workshop', 'Content_workshop']);
 
+function sanitizeStr(s) { return (s || '').replace(/'/g, "''").replace(/[;\x00]/g, '').slice(0, 200); }
+function sqlIn(arr) { return arr.map(v => `'${String(v).replace(/'/g, "''")}'`).join(','); }
+
 module.exports = async function eosEngagement(req, res) {
   try {
-    const cached = cacheGet(CACHE_KEY);
-    if (cached && !req.query.bust) return res.json(cached);
+    const accountName = sanitizeStr(req.query.account || '');
+    const amName      = sanitizeStr(req.query.am || '');
+    const hasFilter   = !!(accountName || (amName && amName !== 'All'));
 
-    const [runsRows, dlRows, vidRows, caseRows, webinarRows, gmRows, acctRegionRows, dlAcctRows, caseAcctRows, dlMktRows, caseMktRows, subRegionRows, productTrendRows] = await Promise.all([
+    if (!hasFilter && !req.query.bust) {
+      const cached = cacheGet(CACHE_KEY);
+      if (cached) return res.json(cached);
+    }
+
+    // Pre-filter: resolve sf_account_code and sf_account_id for filtered accounts
+    let runsCodeWhere = '', casesIdWhere = '';
+    if (hasFilter) {
+      let preWhere = 'WHERE mdm.sf_account_code IS NOT NULL';
+      if (accountName) preWhere += ` AND mdm.sf_account_name LIKE '%${accountName}%'`;
+      if (amName && amName !== 'All') preWhere += `
+        AND EXISTS (SELECT 1 FROM dbo.gold_sf_customer_accounts gca WHERE gca.account_id = mdm.sf_account_id AND gca.account_manager = '${amName}')`;
+      const filterRows = await query(`SELECT DISTINCT mdm.sf_account_code, mdm.sf_account_id FROM dbo.gold_mdm_account mdm ${preWhere}`).catch(() => []);
+      const codes = filterRows.map(r => r.sf_account_code).filter(Boolean);
+      const ids   = filterRows.map(r => r.sf_account_id).filter(Boolean);
+      runsCodeWhere = codes.length ? `AND r.account_id IN (${sqlIn(codes)})` : 'AND 1=0';
+      casesIdWhere  = ids.length   ? `AND c.account_id IN (${sqlIn(ids)})`   : 'AND 1=0';
+    }
+
+    const [runsRows, dlRows, vidRows, caseRows, webinarRows, gmRows, acctRegionRows, dlAcctRows, caseAcctRows, dlMktRows, caseMktRows, subRegionRows, productTrendRows, metaRows] = await Promise.all([
       // 1. Software runs by year + product_region — DISTINCT simulation_id (matches PBI DAX measure)
       query(`
         SELECT YEAR(r.launch_time) AS yr, r.product_region, COUNT(DISTINCT r.simulation_id) AS cnt
@@ -81,6 +104,7 @@ module.exports = async function eosEngagement(req, res) {
         INNER JOIN dbo.gold_mdm_account mdm ON mdm.sf_account_code = r.account_id
         WHERE r.is_internal = 0
           AND r.launch_time IS NOT NULL
+          ${runsCodeWhere}
         GROUP BY YEAR(r.launch_time), r.product_region
         ORDER BY yr
       `),
@@ -112,13 +136,14 @@ module.exports = async function eosEngagement(req, res) {
       // 4. Cases by month + type — date_of_work = "delivered date" per reference notes
       query(`
         SELECT
-          FORMAT(TRY_CAST(date_of_work AS DATE), 'yyyy-MM') AS month,
-          COALESCE(case_type, 'Other') AS case_type,
+          FORMAT(TRY_CAST(c.date_of_work AS DATE), 'yyyy-MM') AS month,
+          COALESCE(c.case_type, 'Other') AS case_type,
           COUNT(*) AS cnt
-        FROM dbo.v_silver_sf_cases
-        WHERE TRY_CAST(date_of_work AS DATE) IS NOT NULL
-          AND account_id IS NOT NULL
-        GROUP BY FORMAT(TRY_CAST(date_of_work AS DATE), 'yyyy-MM'), COALESCE(case_type, 'Other')
+        FROM dbo.v_silver_sf_cases c
+        WHERE TRY_CAST(c.date_of_work AS DATE) IS NOT NULL
+          AND c.account_id IS NOT NULL
+          ${casesIdWhere}
+        GROUP BY FORMAT(TRY_CAST(c.date_of_work AS DATE), 'yyyy-MM'), COALESCE(c.case_type, 'Other')
         ORDER BY month
       `),
 
@@ -318,6 +343,7 @@ module.exports = async function eosEngagement(req, res) {
         LEFT JOIN dbo.v_silver_sf_products p ON p.product_id_sf = c.product_id
         WHERE TRY_CAST(c.date_of_work AS DATE) IS NOT NULL
           AND c.account_id IS NOT NULL
+          ${casesIdWhere}
         GROUP BY COALESCE(c.case_type, 'Other'), COALESCE(p.Energy_Market__c, 'Other'), COALESCE(p.Energy_Market_Region__c, 'Other'), FORMAT(TRY_CAST(c.date_of_work AS DATE), 'yyyy-MM')
         ORDER BY cnt DESC
       `).catch(e => {
@@ -359,9 +385,20 @@ module.exports = async function eosEngagement(req, res) {
         WHERE r.is_internal = 0
           AND r.execution_status = 'Complete'
           AND r.launch_time IS NOT NULL
+          ${runsCodeWhere}
         GROUP BY r.software_product, COALESCE(r.product_region, 'Other'), FORMAT(r.launch_time, 'yyyy-MM')
         ORDER BY r.software_product, market, month
       `).catch(e => { console.warn('[eos-engagement] product-trends skipped:', e.message); return []; }),
+
+      // 14. Metadata: accounts + AMs with any EOS engagement (for filter dropdowns)
+      query(`
+        SELECT DISTINCT mdm.sf_account_name, gca.account_manager
+        FROM dbo.gold_mdm_account mdm
+        LEFT JOIN dbo.gold_sf_customer_accounts gca ON gca.account_id = mdm.sf_account_id
+        WHERE mdm.sf_account_name IS NOT NULL
+          AND EXISTS (SELECT 1 FROM dbo.v_silver_eos_runs r WHERE r.account_id = mdm.sf_account_code AND r.is_internal = 0)
+        ORDER BY mdm.sf_account_name
+      `).catch(() => []),
     ]);
 
     // ── Build account → primary region + market lookup ───────────────────────
@@ -614,7 +651,16 @@ module.exports = async function eosEngagement(req, res) {
       ],
     };
 
-    cacheSet(CACHE_KEY, payload, CACHE_TTL);
+    // Populate accounts + AMs from metadata query
+    const accountNames = [], amNames = [];
+    for (const r of (metaRows || [])) {
+      if (r.sf_account_name && !accountNames.includes(r.sf_account_name)) accountNames.push(r.sf_account_name);
+      if (r.account_manager && !amNames.includes(r.account_manager)) amNames.push(r.account_manager);
+    }
+    payload.accounts         = accountNames.sort();
+    payload.account_managers = amNames.sort();
+
+    if (!hasFilter) cacheSet(CACHE_KEY, payload, CACHE_TTL);
     res.json(payload);
   } catch (err) {
     console.error('[eos-engagement]', err.message);

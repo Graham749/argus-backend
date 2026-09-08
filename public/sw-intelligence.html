@@ -275,6 +275,20 @@ tfoot td{font-size:11px;color:#9d9d9d;padding:6px 10px;border-top:1px solid #e6e
       <span style="width:6px"></span>
       <button onclick="engClearFilters()" style="padding:0 12px;height:30px;border-radius:100px;border:1px solid #e6e6e5;background:#fff;font-size:12px;cursor:pointer;color:#6d6d6c" onmouseover="this.style.borderColor='#9d9d9d'" onmouseout="this.style.borderColor='#e6e6e5'">Clear all</button>
     </div>
+    <div class="filter-bar">
+      <span class="filter-label">Account:</span>
+      <input type="text" id="eng-acct-input" placeholder="Search Salesforce account…"
+        onkeydown="if(event.key==='Enter') engAccountFilter()"
+        style="width:220px;padding:5px 10px;border:1.5px solid #e6e6e5;border-radius:8px;font-size:12px;font-family:inherit;outline:none"
+        onfocus="this.style.borderColor='#288184'" onblur="this.style.borderColor='#e6e6e5'">
+      <button onclick="engAccountFilter()" style="margin-left:4px;padding:0 10px;height:28px;border-radius:6px;border:1px solid #e6e6e5;background:#fff;font-size:11px;cursor:pointer;color:#6d6d6c">Search</button>
+      <span class="filter-label" style="margin-left:16px">Account Manager:</span>
+      <select id="eng-am-select" onchange="engAmFilter()"
+        style="padding:5px 8px;border:1.5px solid #e6e6e5;border-radius:8px;font-size:12px;font-family:inherit;background:#fff;outline:none;min-width:160px">
+        <option value="All">All managers</option>
+      </select>
+      <span style="font-size:10px;color:#c0c0be;margin-left:8px">&#9432; filters Runs, Cases &amp; Workshops only</span>
+    </div>
   </div>
 
   <div style="max-width:1320px;margin:0 auto;padding:24px">
@@ -1324,6 +1338,7 @@ if (new URLSearchParams(location.search).get('embed') === '1') {
 var ENG_DATA = null, engLoaded = false;
 var E_REGION = "All", E_MARKET = "All", E_START = null, E_END = null, E_MIN = null, E_MAX = null;
 var E_PRODUCT = "All";
+var E_ACCOUNT = "", E_AM = "All";
 var E_REGIONS = ["EMEA","APAC","NORAM","LATAM","Other"];
 var E_RC = {EMEA:"#2563eb",APAC:"#0891b2",NORAM:"#7c3aed",LATAM:"#ea580c",Other:"#94a3b8"};
 var PROD_COLORS = {Chronos:"#288184",Amun:"#7c3aed",Origin:"#e65100",Solaris:"#d97706",Lumus:"#0891b2",All:"#3c3c3b"};
@@ -1381,7 +1396,10 @@ function switchTab(tab) {
 
 async function loadEngagement() {
   try {
-    var resp = await fetch('/api/eos-engagement');
+    var params = [];
+    if (E_ACCOUNT) params.push('account=' + encodeURIComponent(E_ACCOUNT));
+    if (E_AM && E_AM !== 'All') params.push('am=' + encodeURIComponent(E_AM));
+    var resp = await fetch('/api/eos-engagement' + (params.length ? '?' + params.join('&') : ''));
     if (!resp.ok) throw new Error('HTTP ' + resp.status);
     ENG_DATA = await resp.json();
     engLoaded = true;
@@ -1395,6 +1413,7 @@ async function loadEngagement() {
     engSyncMonthInputs();
     engRenderFilter();
     engPopulateMarketBar();
+    engPopulateAmDropdown();
     document.getElementById('eng-live-dot').style.display = '';
     document.getElementById('eng-loading').style.display = 'none';
     document.getElementById('eng-content').style.display = '';
@@ -1430,12 +1449,38 @@ function engSetMarket(m) {
 
 function engClearFilters() {
   E_REGION = 'All'; E_MARKET = 'All';
+  E_ACCOUNT = ''; E_AM = 'All';
   E_START = '2025-01'; E_END = E_MAX;
+  var ai = document.getElementById('eng-acct-input'); if (ai) ai.value = '';
+  var ad = document.getElementById('eng-am-select'); if (ad) ad.value = 'All';
   engRenderFilter();
   engPopulateMarketBar();
   engUpdatePresetHighlight();
   engSyncMonthInputs();
   engRender();
+}
+
+function engPopulateAmDropdown() {
+  var sel = document.getElementById('eng-am-select');
+  if (!sel || !ENG_DATA) return;
+  var ams = (ENG_DATA.account_managers || []);
+  var saved = E_AM;
+  sel.innerHTML = '<option value="All">All managers</option>'
+    + ams.map(function(a){ return '<option value="' + a.replace(/"/g,'&quot;') + '">' + a + '</option>'; }).join('');
+  sel.value = saved;
+}
+
+function engAccountFilter() {
+  var v = (document.getElementById('eng-acct-input') || {}).value || '';
+  E_ACCOUNT = v.trim();
+  engLoaded = false;
+  loadEngagement();
+}
+
+function engAmFilter() {
+  E_AM = (document.getElementById('eng-am-select') || {}).value || 'All';
+  engLoaded = false;
+  loadEngagement();
 }
 
 function engPreset(p) {
