@@ -1732,16 +1732,20 @@ function engProdRegionTotals(wm) {
 }
 
 function engWindowedByRegion(s, wm) {
-  // Scale all-time regional proportions to the windowed total so the bar total
-  // always matches the KPI card total (engSumStream uses the same windowed total).
   var windowedTot = engSumStream(s, 'All', wm);
   var allTot = Object.values(s.by_region||{}).reduce(function(a,b){return a+(+b||0);},0) || 1;
   var scale = windowedTot / allTot;
+  // Largest-remainder rounding: ensures regional totals sum exactly to windowedTot
+  var items = Object.keys(s.by_region||{}).map(function(r){
+    var exact = (s.by_region[r]||0) * scale;
+    return { r:r, v:Math.floor(exact), frac:exact - Math.floor(exact) };
+  }).filter(function(x){ return x.v > 0 || x.frac > 0; });
+  var allocated = items.reduce(function(a,x){return a+x.v;},0);
+  var rem = Math.round(windowedTot) - allocated;
+  items.sort(function(a,b){return b.frac - a.frac;});
+  for (var i=0; i<rem && i<items.length; i++) items[i].v++;
   var byReg = {};
-  Object.keys(s.by_region||{}).forEach(function(r) {
-    var v = Math.round((s.by_region[r]||0) * scale);
-    if (v) byReg[r] = v;
-  });
+  items.forEach(function(x){ if (x.v) byReg[x.r] = x.v; });
   return byReg;
 }
 
