@@ -5531,27 +5531,32 @@ class Component extends DCLogic {
       setTimeout(() => this._triggerHealthLoad(target), 100);
     }
 
-    // Searchable account dropdown
+    // Searchable account dropdown — retry until div is in DOM (sc-if may delay rendering)
     const _acctNames = accounts.map(a => a.name);
-    if (!this._ssAcct) {
-      this._ssAcct = window.makeSearchableSelect('sfAcctSearchWrap', _acctNames, '', '— Select Account —', (acctName) => {
-        if (!acctName) return;
-        window.__healthLoadStarted = null;
-        this.updateAccountTitles(acctName);
-        try { localStorage.setItem('argusHealthAccount', acctName); } catch(e) {}
-        this.loadAccountWithMatchCheck(acctName);
-      });
-      // Make the button fill the wrapper width
-      var _sw = document.getElementById('sfAcctSearchWrap');
-      if (_sw) { _sw.style.display = 'block'; _sw.style.flex = '1'; }
-      var _sb = _sw && _sw.querySelector('button');
-      if (_sb) { _sb.style.width = '100%'; _sb.style.minWidth = '0'; _sb.style.fontSize = '13px'; _sb.style.padding = '6px 10px'; _sb.style.borderRadius = '6px'; _sb.style.borderWidth = '1px'; _sb.style.textAlign = 'left'; }
-      var _sp = _sw && _sw.querySelector('.__ss-panel');
-      if (_sp) { _sp.style.minWidth = '300px'; }
-    } else {
-      this._ssAcct.update(_acctNames);
-    }
-    if (target && this._ssAcct) this._ssAcct.setValue(target);
+    const _savedAcct = target;
+    const _doInitSS = () => {
+      const _sw = document.getElementById('sfAcctSearchWrap');
+      if (!_sw) { setTimeout(_doInitSS, 100); return; }
+      if (!this._ssAcct || !this._ssAcct.setValue) {
+        this._ssAcct = window.makeSearchableSelect('sfAcctSearchWrap', _acctNames, '', '— Select Account —', (acctName) => {
+          if (!acctName) return;
+          window.__healthLoadStarted = null;
+          this.updateAccountTitles(acctName);
+          try { localStorage.setItem('argusHealthAccount', acctName); } catch(e) {}
+          this.loadAccountWithMatchCheck(acctName);
+        });
+        if (!this._ssAcct || !this._ssAcct.setValue) { setTimeout(_doInitSS, 100); return; }
+        _sw.style.display = 'block'; _sw.style.flex = '1';
+        var _sb = _sw.querySelector('button');
+        if (_sb) { _sb.style.width='100%'; _sb.style.minWidth='0'; _sb.style.fontSize='13px'; _sb.style.padding='6px 10px'; _sb.style.borderRadius='6px'; _sb.style.borderWidth='1px'; _sb.style.textAlign='left'; }
+        var _sp = _sw.querySelector('.__ss-panel');
+        if (_sp) _sp.style.minWidth = '300px';
+      } else {
+        this._ssAcct.update(_acctNames);
+      }
+      if (_savedAcct && this._ssAcct.setValue) this._ssAcct.setValue(_savedAcct);
+    };
+    _doInitSS();
   }
 
   updateAccountTitles(accountName){
@@ -6437,6 +6442,10 @@ class Component extends DCLogic {
         window.__eosRunsPts = (trends.runs      || []).map(function(x){ return { v:x.cnt, label:x.month }; });
         window.__eosDlPts   = (trends.downloads || []).map(function(x){ return { v:x.cnt, label:x.month }; });
 
+        var _peakRuns = (trends.runs||[]).reduce(function(b,x){ return x.users>b.users?{users:x.users,month:x.month}:b; },{users:0,month:''});
+        var _peakDl   = (trends.downloads||[]).reduce(function(b,x){ return x.users>b.users?{users:x.users,month:x.month}:b; },{users:0,month:''});
+        var _fmtMo = function(m){ var d=new Date(m+'-01');return d.toLocaleDateString('en-GB',{month:'short',year:'numeric'}); };
+
         // Build HTML skeletons (chart mounts are empty — filled after injection)
         var html = buildSection('runs',      'Completed Runs',    d.runs.last_3m,      ['Date','User','Product','Title','Status']);
         html    += buildSection('downloads', 'Report Downloads',  d.downloads.last_3m, ['Date','User','Product','Filename']);
@@ -6448,6 +6457,12 @@ class Component extends DCLogic {
         if (lastParts.length) html += '<div style="font-size:10px;color:#9d9d9d;padding-top:8px;border-top:1px solid #f0f0ef;">'+lastParts.join(' &nbsp;·&nbsp; ')+'</div>';
 
         if (content) { content.innerHTML = html; content.style.display = 'block'; }
+
+        // Peak users in section subtitles
+        var _rSub = document.getElementById('eosRunsSub');
+        if (_rSub) _rSub.textContent = fmt(d.runs.last_3m)+' last 3m'+(_peakRuns.users>0?' · peak '+_peakRuns.users+' users ('+_fmtMo(_peakRuns.month)+')':'');
+        var _dSub = document.getElementById('eosDownloadsSub');
+        if (_dSub) _dSub.textContent = fmt(d.downloads.last_3m)+' last 3m'+(_peakDl.users>0?' · peak '+_peakDl.users+' users ('+_fmtMo(_peakDl.month)+')':'');
 
         // Subtitle + compact pills
         if (subtitle) subtitle.textContent = fmt(d.runs.last_3m) + ' runs · ' + fmt(d.downloads.last_3m) + ' downloads (last 3m)';
