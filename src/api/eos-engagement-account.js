@@ -89,9 +89,9 @@ module.exports = async function eosEngagementAccount(req, res) {
         ORDER BY month
       `).catch(e => { console.warn('[eos-eng-acct] dl-trend:', e.message); return []; }),
 
-      // 4. Runs drill — 100 most recent (all statuses for full picture)
+      // 4. Runs drill — 19-month window, Complete only (matches trend bar counts)
       query(`
-        SELECT TOP 100
+        SELECT
           CONVERT(varchar(10), r.launch_time, 120) AS date,
           r.user_email,
           r.software_product,
@@ -101,12 +101,14 @@ module.exports = async function eosEngagementAccount(req, res) {
         WHERE r.account_id = '${codeEsc}'
           AND r.is_internal = 0
           AND r.launch_time IS NOT NULL
+          AND r.execution_status = 'Complete'
+          AND r.launch_time >= DATEADD(MONTH, -18, DATEFROMPARTS(YEAR(GETUTCDATE()), MONTH(GETUTCDATE()), 1))
         ORDER BY r.launch_time DESC
       `).catch(e => { console.warn('[eos-eng-acct] runs-drill:', e.message); return []; }),
 
-      // 5. Downloads drill — 100 most recent
+      // 5. Downloads drill — 19-month window
       query(`
-        SELECT TOP 100
+        SELECT
           CONVERT(varchar(10), d.download_date, 120) AS date,
           d.user_email,
           d.product,
@@ -115,6 +117,7 @@ module.exports = async function eosEngagementAccount(req, res) {
         WHERE d.sf_account_code = '${codeEsc}'
           AND d.download_date IS NOT NULL
           AND COALESCE(d.product, '') != 'scenarioExplorer'
+          AND d.download_date >= DATEADD(MONTH, -18, DATEFROMPARTS(YEAR(GETUTCDATE()), MONTH(GETUTCDATE()), 1))
         ORDER BY d.download_date DESC
       `).catch(e => { console.warn('[eos-eng-acct] dl-drill:', e.message); return []; }),
     ]);
