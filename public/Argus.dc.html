@@ -6138,6 +6138,9 @@ class Component extends DCLogic {
     if (loading) { loading.style.display = 'block'; loading.textContent = 'Loading engagement data…'; }
     if (noMatch) noMatch.style.display = 'none';
     if (content) content.style.display = 'none';
+    // Clear EOS globals so EP doesn't show the previous account's runs while this fetch is in-flight
+    window.__eosRunsPts = [];
+    window.__eosDlPts   = [];
 
     var esc   = function(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); };
     var fmt   = function(n){ return Number(n||0).toLocaleString('en-GB'); };

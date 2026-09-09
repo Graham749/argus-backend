@@ -129,7 +129,9 @@ async function runQueries(code, codeEsc, account) {
     ]);
   }
 
-  const hasAnyData = (Number(rr.total)||0) > 0 || (Number(rd.total)||0) > 0;
+  const hasAnyData = (Number(rr.total)||0) > 0 || (Number(rd.total)||0) > 0
+                  || (Number(g.api_calls_total)||0) > 0 || (Number(g.vid_total)||0) > 0
+                  || (Number(g.ph_events_total)||0) > 0;
   if (!hasAnyData) return { matched: true, sf_account_code: code, has_data: false };
 
   return {
