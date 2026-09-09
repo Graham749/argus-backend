@@ -6361,10 +6361,8 @@ class Component extends DCLogic {
         +'<div id="eos'+idU+'Filters" style="margin-left:auto;display:flex;gap:4px;flex-wrap:wrap;align-items:center;"></div>'
         +'</div>'
         // Clickable chart wrapper — background click shows ALL rows; bar click filters to that month
-        +'<div id="eos'+idU+'Chart" onclick="window.eosShowAllDrill(\''+idKey+'\')" '
-        +'style="cursor:pointer;border-radius:6px;overflow:hidden;background:#f7f7f6;padding:6px 6px 2px;" '
-        +'title="Click a bar for that month · click background for all"></div>'
-        +'<div style="font-size:9px;color:#b8b8b6;text-align:center;margin-top:1px;margin-bottom:6px;">Click a bar to filter by month · click background for all</div>'
+        +'<div id="eos'+idU+'Chart" '
+        +'style="border-radius:6px;overflow:hidden;background:#f7f7f6;padding:6px 6px 2px;"></div>'
         // Drill panel — hidden by default, appears below chart
         +'<div id="eos'+idU+'Drill" style="display:none;margin-top:6px;border:1px solid #e6e6e5;border-radius:8px;overflow:hidden;">'
         +'<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:#f7f7f6;border-bottom:1px solid #e6e6e5;">'
@@ -6406,17 +6404,6 @@ class Component extends DCLogic {
         if (lastParts.length) html += '<div style="font-size:10px;color:#9d9d9d;padding-top:8px;border-top:1px solid #f0f0ef;">'+lastParts.join(' &nbsp;·&nbsp; ')+'</div>';
 
         if (content) { content.innerHTML = html; content.style.display = 'block'; }
-
-        // Inject filter controls (after DOM exists)
-        var btnStyle = 'padding:4px 9px;border-radius:5px;border:1px solid;font-size:10px;font-weight:600;cursor:pointer;transition:background .12s,color .12s;';
-        var runsProds = ['All'];
-        (d.drill.runs||[]).forEach(function(r){ if (r.product && runsProds.indexOf(r.product)<0) runsProds.push(r.product); });
-        runsProds.sort(function(a,b){ return a==='All'?-1:b==='All'?1:a.localeCompare(b); });
-        var runsFiltersEl = document.getElementById('eosRunsFilters');
-        if (runsFiltersEl) runsFiltersEl.innerHTML = runsProds.map(function(p){
-          var on = p === 'All';
-          return '<button class="eos-runs-filter-btn" data-prod="'+esc(p)+'" onclick="window.eosRunsFilter(\''+p.replace(/'/g,"\\'")+'\');" style="'+btnStyle+'background:'+(on?'#288184':'#f0f0ef')+';color:'+(on?'#fff':'#3c3c3b')+';border-color:'+(on?'#288184':'#d0d0d0')+';">'+esc(p)+'</button>';
-        }).join('');
 
         var dlProds = [];
         (d.drill.downloads||[]).forEach(function(r){ if (r.product && dlProds.indexOf(r.product)<0) dlProds.push(r.product); });
