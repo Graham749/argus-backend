@@ -44,7 +44,7 @@ async function runQueries(code, codeEsc) {
         ph_engaged_minutes,
         CONVERT(varchar(10), ph_last_seen, 120) AS ph_last_seen,
         ph_top_feature
-      FROM DBO.gold_mdm_eos_engagement
+      FROM dbo.gold_mdm_eos_engagement
       WHERE sf_account_code = '${codeEsc}'
     `),
 

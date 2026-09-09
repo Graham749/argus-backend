@@ -148,7 +148,7 @@ module.exports = async function eosEngagement(req, res) {
         FROM (
           SELECT sf_account_code, product_region,
                  ROW_NUMBER() OVER (PARTITION BY sf_account_code ORDER BY SUM(total_runs) DESC) AS rn
-          FROM dbo.v_gold_mdm_eos_runs
+          FROM dbo.gold_mdm_eos_runs
           WHERE sf_account_code IS NOT NULL
           GROUP BY sf_account_code, product_region
         ) x WHERE rn = 1

@@ -452,7 +452,7 @@ async function handler(req, res) {
           SUM(CASE WHEN status = 'solved'        THEN 1 ELSE 0 END) AS solved_count,
           SUM(CASE WHEN status = 'closed'        THEN 1 ELSE 0 END) AS closed_count,
           CONVERT(varchar(10), MAX(TRY_CAST(updated_at AS datetime2)), 120) AS last_date
-        FROM dbo.v_gold_mdm_zd_tickets
+        FROM dbo.gold_mdm_zd_tickets
         WHERE status NOT IN ('deleted')
         GROUP BY sf_account_name
       `),
