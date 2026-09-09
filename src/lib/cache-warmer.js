@@ -3,9 +3,9 @@
 const http = require('http');
 const { query } = require('./db');
 
-const TOP_N        = 30;
-const STAGGER_MS   = 2500;
-const START_DELAY  = 5000;
+const TOP_N        = 20;
+const STAGGER_MS   = 5000;
+const START_DELAY  = 10000;
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
