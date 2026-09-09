@@ -2970,6 +2970,7 @@ class Component extends DCLogic {
       const pendingTarget = window.__argusTargetAccount;
       if (pendingTarget && select.options.length > 1) {
         select.value = pendingTarget;
+        if(this._ssAcct && this._ssAcct.setValue) this._ssAcct.setValue(pendingTarget);
         if (select.value === pendingTarget) {
           window.__argusTargetAccount = null;
           try { localStorage.setItem('argusHealthAccount', pendingTarget); } catch(e) {}
@@ -7859,6 +7860,7 @@ class Component extends DCLogic {
           if(target){
             window.__argusTargetAccount = null;
             select.value = target;
+            if(this._ssAcct && this._ssAcct.setValue) this._ssAcct.setValue(target);
             try{ localStorage.setItem('argusHealthAccount', target); }catch(e){}
             this._triggerHealthLoad(target);
           }
