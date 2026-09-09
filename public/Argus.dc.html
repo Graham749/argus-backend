@@ -347,7 +347,7 @@ input{font-family:inherit;}
               </div>
               <div id="eosEngSubtitle" style="font-size:11px;color:#9d9d9d;margin-top:2px;">Software runs &amp; report downloads</div>
             </div>
-            <span id="eosEngChev" style="font-size:16px;color:#9d9d9d;flex-shrink:0;margin-left:8px;">▴</span>
+            <span id="eosEngChev" style="font-size:16px;color:#9d9d9d;flex-shrink:0;margin-left:8px;">▾</span>
           </div>
           <div id="eosEngCompact" class="hc-compact"></div>
           <div id="eosEngBody">
@@ -2834,7 +2834,7 @@ class Component extends DCLogic {
       { hdr: 'zdCardHeader',   body: 'zdCardBody',    chev: 'zdCollapseChev',    compact: 'zdCompact',    rerender: function(){ window.__renderZdGraph    && window.__renderZdGraph();    } },
       { hdr: 'pbCardHeader',   body: 'pbCardBody',    chev: 'pbCollapseChev',    compact: 'pbCompact',    rerender: function(){ window.__renderPbGraph    && window.__renderPbGraph();    } },
       { hdr: 'phCardHeader',   body: 'phCardBody',    chev: 'phCollapseChev',    compact: 'phCompact'    },
-      { hdr: 'eosEngHeader',  body: 'eosEngBody',    chev: 'eosEngChev',        compact: 'eosEngCompact', startOpen: true, rerender: function(){ window.__renderEosCharts && window.__renderEosCharts(); } },
+      { hdr: 'eosEngHeader',  body: 'eosEngBody',    chev: 'eosEngChev',        compact: 'eosEngCompact', rerender: function(){ window.__renderEosCharts && window.__renderEosCharts(); } },
     ];
     cards.forEach(function(c) {
       var hdr     = document.getElementById(c.hdr);
