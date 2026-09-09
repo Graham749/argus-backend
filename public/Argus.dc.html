@@ -55,7 +55,8 @@ input{font-family:inherit;}
 /* PH: img wrapped in a bordered container div */
 #phCardHeader>div:first-child{width:28px!important;height:28px!important;padding:3px!important;}
 #phCardHeader>div:first-child img{width:20px!important;}
-#sfCollapseChev,#casesCollapseChev,#oppsCollapseChev,#zdCollapseChev,#pbCollapseChev,#phCollapseChev,#epCollapseChev{font-size:13px!important;}
+#eosEngHeader>img{width:28px!important;height:28px!important;}
+#sfCollapseChev,#casesCollapseChev,#oppsCollapseChev,#zdCollapseChev,#pbCollapseChev,#phCollapseChev,#epCollapseChev,#eosEngChev{font-size:13px!important;}
 </style>
 </helmet>
 
@@ -737,15 +738,7 @@ input{font-family:inherit;}
 
         <!-- Engagement History Card -->
         <div id="eosEngCard" style="display:none;background:#fff;border:1px solid #e6e6e5;border-radius:12px;padding:20px;box-shadow:0 1px 3px rgba(60,60,59,0.07);margin-bottom:8px;">
-          <div id="eosEngHeader" style="display:flex;align-items:center;gap:10px;margin-bottom:16px;cursor:pointer;user-select:none;" onclick="
-            var b=document.getElementById('eosEngBody');
-            var c=document.getElementById('eosEngChev');
-            if(this._collapsed===undefined)this._collapsed=false;
-            var col=this._collapsed;
-            b.style.display=col?'block':'none';
-            c.textContent=col?'▴':'▾';
-            this._collapsed=!col;
-          ">
+          <div id="eosEngHeader" style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
             <img src="./assets/EOS.png" alt="EOS" style="width:44px;height:44px;object-fit:contain;border-radius:8px;flex-shrink:0;" />
             <div style="flex:1;">
               <div style="display:flex;align-items:center;gap:8px;">
@@ -2834,6 +2827,7 @@ class Component extends DCLogic {
       { hdr: 'zdCardHeader',   body: 'zdCardBody',    chev: 'zdCollapseChev',    compact: 'zdCompact',    rerender: function(){ window.__renderZdGraph    && window.__renderZdGraph();    } },
       { hdr: 'pbCardHeader',   body: 'pbCardBody',    chev: 'pbCollapseChev',    compact: 'pbCompact',    rerender: function(){ window.__renderPbGraph    && window.__renderPbGraph();    } },
       { hdr: 'phCardHeader',   body: 'phCardBody',    chev: 'phCollapseChev',    compact: 'phCompact'    },
+      { hdr: 'eosEngHeader',  body: 'eosEngBody',    chev: 'eosEngChev',        compact: 'eosEngCompact', startOpen: true, rerender: function(){ window.__renderEosCharts && window.__renderEosCharts(); } },
     ];
     cards.forEach(function(c) {
       var hdr     = document.getElementById(c.hdr);
