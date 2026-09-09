@@ -1794,9 +1794,12 @@ document.addEventListener('click', function(e) {
 });
 
 window.__hcExpand = function(prefix) {
-  var hdr  = document.getElementById(prefix + 'CardHeader');
-  var body = document.getElementById(prefix + 'CardBody');
-  var chev = document.getElementById(prefix + 'CollapseChev');
+  var ids = prefix === 'eos'
+    ? { hdr:'eosEngHeader', body:'eosEngBody', chev:'eosEngChev' }
+    : { hdr:prefix+'CardHeader', body:prefix+'CardBody', chev:prefix+'CollapseChev' };
+  var hdr  = document.getElementById(ids.hdr);
+  var body = document.getElementById(ids.body);
+  var chev = document.getElementById(ids.chev);
   if (!hdr || !body) return;
   hdr._collapsed = false;
   body.style.display = 'block';
@@ -6395,6 +6398,8 @@ class Component extends DCLogic {
         if (loading) loading.style.display = 'none';
         if (!d || !d.matched || !d.has_data) {
           if (noMatch) noMatch.style.display = 'block';
+          var _eosCmpctNm = document.getElementById('eosEngCompact');
+          if (_eosCmpctNm) _eosCmpctNm.innerHTML = '<div class="hc-compact-status"><span class="hc-pill hc-pill-grey">No EOS data</span></div>';
           return;
         }
 
@@ -6416,6 +6421,20 @@ class Component extends DCLogic {
         if (lastParts.length) html += '<div style="font-size:10px;color:#9d9d9d;padding-top:8px;border-top:1px solid #f0f0ef;">'+lastParts.join(' &nbsp;·&nbsp; ')+'</div>';
 
         if (content) { content.innerHTML = html; content.style.display = 'block'; }
+
+        // Subtitle + compact pills
+        if (subtitle) subtitle.textContent = fmt(d.runs.last_3m) + ' runs · ' + fmt(d.downloads.last_3m) + ' downloads (last 3m)';
+        (function(){
+          var pills = [
+            { val: fmt(d.runs.last_3m),              style: 'background:#e0f4f4;color:#1a6b6d;',                      lbl: 'Runs 3m'      },
+            { val: fmt(d.runs.active_users),          style: 'background:#f7f7f6;color:#6d6d6c;border:1px solid #e6e6e5;', lbl: 'Run Users'    },
+            { val: fmt(d.runs.distinct_products),     style: 'background:#f7f7f6;color:#6d6d6c;border:1px solid #e6e6e5;', lbl: 'Products'     },
+            { val: fmt(d.downloads.last_3m),          style: 'background:#eceff1;color:#37474f;',                      lbl: 'Downloads 3m' },
+            { val: fmt(d.downloads.distinct_users),   style: 'background:#f7f7f6;color:#6d6d6c;border:1px solid #e6e6e5;', lbl: 'DL Users'     },
+          ].map(function(p){ return '<span class="hc-pill hc-pill-btn" style="'+p.style+'" onclick="window.__hcExpand&&window.__hcExpand(\'eos\')">'+p.val+' '+p.lbl+'</span>'; }).join('');
+          var el = document.getElementById('eosEngCompact');
+          if (el) el.innerHTML = '<div class="hc-compact-status">' + pills + '</div>';
+        })();
 
         var btnStyle = 'padding:4px 9px;border-radius:5px;border:1px solid;font-size:10px;font-weight:600;cursor:pointer;transition:background .12s,color .12s;';
         var runsProds = ['All'];
