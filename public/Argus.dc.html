@@ -155,9 +155,10 @@ input{font-family:inherit;}
         <!-- Page-level account selector -->
         <div style="background:#fff;border:1px solid #e6e6e5;border-radius:8px;padding:10px 16px;margin-bottom:14px;display:flex;align-items:center;gap:12px;box-shadow:0 1px 3px rgba(60,60,59,0.05);">
           <label style="font-size:11px;font-weight:700;color:#3c3c3b;white-space:nowrap;">SELECT ACCOUNT</label>
-          <select id="sfAccountSelector" style="flex:1;padding:6px 10px;border:1px solid #e6e6e5;border-radius:6px;font-size:13px;cursor:pointer;max-width:480px;">
+          <select id="sfAccountSelector" style="display:none;">
             <option value="">-- Loading accounts... --</option>
           </select>
+          <div id="sfAcctSearchWrap" style="flex:1;max-width:480px;min-width:180px;"></div>
           <button id="collapseAllBtn" style="padding:5px 12px;border:1px solid #e6e6e5;border-radius:6px;background:#f7f7f6;font-size:11px;font-weight:600;color:#6d6d6c;cursor:pointer;white-space:nowrap;flex-shrink:0;">Expand All</button>
         </div>
 
@@ -2656,7 +2657,8 @@ window.makeSearchableSelect = function(wrapperId, options, allValue, allLabel, o
   srch.addEventListener('click', function(e) { e.stopPropagation(); });
 
   updateBtn();
-  state.reset = function() { state.val = allValue; updateBtn(); };
+  state.reset    = function() { state.val = allValue; updateBtn(); };
+  state.setValue = function(v) { state.val = (_opts.indexOf(v) >= 0 || v === allValue) ? v : allValue; updateBtn(); };
   state.update = function(newOpts) {
     _opts = newOpts;
     if (state.val !== allValue && _opts.indexOf(state.val) < 0) {
@@ -2801,6 +2803,7 @@ class Component extends DCLogic {
         return;
       }
       select.value = target;
+      if (this._ssAcct) this._ssAcct.setValue(target);
       this._triggerHealthLoad(target);
     };
     setTimeout(poll, 300);
@@ -3020,6 +3023,7 @@ class Component extends DCLogic {
       const t = window.__argusTargetAccount;
       if (t) {
         select.value = t;
+        if (this._ssAcct) this._ssAcct.setValue(t);
         if (select.value === t) {
           window.__argusTargetAccount = null;
           try { localStorage.setItem('argusHealthAccount', t); } catch(e) {}
@@ -5525,6 +5529,28 @@ class Component extends DCLogic {
       // _triggerHealthLoad is idempotent — safe to call even if setV / _initHealthView already fired
       setTimeout(() => this._triggerHealthLoad(target), 100);
     }
+
+    // Searchable account dropdown
+    const _acctNames = accounts.map(a => a.name);
+    if (!this._ssAcct) {
+      this._ssAcct = window.makeSearchableSelect('sfAcctSearchWrap', _acctNames, '', '— Select Account —', (acctName) => {
+        if (!acctName) return;
+        window.__healthLoadStarted = null;
+        this.updateAccountTitles(acctName);
+        try { localStorage.setItem('argusHealthAccount', acctName); } catch(e) {}
+        this.loadAccountWithMatchCheck(acctName);
+      });
+      // Make the button fill the wrapper width
+      var _sw = document.getElementById('sfAcctSearchWrap');
+      if (_sw) { _sw.style.display = 'block'; _sw.style.flex = '1'; }
+      var _sb = _sw && _sw.querySelector('button');
+      if (_sb) { _sb.style.width = '100%'; _sb.style.minWidth = '0'; _sb.style.fontSize = '13px'; _sb.style.padding = '6px 10px'; _sb.style.borderRadius = '6px'; _sb.style.borderWidth = '1px'; }
+      var _sp = _sw && _sw.querySelector('.__ss-panel');
+      if (_sp) { _sp.style.minWidth = '300px'; }
+    } else {
+      this._ssAcct.update(_acctNames);
+    }
+    if (target && this._ssAcct) this._ssAcct.setValue(target);
   }
 
   updateAccountTitles(accountName){
