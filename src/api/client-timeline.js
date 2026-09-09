@@ -173,14 +173,41 @@ module.exports = async function clientTimeline(req, res) {
     const zdEsc = (zd_org_id    || '').replace(/'/g, "''");
     const pbEsc = (pb_company_id|| '').toLowerCase().replace(/'/g, "''");
 
-    // Step 2: PH tenant lookup (cached per SF account ID — 15min TTL)
+    // Step 2: PH tenant lookup — use domain-based lookup against gold_posthog_account_activity
+    // (matches ph-trends.js). gold_mdm_posthog can map to subdomain tenants (e.g. marketing.*)
+    // that have no events in posthog_notebook_events, so we prefer the activity table which
+    // holds only tenants with real usage data.
     const phCacheKey = `ph_tenant:${sf_account_id}`;
     let phTenant = cacheGet(phCacheKey);
-    if (phTenant === undefined) {
-      const phRows = await query(`
-        SELECT TOP 1 ph_tenant FROM dbo.gold_mdm_posthog WHERE sf_account_id = '${sfEsc}'
-      `);
-      phTenant = phRows?.[0]?.ph_tenant || null;
+    if (phTenant == null) {
+      const domains = new Set();
+      const add = v => { if (v) domains.add(v.trim().toLowerCase()); };
+      add(mdm.sf_website_domain);
+      if (mdm.sf_eos_access_domains)   mdm.sf_eos_access_domains.split(';').forEach(add);
+      if (mdm.sf_eos_access_domains_2) mdm.sf_eos_access_domains_2.split(';').forEach(add);
+      add(mdm.zd_primary_email_domain);
+      if (mdm.sf_account_code) add(mdm.sf_account_code);
+      if (mdm.sf_eos_tenant)   add(mdm.sf_eos_tenant);
+      domains.delete('');
+
+      if (domains.size) {
+        const inList = [...domains].map(d => `'${d.replace(/'/g, "''")}'`).join(',');
+        const activityRows = await query(`
+          SELECT TOP 1 ph_tenant FROM dbo.gold_posthog_account_activity
+          WHERE ph_tenant IN (${inList})
+          ORDER BY ph_total_events DESC
+        `);
+        phTenant = activityRows?.[0]?.ph_tenant || null;
+      }
+
+      // Fallback to gold_mdm_posthog if domain lookup finds nothing
+      if (!phTenant) {
+        const phRows = await query(`
+          SELECT TOP 1 ph_tenant FROM dbo.gold_mdm_posthog WHERE sf_account_id = '${sfEsc}'
+        `);
+        phTenant = phRows?.[0]?.ph_tenant || null;
+      }
+
       cacheSet(phCacheKey, phTenant, 15 * 60 * 1000);
     }
     const phEsc = (phTenant || '').replace(/'/g, "''");

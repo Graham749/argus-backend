@@ -6,6 +6,7 @@
 <script src="./mock-data.js"></script>
 <script src="./support.js"></script>
 <script src="./analytics.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@0.9.8/dist/driver.min.css"/>
 <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/d3-sankey@0.12.3/dist/d3-sankey.min.js"></script>
@@ -77,6 +78,10 @@ input{font-family:inherit;}
         <span style="width:7px;height:7px;border-radius:50%;background:#00be86;box-shadow:0 0 0 3px rgba(0,190,134,0.25);"></span>
         {{ syncedAgo }}
       </span>
+      <button id="tourBtn" style="display:flex;align-items:center;gap:6px;padding:5px 12px;background:transparent;border:1px solid rgba(255,255,255,0.25);border-radius:6px;color:rgba(255,255,255,0.8);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;letter-spacing:0.02em;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;flex-shrink:0;"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+        Take a tour
+      </button>
       <span style="font-size:13px;color:rgba(255,255,255,0.7);">{{ currentUser.name }}</span>
       <span style="width:32px;height:32px;border-radius:50%;background:#52524f;border:1.5px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;">{{ currentUser.initials }}</span>
     </div>
@@ -5532,32 +5537,28 @@ class Component extends DCLogic {
       setTimeout(() => this._triggerHealthLoad(target), 100);
     }
 
-    // Searchable account dropdown — retry until div is in DOM (sc-if may delay rendering)
-    const _acctNames = accounts.map(a => a.name);
-    const _savedAcct = target;
-    const _doInitSS = () => {
-      const _sw = document.getElementById('sfAcctSearchWrap');
-      if (!_sw) { setTimeout(_doInitSS, 100); return; }
-      if (!this._ssAcct || !this._ssAcct.setValue) {
-        this._ssAcct = window.makeSearchableSelect('sfAcctSearchWrap', _acctNames, '', '— Select Account —', (acctName) => {
-          if (!acctName) return;
-          window.__healthLoadStarted = null;
-          this.updateAccountTitles(acctName);
-          try { localStorage.setItem('argusHealthAccount', acctName); } catch(e) {}
-          this.loadAccountWithMatchCheck(acctName);
-        });
-        if (!this._ssAcct || !this._ssAcct.setValue) { setTimeout(_doInitSS, 100); return; }
-        _sw.style.display = 'block'; _sw.style.flex = '1';
-        var _sb = _sw.querySelector('button');
-        if (_sb) { _sb.style.width='100%'; _sb.style.minWidth='0'; _sb.style.fontSize='13px'; _sb.style.padding='6px 10px'; _sb.style.borderRadius='6px'; _sb.style.borderWidth='1px'; _sb.style.textAlign='left'; }
-        var _sp = _sw.querySelector('.__ss-panel');
-        if (_sp) _sp.style.minWidth = '300px';
-      } else {
-        this._ssAcct.update(_acctNames);
-      }
-      if (_savedAcct && this._ssAcct.setValue) this._ssAcct.setValue(_savedAcct);
-    };
-    _doInitSS();
+    this._initAcctSearch(target);
+  }
+
+  _initAcctSearch(target) {
+    const _sw = document.getElementById('sfAcctSearchWrap');
+    if (!_sw) { setTimeout(() => this._initAcctSearch(target), 100); return; }
+    const _names = (window.__argusAccountsList || this.cachedAccounts || []).map(a => a.name);
+    if (!_names.length) { setTimeout(() => this._initAcctSearch(target), 100); return; }
+    this._ssAcct = window.makeSearchableSelect('sfAcctSearchWrap', _names, '', '— Select Account —', (acctName) => {
+      if (!acctName) return;
+      window.__healthLoadStarted = null;
+      this.updateAccountTitles(acctName);
+      try { localStorage.setItem('argusHealthAccount', acctName); } catch(e) {}
+      this.loadAccountWithMatchCheck(acctName);
+    });
+    if (!this._ssAcct || !this._ssAcct.setValue) { setTimeout(() => this._initAcctSearch(target), 100); return; }
+    _sw.style.display = 'block'; _sw.style.flex = '1';
+    const _sb = _sw.querySelector('button');
+    if (_sb) { _sb.style.width='100%'; _sb.style.minWidth='0'; _sb.style.fontSize='13px'; _sb.style.padding='6px 10px'; _sb.style.borderRadius='6px'; _sb.style.borderWidth='1px'; _sb.style.textAlign='left'; }
+    const _sp = _sw.querySelector('.__ss-panel');
+    if (_sp) _sp.style.minWidth = '300px';
+    if (target && this._ssAcct.setValue) this._ssAcct.setValue(target);
   }
 
   updateAccountTitles(accountName){
@@ -7857,12 +7858,17 @@ class Component extends DCLogic {
           // Re-wire collapse handlers every time we land on health — DOM may have been
           // re-rendered by setState, which wipes style.display and onclick bindings.
           this.setupCardCollapses();
+          // Always re-init the searchable dropdown: sc-if re-renders DOM on navigation
+          // so _ssAcct holds stale references to detached elements.
+          this._ssAcct = null;
           if(target){
             window.__argusTargetAccount = null;
             select.value = target;
-            if(this._ssAcct && this._ssAcct.setValue) this._ssAcct.setValue(target);
             try{ localStorage.setItem('argusHealthAccount', target); }catch(e){}
+            this._initAcctSearch(target);
             this._triggerHealthLoad(target);
+          } else {
+            this._initAcctSearch(null);
           }
         } else {
           setTimeout(waitForHealthDOM, 50);
@@ -9946,5 +9952,7 @@ class Component extends DCLogic {
 
 })();
 </script>
+<script src="https://cdn.jsdelivr.net/npm/driver.js@0.9.8/dist/driver.min.js"></script>
+<script src="./tour.js"></script>
 </body>
 </html>

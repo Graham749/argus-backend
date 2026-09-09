@@ -11,12 +11,19 @@ async function getAccountsList(req, res) {
     }
 
     const results = await query(`
-      SELECT DISTINCT ca.account_name
+      SELECT DISTINCT ca.account_name AS account_name
       FROM [dbo].[gold_sf_subscriptions] s
       INNER JOIN [dbo].[gold_sf_customer_accounts] ca ON s.account_id = ca.account_id
       WHERE ca.parent_account_id IS NULL
         AND s.account_name IS NOT NULL
-      ORDER BY ca.account_name ASC
+
+      UNION
+
+      SELECT DISTINCT sf_account_name AS account_name
+      FROM [dbo].[gold_mdm_eos_engagement]
+      WHERE sf_account_name IS NOT NULL
+
+      ORDER BY account_name ASC
     `);
 
     const payload = { accounts: results.map(r => ({ name: r.account_name, value: r.account_name })) };
