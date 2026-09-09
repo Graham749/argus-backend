@@ -741,7 +741,7 @@ input{font-family:inherit;}
             var c=document.getElementById('eosEngChev');
             var col=this._collapsed;
             b.style.display=col?'block':'none';
-            c.textContent=col?'▾':'▾';
+            c.textContent=col?'▴':'▾';
             this._collapsed=!col;
           ">
             <div style="width:44px;height:44px;flex-shrink:0;background:#e6f4f4;border-radius:8px;display:flex;align-items:center;justify-content:center;">
@@ -6219,7 +6219,9 @@ class Component extends DCLogic {
       return (fullPts||[]).map(function(p){ return { v: byMonth[p.label] || 0, label: p.label }; });
     };
 
-    // Renders runs/downloads using the same 19-month window as Cases/Tickets/Usage/Notes widgets
+    // Renders runs/downloads using the same 19-month spine as ZD/Cases/PB charts.
+    // Uses __epLastTimeline.months when available (ensures Sept current-month column matches).
+    // Falls back to pts-derived months while timeline is still loading.
     var renderEosTimeline = function(mountId, pts, color, onMonthClick) {
       var container = document.getElementById(mountId);
       if (!container) return;
@@ -6231,6 +6233,9 @@ class Component extends DCLogic {
       var byMonth = {};
       (pts || []).forEach(function(p){ byMonth[p.label] = p.v; });
       var values = months.map(function(m){ return byMonth[m] !== undefined ? byMonth[m] : null; });
+      var parentEl = container.parentElement;
+      var parentW  = parentEl ? (parentEl.clientWidth || parentEl.offsetWidth || 0) : 0;
+      if (!parentW) { console.warn('[eosTimeline] '+mountId+' has zero width — card collapsed?'); return; }
       window.__renderWidgetTimeline({
         container: container,
         values: values,
@@ -6332,6 +6337,8 @@ class Component extends DCLogic {
     // Re-attaches per-month bar click handler after each re-render
     window.eosRunsFilter = function(prod) {
       try {
+        var all  = ((window.__eosEngDrill || {}).runs) || [];
+        console.log('[eosRunsFilter] prod='+prod+' drill_rows='+all.length+' pts='+((window.__eosRunsPts||[]).length));
         window.__eosRunsActiveProd = prod;
         document.querySelectorAll('.eos-runs-filter-btn').forEach(function(b){
           var on = b.dataset.prod === prod;
@@ -6339,7 +6346,6 @@ class Component extends DCLogic {
           b.style.color       = on ? '#fff'    : '#3c3c3b';
           b.style.borderColor = on ? '#288184' : '#d0d0d0';
         });
-        var all  = ((window.__eosEngDrill || {}).runs) || [];
         var rows = prod === 'All' ? all : all.filter(function(r){ return (r.product||'') === prod; });
         var pts  = prod === 'All' ? window.__eosRunsPts : drillToPts(rows, window.__eosRunsPts);
         renderEosTimeline('eosRunsChart', pts, '#288184', makeBarClickHandler('Runs'));
@@ -6457,6 +6463,23 @@ class Component extends DCLogic {
           if (epWrap && epWrap.style.display !== 'none') window.__epRender(epWrap, window.__epLastData);
         }
 
+        // Register re-render callback so fetchEngagementTimeline can re-draw these charts
+        // with the correct __epLastTimeline.months spine when timeline data arrives later.
+        // Respects the active product filter so a filtered view stays filtered after re-render.
+        window.__renderEosCharts = function() {
+          var activeProd = window.__eosRunsActiveProd || 'All';
+          var runsPts;
+          if (activeProd === 'All') {
+            runsPts = window.__eosRunsPts;
+          } else {
+            var allR = ((window.__eosEngDrill || {}).runs) || [];
+            var filtR = allR.filter(function(r){ return (r.product||'') === activeProd; });
+            runsPts = drillToPts(filtR, window.__eosRunsPts);
+          }
+          renderEosTimeline('eosRunsChart',      runsPts,             '#288184', makeBarClickHandler('Runs'));
+          renderEosTimeline('eosDownloadsChart', window.__eosDlPts,   '#546e7a', makeBarClickHandler('Downloads'));
+        };
+
         if (subtitle) subtitle.textContent = fmt(d.runs.last_3m)+' runs · '+fmt(d.downloads.last_3m)+' downloads (last 3m)';
       })
       .catch(function(e) {
@@ -6507,10 +6530,11 @@ class Component extends DCLogic {
 
         window.__epLastTimeline = data; // shared by widget timeline graphs
         // Re-render widget graphs for cards that loaded before this timeline arrived
-        if (window.__renderOppsGraph)  window.__renderOppsGraph();
-        if (window.__renderCasesGraph) window.__renderCasesGraph();
-        if (window.__renderZdGraph)    window.__renderZdGraph();
-        if (window.__renderPbGraph)    window.__renderPbGraph();
+        if (window.__renderOppsGraph)   window.__renderOppsGraph();
+        if (window.__renderCasesGraph)  window.__renderCasesGraph();
+        if (window.__renderZdGraph)     window.__renderZdGraph();
+        if (window.__renderPbGraph)     window.__renderPbGraph();
+        if (window.__renderEosCharts)   window.__renderEosCharts(); // align EOS spine to current month
         window.__epRender(wrap, data);
       })
       .catch(err => {
