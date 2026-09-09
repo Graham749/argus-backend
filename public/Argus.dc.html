@@ -739,12 +739,15 @@ input{font-family:inherit;}
           <div id="eosEngHeader" style="display:flex;align-items:center;gap:10px;margin-bottom:16px;cursor:pointer;user-select:none;" onclick="
             var b=document.getElementById('eosEngBody');
             var c=document.getElementById('eosEngChev');
+            if(this._collapsed===undefined)this._collapsed=false;
             var col=this._collapsed;
             b.style.display=col?'block':'none';
             c.textContent=col?'▴':'▾';
             this._collapsed=!col;
           ">
-            <img src="./assets/EOS 200px.png" alt="EOS" style="width:44px;height:44px;object-fit:contain;flex-shrink:0;" />
+            <div style="width:44px;height:44px;flex-shrink:0;background:#fff;border:1px solid #e6e6e5;border-radius:8px;display:flex;align-items:center;justify-content:center;padding:6px;box-sizing:border-box;">
+              <img src="./assets/EOS.png" alt="EOS" style="width:28px;height:28px;object-fit:contain;" />
+            </div>
             <div style="flex:1;">
               <div style="display:flex;align-items:center;gap:8px;">
                 <div style="font-size:13px;font-weight:700;">EOS Engagement</div>
@@ -752,7 +755,7 @@ input{font-family:inherit;}
               </div>
               <div id="eosEngSubtitle" style="font-size:11px;color:#9d9d9d;margin-top:2px;">Software runs &amp; report downloads</div>
             </div>
-            <span id="eosEngChev" style="font-size:16px;color:#9d9d9d;flex-shrink:0;margin-left:8px;">▾</span>
+            <span id="eosEngChev" style="font-size:16px;color:#9d9d9d;flex-shrink:0;margin-left:8px;">▴</span>
           </div>
           <div id="eosEngCompact" class="hc-compact"></div>
           <div id="eosEngBody">
