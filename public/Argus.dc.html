@@ -2035,7 +2035,7 @@ window.__epRender = function(container, data) {
   const SECT_HDR   = 26;   // section label height
   const OPPS_AX_H  = 20;   // month axis below opps bars
   const OPPS_SEP   = 22;   // gap below opps axis to engagement section
-  const N_ROWS     = 4;    // cases, tickets, usage, notes
+  const N_ROWS     = 6;    // runs, downloads, cases, tickets, usage, notes
   const AX_H       = 18;
 
   const RNEW_SECT_Y = PAD_T;
@@ -2050,12 +2050,18 @@ window.__epRender = function(container, data) {
   const MABBR     = ['J','F','M','A','M','J','J','A','S','O','N','D'];
   const TYPE_COLS = ['#1565c0','#388e3c','#f57c00','#6a1b9a','#00838f','#c62828','#546e7a','#ad1457'];
 
-  // Engagement rows only — Opportunities is its own centred section between Renewals and Engagement.
+  // Engagement rows — Runs + Downloads at top, then Cases/Tickets/Usage/Notes.
+  var runsByMonth = {};
+  (window.__eosRunsPts || []).forEach(function(pt) { runsByMonth[pt.label] = pt.v; });
+  var dlByMonth = {};
+  (window.__eosDlPts || []).forEach(function(pt) { dlByMonth[pt.label] = pt.v; });
   const ROWS = [
-    { key:'cases',   label:'Cases',   source:'Salesforce',   color:'#288184', nullBg:'#f5f5f5', positive:false, bench:(data.benchmark||{}).cases   || {p25:0,p50:0.5,p75:1.5,p90:4}  },
-    { key:'support', label:'Tickets', source:'Zendesk',      color:'#288184', nullBg:'#f5f5f5', positive:false, bench:(data.benchmark||{}).support || {p25:0,p50:1,p75:3,p90:8}      },
-    { key:'usage',   label:'Usage',   source:'PostHog',      color:'#288184', nullBg:'#f5f5f5', positive:true,  bench:(data.benchmark||{}).usage   || {p25:2,p50:8,p75:22,p90:55}    },
-    { key:'product', label:'Notes',   source:'ProductBoard', color:'#288184', nullBg:'#f5f5f5', positive:true,  bench:(data.benchmark||{}).product || {p25:0,p50:0.3,p75:1.2,p90:4}  },
+    { key:'runs',      label:'Runs',      source:'EOS',          color:'#288184', nullBg:'#f5f5f5', positive:true,  noBadge:true, _monthMap:runsByMonth },
+    { key:'downloads', label:'Downloads', source:'EOS',          color:'#546e7a', nullBg:'#f5f5f5', positive:true,  noBadge:true, _monthMap:dlByMonth  },
+    { key:'cases',     label:'Cases',     source:'Salesforce',   color:'#288184', nullBg:'#f5f5f5', positive:false, bench:(data.benchmark||{}).cases   || {p25:0,p50:0.5,p75:1.5,p90:4}  },
+    { key:'support',   label:'Tickets',   source:'Zendesk',      color:'#288184', nullBg:'#f5f5f5', positive:false, bench:(data.benchmark||{}).support || {p25:0,p50:1,p75:3,p90:8}      },
+    { key:'usage',     label:'Usage',     source:'PostHog',      color:'#288184', nullBg:'#f5f5f5', positive:true,  bench:(data.benchmark||{}).usage   || {p25:2,p50:8,p75:22,p90:55}    },
+    { key:'product',   label:'Notes',     source:'ProductBoard', color:'#288184', nullBg:'#f5f5f5', positive:true,  bench:(data.benchmark||{}).product || {p25:0,p50:0.3,p75:1.2,p90:4}  },
   ];
 
   function s(tag, a, txt) {
@@ -2415,11 +2421,20 @@ window.__epRender = function(container, data) {
   }, 'ENGAGEMENT · Historic'));
   svg.appendChild(s('line', { x1:LBL_W+145, y1:HIST_SECT_Y+12, x2:LBL_W+CW, y2:HIST_SECT_Y+12, stroke:'#e0e0df', 'stroke-width':1 }));
 
-  // ── Data rows (Cases, Tickets, Usage, Notes) ──────────────────────────────────
+  // ── Data rows (Runs, Downloads, Cases, Tickets, Usage, Notes) ────────────────
   ROWS.forEach(function(row, ri) {
-    var vals = data[row.key] || [];
     var rowY = HIST_Y + ri*(ROW_H+GAP);
-    var maxV = Math.max(row.bench.p90||0.01, Math.max.apply(null, vals.filter(function(v){return v!==null;})||[0]));
+    var monthMap = {};
+    var vals;
+    if (row._monthMap) {
+      monthMap = row._monthMap;
+      vals = data.months.map(function(m) { var v = row._monthMap[m]; return v !== undefined ? Number(v) : null; });
+    } else {
+      vals = data[row.key] || [];
+      data.months.forEach(function(m, i) { monthMap[m] = vals[i]; });
+    }
+    var benchP90 = (row.bench && row.bench.p90) ? row.bench.p90 : 0;
+    var maxV = Math.max(benchP90, Math.max.apply(null, vals.filter(function(v){return v!==null&&v!==undefined;})||[0]), 0.01);
 
     svg.appendChild(s('text', {
       x:LBL_W-6, y:rowY+ROW_H/2-4, 'text-anchor':'end', 'dominant-baseline':'middle',
@@ -2431,9 +2446,6 @@ window.__epRender = function(container, data) {
     }, row.source));
 
     var BAR_MAX = ROW_H - 12;
-
-    var monthMap = {};
-    data.months.forEach(function(m, i) { monthMap[m] = (data[row.key]||[])[i]; });
 
     backCols.forEach(function(col, ci) {
       var colX = LBL_W + ci * CELL;
@@ -2449,10 +2461,10 @@ window.__epRender = function(container, data) {
       if (!isNull && v > 0 && maxV > 0) {
         var barH2 = Math.max(4, Math.round((v/maxV)*BAR_MAX));
         var barY2 = rowY + ROW_H - barH2;
-        var unitLabel = row.key==='support'?' tickets':row.key==='cases'?' cases':row.key==='usage'?' users':' notes';
+        var unitLabel = row.key==='runs'?' runs':row.key==='downloads'?' downloads':row.key==='support'?' tickets':row.key==='cases'?' cases':row.key==='usage'?' users':' notes';
         var bar = s('rect', { x:colX+1, y:barY2, width:CAL_BAR_W, height:barH2, fill:row.color, rx:3, opacity:0.85 });
         var t = s('title');
-        t.textContent = col.key + ': ' + v + unitLabel + ' · median ' + (row.bench.p50||0).toFixed(1);
+        t.textContent = col.key + ': ' + v + unitLabel + (row.bench ? ' · median ' + (row.bench.p50||0).toFixed(1) : '');
         bar.appendChild(t);
         svg.appendChild(bar);
 
@@ -2466,7 +2478,7 @@ window.__epRender = function(container, data) {
       }
     });
 
-    if (row.bench.p50 > 0 && maxV > 0) {
+    if (row.bench && row.bench.p50 > 0 && maxV > 0) {
       var ly = rowY + ROW_H - Math.min(BAR_MAX, Math.round((row.bench.p50/maxV)*BAR_MAX));
       svg.appendChild(s('line', {
         x1:LBL_W, y1:ly, x2:LBL_W+CW, y2:ly,
@@ -2474,52 +2486,54 @@ window.__epRender = function(container, data) {
       }));
     }
 
-    var recent = vals.slice(-3).filter(function(v){return v!==null;});
-    var avg3   = recent.length ? recent.reduce(function(a,v){return a+v;},0)/recent.length : 0;
-    var rawP   = bPct(avg3, row.bench);
-    var adjP   = row.positive ? rawP : 100 - rawP;
-    var hasData = vals.some(function(v){return v!==null;});
+    if (!row.noBadge) {
+      var recent = vals.slice(-3).filter(function(v){return v!==null;});
+      var avg3   = recent.length ? recent.reduce(function(a,v){return a+v;},0)/recent.length : 0;
+      var rawP   = bPct(avg3, row.bench);
+      var adjP   = row.positive ? rawP : 100 - rawP;
+      var hasData = vals.some(function(v){return v!==null;});
 
-    function ordSuffix(n) {
-      var s = ['th','st','nd','rd'], v = n % 100;
-      return n + (s[(v-20)%10] || s[v] || s[0]);
-    }
-    var pctLabel = !hasData ? '—' : ordSuffix(avg3 > 0 ? rawP : 0);
-    var badgeEl  = s('text', {
-      x:LBL_W+CW+6, y:rowY+9, 'dominant-baseline':'middle',
-      'font-size':9, 'font-weight':700,
-      'font-family':'Lato,Helvetica Neue,Arial,sans-serif',
-      fill:avg3 > 0 ? pColor(adjP) : '#d0d0d0'
-    });
-    badgeEl.textContent = pctLabel;
-    var dimName = row.key==='usage' ? 'PostHog usage' : row.key==='support' ? 'Zendesk tickets'
-      : row.key==='cases' ? 'Salesforce cases' : 'ProductBoard notes';
-    var tipTxt = avg3 > 0
-      ? '<strong style="font-size:12px;display:block;margin-bottom:3px;">Engagement Percentile</strong>'
-        + 'This account is in the <strong>' + ordSuffix(rawP) + ' percentile</strong> across Aurora clients<br>'
-        + '<span style="color:#9d9d9d;font-size:10px;">Higher means more engagement than more clients</span><br><br>'
-        + 'Dimension: ' + dimName + '<br>'
-        + '3-month avg: ' + avg3.toFixed(1)
-        + (row.positive ? '' : '<br><em style="color:#e65100;">Lower is healthier for this metric</em>')
-      : '<strong style="font-size:12px;display:block;margin-bottom:3px;">Engagement Percentile</strong>'
-        + 'No ' + dimName + ' in the last 3 months';
-    var titleEl = document.createElementNS('http://www.w3.org/2000/svg', 'title');
-    titleEl.textContent = tipTxt.replace(/<[^>]+>/g, '');
-    badgeEl.appendChild(titleEl);
-    badgeEl.style.cursor = 'help';
-    badgeEl.addEventListener('mouseenter', function(e) { window.__showTextTip && window.__showTextTip(e, tipTxt); });
-    badgeEl.addEventListener('mousemove',  function(e) { window.engMoveTip  && window.engMoveTip(e); });
-    badgeEl.addEventListener('mouseleave', function()   { window.engHideTip  && window.engHideTip(); });
-    svg.appendChild(badgeEl);
+      function ordSuffix(n) {
+        var s = ['th','st','nd','rd'], v = n % 100;
+        return n + (s[(v-20)%10] || s[v] || s[0]);
+      }
+      var pctLabel = !hasData ? '—' : ordSuffix(avg3 > 0 ? rawP : 0);
+      var badgeEl  = s('text', {
+        x:LBL_W+CW+6, y:rowY+9, 'dominant-baseline':'middle',
+        'font-size':9, 'font-weight':700,
+        'font-family':'Lato,Helvetica Neue,Arial,sans-serif',
+        fill:avg3 > 0 ? pColor(adjP) : '#d0d0d0'
+      });
+      badgeEl.textContent = pctLabel;
+      var dimName = row.key==='usage' ? 'PostHog usage' : row.key==='support' ? 'Zendesk tickets'
+        : row.key==='cases' ? 'Salesforce cases' : 'ProductBoard notes';
+      var tipTxt = avg3 > 0
+        ? '<strong style="font-size:12px;display:block;margin-bottom:3px;">Engagement Percentile</strong>'
+          + 'This account is in the <strong>' + ordSuffix(rawP) + ' percentile</strong> across Aurora clients<br>'
+          + '<span style="color:#9d9d9d;font-size:10px;">Higher means more engagement than more clients</span><br><br>'
+          + 'Dimension: ' + dimName + '<br>'
+          + '3-month avg: ' + avg3.toFixed(1)
+          + (row.positive ? '' : '<br><em style="color:#e65100;">Lower is healthier for this metric</em>')
+        : '<strong style="font-size:12px;display:block;margin-bottom:3px;">Engagement Percentile</strong>'
+          + 'No ' + dimName + ' in the last 3 months';
+      var titleEl = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+      titleEl.textContent = tipTxt.replace(/<[^>]+>/g, '');
+      badgeEl.appendChild(titleEl);
+      badgeEl.style.cursor = 'help';
+      badgeEl.addEventListener('mouseenter', function(e) { window.__showTextTip && window.__showTextTip(e, tipTxt); });
+      badgeEl.addEventListener('mousemove',  function(e) { window.engMoveTip  && window.engMoveTip(e); });
+      badgeEl.addEventListener('mouseleave', function()   { window.engHideTip  && window.engHideTip(); });
+      svg.appendChild(badgeEl);
 
-    if (avg3 > 0) {
-      var units = row.key==='usage' ? ' users' : row.key==='support' ? ' tickets'
-        : row.key==='cases' ? ' cases' : ' notes';
-      var avgDisp = avg3 >= 10 ? Math.round(avg3) : avg3.toFixed(1).replace(/\.0$/,'');
-      svg.appendChild(s('text', {
-        x:LBL_W+CW+6, y:rowY+21, 'dominant-baseline':'middle',
-        'font-size':8, 'font-family':'Lato,Helvetica Neue,Arial,sans-serif', fill:'#c0c0c0'
-      }, 'avg '+avgDisp+units));
+      if (avg3 > 0) {
+        var units = row.key==='usage' ? ' users' : row.key==='support' ? ' tickets'
+          : row.key==='cases' ? ' cases' : ' notes';
+        var avgDisp = avg3 >= 10 ? Math.round(avg3) : avg3.toFixed(1).replace(/\.0$/,'');
+        svg.appendChild(s('text', {
+          x:LBL_W+CW+6, y:rowY+21, 'dominant-baseline':'middle',
+          'font-size':8, 'font-family':'Lato,Helvetica Neue,Arial,sans-serif', fill:'#c0c0c0'
+        }, 'avg '+avgDisp+units));
+      }
     }
   });
 
@@ -6205,6 +6219,28 @@ class Component extends DCLogic {
       return (fullPts||[]).map(function(p){ return { v: byMonth[p.label] || 0, label: p.label }; });
     };
 
+    // Renders runs/downloads using the same 19-month window as Cases/Tickets/Usage/Notes widgets
+    var renderEosTimeline = function(mountId, pts, color, onMonthClick) {
+      var container = document.getElementById(mountId);
+      if (!container) return;
+      var months = (window.__epLastTimeline && window.__epLastTimeline.months) || [];
+      if (!months.length) {
+        var labels = (pts || []).map(function(p){ return p.label; }).sort();
+        months = labels.slice(-19);
+      }
+      var byMonth = {};
+      (pts || []).forEach(function(p){ byMonth[p.label] = p.v; });
+      var values = months.map(function(m){ return byMonth[m] !== undefined ? byMonth[m] : null; });
+      window.__renderWidgetTimeline({
+        container: container,
+        values: values,
+        months: months,
+        color: color,
+        nullBg: '#f5f5f5',
+        onMonthClick: onMonthClick || function(){}
+      });
+    };
+
     // Render drill table tbody — called both on initial load and on filter change
     var renderDrillRows = function(type, rows) {
       var tbody = document.getElementById('eos'+type+'DrillBody');
@@ -6294,7 +6330,7 @@ class Component extends DCLogic {
         var all  = ((window.__eosEngDrill || {}).runs) || [];
         var rows = prod === 'All' ? all : all.filter(function(r){ return (r.product||'') === prod; });
         var pts  = prod === 'All' ? window.__eosRunsPts : drillToPts(rows, window.__eosRunsPts);
-        renderBarChart('eosRunsChart', pts, '#288184', { onBarClick: makeBarClickHandler('Runs') });
+        renderEosTimeline('eosRunsChart', pts, '#288184', makeBarClickHandler('Runs'));
         (window.eosRenderDrillRows || renderDrillRows)('Runs', rows);
         window.eosShowDrill('runs');   // auto-open drill so filtered result is immediately visible
       } catch(err) { console.error('[eosRunsFilter]', err); }
@@ -6306,7 +6342,7 @@ class Component extends DCLogic {
         var all  = ((window.__eosEngDrill || {}).downloads) || [];
         var rows = (!prod || prod === 'All') ? all : all.filter(function(r){ return (r.product||'') === prod; });
         var pts  = (!prod || prod === 'All') ? window.__eosDlPts : drillToPts(rows, window.__eosDlPts);
-        renderBarChart('eosDownloadsChart', pts, '#546e7a', { onBarClick: makeBarClickHandler('Downloads') });
+        renderEosTimeline('eosDownloadsChart', pts, '#546e7a', makeBarClickHandler('Downloads'));
         (window.eosRenderDrillRows || renderDrillRows)('Downloads', rows);
         window.eosShowDrill('downloads');  // auto-open drill so filtered result is immediately visible
       } catch(err) { console.error('[eosDlFilter]', err); }
@@ -6396,56 +6432,18 @@ class Component extends DCLogic {
         // Render charts (two-pass — DOM now laid out, offsetWidth is real)
         // Per-month bar click opens drill filtered to that month (SF-style)
         requestAnimationFrame(function(){
-          renderBarChart('eosRunsChart',      window.__eosRunsPts, '#288184', { onBarClick: makeBarClickHandler('Runs') });
-          renderBarChart('eosDownloadsChart', window.__eosDlPts,   '#546e7a', { onBarClick: makeBarClickHandler('Downloads') });
+          renderEosTimeline('eosRunsChart',      window.__eosRunsPts, '#288184', makeBarClickHandler('Runs'));
+          renderEosTimeline('eosDownloadsChart', window.__eosDlPts,   '#546e7a', makeBarClickHandler('Downloads'));
         });
 
         // Populate drill tables
         renderDrillRows('Runs',      d.drill.runs      || []);
         renderDrillRows('Downloads', d.drill.downloads || []);
 
-        // Restore Engagement Pulse bar charts — full-width rows, same style
-        // EP bar charts — no card-within-card; match EP's own section label style
-        // (uppercase, small, muted; charts are borderless, same as EP's inline SVG sections)
-        var epTrends = document.getElementById('eosEpTrends');
-        if (epTrends) {
-          epTrends.innerHTML = '';
-          var epCharts = [];  // collect {id, pts, color} for batch render after display:block
-          // EP rows use the same 76px label column as the EP SVG (LBL_W=76, RHS_W=76)
-          // so the bar area aligns with the EP timeline bar columns
-          var makeEpRow = function(label, pts, color, total3m, chartId) {
-            if (!pts || !pts.length) return;
-            // Flex row: [76px label col] [chart area, flex:1] [76px right spacer]
-            // matches EP SVG coordinate system exactly
-            var row = document.createElement('div');
-            row.style.cssText = 'display:flex;align-items:center;margin-bottom:6px;';
-            var lbl = document.createElement('div');
-            lbl.style.cssText = 'width:76px;flex-shrink:0;padding-right:6px;box-sizing:border-box;';
-            lbl.innerHTML = '<div style="font-size:10px;font-weight:700;color:#6d6d6c;letter-spacing:0.04em;text-transform:uppercase;line-height:1.2;">'+label+'</div>'
-              +'<div style="font-size:10px;color:#9d9d9d;">'+fmt(total3m)+' last 3m</div>';
-            var mount = document.createElement('div');
-            mount.id = chartId;
-            mount.style.cssText = 'flex:1;min-width:0;';
-            var rhs = document.createElement('div');
-            rhs.style.cssText = 'width:76px;flex-shrink:0;';
-            row.appendChild(lbl);
-            row.appendChild(mount);
-            row.appendChild(rhs);
-            epTrends.appendChild(row);
-            epCharts.push({id:chartId, pts:pts, color:color});
-          };
-          makeEpRow('Completed Runs',   window.__eosRunsPts, '#288184', d.runs.last_3m,      'eosEpRunsChart');
-          makeEpRow('Report Downloads', window.__eosDlPts,   '#546e7a', d.downloads.last_3m, 'eosEpDlChart');
-          // Thin separator before main EP timeline (matches EP section spacing)
-          var sep = document.createElement('div');
-          sep.style.cssText = 'border-top:1px solid #f0f0ef;margin-bottom:10px;';
-          epTrends.appendChild(sep);
-          epTrends.style.display = 'block';
-          // Single rAF AFTER display:block so offsetWidth is real (batch render all EP charts)
-          // h:64 matches EP SVG ROW_H=68 — compact, consistent with EP's own row heights
-          requestAnimationFrame(function(){
-            epCharts.forEach(function(c){ renderBarChart(c.id, c.pts, c.color, {tracks:false, h:64, noMonthLabels:true}); });
-          });
+        // Re-render the EP SVG so Runs/Downloads rows (now inside Engagement · Historic) pick up the new data
+        if (window.__epLastData) {
+          var epWrap = document.getElementById('epWrap');
+          if (epWrap && epWrap.style.display !== 'none') window.__epRender(epWrap, window.__epLastData);
         }
 
         if (subtitle) subtitle.textContent = fmt(d.runs.last_3m)+' runs · '+fmt(d.downloads.last_3m)+' downloads (last 3m)';
