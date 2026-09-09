@@ -436,7 +436,7 @@ async function handler(req, res) {
         sub.eos_failed_3m,
         sub.eos_active_users_12m,
         sub.eos_last_run
-      FROM dbo.v_silver_sf_subscriptions sub
+      FROM dbo.gold_sf_subscriptions sub
       WHERE sub.Service_Type__c = 'Software'
         AND sub.status IN ('Active', 'Termination in Progress')
         AND COALESCE(sub.is_deleted, 0) = 0
