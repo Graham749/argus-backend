@@ -6291,11 +6291,19 @@ class Component extends DCLogic {
       var el = document.getElementById(id);
       if (el) el.style.display = 'block';
     };
-    // Close drill panel — only the Collapse button calls this
+    // Close drill panel — only the Back button calls this
     window.eosCollapseDrill = function(type) {
       var id = 'eos' + type.charAt(0).toUpperCase() + type.slice(1) + 'Drill';
       var el = document.getElementById(id);
       if (el) el.style.display = 'none';
+      var lbl = document.getElementById('eos' + type.charAt(0).toUpperCase() + type.slice(1) + 'DrillLabel');
+      if (lbl) lbl.textContent = type === 'runs' ? 'Completed Runs' : 'Report Downloads';
+    };
+
+    var fmtMo = function(mo) {
+      if (!mo) return mo;
+      var d = new Date(mo + '-01');
+      return d.toLocaleDateString('en-GB', {month:'short'}) + " '" + String(d.getFullYear()).slice(2);
     };
 
     // Build the onBarClick handler for a given type — filters drill to clicked month (SF-style)
@@ -6307,9 +6315,13 @@ class Component extends DCLogic {
           var prod    = window.__eosRunsActiveProd || 'All';
           var base    = prod === 'All' ? allRuns : allRuns.filter(function(r){ return (r.product||'') === prod; });
           rows = base.filter(function(r){ return String(r.date||'').slice(0,7) === month; });
+          var lbl = document.getElementById('eosRunsDrillLabel');
+          if (lbl) lbl.textContent = (prod === 'All' ? 'Completed Runs' : prod) + ' › ' + fmtMo(month);
         } else {
           var allDl = ((window.__eosEngDrill || {}).downloads) || [];
           rows = allDl.filter(function(r){ return String(r.date||'').slice(0,7) === month; });
+          var dlLbl = document.getElementById('eosDownloadsDrillLabel');
+          if (dlLbl) dlLbl.textContent = 'Report Downloads › ' + fmtMo(month);
         }
         (window.eosRenderDrillRows || renderDrillRows)(type, rows);
         window.eosShowDrill(type.toLowerCase());
@@ -6332,6 +6344,8 @@ class Component extends DCLogic {
         var pts  = prod === 'All' ? window.__eosRunsPts : drillToPts(rows, window.__eosRunsPts);
         renderEosTimeline('eosRunsChart', pts, '#288184', makeBarClickHandler('Runs'));
         (window.eosRenderDrillRows || renderDrillRows)('Runs', rows);
+        var lbl = document.getElementById('eosRunsDrillLabel');
+        if (lbl) lbl.textContent = prod === 'All' ? 'Completed Runs' : prod;
         window.eosShowDrill('runs');   // auto-open drill so filtered result is immediately visible
       } catch(err) { console.error('[eosRunsFilter]', err); }
     };
@@ -6366,8 +6380,8 @@ class Component extends DCLogic {
         // Drill panel — hidden by default, appears below chart
         +'<div id="eos'+idU+'Drill" style="display:none;margin-top:6px;border:1px solid #e6e6e5;border-radius:8px;overflow:hidden;">'
         +'<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:#f7f7f6;border-bottom:1px solid #e6e6e5;">'
-        +'<button onclick="window.eosCollapseDrill(\''+idKey+'\')" style="padding:4px 10px;border-radius:5px;border:1px solid #e6e6e5;background:#fff;color:#288184;font-size:11px;font-weight:700;cursor:pointer;">← Collapse</button>'
-        +'<span style="font-size:11px;color:#6d6d6c;">'+label+' · most recent 100</span>'
+        +'<button onclick="window.eosCollapseDrill(\''+idKey+'\')" style="padding:4px 10px;border-radius:5px;border:1px solid #e6e6e5;background:#fff;color:#288184;font-size:11px;font-weight:700;cursor:pointer;">← Back</button>'
+        +'<span id="eos'+idU+'DrillLabel" style="font-size:11px;color:#6d6d6c;">'+label+'</span>'
         +'</div>'
         +'<div style="max-height:360px;overflow-y:auto;">'
         +'<table style="width:100%;border-collapse:collapse;">'
@@ -6404,6 +6418,16 @@ class Component extends DCLogic {
         if (lastParts.length) html += '<div style="font-size:10px;color:#9d9d9d;padding-top:8px;border-top:1px solid #f0f0ef;">'+lastParts.join(' &nbsp;·&nbsp; ')+'</div>';
 
         if (content) { content.innerHTML = html; content.style.display = 'block'; }
+
+        var btnStyle = 'padding:4px 9px;border-radius:5px;border:1px solid;font-size:10px;font-weight:600;cursor:pointer;transition:background .12s,color .12s;';
+        var runsProds = ['All'];
+        (d.drill.runs||[]).forEach(function(r){ if (r.product && runsProds.indexOf(r.product)<0) runsProds.push(r.product); });
+        runsProds.sort(function(a,b){ return a==='All'?-1:b==='All'?1:a.localeCompare(b); });
+        var runsFiltersEl = document.getElementById('eosRunsFilters');
+        if (runsFiltersEl) runsFiltersEl.innerHTML = runsProds.map(function(p){
+          var on = p === 'All';
+          return '<button class="eos-runs-filter-btn" data-prod="'+esc(p)+'" onclick="window.eosRunsFilter(\''+p.replace(/'/g,"\\'")+'\');" style="'+btnStyle+'background:'+(on?'#288184':'#f0f0ef')+';color:'+(on?'#fff':'#3c3c3b')+';border-color:'+(on?'#288184':'#d0d0d0')+';">'+esc(p)+'</button>';
+        }).join('');
 
         var dlProds = [];
         (d.drill.downloads||[]).forEach(function(r){ if (r.product && dlProds.indexOf(r.product)<0) dlProds.push(r.product); });
