@@ -443,7 +443,7 @@ async function handler(req, res) {
         AND sub.arr > 0
         AND (sub.status = 'Active' OR sub.renewal_date >= GETDATE())
     `),
-      query(`SELECT currency_iso_code, CAST(1.0 / gbp_rate AS float) AS gbp_to_ccy FROM dbo.v_silver_lookup_fxrates`),
+      query(`SELECT currency_iso_code, CAST(1.0 / gbp_rate AS float) AS gbp_to_ccy FROM dbo.gold_lookup_fxrates`),
       query(`
         SELECT
           sf_account_name,
@@ -463,8 +463,8 @@ async function handler(req, res) {
           COUNT(*) AS opp_count,
           SUM(COALESCE(CAST(o.amount AS float), 0) * COALESCE(CAST(fx.gbp_rate AS float), 1.0)) AS pipeline_gbp
         FROM dbo.gold_sf_opportunities o
-        JOIN dbo.v_silver_sf_customer_accounts a ON o.account_id = a.account_id
-        LEFT JOIN dbo.v_silver_lookup_fxrates fx ON o.currency = fx.currency_iso_code
+        JOIN dbo.gold_sf_customer_accounts a ON o.account_id = a.account_id
+        LEFT JOIN dbo.gold_lookup_fxrates fx ON o.currency = fx.currency_iso_code
         WHERE o.is_closed = 0
         GROUP BY a.account_name
       `),

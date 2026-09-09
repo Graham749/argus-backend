@@ -77,7 +77,7 @@ module.exports = async function eosEngagement(req, res) {
       // 1. Software runs by year + product_region — DISTINCT simulation_id (matches PBI DAX measure)
       query(`
         SELECT YEAR(r.launch_time) AS yr, r.product_region, COUNT(DISTINCT r.simulation_id) AS cnt
-        FROM dbo.v_silver_eos_runs r
+        FROM dbo.gold_eos_runs r
         INNER JOIN dbo.gold_mdm_account mdm ON mdm.sf_account_code = r.account_id
         WHERE r.is_internal = 0
           AND r.launch_time IS NOT NULL
@@ -92,7 +92,7 @@ module.exports = async function eosEngagement(req, res) {
         SELECT FORMAT(CAST(download_date AS DATE), 'yyyy-MM') AS month,
                COUNT(DISTINCT tracking_id) AS cnt,
                COUNT(DISTINCT user_email)  AS users
-        FROM dbo.v_silver_eos_downloads
+        FROM dbo.gold_eos_downloads
         WHERE download_date IS NOT NULL
           AND COALESCE(product, '') != 'scenarioExplorer'
         GROUP BY FORMAT(CAST(download_date AS DATE), 'yyyy-MM')
@@ -117,7 +117,7 @@ module.exports = async function eosEngagement(req, res) {
           FORMAT(TRY_CAST(date_of_work AS DATE), 'yyyy-MM') AS month,
           COALESCE(case_type, 'Other') AS case_type,
           COUNT(*) AS cnt
-        FROM dbo.v_silver_sf_cases
+        FROM dbo.gold_sf_cases
         WHERE TRY_CAST(date_of_work AS DATE) IS NOT NULL
           AND account_id IS NOT NULL
         GROUP BY FORMAT(TRY_CAST(date_of_work AS DATE), 'yyyy-MM'), COALESCE(case_type, 'Other')
@@ -127,7 +127,7 @@ module.exports = async function eosEngagement(req, res) {
       // 5. Webinars by market + month (region_raw for direct region assignment)
       query(`
         SELECT market_raw, region_raw, FORMAT(event_date, 'yyyy-MM') AS month, SUM(COALESCE(attendees, 0)) AS attendees, COUNT(*) AS event_count
-        FROM dbo.v_silver_webinar_schedule
+        FROM dbo.gold_webinar_schedule
         WHERE event_date IS NOT NULL AND COALESCE(attendees, 0) > 0
         GROUP BY market_raw, region_raw, FORMAT(event_date, 'yyyy-MM')
         ORDER BY month DESC
@@ -136,7 +136,7 @@ module.exports = async function eosEngagement(req, res) {
       // 6. Group meetings by market + month (region for direct region assignment)
       query(`
         SELECT market_raw, region AS region_raw, FORMAT(event_date, 'yyyy-MM') AS month, SUM(COALESCE(attendees, 0)) AS attendees, COUNT(*) AS event_count
-        FROM dbo.v_silver_gm_annual_plan
+        FROM dbo.gold_gm_annual_plan
         WHERE event_date IS NOT NULL AND COALESCE(attendees, 0) > 0
         GROUP BY market_raw, region, FORMAT(event_date, 'yyyy-MM')
         ORDER BY month DESC
@@ -179,7 +179,7 @@ module.exports = async function eosEngagement(req, res) {
             ELSE 'EMEA'
           END AS region,
           COUNT(DISTINCT tracking_id) AS cnt
-        FROM dbo.v_silver_eos_downloads
+        FROM dbo.gold_eos_downloads
         WHERE download_date IS NOT NULL
           AND tracking_id IS NOT NULL
           AND COALESCE(product, '') != 'scenarioExplorer'
@@ -209,7 +209,7 @@ module.exports = async function eosEngagement(req, res) {
       // 9. Cases by account + type — date_of_work consistent with query 4
       query(`
         SELECT mdm.sf_account_code, COALESCE(c.case_type, 'Other') AS case_type, COUNT(*) AS cnt
-        FROM dbo.v_silver_sf_cases c
+        FROM dbo.gold_sf_cases c
         JOIN dbo.gold_mdm_account mdm ON mdm.sf_account_id = c.account_id
         WHERE TRY_CAST(c.date_of_work AS DATE) IS NOT NULL AND c.account_id IS NOT NULL
         GROUP BY mdm.sf_account_code, COALESCE(c.case_type, 'Other')
@@ -297,7 +297,7 @@ module.exports = async function eosEngagement(req, res) {
             tracking_id,
             user_email,
             FORMAT(CAST(download_date AS DATE), 'yyyy-MM') AS month
-          FROM dbo.v_silver_eos_downloads
+          FROM dbo.gold_eos_downloads
           WHERE download_date IS NOT NULL
             AND COALESCE(product, '') != 'scenarioExplorer'
         )
@@ -316,8 +316,8 @@ module.exports = async function eosEngagement(req, res) {
           COALESCE(p.Energy_Market_Region__c, 'Other') AS region,
           FORMAT(TRY_CAST(c.date_of_work AS DATE), 'yyyy-MM') AS month,
           COUNT(*) AS cnt
-        FROM dbo.v_silver_sf_cases c
-        LEFT JOIN dbo.v_silver_sf_products p ON p.product_id_sf = c.product_id
+        FROM dbo.gold_sf_cases c
+        LEFT JOIN dbo.gold_sf_products p ON p.product_id_sf = c.product_id
         WHERE TRY_CAST(c.date_of_work AS DATE) IS NOT NULL
           AND c.account_id IS NOT NULL
         GROUP BY COALESCE(c.case_type, 'Other'), COALESCE(p.Energy_Market__c, 'Other'), COALESCE(p.Energy_Market_Region__c, 'Other'), FORMAT(TRY_CAST(c.date_of_work AS DATE), 'yyyy-MM')
@@ -332,7 +332,7 @@ module.exports = async function eosEngagement(req, res) {
       query(`
         WITH sub_region AS (
           SELECT mdm.sf_account_code, sub.energy_region, COUNT(*) AS cnt
-          FROM dbo.v_silver_sf_subscriptions sub
+          FROM dbo.gold_sf_subscriptions sub
           INNER JOIN dbo.gold_mdm_account mdm ON mdm.sf_account_name = sub.account_name
           WHERE sub.energy_region IN ('EMEA','APAC','NORAM','LATAM')
             AND sub.status IN ('Active', 'Termination in Progress')
@@ -356,7 +356,7 @@ module.exports = async function eosEngagement(req, res) {
           FORMAT(r.launch_time, 'yyyy-MM')    AS month,
           COUNT(DISTINCT r.simulation_id)     AS runs,
           COUNT(DISTINCT r.user_email)        AS users
-        FROM dbo.v_silver_eos_runs r
+        FROM dbo.gold_eos_runs r
         INNER JOIN dbo.gold_mdm_account mdm ON mdm.sf_account_code = r.account_id
         WHERE r.is_internal = 0
           AND r.execution_status = 'Complete'
@@ -371,7 +371,7 @@ module.exports = async function eosEngagement(req, res) {
       query(`
         WITH ranked AS (
           SELECT product, COUNT(DISTINCT tracking_id) AS total_cnt
-          FROM dbo.v_silver_eos_downloads
+          FROM dbo.gold_eos_downloads
           WHERE download_date IS NOT NULL
             AND product IS NOT NULL
             AND COALESCE(product, '') != 'scenarioExplorer'
@@ -384,7 +384,7 @@ module.exports = async function eosEngagement(req, res) {
                FORMAT(CAST(d.download_date AS DATE), 'yyyy-MM') AS month,
                COUNT(DISTINCT d.tracking_id) AS cnt,
                COUNT(DISTINCT d.user_email)  AS users
-        FROM dbo.v_silver_eos_downloads d
+        FROM dbo.gold_eos_downloads d
         INNER JOIN top_products tp ON tp.product = d.product
         WHERE d.download_date IS NOT NULL
           AND COALESCE(d.product, '') != 'scenarioExplorer'

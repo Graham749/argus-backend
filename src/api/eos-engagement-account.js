@@ -44,7 +44,7 @@ async function runQueries(code, codeEsc) {
         ph_engaged_minutes,
         CONVERT(varchar(10), ph_last_seen, 120) AS ph_last_seen,
         ph_top_feature
-      FROM dbo.v_gold_mdm_eos_engagement
+      FROM DBO.gold_mdm_eos_engagement
       WHERE sf_account_code = '${codeEsc}'
     `),
 
@@ -54,7 +54,7 @@ async function runQueries(code, codeEsc) {
         FORMAT(r.launch_time, 'yyyy-MM')   AS month,
         COUNT(DISTINCT r.simulation_id)    AS cnt,
         COUNT(DISTINCT r.user_email)       AS users
-      FROM dbo.v_silver_eos_runs r
+      FROM dbo.gold_eos_runs r
       WHERE r.account_id = '${codeEsc}'
         AND r.is_internal = 0
         AND r.execution_status = 'Complete'
@@ -70,7 +70,7 @@ async function runQueries(code, codeEsc) {
         FORMAT(CAST(d.download_date AS DATE), 'yyyy-MM') AS month,
         COUNT(DISTINCT d.tracking_id)                    AS cnt,
         COUNT(DISTINCT d.user_email)                     AS users
-      FROM dbo.v_silver_eos_downloads d
+      FROM dbo.gold_eos_downloads d
       WHERE d.sf_account_code = '${codeEsc}'
         AND d.download_date IS NOT NULL
         AND d.download_date >= DATEADD(MONTH, -24, GETUTCDATE())
@@ -87,7 +87,7 @@ async function runQueries(code, codeEsc) {
         r.software_product,
         COALESCE(r.title, '')                    AS title,
         r.execution_status
-      FROM dbo.v_silver_eos_runs r
+      FROM dbo.gold_eos_runs r
       WHERE r.account_id = '${codeEsc}'
         AND r.is_internal = 0
         AND r.launch_time IS NOT NULL
@@ -103,7 +103,7 @@ async function runQueries(code, codeEsc) {
         d.user_email,
         d.product,
         COALESCE(d.filename, '')                   AS filename
-      FROM dbo.v_silver_eos_downloads d
+      FROM dbo.gold_eos_downloads d
       WHERE d.sf_account_code = '${codeEsc}'
         AND d.download_date IS NOT NULL
         AND COALESCE(d.product, '') != 'scenarioExplorer'
