@@ -2023,6 +2023,7 @@ window.__epToggleFullscreen = function() {
 // ── Engagement Pulse SVG renderer ─────────────────────────────────────────────
 window.__epRender = function(container, data) {
   window.__epLastData = data;
+  container.innerHTML = '';  // clear previous render before re-drawing
   const LBL_W      = 76;
   const RHS_W      = 76;
   const visW       = Math.max(container.offsetWidth || 0,
