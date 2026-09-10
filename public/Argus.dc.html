@@ -78,7 +78,7 @@ input{font-family:inherit;}
         <span style="width:7px;height:7px;border-radius:50%;background:#00be86;box-shadow:0 0 0 3px rgba(0,190,134,0.25);"></span>
         {{ syncedAgo }}
       </span>
-      <button id="tourBtn" style="display:flex;align-items:center;gap:6px;padding:5px 12px;background:transparent;border:1px solid rgba(255,255,255,0.25);border-radius:6px;color:rgba(255,255,255,0.8);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;letter-spacing:0.02em;">
+      <button id="tourBtn" style="{{ tourBtnStyle }}">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;flex-shrink:0;"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
         Take a tour
       </button>
@@ -8554,6 +8554,7 @@ class Component extends DCLogic {
       setBuildTabArgusMcp:(e)=>{e&&e.preventDefault();localStorage.setItem('buildTab','argusMcp');this.setV({buildTab:'argusMcp'});},
       goMdm:(e)=>{e&&e.preventDefault();localStorage.setItem('argusView','mdm');window.__mdmSearch='';window.__mdmConfFilter=null;window.__mdmExpandedId=null;this.setV({view:'mdm'}); },
       goSwIntelligence:(e)=>{e&&e.preventDefault();localStorage.setItem('argusView','swIntelligence');document.body.classList.add('sidebar-collapsed');localStorage.setItem('sidebarCollapsed','true');this.setV({view:'swIntelligence'});},
+      tourBtnStyle:S.view==='buildDesign'?'display:none':'display:flex;align-items:center;gap:6px;padding:5px 12px;background:transparent;border:1px solid rgba(255,255,255,0.25);border-radius:6px;color:rgba(255,255,255,0.8);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;letter-spacing:0.02em;',
       navStyleHealth:navStyle('health'), navStyleFeatures:navStyle('features'), navStyleAssistant:navStyle('assistant'), navStyleBriefing:navStyle('briefing'), navStyleBuildStatus:navStyle('buildStatus'), navStyleBuildDesign:navStyle('buildDesign'), navStyleMdm:navStyle('mdm'), navStyleSwIntelligence:navStyle('swIntelligence'),
       isHealth:S.view==='health', isFeatures:S.view==='features', isAssistant:S.view==='assistant', isBriefing:S.view==='briefing', isBuildStatus:S.view==='buildStatus', isBuildDesign:S.view==='buildDesign', isMdm:S.view==='mdm', isSwIntelligence:S.view==='swIntelligence',
       buildTabIsArgusVision:(S.buildTab||'argusVision')==='argusVision', buildTabIsDataLake:S.buildTab==='dataLakeBuild', buildTabIsArgusMcp:S.buildTab==='argusMcp',

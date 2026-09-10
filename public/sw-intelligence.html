@@ -6,6 +6,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Region Intelligence · Software Health</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@0.9.8/dist/driver.min.css">
+<script src="./analytics.js"></script>
 <style>
 @font-face{font-family:'Lato';src:url('assets/fonts/lato-regular.woff2') format('woff2');font-weight:400;font-style:normal;font-display:swap;}
 @font-face{font-family:'Lato';src:url('assets/fonts/lato-bold.woff2') format('woff2');font-weight:700;font-style:normal;font-display:swap;}
@@ -130,6 +132,10 @@ tfoot td{font-size:11px;color:#9d9d9d;padding:6px 10px;border-top:1px solid #e6e
   <span class="nav-sep"></span>
   <div class="nav-brand"><i class="ti ti-chart-line" aria-hidden="true" style="margin-right:5px;color:#288184"></i>Region Intelligence</div>
   <div style="flex:1"></div>
+  <button id="tourBtn" onclick="argusStartTour()" style="display:flex;align-items:center;gap:6px;padding:5px 12px;margin-right:12px;background:transparent;border:1px solid #d4d4d3;border-radius:6px;color:#6d6d6c;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;letter-spacing:0.02em;">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;flex-shrink:0;"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+    Take a tour
+  </button>
   <div class="nav-meta">ARR <strong id="arr-date">—</strong>&nbsp;·&nbsp;Fabric</div>
 </nav>
 
@@ -213,7 +219,7 @@ tfoot td{font-size:11px;color:#9d9d9d;padding:6px 10px;border-top:1px solid #e6e
   <div class="filter-bar" id="mkt-bar" style="display:none"></div>
 
   <!-- Filters row 3 — signal pills -->
-  <div class="filter-bar">
+  <div class="filter-bar" id="signal-bar">
     <span class="filter-label">Signals:</span>
     <div class="pill active" id="fp-ALL"         onclick="setFP(this,'ALL')">All</div>
     <div class="pill"        id="fp-terminating" onclick="setFP(this,'terminating')">Termination</div>
@@ -287,7 +293,7 @@ tfoot td{font-size:11px;color:#9d9d9d;padding:6px 10px;border-top:1px solid #e6e
     <div id="eng-content" style="display:none">
 
       <!-- 1. Engagement summary -->
-      <section style="margin-bottom:24px">
+      <section id="eng-summary" style="margin-bottom:24px">
         <div style="font-size:13px;font-weight:700;color:#3c3c3b;margin-bottom:12px">Engagement summary</div>
         <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:12px">
           <div id="eng-kpis" style="display:contents"></div>
@@ -2085,5 +2091,7 @@ function engRenderMarketDrillInner(mktStreams, wm) {
 loadData();
 loadEngagement();
 </script>
+<script src="https://cdn.jsdelivr.net/npm/driver.js@0.9.8/dist/driver.min.js"></script>
+<script src="./sw-tour.js"></script>
 </body>
 </html>
