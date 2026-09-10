@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Region Intelligence · Client Engagement</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@0.9.8/dist/driver.min.css">
+<script src="./analytics.js"></script>
 <style>
 @font-face{font-family:'Lato';src:url('assets/fonts/lato-regular.woff2') format('woff2');font-weight:400;font-style:normal;font-display:swap;}
 @font-face{font-family:'Lato';src:url('assets/fonts/lato-bold.woff2') format('woff2');font-weight:700;font-style:normal;font-display:swap;}
@@ -70,6 +72,11 @@ tr:last-child td{border-bottom:none;}
   <a href="/" class="nav-back"><i class="ti ti-arrow-left"></i> Argus</a>
   <span class="nav-sep"></span>
   <div class="nav-brand"><i class="ti ti-chart-line" style="margin-right:5px;color:#288184"></i>Region Intelligence</div>
+  <div style="flex:1"></div>
+  <button id="tourBtn" onclick="argusStartTour()" style="display:flex;align-items:center;gap:6px;padding:5px 12px;margin-right:12px;background:transparent;border:1px solid #d4d4d3;border-radius:6px;color:#6d6d6c;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;letter-spacing:0.02em;">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;flex-shrink:0;"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+    Take a tour
+  </button>
   <div class="nav-meta">Snapshot <strong id="snap-date">—</strong>&nbsp;·&nbsp;Fabric</div>
 </nav>
 
@@ -359,5 +366,7 @@ if (new URLSearchParams(location.search).get('embed') === '1') {
 }
 loadData();
 </script>
+<script src="https://cdn.jsdelivr.net/npm/driver.js@0.9.8/dist/driver.min.js"></script>
+<script src="./tce-tour.js"></script>
 </body>
 </html>

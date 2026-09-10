@@ -57,14 +57,9 @@ function fetchUserFromGraph(token) {
 }
 
 async function getCurrentUser(req, res) {
-  // For now: return hardcoded user to verify endpoint works
-  console.log('[current-user] Endpoint called - returning test user');
-  res.json({
-    name: 'Graham Clark',
-    email: 'graham@aurora.local',
-    initials: 'GC',
-    id: 'test-user'
-  });
+  const email = req.headers['cf-access-authenticated-user-email'] || 'graham.clark@auroraer.com';
+  const name = email.split('@')[0].split('.').map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ');
+  res.json({ email, name });
 }
 
 module.exports = getCurrentUser;
