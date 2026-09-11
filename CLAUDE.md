@@ -30,11 +30,20 @@ Argus is an internal account health dashboard for Aurora Energy Research. It sur
 - Auth: Cloudflare One — user email available in `Cf-Access-Authenticated-User-Email` header
 - PostHog: enabled — EU cloud, project `270193`
 - App runs as Windows service via NSSM (`ArgusApp`)
+- `aersoftware` account does not have local admin — cannot stop/start the service without Conor
 - `.env` on server:
   ```
   FABRIC_SERVER=pv6dzlli723u5jswg27zhty5be-qhcpisfudclelcjaerq6yrhgee.datawarehouse.fabric.microsoft.com
   PORT=8501
   CORS_ORIGIN=https://argus.auroraer.cloud
+  AZ_PATH=C:\Program Files (x86)\Microsoft SDKs\Azure\CLI2\wbin\az.cmd
+  AZ_TENANT=ad3c7c7d-fe68-4eb7-a656-36bf93cf1d09
+  ```
+- `AZ_PATH` — full path to az.cmd; needed because NSSM service PATH differs from interactive user PATH
+- `AZ_TENANT` — Aurora tenant ID; needed because the account has no Azure subscriptions (`az login --allow-no-subscriptions`)
+- After a password change, re-run on the server (no restart needed):
+  ```
+  az login --use-device-code --allow-no-subscriptions --tenant ad3c7c7d-fe68-4eb7-a656-36bf93cf1d09
   ```
 
 ## Key files
