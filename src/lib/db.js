@@ -20,7 +20,7 @@ async function getAccessToken() {
   if (_tokenFetch) return _tokenFetch;
   _tokenFetch = new Promise((resolve, reject) => {
     exec(
-      'az account get-access-token --resource https://database.windows.net/ --query accessToken -o tsv',
+      `${process.env.AZ_PATH || 'az'} account get-access-token --resource https://database.windows.net/ --query accessToken -o tsv`,
       { encoding: 'utf-8', timeout: 30000 },
       (err, stdout) => {
         _tokenFetch = null;
