@@ -8,12 +8,14 @@ if (window.location.hostname !== 'localhost' && window.location.hostname !== '12
     api_host: 'https://eu.i.posthog.com',
     defaults: '2026-05-30',
     person_profiles: 'identified_only',
+    capture_pageview: false,
   });
 
   fetch('/api/current-user')
     .then(function(r) { return r.json(); })
     .then(function(user) {
       posthog.identify(user.email, { name: user.name });
+      posthog.capture('$pageview');
     })
     .catch(function() {});
 }
