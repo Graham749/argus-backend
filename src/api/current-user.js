@@ -1,19 +1,11 @@
-const { execSync } = require('child_process');
 const https = require('https');
+const { getToken } = require('../lib/auth');
 
 let cachedUser = null;
 let userCacheTime = null;
 
-function getAccessToken() {
-  try {
-    const token = execSync(
-      `"${process.env.AZ_PATH || 'az'}" account get-access-token --resource https://graph.microsoft.com --query accessToken -o tsv${process.env.AZ_TENANT ? ` --tenant ${process.env.AZ_TENANT}` : ''}`,
-      { encoding: 'utf-8' }
-    ).trim();
-    return token;
-  } catch (err) {
-    throw new Error(`Failed to get token: ${err.message}`);
-  }
+async function getAccessToken() {
+  return getToken('https://graph.microsoft.com');
 }
 
 function fetchUserFromGraph(token) {

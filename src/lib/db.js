@@ -1,8 +1,8 @@
 // Shared Fabric SQL connection pool + token cache.
 // All ph-*.js handlers import query() from here instead of creating
 // a new ConnectionPool per call (which costs 1-3s TCP/TLS handshake each time).
-const { exec } = require('child_process');
 const sql = require('mssql');
+const { getToken } = require('./auth');
 
 const SERVER = process.env.FABRIC_SERVER ||
   'pv6dzlli723u5jswg27zhty5be-qhcpisfudclelcjaerq6yrhgee.datawarehouse.fabric.microsoft.com';
@@ -18,20 +18,14 @@ async function getAccessToken() {
   const now = Date.now();
   if (_cachedToken && _tokenExpiry && _tokenExpiry > now + 60000) return _cachedToken;
   if (_tokenFetch) return _tokenFetch;
-  _tokenFetch = new Promise((resolve, reject) => {
-    exec(
-      `"${process.env.AZ_PATH || 'az'}" account get-access-token --resource https://database.windows.net/ --query accessToken -o tsv${process.env.AZ_TENANT ? ` --tenant ${process.env.AZ_TENANT}` : ''}`,
-      { encoding: 'utf-8', timeout: 30000 },
-      (err, stdout) => {
-        _tokenFetch = null;
-        if (err) return reject(err);
-        const token = stdout.trim();
-        _cachedToken = token;
-        _tokenExpiry  = Date.now() + 55 * 60 * 1000;
-        resolve(token);
-      }
-    );
-  });
+  _tokenFetch = getToken('https://database.windows.net/')
+    .then(token => {
+      _tokenFetch = null;
+      _cachedToken = token;
+      _tokenExpiry = Date.now() + 55 * 60 * 1000;
+      return token;
+    })
+    .catch(err => { _tokenFetch = null; throw err; });
   return _tokenFetch;
 }
 

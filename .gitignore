@@ -11,3 +11,4 @@ yarn-error.log*
 *.swo
 mock-standalone.html
 .build-cache/
+.token-cache.json
