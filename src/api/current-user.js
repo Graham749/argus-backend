@@ -7,7 +7,7 @@ let userCacheTime = null;
 function getAccessToken() {
   try {
     const token = execSync(
-      `${process.env.AZ_PATH || 'az'} account get-access-token --resource https://graph.microsoft.com --query accessToken -o tsv${process.env.AZ_TENANT ? ` --tenant ${process.env.AZ_TENANT}` : ''}`,
+      `"${process.env.AZ_PATH || 'az'}" account get-access-token --resource https://graph.microsoft.com --query accessToken -o tsv${process.env.AZ_TENANT ? ` --tenant ${process.env.AZ_TENANT}` : ''}`,
       { encoding: 'utf-8' }
     ).trim();
     return token;
