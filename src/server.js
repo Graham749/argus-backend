@@ -35,6 +35,15 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 // Middleware
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on('finish', () => {
+    if (req.path.startsWith('/api/')) {
+      console.log(`${req.method} ${req.path} ${res.statusCode} ${Date.now() - start}ms`);
+    }
+  });
+  next();
+});
 app.use(express.json());
 
 // CORS
