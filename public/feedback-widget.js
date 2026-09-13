@@ -90,8 +90,6 @@
       'border:none',
       'cursor:pointer',
       'padding:2px 4px',
-      'opacity:0',
-      'transition:opacity 0.15s',
       'flex-shrink:0',
       'margin-left:auto',
       'display:flex',
@@ -102,8 +100,6 @@
     el.style.position = el.style.position || 'relative';
     el.appendChild(btn);
 
-    el.addEventListener('mouseenter', function () { btn.style.opacity = '1'; });
-    el.addEventListener('mouseleave', function () { btn.style.opacity = '0'; });
     btn.addEventListener('click', function (e) {
       e.stopPropagation();
       showDialog(btn, widgetName);
