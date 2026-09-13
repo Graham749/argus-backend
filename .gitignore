@@ -12,3 +12,4 @@ yarn-error.log*
 mock-standalone.html
 .build-cache/
 .token-cache.json
+data/feedback.json
