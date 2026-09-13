@@ -21,7 +21,9 @@ function postFeedback(req, res) {
   if (!comment || !widget) return res.status(400).json({ error: 'widget and comment required' });
 
   const entry = {
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
     ts: new Date().toISOString(),
+    status: 'submitted',
     user: user || req.headers['cf-access-authenticated-user-email'] || 'unknown',
     page: page || '/',
     widget,
