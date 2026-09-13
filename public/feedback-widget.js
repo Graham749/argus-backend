@@ -106,6 +106,15 @@
     });
   }
 
+  function wireFeedbackIfNeeded(el) {
+    if (el.querySelector('button[title="Give feedback on this widget"]')) return;
+    wireFeedback(el);
+  }
+
+  function wireAll() {
+    document.querySelectorAll('[data-feedback]').forEach(wireFeedbackIfNeeded);
+  }
+
   document.addEventListener('click', function (e) {
     if (!e.target.closest('.fb-dialog')) closeAll();
   });
@@ -114,5 +123,12 @@
     if (e.key === 'Escape') closeAll();
   });
 
-  document.querySelectorAll('[data-feedback]').forEach(wireFeedback);
+  wireAll();
+
+  // Re-wire after data loads replace card header content
+  var _rewireTimer;
+  new MutationObserver(function () {
+    clearTimeout(_rewireTimer);
+    _rewireTimer = setTimeout(wireAll, 150);
+  }).observe(document.body, { childList: true, subtree: true });
 })();

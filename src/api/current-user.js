@@ -49,9 +49,20 @@ function fetchUserFromGraph(token) {
 }
 
 async function getCurrentUser(req, res) {
-  const email = req.headers['cf-access-authenticated-user-email'] || 'graham.clark@auroraer.com';
-  const name = email.split('@')[0].split('.').map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ');
-  res.json({ email, name });
+  const cfEmail = req.headers['cf-access-authenticated-user-email'];
+  const isLocal = req.hostname === 'localhost' || req.hostname === '127.0.0.1';
+
+  let email, name;
+  if (cfEmail) {
+    email = cfEmail;
+  } else if (isLocal) {
+    email = 'graham.clark@auroraer.com';
+  } else {
+    return res.json({ email: null, name: null, authenticated: false });
+  }
+
+  name = email.split('@')[0].split('.').map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ');
+  res.json({ email, name, authenticated: true });
 }
 
 module.exports = getCurrentUser;
