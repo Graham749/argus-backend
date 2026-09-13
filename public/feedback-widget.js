@@ -114,7 +114,5 @@
     if (e.key === 'Escape') closeAll();
   });
 
-  document.addEventListener('DOMContentLoaded', function () {
-    document.querySelectorAll('[data-feedback]').forEach(wireFeedback);
-  });
+  document.querySelectorAll('[data-feedback]').forEach(wireFeedback);
 })();
