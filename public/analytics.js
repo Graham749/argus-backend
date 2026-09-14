@@ -15,8 +15,9 @@ if (window.location.hostname === 'argus.auroraer.cloud') {
     .then(function(r) { return r.json(); })
     .then(function(user) {
       if (!user.email) return; // not Cloudflare-authenticated — skip tracking
-      posthog.identify(user.email, { name: user.name });
-      posthog.capture('$pageview');
+      posthog.identify(user.email, { email: user.email, name: user.name });
+      // Capture pageview after identify has flushed to avoid anonymous $pageview race
+      setTimeout(function() { posthog.capture('$pageview'); }, 0);
     })
     .catch(function() {});
 }
