@@ -32,7 +32,7 @@
       'font-family:Lato,Helvetica Neue,Arial,sans-serif',
     ].join(';');
 
-    var top = rect.bottom + window.scrollY + 6;
+    var top = rect.bottom + 6;
     var left = Math.min(rect.right - 280, window.innerWidth - 296);
     dialog.style.top = top + 'px';
     dialog.style.left = Math.max(8, left) + 'px';
