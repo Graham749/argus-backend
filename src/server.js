@@ -111,6 +111,7 @@ app.get('/api/feedback', getFeedback);
 app.delete('/api/feedback/:id', deleteFeedback);
 
 app.get('/', (req, res) => {
+  res.set('Cache-Control', 'no-store');
   res.sendFile(path.join(argusPath, 'Argus.dc.html'));
 });
 
