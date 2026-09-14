@@ -188,7 +188,7 @@ tfoot td{font-size:11px;color:#9d9d9d;padding:6px 10px;border-top:1px solid #e6e
   <div class="kpi-row" id="ch-kpi-row" data-feedback="SW Intelligence — Signal Filters"></div>
 
   <!-- Filters row 1 — search + group-by -->
-  <div class="filter-bar" data-feedback="Account Overview">
+  <div class="filter-bar">
     <div style="display:flex;flex:1;min-width:220px;max-width:380px;border:1.5px solid #e6e6e5;border-radius:8px;overflow:hidden;background:#fff;">
       <input type="text" id="cl-search" placeholder="Search account or parent…"
         onkeydown="if(event.key==='Enter'){renderKPIs();renderClients();}"
@@ -220,7 +220,7 @@ tfoot td{font-size:11px;color:#9d9d9d;padding:6px 10px;border-top:1px solid #e6e
   <div class="filter-bar" id="mkt-bar" style="display:none"></div>
 
   <!-- Filters row 3 — signal pills -->
-  <div class="filter-bar" id="signal-bar">
+  <div class="filter-bar" id="signal-bar" data-feedback="Account Overview">
     <span class="filter-label">Signals:</span>
     <div class="pill active" id="fp-ALL"         onclick="setFP(this,'ALL')">All</div>
     <div class="pill"        id="fp-terminating" onclick="setFP(this,'terminating')">Termination</div>
