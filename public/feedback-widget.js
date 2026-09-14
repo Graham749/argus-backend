@@ -1,5 +1,6 @@
 (function () {
-  if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') return;
+  var _allowed = ['localhost', '127.0.0.1', 'argus.auroraer.cloud'];
+  if (_allowed.indexOf(window.location.hostname) === -1) return;
   var _user = null;
 
   function getUser(cb) {
@@ -74,6 +75,7 @@
             user: user.email,
           }),
         }).then(function () {
+          if (window.posthog) posthog.capture('feedback_submitted', { widget: widgetName, title: title, page: window.location.pathname });
           closeAll();
           var toast = document.createElement('div');
           toast.textContent = 'Feedback sent — thanks!';
