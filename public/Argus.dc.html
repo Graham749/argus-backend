@@ -8568,7 +8568,7 @@ class Component extends DCLogic {
       setBuildTabArgusVision:(e)=>{e&&e.preventDefault();localStorage.setItem('buildTab','argusVision');this.setV({buildTab:'argusVision'});},
       setBuildTabDatalake:(e)=>{e&&e.preventDefault();localStorage.setItem('buildTab','dataLakeBuild');this.setV({buildTab:'dataLakeBuild'});},
       setBuildTabArgusMcp:(e)=>{e&&e.preventDefault();localStorage.setItem('buildTab','argusMcp');this.setV({buildTab:'argusMcp'});},
-      setBuildTabFeedback:(e)=>{e&&e.preventDefault();localStorage.setItem('buildTab','feedback');this.setV({buildTab:'feedback'});var _t=0;var _p=setInterval(()=>{if(document.getElementById('fbDashboard')){clearInterval(_p);window.__fbLoad&&window.__fbLoad();}if(++_t>40)clearInterval(_p);},50);},
+      setBuildTabFeedback:(e)=>{e&&e.preventDefault();localStorage.setItem('buildTab','feedback');this.setV({buildTab:'feedback'});},
       goMdm:(e)=>{e&&e.preventDefault();localStorage.setItem('argusView','mdm');window.__mdmSearch='';window.__mdmConfFilter=null;window.__mdmExpandedId=null;this.setV({view:'mdm'}); },
       goSwIntelligence:(e)=>{e&&e.preventDefault();localStorage.setItem('argusView','swIntelligence');document.body.classList.add('sidebar-collapsed');localStorage.setItem('sidebarCollapsed','true');this.setV({view:'swIntelligence'});},
       tourBtnStyle:S.view==='buildDesign'?'display:none':'display:flex;align-items:center;gap:6px;padding:5px 12px;background:transparent;border:1px solid rgba(255,255,255,0.25);border-radius:6px;color:rgba(255,255,255,0.8);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;letter-spacing:0.02em;',
@@ -10050,14 +10050,17 @@ class Component extends DCLogic {
       .catch(function() { alert('Delete failed'); });
   };
 
-  // Auto-load on page refresh when feedback tab is already active in localStorage
-  if (localStorage.getItem('buildTab') === 'feedback') {
-    var _t0 = 0;
-    var _p0 = setInterval(function() {
-      if (document.getElementById('fbDashboard')) { clearInterval(_p0); window.__fbLoad(); }
-      if (++_t0 > 60) clearInterval(_p0);
-    }, 50);
-  }
+  // Auto-load whenever fbDashboard appears in the DOM (tab click, page load, or navigating back)
+  var _fbSeen = false;
+  new MutationObserver(function() {
+    var el = document.getElementById('fbDashboard');
+    if (el && !_fbSeen) {
+      _fbSeen = true;
+      window.__fbLoad();
+    } else if (!el) {
+      _fbSeen = false; // reset when element is removed so next appearance re-triggers
+    }
+  }).observe(document.body, { childList: true, subtree: true });
 })();
 </script>
 <script src="https://cdn.jsdelivr.net/npm/driver.js@0.9.8/dist/driver.min.js"></script>
