@@ -17,7 +17,7 @@ function saveFeedback(entries) {
 }
 
 function postFeedback(req, res) {
-  const { widget, comment, page, user } = req.body || {};
+  const { widget, title, comment, page, user } = req.body || {};
   if (!comment || !widget) return res.status(400).json({ error: 'widget and comment required' });
 
   const entry = {
@@ -27,6 +27,7 @@ function postFeedback(req, res) {
     user: user || req.headers['cf-access-authenticated-user-email'] || 'unknown',
     page: page || '/',
     widget,
+    title: title || '',
     comment,
   };
 

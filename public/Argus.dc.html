@@ -1364,6 +1364,7 @@ input{font-family:inherit;}
         <div onClick="{{ setBuildTabArgusVision }}" style="{{ buildTabStyleArgusVision }}">Argus Vision</div>
         <div onClick="{{ setBuildTabDatalake }}" style="{{ buildTabStyleDatalake }}">Data Lake Build</div>
         <div onClick="{{ setBuildTabArgusMcp }}" style="{{ buildTabStyleArgusMcp }}">Argus and MCP</div>
+        <div onClick="{{ setBuildTabFeedback }}" style="{{ buildTabStyleFeedback }}">Feedback</div>
       </div>
       <div style="padding:28px 32px;max-width:1080px;">
         <!-- Argus Vision tab -->
@@ -1654,6 +1655,18 @@ input{font-family:inherit;}
           </div>
 
         </div>
+      </sc-if>
+
+      <!-- Feedback tab -->
+      <sc-if value="{{ buildTabIsFeedback }}" hint-placeholder-val="{{ false }}">
+      <div style="max-width:960px;">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
+          <div style="font-size:18px;font-weight:700;color:#3c3c3b;flex:1;">Feedback</div>
+          <input id="fbSearch" type="text" placeholder="Search by ticket ID, widget or user..." oninput="window.__fbFilter&&window.__fbFilter(this.value)" style="padding:7px 12px;border:1px solid #e6e6e5;border-radius:6px;font-size:12px;width:280px;outline:none;"/>
+          <button onclick="window.__fbLoad&&window.__fbLoad()" style="padding:7px 14px;border-radius:6px;border:1px solid #e6e6e5;background:#fff;font-size:12px;font-weight:600;cursor:pointer;color:#3c3c3b;">Refresh</button>
+        </div>
+        <div id="fbDashboard" style="color:#9d9d9d;font-size:13px;">Loading...</div>
+      </div>
       </sc-if>
       </div>
       </sc-if>
@@ -8555,15 +8568,17 @@ class Component extends DCLogic {
       setBuildTabArgusVision:(e)=>{e&&e.preventDefault();localStorage.setItem('buildTab','argusVision');this.setV({buildTab:'argusVision'});},
       setBuildTabDatalake:(e)=>{e&&e.preventDefault();localStorage.setItem('buildTab','dataLakeBuild');this.setV({buildTab:'dataLakeBuild'});},
       setBuildTabArgusMcp:(e)=>{e&&e.preventDefault();localStorage.setItem('buildTab','argusMcp');this.setV({buildTab:'argusMcp'});},
+      setBuildTabFeedback:(e)=>{e&&e.preventDefault();localStorage.setItem('buildTab','feedback');this.setV({buildTab:'feedback'});setTimeout(()=>{window.__fbLoad&&window.__fbLoad();},80);},
       goMdm:(e)=>{e&&e.preventDefault();localStorage.setItem('argusView','mdm');window.__mdmSearch='';window.__mdmConfFilter=null;window.__mdmExpandedId=null;this.setV({view:'mdm'}); },
       goSwIntelligence:(e)=>{e&&e.preventDefault();localStorage.setItem('argusView','swIntelligence');document.body.classList.add('sidebar-collapsed');localStorage.setItem('sidebarCollapsed','true');this.setV({view:'swIntelligence'});},
       tourBtnStyle:S.view==='buildDesign'?'display:none':'display:flex;align-items:center;gap:6px;padding:5px 12px;background:transparent;border:1px solid rgba(255,255,255,0.25);border-radius:6px;color:rgba(255,255,255,0.8);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;letter-spacing:0.02em;',
       navStyleHealth:navStyle('health'), navStyleFeatures:navStyle('features'), navStyleAssistant:navStyle('assistant'), navStyleBriefing:navStyle('briefing'), navStyleBuildStatus:navStyle('buildStatus'), navStyleBuildDesign:navStyle('buildDesign'), navStyleMdm:navStyle('mdm'), navStyleSwIntelligence:navStyle('swIntelligence'),
       isHealth:S.view==='health', isFeatures:S.view==='features', isAssistant:S.view==='assistant', isBriefing:S.view==='briefing', isBuildStatus:S.view==='buildStatus', isBuildDesign:S.view==='buildDesign', isMdm:S.view==='mdm', isSwIntelligence:S.view==='swIntelligence',
-      buildTabIsArgusVision:(S.buildTab||'argusVision')==='argusVision', buildTabIsDataLake:S.buildTab==='dataLakeBuild', buildTabIsArgusMcp:S.buildTab==='argusMcp',
+      buildTabIsArgusVision:(S.buildTab||'argusVision')==='argusVision', buildTabIsDataLake:S.buildTab==='dataLakeBuild', buildTabIsArgusMcp:S.buildTab==='argusMcp', buildTabIsFeedback:S.buildTab==='feedback',
       buildTabStyleArgusVision:(S.buildTab||'argusVision')==='argusVision'?'padding:12px 20px;font-size:13px;font-weight:600;color:#3c3c3b;border-bottom:2px solid #288184;cursor:pointer;white-space:nowrap;display:flex;align-items:center;margin-bottom:-1px;':'padding:12px 20px;font-size:13px;font-weight:600;color:#9d9d9d;border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap;display:flex;align-items:center;margin-bottom:-1px;',
       buildTabStyleDatalake:S.buildTab==='dataLakeBuild'?'padding:12px 20px;font-size:13px;font-weight:600;color:#3c3c3b;border-bottom:2px solid #288184;cursor:pointer;white-space:nowrap;display:flex;align-items:center;margin-bottom:-1px;':'padding:12px 20px;font-size:13px;font-weight:600;color:#9d9d9d;border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap;display:flex;align-items:center;margin-bottom:-1px;',
       buildTabStyleArgusMcp:S.buildTab==='argusMcp'?'padding:12px 20px;font-size:13px;font-weight:600;color:#3c3c3b;border-bottom:2px solid #288184;cursor:pointer;white-space:nowrap;display:flex;align-items:center;margin-bottom:-1px;':'padding:12px 20px;font-size:13px;font-weight:600;color:#9d9d9d;border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap;display:flex;align-items:center;margin-bottom:-1px;',
+      buildTabStyleFeedback:S.buildTab==='feedback'?'padding:12px 20px;font-size:13px;font-weight:600;color:#3c3c3b;border-bottom:2px solid #288184;cursor:pointer;white-space:nowrap;display:flex;align-items:center;margin-bottom:-1px;':'padding:12px 20px;font-size:13px;font-weight:600;color:#9d9d9d;border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap;display:flex;align-items:center;margin-bottom:-1px;',
       healthTabsHtml, rangesHtml, healthTabs, ranges, hc,
       toggleUsers:()=>this.toggleDrill('users_'+S.healthClient), drillUsers:!!S.drills['users_'+S.healthClient],
       toggleSubs:()=>this.toggleDrill('subs_'+S.healthClient), drillSubs:!!S.drills['subs_'+S.healthClient],
@@ -9958,6 +9973,69 @@ class Component extends DCLogic {
     }
   }
 
+})();
+</script>
+<script>
+(function() {
+  var _allEntries = [];
+
+  function esc(s) {
+    return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function renderEntries(entries) {
+    var el = document.getElementById('fbDashboard');
+    if (!el) return;
+    if (!entries.length) {
+      el.innerHTML = '<div style="color:#9d9d9d;font-size:13px;padding:20px 0;">No feedback found.</div>';
+      return;
+    }
+    el.innerHTML = entries.map(function(e) {
+      var d = new Date(e.ts);
+      var date = d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}) + ' ' + d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+      var statusColor = e.status === 'submitted' ? '#288184' : '#9d9d9d';
+      var statusBg = e.status === 'submitted' ? '#e8f7f7' : '#f5f5f5';
+      return '<div style="background:#fff;border:1px solid #e6e6e5;border-radius:10px;padding:16px 20px;margin-bottom:10px;">' +
+        '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;">' +
+          '<span style="font-size:10px;font-weight:700;color:#fff;background:#288184;padding:2px 8px;border-radius:4px;font-family:monospace;letter-spacing:0.04em;flex-shrink:0;">#' + esc(e.id) + '</span>' +
+          '<span style="font-size:12px;font-weight:700;color:#3c3c3b;">' + esc(e.widget) + '</span>' +
+          '<span style="font-size:10px;font-weight:600;color:'+statusColor+';background:'+statusBg+';padding:2px 8px;border-radius:10px;">' + esc(e.status) + '</span>' +
+          '<span style="font-size:11px;color:#9d9d9d;margin-left:auto;">' + date + '</span>' +
+        '</div>' +
+        (e.title ? '<div style="font-size:13px;font-weight:600;color:#3c3c3b;margin-bottom:4px;">' + esc(e.title) + '</div>' : '') +
+        '<div style="font-size:12px;color:#6d6d6c;line-height:1.5;">' + esc(e.comment) + '</div>' +
+        '<div style="font-size:11px;color:#9d9d9d;margin-top:6px;">' + esc(e.user) + ' &middot; ' + esc(e.page) + '</div>' +
+      '</div>';
+    }).join('');
+  }
+
+  window.__fbLoad = function() {
+    var el = document.getElementById('fbDashboard');
+    if (!el) return;
+    el.innerHTML = '<div style="color:#9d9d9d;font-size:13px;padding:20px 0;">Loading...</div>';
+    fetch('/api/feedback')
+      .then(function(r) { return r.json(); })
+      .then(function(entries) {
+        _allEntries = entries.sort(function(a,b) { return b.ts.localeCompare(a.ts); });
+        var searchEl = document.getElementById('fbSearch');
+        var q = searchEl ? searchEl.value.trim() : '';
+        renderEntries(q ? _allEntries.filter(function(e) {
+          return (e.id+' '+e.widget+' '+e.user+' '+(e.title||'')).toLowerCase().includes(q.toLowerCase());
+        }) : _allEntries);
+      })
+      .catch(function() {
+        var el2 = document.getElementById('fbDashboard');
+        if (el2) el2.innerHTML = '<div style="color:#e57373;font-size:13px;">Failed to load feedback.</div>';
+      });
+  };
+
+  window.__fbFilter = function(q) {
+    if (!q) return renderEntries(_allEntries);
+    var filtered = _allEntries.filter(function(e) {
+      return (e.id+' '+e.widget+' '+e.user+' '+(e.title||'')+' '+e.comment).toLowerCase().includes(q.toLowerCase());
+    });
+    renderEntries(filtered);
+  };
 })();
 </script>
 <script src="https://cdn.jsdelivr.net/npm/driver.js@0.9.8/dist/driver.min.js"></script>
