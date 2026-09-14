@@ -1778,7 +1778,7 @@ input{font-family:inherit;}
 
       <!-- ============ MDM ============ -->
       <sc-if value="{{ isMdm }}" hint-placeholder-val="{{ false }}">
-      <div data-feedback="Account MDM" style="padding:32px;animation:argusFade .25s ease;" dangerouslySetInnerHTML="{{ mdmHtml }}"></div>
+      <div style="padding:32px;animation:argusFade .25s ease;" dangerouslySetInnerHTML="{{ mdmHtml }}"></div>
       </sc-if>
 
     </main>
@@ -9055,7 +9055,7 @@ class Component extends DCLogic {
 
         const html = ''
           +'<div style="margin-bottom:24px;">'
-            +'<div style="display:flex;align-items:center;gap:8px;">'
+            +'<div data-feedback="Account MDM" style="display:flex;align-items:center;gap:8px;">'
               +'<div style="font-size:24px;font-weight:700;letter-spacing:-0.01em;">Account MDM</div>'
               +'<div style="display:flex;align-items:center;gap:4px;font-size:10px;color:#00be86;font-weight:600;"><span style="font-size:12px;line-height:1;">●</span>Live data</div>'
               +'<div style="flex:1"></div>'
