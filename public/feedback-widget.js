@@ -95,7 +95,7 @@
       'display:flex',
       'align-items:center',
     ].join(';');
-    btn.innerHTML = '<img src="/assets/feedback-icon.svg" style="width:16px;height:16px;opacity:0.45;" />';
+    btn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#288184" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:block;opacity:0.7;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>';
 
     el.style.position = el.style.position || 'relative';
     el.appendChild(btn);
