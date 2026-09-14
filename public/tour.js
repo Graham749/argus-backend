@@ -112,6 +112,18 @@
       });
     }
 
+    // Feedback button — always present on the account selector row
+    if (exists('button[data-fb-widget]')) {
+      steps.push({
+        element: 'button[data-fb-widget]',
+        popover: {
+          title: 'Submit feedback',
+          description: 'See the speech bubble icon on every widget header? Click it to submit feedback on that specific widget &mdash; tell us what\'s missing, confusing, or could be improved. Your submissions go straight to the Build Design &rsaquo; Feedback tab.',
+          position: 'bottom',
+        },
+      });
+    }
+
     // Engagement Pulse — only visible after account is selected
     if (visible('#epCard')) {
       steps.push({
