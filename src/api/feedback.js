@@ -43,4 +43,13 @@ function getFeedback(req, res) {
   res.json(loadFeedback());
 }
 
-module.exports = { postFeedback, getFeedback };
+function deleteFeedback(req, res) {
+  const { id } = req.params;
+  const entries = loadFeedback();
+  const filtered = entries.filter(e => e.id !== id);
+  if (filtered.length === entries.length) return res.status(404).json({ error: 'not found' });
+  saveFeedback(filtered);
+  res.json({ ok: true });
+}
+
+module.exports = { postFeedback, getFeedback, deleteFeedback };

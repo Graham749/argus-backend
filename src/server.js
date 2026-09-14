@@ -30,7 +30,7 @@ const eosEngagement        = require('./api/eos-engagement');
 const eosEngagementAccount = require('./api/eos-engagement-account');
 const { query: dbQuery } = require('./lib/db');
 const cacheWarmer        = require('./lib/cache-warmer');
-const { postFeedback, getFeedback } = require('./api/feedback');
+const { postFeedback, getFeedback, deleteFeedback } = require('./api/feedback');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -108,6 +108,7 @@ app.get('/eos-engagement',    (req, res) => { res.set('Cache-Control', 'no-store
 // Serve Argus dashboard at root
 app.post('/api/feedback', postFeedback);
 app.get('/api/feedback', getFeedback);
+app.delete('/api/feedback/:id', deleteFeedback);
 
 app.get('/', (req, res) => {
   res.sendFile(path.join(argusPath, 'Argus.dc.html'));
