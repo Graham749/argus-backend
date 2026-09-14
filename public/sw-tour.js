@@ -141,6 +141,17 @@
         });
       }
 
+      if (exists('button[data-fb-widget]')) {
+        steps.push({
+          element: 'button[data-fb-widget]',
+          popover: {
+            title: 'Submit feedback',
+            description: 'See the speech bubble icon on each section header? Click it to submit feedback on that specific section &mdash; tell us what\'s missing, confusing, or could be improved. Submissions go straight to Build Design &rsaquo; Feedback.',
+            position: 'bottom',
+          },
+        });
+      }
+
       if (window.posthog) posthog.capture('tour_started', { page: 'tce-tab' });
 
     } else {
@@ -263,6 +274,17 @@
             title: 'Account table',
             description: 'Each row shows an account\'s ARR, renewal signals, and ZD / pipeline summary. <strong>Click a row</strong> to expand it and see per-product subscription detail. Use the <strong>&ldquo;Client Health &rarr;&rdquo;</strong> button to open the full account health card.',
             position: 'top',
+          },
+        });
+      }
+
+      if (exists('button[data-fb-widget]')) {
+        steps.push({
+          element: 'button[data-fb-widget]',
+          popover: {
+            title: 'Submit feedback',
+            description: 'See the speech bubble icon next to each section? Click it to submit feedback on that specific area &mdash; tell us what\'s missing, confusing, or could be improved. Submissions go straight to Build Design &rsaquo; Feedback.',
+            position: 'bottom',
           },
         });
       }
