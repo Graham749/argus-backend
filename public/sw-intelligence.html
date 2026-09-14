@@ -174,7 +174,7 @@ tfoot td{font-size:11px;color:#9d9d9d;padding:6px 10px;border-top:1px solid #e6e
 <section id="clients">
 
   <!-- Health status filter bar -->
-  <div id="health-bar" data-feedback="Renewal Health" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:16px;">
+  <div id="health-bar" data-feedback="SW Intelligence — Renewal Health" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:16px;">
     <span class="filter-label" style="font-size:11px;color:#9d9d9d;font-weight:700">Renewal Health:</span>
     <span class="hp hp-od sel" id="hp-all" onclick="setHealth('all')" style="background:#f5f5f5;color:#6d6d6c">All Accounts</span>
     <span class="hp hp-tm" id="hp-TERMINATING" onclick="setHealth('TERMINATING')">0 Terminating</span>
@@ -220,7 +220,7 @@ tfoot td{font-size:11px;color:#9d9d9d;padding:6px 10px;border-top:1px solid #e6e
   <div class="filter-bar" id="mkt-bar" style="display:none"></div>
 
   <!-- Filters row 3 — signal pills -->
-  <div class="filter-bar" id="signal-bar" data-feedback="Account Overview">
+  <div class="filter-bar" id="signal-bar" data-feedback="SW Intelligence — Account Overview">
     <span class="filter-label">Signals:</span>
     <div class="pill active" id="fp-ALL"         onclick="setFP(this,'ALL')">All</div>
     <div class="pill"        id="fp-terminating" onclick="setFP(this,'terminating')">Termination</div>
@@ -328,13 +328,13 @@ tfoot td{font-size:11px;color:#9d9d9d;padding:6px 10px;border-top:1px solid #e6e
 
       <!-- 4. Breakdown over time -->
       <section style="margin-bottom:24px">
-        <div data-feedback="TCE — Breakdown Over Time" style="font-size:13px;font-weight:700;color:#3c3c3b;margin-bottom:12px;display:flex;align-items:center;">Breakdown over time <span id="eng-time-hint" style="font-size:11px;color:#9d9d9d;font-weight:400"></span></div>
+        <div data-feedback="TCE — Breakdown Over Time" style="font-size:13px;font-weight:700;color:#3c3c3b;margin-bottom:12px;display:flex;align-items:center;">Breakdown over time<span id="eng-time-hint" style="font-size:11px;color:#9d9d9d;font-weight:400;margin-left:4px"></span></div>
         <div class="card" style="padding:0;overflow:hidden"><div id="eng-timetable"></div></div>
       </section>
 
       <!-- 5. Market detail -->
       <section style="margin-bottom:24px">
-        <div data-feedback="TCE — Market Detail" style="font-size:13px;font-weight:700;color:#3c3c3b;margin-bottom:12px;display:flex;align-items:center;">Market detail &mdash; region to market <span id="eng-mkt-hint" style="font-size:11px;color:#9d9d9d;font-weight:400"></span></div>
+        <div data-feedback="TCE — Market Detail" style="font-size:13px;font-weight:700;color:#3c3c3b;margin-bottom:12px;display:flex;align-items:center;">Market detail &mdash; region to market<span id="eng-mkt-hint" style="font-size:11px;color:#9d9d9d;font-weight:400;margin-left:4px"></span></div>
         <div class="card" style="padding:0;overflow-x:auto"><div id="eng-marketdrill"></div></div>
       </section>
 

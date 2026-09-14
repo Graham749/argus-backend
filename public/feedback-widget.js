@@ -105,6 +105,10 @@
       'align-items:center',
     ].join(';');
     btn.innerHTML = SVG;
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      showDialog(btn, widgetName);
+    });
     el.style.position = el.style.position || 'relative';
     el.appendChild(btn);
   }
