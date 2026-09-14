@@ -1803,6 +1803,7 @@ if (localStorage.getItem('sidebarCollapsed') === 'true') {
 window.__syncUrl = function(view, tab) {
   var qs = '?view=' + view + (tab ? '&tab=' + tab : '');
   history.replaceState(null, '', qs);
+  if (window.posthog) posthog.capture('$pageview', { $current_url: window.location.origin + qs });
 };
 
 // Navigate to requested view when opened in new tab (e.g. from SW Intelligence Client Health button)
