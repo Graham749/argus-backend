@@ -1569,22 +1569,6 @@ input{font-family:inherit;}
             <div style="font-size:11px;color:#4A7AAA;margin-top:10px;line-height:1.6;">Materialised Gold = no view-chain recomputation on every query · Fabric Pipeline manages refresh · In-memory cache reduces concurrent CU burn on F8</div>
           </div>
 
-          <div style="display:flex;justify-content:center;align-items:center;height:28px;color:#ccc;"><svg width="12" height="18" viewBox="0 0 12 18"><path d="M6 0v12M1 7l5 6 5-6" stroke="#CCCCCC" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-
-          <!-- Planned Data Signals -->
-          <div style="border:1.5px dashed #d6d6d4;border-radius:10px;padding:16px 20px;">
-            <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
-              <div style="font-size:11px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:#3c3c3b;">New Data Signals</div>
-              <div style="background:#fffaeb;color:#7A5800;border-radius:6px;padding:2px 8px;font-size:9.5px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;">Under development</div>
-            </div>
-            <div style="font-size:11px;color:#6d6d6c;margin-bottom:12px;line-height:1.6;">Four additional engagement signals planned for ingestion — each will follow the same Bronze → Silver → Gold pipeline as existing sources.</div>
-            <div style="display:flex;flex-wrap:wrap;gap:8px;">
-              <div style="background:#f7f7f5;border:1px solid #d6d6d4;border-radius:8px;padding:8px 13px;font-size:11px;font-weight:500;color:#222;min-width:180px;">EOS API &amp; MCP engagement<span style="font-size:9.5px;color:#888;font-weight:400;display:block;margin-top:2px;">API call volume + MCP tool usage per client</span></div>
-              <div style="background:#f7f7f5;border:1px solid #d6d6d4;border-radius:8px;padding:8px 13px;font-size:11px;font-weight:500;color:#222;min-width:180px;">ARR trend analysis<span style="font-size:9.5px;color:#888;font-weight:400;display:block;margin-top:2px;">Salesforce subscription trajectory · growth / flat / declining</span></div>
-              <div style="background:#f7f7f5;border:1px solid #d6d6d4;border-radius:8px;padding:8px 13px;font-size:11px;font-weight:500;color:#222;min-width:180px;">Industrialised OKR source<span style="font-size:9.5px;color:#888;font-weight:400;display:block;margin-top:2px;">Replacing manual Power BI scraping with automated pipeline</span></div>
-              <div style="background:#f7f7f5;border:1px dashed #d6d6d4;border-radius:8px;padding:8px 13px;font-size:11px;font-weight:500;color:#aaa;min-width:180px;">Customer AI engagement<span style="font-size:9.5px;color:#bbb;font-weight:400;display:block;margin-top:2px;">Data Lake Development — source under investigation</span></div>
-            </div>
-          </div>
 
         </div>
       </div>
@@ -1676,6 +1660,37 @@ input{font-family:inherit;}
           <div style="font-size:11.5px;color:#6d6d6c;margin-bottom:24px;">Phase 1 (dashboard) is live. Phase 2 (MCP) is in progress. Below is what follows — each feature builds on the validated data layer Argus has established.</div>
 
           <div style="display:flex;flex-direction:column;gap:16px;">
+
+            <!-- New Data Signals -->
+            <div style="border:1px solid #e6e6e5;border-radius:10px;padding:18px 20px;">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+                <div style="background:#fffaeb;color:#7A5800;border-radius:6px;padding:3px 10px;font-size:10px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;white-space:nowrap;">Investigation</div>
+                <div style="font-size:13px;font-weight:700;color:#3c3c3b;">New Data Signals</div>
+                <div style="margin-left:auto;font-size:10px;color:#9d9d9d;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;">In planning</div>
+              </div>
+              <div style="font-size:11.5px;color:#6d6d6c;line-height:1.65;margin-bottom:12px;">Four new engagement signals under Data Lake development — each will follow the Bronze → Silver → Gold pipeline and surface in the health card.</div>
+              <div style="display:flex;flex-direction:column;gap:8px;">
+                <div style="background:#f7f7f5;border-radius:8px;padding:10px 14px;">
+                  <div style="font-size:11px;font-weight:700;color:#3c3c3b;margin-bottom:3px;">EOS API &amp; MCP engagement</div>
+                  <div style="font-size:10.5px;color:#6d6d6c;line-height:1.5;">API call volume and MCP tool usage per client — signals how deeply the software is embedded in their workflows. High usage across either channel means the product is operationally critical.</div>
+                </div>
+                <div style="background:#f7f7f5;border-radius:8px;padding:10px 14px;">
+                  <div style="font-size:11px;font-weight:700;color:#3c3c3b;margin-bottom:3px;">ARR trend analysis</div>
+                  <div style="font-size:10.5px;color:#6d6d6c;line-height:1.5;">ARR trajectory per account from Salesforce subscription data — surfacing growth, flat, or declining trends before a renewal becomes a risk.</div>
+                </div>
+                <div style="background:#f7f7f5;border-radius:8px;padding:10px 14px;">
+                  <div style="font-size:11px;font-weight:700;color:#3c3c3b;margin-bottom:3px;">Industrialised OKR source</div>
+                  <div style="font-size:10.5px;color:#6d6d6c;line-height:1.5;">OKR data currently scraped manually from Power BI reports — replacing with an automated pipeline feeding directly into Argus.</div>
+                </div>
+                <div style="background:#f7f7f5;border-radius:8px;padding:10px 14px;">
+                  <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;">
+                    <div style="font-size:11px;font-weight:700;color:#3c3c3b;">Customer AI engagement</div>
+                    <div style="font-size:9px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;color:#7A5800;background:#fffaeb;border-radius:4px;padding:2px 6px;">Data Lake Development</div>
+                  </div>
+                  <div style="font-size:10.5px;color:#6d6d6c;line-height:1.5;">How much is each client using Aurora's AI features? New data source — feasibility under investigation before committing to build.</div>
+                </div>
+              </div>
+            </div>
 
             <!-- Feature Priority -->
             <div style="border:1px solid #e6e6e5;border-radius:10px;padding:18px 20px;">
