@@ -174,7 +174,7 @@ tfoot td{font-size:11px;color:#9d9d9d;padding:6px 10px;border-top:1px solid #e6e
 <section id="clients">
 
   <!-- Health status filter bar -->
-  <div id="health-bar" data-feedback="SW Intelligence — Software Health" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:16px;">
+  <div id="health-bar" data-feedback="Renewal Health" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:16px;">
     <span class="filter-label" style="font-size:11px;color:#9d9d9d;font-weight:700">Renewal Health:</span>
     <span class="hp hp-od sel" id="hp-all" onclick="setHealth('all')" style="background:#f5f5f5;color:#6d6d6c">All Accounts</span>
     <span class="hp hp-tm" id="hp-TERMINATING" onclick="setHealth('TERMINATING')">0 Terminating</span>
@@ -185,10 +185,10 @@ tfoot td{font-size:11px;color:#9d9d9d;padding:6px 10px;border-top:1px solid #e6e
   </div>
 
   <!-- KPI strip -->
-  <div class="kpi-row" id="ch-kpi-row" data-feedback="SW Intelligence — Account Summary"></div>
+  <div class="kpi-row" id="ch-kpi-row" data-feedback="Account Overview"></div>
 
   <!-- Filters row 1 — search + group-by -->
-  <div class="filter-bar">
+  <div class="filter-bar" data-feedback="SW Intelligence — Signal Filters">
     <div style="display:flex;flex:1;min-width:220px;max-width:380px;border:1.5px solid #e6e6e5;border-radius:8px;overflow:hidden;background:#fff;">
       <input type="text" id="cl-search" placeholder="Search account or parent…"
         onkeydown="if(event.key==='Enter'){renderKPIs();renderClients();}"
@@ -220,7 +220,7 @@ tfoot td{font-size:11px;color:#9d9d9d;padding:6px 10px;border-top:1px solid #e6e
   <div class="filter-bar" id="mkt-bar" style="display:none"></div>
 
   <!-- Filters row 3 — signal pills -->
-  <div class="filter-bar" id="signal-bar" data-feedback="SW Intelligence — Signal Filters">
+  <div class="filter-bar" id="signal-bar">
     <span class="filter-label">Signals:</span>
     <div class="pill active" id="fp-ALL"         onclick="setFP(this,'ALL')">All</div>
     <div class="pill"        id="fp-terminating" onclick="setFP(this,'terminating')">Termination</div>
