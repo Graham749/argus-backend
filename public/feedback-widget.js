@@ -45,7 +45,7 @@
         '<button class="fb-close" style="background:none;border:none;cursor:pointer;font-size:16px;color:#9d9d9d;padding:0;line-height:1;">&#x2715;</button>',
       '</div>',
       '<input class="fb-title" type="text" placeholder="Title (optional)" style="width:100%;box-sizing:border-box;border:1px solid #e6e6e5;border-radius:6px;padding:8px;font-size:12px;font-family:inherit;color:#3c3c3b;outline:none;margin-bottom:8px;" />',
-      '<textarea class="fb-text" placeholder="What could be improved?" style="width:100%;box-sizing:border-box;border:1px solid #e6e6e5;border-radius:6px;padding:8px;font-size:12px;font-family:inherit;resize:vertical;min-height:72px;color:#3c3c3b;outline:none;"></textarea>',
+      '<textarea class="fb-text" placeholder="Comments (optional)" style="width:100%;box-sizing:border-box;border:1px solid #e6e6e5;border-radius:6px;padding:8px;font-size:12px;font-family:inherit;resize:vertical;min-height:72px;color:#3c3c3b;outline:none;"></textarea>',
       '<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:10px;">',
         '<button class="fb-cancel" style="padding:6px 14px;border-radius:6px;border:1px solid #e6e6e5;background:#fff;color:#6d6d6c;font-size:11px;font-weight:700;cursor:pointer;">Cancel</button>',
         '<button class="fb-send" style="padding:6px 14px;border-radius:6px;border:none;background:#288184;color:#fff;font-size:11px;font-weight:700;cursor:pointer;">Send</button>',
@@ -60,8 +60,8 @@
 
     dialog.querySelector('.fb-send').onclick = function () {
       var comment = dialog.querySelector('.fb-text').value.trim();
-      if (!comment) return;
       var title = dialog.querySelector('.fb-title').value.trim();
+      if (!comment && !title) return;
       getUser(function (user) {
         fetch('/api/feedback', {
           method: 'POST',

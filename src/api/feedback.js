@@ -18,7 +18,7 @@ function saveFeedback(entries) {
 
 function postFeedback(req, res) {
   const { widget, title, comment, page, user } = req.body || {};
-  if (!comment || !widget) return res.status(400).json({ error: 'widget and comment required' });
+  if ((!comment && !title) || !widget) return res.status(400).json({ error: 'widget and title or comment required' });
 
   const entry = {
     id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
