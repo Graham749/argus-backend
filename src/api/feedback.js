@@ -24,7 +24,7 @@ function postFeedback(req, res) {
     id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
     ts: new Date().toISOString(),
     status: 'submitted',
-    user: user || req.headers['cf-access-authenticated-user-email'] || 'unknown',
+    user: user || (() => { try { const b = (req.headers['x-amzn-oidc-data']||'').split('.')[1]; return b ? JSON.parse(Buffer.from(b.replace(/-/g,'+').replace(/_/g,'/'), 'base64').toString()).email : null; } catch(_){} })() || 'unknown',
     page: page || '/',
     widget,
     title: title || '',
