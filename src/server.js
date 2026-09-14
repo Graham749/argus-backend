@@ -74,20 +74,6 @@ app.get('/api/test', (req, res) => {
   res.json({ test: 'ok', hasAccountsList: typeof accountsList });
 });
 
-// Temporary header debug — remove after diagnosing CF identity header issue
-app.get('/api/debug-headers', (req, res) => {
-  const relevant = {
-    'cf-access-authenticated-user-email': req.headers['cf-access-authenticated-user-email'] || null,
-    'cf-connecting-ip': req.headers['cf-connecting-ip'] || null,
-    'cf-ray': req.headers['cf-ray'] || null,
-    'x-forwarded-for': req.headers['x-forwarded-for'] || null,
-    'x-real-ip': req.headers['x-real-ip'] || null,
-    host: req.headers['host'] || null,
-    all: Object.keys(req.headers),
-  };
-  res.json(relevant);
-});
-
 // API routes (MUST be before static files)
 app.get('/api/lakehouse-status', lakehouseStatus);
 app.get('/api/build-status', buildStatus);
