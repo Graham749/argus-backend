@@ -1662,7 +1662,7 @@ input{font-family:inherit;}
       <div style="max-width:960px;">
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
           <div style="font-size:18px;font-weight:700;color:#3c3c3b;flex:1;">Feedback</div>
-          <input id="fbSearch" type="text" placeholder="Search by ticket ID, widget or user..." oninput="window.__fbFilter&&window.__fbFilter(this.value)" style="padding:7px 12px;border:1px solid #e6e6e5;border-radius:6px;font-size:12px;width:280px;outline:none;"/>
+          <input id="fbSearch" type="text" placeholder="Search by ticket ID, widget or user..." style="padding:7px 12px;border:1px solid #e6e6e5;border-radius:6px;font-size:12px;width:280px;outline:none;"/>
           <button onclick="window.__fbLoad&&window.__fbLoad()" style="padding:7px 14px;border-radius:6px;border:1px solid #e6e6e5;background:#fff;font-size:12px;font-weight:600;cursor:pointer;color:#3c3c3b;">Refresh</button>
         </div>
         <div id="fbDashboard" style="color:#9d9d9d;font-size:13px;">Loading...</div>
@@ -10057,6 +10057,13 @@ class Component extends DCLogic {
     if (el && !_fbLoaded) { _fbLoaded = true; window.__fbLoad(); }
     else if (!el && _fbLoaded) { _fbLoaded = false; }
   }, 250);
+
+  // Event delegation for search — avoids inline oninput being stripped by sc-if
+  document.addEventListener('input', function(e) {
+    if (e.target && e.target.id === 'fbSearch') {
+      window.__fbFilter(e.target.value);
+    }
+  });
 })();
 </script>
 <script src="https://cdn.jsdelivr.net/npm/driver.js@0.9.8/dist/driver.min.js"></script>
