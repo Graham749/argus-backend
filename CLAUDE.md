@@ -7,7 +7,7 @@ Argus is an internal account health dashboard for Aurora Energy Research. It sur
 - **Backend**: Node.js/Express (`src/server.js`)
 - **Frontend**: Static HTML pages in `public/` — no build step, no framework
 - **Database**: Microsoft Fabric lakehouse via Azure AD auth (`mssql` package)
-- **Auth**: Cloudflare One (in production) injects `Cf-Access-Authenticated-User-Email` header
+- **Auth**: AWS ALB handles Entra authentication and injects `x-amzn-oidc-data` (signed JWT) on every authenticated request. Cloudflare One is used only for RDP access to the server, not for app traffic.
 
 ## Environments
 
@@ -27,7 +27,7 @@ Argus is an internal account health dashboard for Aurora Energy Research. It sur
 - URL: `https://argus.auroraer.cloud`
 - Server: `srvargusinfrastructure.int.auroraer.cloud` (Windows, D:\app)
 - Port: `8501` (routed to argus.auroraer.cloud via ALB)
-- Auth: Cloudflare One — user email available in `Cf-Access-Authenticated-User-Email` header
+- Auth: AWS ALB with Entra app — user email in `x-amzn-oidc-data` JWT (decoded in `src/api/current-user.js`)
 - PostHog: enabled — EU cloud, project `270193`
 - App runs as Windows service via NSSM (`ArgusApp`)
 - `aersoftware` account does not have local admin — cannot stop/start the service without Conor
@@ -84,12 +84,14 @@ git push origin main
 
 Then RDP to `srvargusinfrastructure.int.auroraer.cloud` (user: `aersoftware`, requires Cloudflare One):
 ```
-cd D:\app
+cd D:\app\argus-backend
 git pull
 nssm restart ArgusApp
 ```
 
-Static files in `public/` are served on next request — no rebuild needed. Check `D:\app\app.log` if the service fails to start.
+**Important:** The NSSM service runs from `D:\app\argus-backend` (not `D:\app`). Always `git pull` in `D:\app\argus-backend` — there is a second repo clone at `D:\app` that the service does not use.
+
+Static files in `public/` are served on next request after `git pull` — no restart needed for HTML/JS changes. Restart is only needed for `src/` changes. Check `D:\app\argus-backend\app.log` if the service fails to start.
 
 ## First-time production setup (one-off)
 
