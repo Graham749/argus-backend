@@ -10049,6 +10049,15 @@ class Component extends DCLogic {
       })
       .catch(function() { alert('Delete failed'); });
   };
+
+  // Auto-load on page refresh when feedback tab is already active in localStorage
+  if (localStorage.getItem('buildTab') === 'feedback') {
+    var _t0 = 0;
+    var _p0 = setInterval(function() {
+      if (document.getElementById('fbDashboard')) { clearInterval(_p0); window.__fbLoad(); }
+      if (++_t0 > 60) clearInterval(_p0);
+    }, 50);
+  }
 })();
 </script>
 <script src="https://cdn.jsdelivr.net/npm/driver.js@0.9.8/dist/driver.min.js"></script>
