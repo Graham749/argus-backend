@@ -174,7 +174,7 @@ tfoot td{font-size:11px;color:#9d9d9d;padding:6px 10px;border-top:1px solid #e6e
 <section id="clients">
 
   <!-- Health status filter bar -->
-  <div id="health-bar" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:16px;">
+  <div id="health-bar" data-feedback="SW Intelligence — Software Health" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:16px;">
     <span class="filter-label" style="font-size:11px;color:#9d9d9d;font-weight:700">Renewal Health:</span>
     <span class="hp hp-od sel" id="hp-all" onclick="setHealth('all')" style="background:#f5f5f5;color:#6d6d6c">All Accounts</span>
     <span class="hp hp-tm" id="hp-TERMINATING" onclick="setHealth('TERMINATING')">0 Terminating</span>
@@ -295,7 +295,7 @@ tfoot td{font-size:11px;color:#9d9d9d;padding:6px 10px;border-top:1px solid #e6e
 
       <!-- 1. Engagement summary -->
       <section id="eng-summary" style="margin-bottom:24px">
-        <div style="font-size:13px;font-weight:700;color:#3c3c3b;margin-bottom:12px">Engagement summary</div>
+        <div data-feedback="TCE — Engagement Summary" style="font-size:13px;font-weight:700;color:#3c3c3b;margin-bottom:12px;display:flex;align-items:center;">Engagement summary</div>
         <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:12px">
           <div id="eng-kpis" style="display:contents"></div>
           <div style="grid-column:2;grid-row:2;background:#fff;border:1px dashed #d0d0cf;border-radius:10px;padding:12px 16px;display:flex;flex-direction:column;justify-content:center">
@@ -313,7 +313,7 @@ tfoot td{font-size:11px;color:#9d9d9d;padding:6px 10px;border-top:1px solid #e6e
 
       <!-- 2. Regional distribution by stream -->
       <section style="margin-bottom:24px">
-        <div style="font-size:13px;font-weight:700;color:#3c3c3b;margin-bottom:12px">Regional distribution by stream</div>
+        <div data-feedback="TCE — Regional Distribution by Stream" style="font-size:13px;font-weight:700;color:#3c3c3b;margin-bottom:12px;display:flex;align-items:center;">Regional distribution by stream</div>
         <div class="card">
           <div id="eng-legend" style="display:flex;flex-wrap:wrap;gap:14px;margin-bottom:14px;font-size:11px;color:#9d9d9d"></div>
           <div id="eng-mix"></div>
@@ -322,19 +322,19 @@ tfoot td{font-size:11px;color:#9d9d9d;padding:6px 10px;border-top:1px solid #e6e
 
       <!-- 3. Regional breakdown -->
       <section style="margin-bottom:24px">
-        <div style="font-size:13px;font-weight:700;color:#3c3c3b;margin-bottom:12px">Regional breakdown</div>
+        <div data-feedback="TCE — Regional Breakdown" style="font-size:13px;font-weight:700;color:#3c3c3b;margin-bottom:12px;display:flex;align-items:center;">Regional breakdown</div>
         <div class="card" style="padding:0;overflow-x:auto"><div id="eng-table"></div></div>
       </section>
 
       <!-- 4. Breakdown over time -->
       <section style="margin-bottom:24px">
-        <div style="font-size:13px;font-weight:700;color:#3c3c3b;margin-bottom:12px">Breakdown over time <span id="eng-time-hint" style="font-size:11px;color:#9d9d9d;font-weight:400"></span></div>
+        <div data-feedback="TCE — Breakdown Over Time" style="font-size:13px;font-weight:700;color:#3c3c3b;margin-bottom:12px;display:flex;align-items:center;">Breakdown over time <span id="eng-time-hint" style="font-size:11px;color:#9d9d9d;font-weight:400"></span></div>
         <div class="card" style="padding:0;overflow:hidden"><div id="eng-timetable"></div></div>
       </section>
 
       <!-- 5. Market detail -->
       <section style="margin-bottom:24px">
-        <div style="font-size:13px;font-weight:700;color:#3c3c3b;margin-bottom:12px">Market detail &mdash; region to market <span id="eng-mkt-hint" style="font-size:11px;color:#9d9d9d;font-weight:400"></span></div>
+        <div data-feedback="TCE — Market Detail" style="font-size:13px;font-weight:700;color:#3c3c3b;margin-bottom:12px;display:flex;align-items:center;">Market detail &mdash; region to market <span id="eng-mkt-hint" style="font-size:11px;color:#9d9d9d;font-weight:400"></span></div>
         <div class="card" style="padding:0;overflow-x:auto"><div id="eng-marketdrill"></div></div>
       </section>
 
@@ -2094,5 +2094,6 @@ loadEngagement();
 </script>
 <script src="https://cdn.jsdelivr.net/npm/driver.js@0.9.8/dist/driver.min.js"></script>
 <script src="./sw-tour.js"></script>
+<script src="./feedback-widget.js"></script>
 </body>
 </html>
