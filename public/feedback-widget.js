@@ -102,6 +102,7 @@
 
     btn.addEventListener('click', function (e) {
       e.stopPropagation();
+      e.stopImmediatePropagation();
       showDialog(btn, widgetName);
     });
   }
@@ -116,7 +117,8 @@
   }
 
   document.addEventListener('click', function (e) {
-    if (!e.target.closest('.fb-dialog')) closeAll();
+    if (e.target.closest('.fb-dialog') || e.target.closest('button[title="Give feedback on this widget"]')) return;
+    closeAll();
   });
 
   document.addEventListener('keydown', function (e) {
