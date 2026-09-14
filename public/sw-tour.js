@@ -63,6 +63,17 @@
         });
       }
 
+      if (exists('button[data-fb-widget]')) {
+        steps.push({
+          element: 'button[data-fb-widget]',
+          popover: {
+            title: 'Submit feedback',
+            description: 'See the speech bubble icon on each section header? Click it to submit feedback on that specific section &mdash; tell us what\'s missing, confusing, or could be improved. Submissions go straight to Build Design &rsaquo; Feedback.',
+            position: 'bottom',
+          },
+        });
+      }
+
       // All sections below are inside #eng-content (display:none until data loads)
       if (visible('#eng-summary')) {
         steps.push({
@@ -137,17 +148,6 @@
             title: 'Market detail',
             description: 'Drills from billing region down to individual energy market. See exactly which markets within each region are generating the most activity across all engagement streams.',
             position: 'top',
-          },
-        });
-      }
-
-      if (exists('button[data-fb-widget]')) {
-        steps.push({
-          element: 'button[data-fb-widget]',
-          popover: {
-            title: 'Submit feedback',
-            description: 'See the speech bubble icon on each section header? Click it to submit feedback on that specific section &mdash; tell us what\'s missing, confusing, or could be improved. Submissions go straight to Build Design &rsaquo; Feedback.',
-            position: 'bottom',
           },
         });
       }
