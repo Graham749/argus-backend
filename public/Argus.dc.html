@@ -72,7 +72,7 @@ input{font-family:inherit;}
       <span style="font-size:13px;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;color:#fff;">Argus</span>
       <span style="width:1px;height:24px;background:rgba(255,255,255,0.18);"></span>
       <span style="font-size:13px;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;color:#fff;">Team 20</span>
-      <span style="font-size:10px;font-weight:700;padding:3px 9px;background:#ffcc00;color:#3c3c3b;border-radius:20px;letter-spacing:0.08em;text-transform:uppercase;">Beta</span>
+      <span style="font-size:10px;font-weight:700;padding:3px 9px;background:#ffcc00;color:#3c3c3b;border-radius:20px;letter-spacing:0.08em;text-transform:uppercase;">Pilot</span>
     </div>
     <div style="display:flex;align-items:center;gap:16px;">
       <span style="display:flex;align-items:center;gap:7px;font-size:12px;color:rgba(255,255,255,0.6);">
@@ -1605,15 +1605,15 @@ input{font-family:inherit;}
 
           <!-- What's live / What's next -->
           <div style="background:#fffaeb;border:1px solid #D4AA30;border-radius:8px;padding:16px 18px;margin-bottom:20px;">
-            <div style="font-size:12px;font-weight:700;color:#7A5800;margin-bottom:10px;">One step remaining to make MCP live</div>
+            <div style="font-size:12px;font-weight:700;color:#7A5800;margin-bottom:10px;">Steps remaining to make MCP live</div>
             <div style="display:flex;flex-direction:column;gap:10px;">
               <div style="display:flex;gap:12px;align-items:flex-start;">
                 <div style="background:#7DC49A;color:#fff;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px;">✓</div>
                 <div><div style="font-size:11.5px;font-weight:600;color:#1A6E3E;margin-bottom:2px;">Hosting &amp; authentication — done</div><div style="font-size:11px;color:#555;line-height:1.5;">Argus runs on a permanent HTTPS URL (<a href="https://argus.auroraer.cloud" target="_blank" style="color:#288184;">argus.auroraer.cloud</a>). Cloudflare One gates access to Aurora Microsoft accounts — no additional IT setup needed. Fabric SQL authenticates via the service account already in place.</div></div>
               </div>
               <div style="display:flex;gap:12px;align-items:flex-start;">
-                <div style="background:#7DC49A;color:#fff;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px;">✓</div>
-                <div><div style="font-size:11.5px;font-weight:600;color:#1A6E3E;margin-bottom:2px;">MCP server built &amp; tested</div><div style="font-size:11px;color:#555;line-height:1.5;">The MCP server is built, data-validated against Argus, and running locally. Tools cover account search, full client health reports, and software-specific views — with upsell intelligence and live news.</div></div>
+                <div style="background:#D4AA30;color:#fff;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px;">→</div>
+                <div><div style="font-size:11.5px;font-weight:600;color:#7A5800;margin-bottom:2px;">MCP server built &amp; tested — deploy to server</div><div style="font-size:11px;color:#9A7200;line-height:1.5;">The MCP server is built, data-validated against Argus, and running locally. Tools cover account search, full client health reports, and software-specific views — with upsell intelligence and live news. Next step: deploy to the Argus server so it is accessible from the web.</div></div>
               </div>
               <div style="display:flex;gap:12px;align-items:flex-start;">
                 <div style="background:#D4AA30;color:#fff;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px;">→</div>
@@ -1634,7 +1634,7 @@ input{font-family:inherit;}
             </div>
             <div style="background:#FBF0EE;border:1px solid #E0A098;border-radius:10px;padding:18px;">
               <div style="font-size:10px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:#8A2A1A;margin-bottom:4px;">Phase 2 — MCP server (3 tools)</div>
-              <div style="font-size:11px;color:#555;margin-bottom:12px;">In progress · next phase · needs Claude Enterprise registration</div>
+              <div style="font-size:11px;color:#555;margin-bottom:12px;">Built &amp; tested locally · needs server deployment + Claude Enterprise registration</div>
               <div style="display:flex;flex-direction:column;gap:4px;">
                 <div style="display:flex;align-items:baseline;gap:8px;"><span style="font-family:'Courier New',monospace;font-size:9.5px;font-weight:600;color:#8A2A1A;white-space:nowrap;">search_accounts</span><span style="font-size:9.5px;color:#777;">name lookup · resolves parent/child hierarchy</span></div>
                 <div style="display:flex;align-items:baseline;gap:8px;"><span style="font-family:'Courier New',monospace;font-size:9.5px;font-weight:600;color:#8A2A1A;white-space:nowrap;">get_client_health</span><span style="font-size:9.5px;color:#777;">ARR · renewals · pipeline · upsell intelligence · news</span></div>
