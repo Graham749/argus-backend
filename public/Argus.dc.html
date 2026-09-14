@@ -10050,17 +10050,13 @@ class Component extends DCLogic {
       .catch(function() { alert('Delete failed'); });
   };
 
-  // Auto-load whenever fbDashboard appears in the DOM (tab click, page load, or navigating back)
-  var _fbSeen = false;
-  new MutationObserver(function() {
+  // Poll every 250ms: auto-load when fbDashboard appears, reset when it disappears
+  var _fbLoaded = false;
+  setInterval(function() {
     var el = document.getElementById('fbDashboard');
-    if (el && !_fbSeen) {
-      _fbSeen = true;
-      window.__fbLoad();
-    } else if (!el) {
-      _fbSeen = false; // reset when element is removed so next appearance re-triggers
-    }
-  }).observe(document.body, { childList: true, subtree: true });
+    if (el && !_fbLoaded) { _fbLoaded = true; window.__fbLoad(); }
+    else if (!el && _fbLoaded) { _fbLoaded = false; }
+  }, 250);
 })();
 </script>
 <script src="https://cdn.jsdelivr.net/npm/driver.js@0.9.8/dist/driver.min.js"></script>
