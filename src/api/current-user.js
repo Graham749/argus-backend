@@ -49,19 +49,42 @@ function fetchUserFromGraph(token) {
 }
 
 async function getCurrentUser(req, res) {
-  const cfEmail = req.headers['cf-access-authenticated-user-email'];
   const isLocal = req.hostname === 'localhost' || req.hostname === '127.0.0.1';
-
   let email, name;
-  if (cfEmail) {
-    email = cfEmail;
-  } else if (isLocal) {
+
+  // AWS ALB injects x-amzn-oidc-data (signed JWT) after Entra authentication
+  const oidcData = req.headers['x-amzn-oidc-data'];
+  if (oidcData) {
+    try {
+      const base64 = oidcData.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+      const payload = JSON.parse(Buffer.from(base64, 'base64').toString('utf8'));
+      email = payload.email || payload.upn || payload.preferred_username || payload.unique_name;
+      name = payload.name;
+      console.log('[user] OIDC claims:', Object.keys(payload).join(', '));
+    } catch (e) {
+      console.error('[user] Failed to decode OIDC JWT:', e.message);
+    }
+  }
+
+  // Fallback: Cloudflare Access header (not currently active but kept for compatibility)
+  if (!email) {
+    const cfEmail = req.headers['cf-access-authenticated-user-email'];
+    if (cfEmail) email = cfEmail;
+  }
+
+  // Local dev fallback
+  if (!email && isLocal) {
     email = 'graham.clark@auroraer.com';
-  } else {
+  }
+
+  if (!email) {
     return res.json({ email: null, name: null, authenticated: false });
   }
 
-  name = email.split('@')[0].split('.').map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ');
+  if (!name) {
+    name = email.split('@')[0].split('.').map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ');
+  }
+
   res.json({ email, name, authenticated: true });
 }
 
