@@ -1364,6 +1364,7 @@ input{font-family:inherit;}
         <div onClick="{{ setBuildTabArgusVision }}" style="{{ buildTabStyleArgusVision }}">Argus Vision</div>
         <div onClick="{{ setBuildTabDatalake }}" style="{{ buildTabStyleDatalake }}">Data Lake Build</div>
         <div onClick="{{ setBuildTabArgusMcp }}" style="{{ buildTabStyleArgusMcp }}">Argus and MCP</div>
+        <div onClick="{{ setBuildTabRoadmap }}" style="{{ buildTabStyleRoadmap }}">Roadmap</div>
         <div onClick="{{ setBuildTabFeedback }}" style="{{ buildTabStyleFeedback }}">Feedback</div>
       </div>
       <div style="padding:28px 32px;max-width:1080px;">
@@ -1577,13 +1578,13 @@ input{font-family:inherit;}
         <div style="background:#fff;border:1px solid #e6e6e5;border-radius:12px;padding:28px;margin-top:0;">
 
           <!-- Status -->
-          <div style="background:#fce4e4;border:1px solid #e8a0a0;border-radius:8px;padding:10px 16px;font-size:11.5px;color:#8b1a1a;line-height:1.5;margin-bottom:20px;">
-            <strong>Blocked on IT:</strong> Azure App Service hosting + Fabric SQL authentication require a one-time IT service principal setup · IT resource update due September 2026 · Investigating AWS hosting as an alternative · <a href="https://learn.microsoft.com/en-us/fabric/data-warehouse/connectivity" target="_blank" style="color:#8b1a1a;text-decoration:underline;">Technical detail (TDS)</a>
+          <div style="background:#e8f5e9;border:1px solid #7DC49A;border-radius:8px;padding:10px 16px;font-size:11.5px;color:#1A6E3E;line-height:1.5;margin-bottom:20px;">
+            <strong>Phase 1 live:</strong> Argus dashboard running at <a href="https://argus.auroraer.cloud" target="_blank" style="color:#1A6E3E;text-decoration:underline;">argus.auroraer.cloud</a> · Cloudflare One auth · live Fabric data · pilot access via SG-Entra-App-Argus · Phase 2 (MCP) in development
           </div>
 
           <!-- What it enables -->
           <div style="margin-bottom:20px;">
-            <div style="font-size:13px;font-weight:700;color:#3c3c3b;margin-bottom:4px;">What Claude can do once this is live</div>
+            <div style="font-size:13px;font-weight:700;color:#3c3c3b;margin-bottom:4px;">What Claude can do</div>
             <div style="font-size:11.5px;color:#6d6d6c;margin-bottom:14px;">Aurora staff ask plain-English questions in Claude. The MCP server queries our live Salesforce, Zendesk and Productboard data and returns a structured answer — no dashboard, no SQL, no waiting for a report.</div>
             <div style="display:flex;flex-direction:column;gap:8px;">
               <div style="background:#f7f7f5;border:1px solid #e6e6e5;border-radius:8px;padding:12px 16px;">
@@ -1601,59 +1602,138 @@ input{font-family:inherit;}
             </div>
           </div>
 
-          <!-- Why not live yet -->
+          <!-- What's live / What's next -->
           <div style="background:#fffaeb;border:1px solid #D4AA30;border-radius:8px;padding:16px 18px;margin-bottom:20px;">
-            <div style="font-size:12px;font-weight:700;color:#7A5800;margin-bottom:10px;">Why this isn't live yet — three one-time IT tasks</div>
+            <div style="font-size:12px;font-weight:700;color:#7A5800;margin-bottom:10px;">One step remaining to make MCP live</div>
             <div style="display:flex;flex-direction:column;gap:10px;">
               <div style="display:flex;gap:12px;align-items:flex-start;">
-                <div style="background:#D4AA30;color:#fff;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px;">1</div>
-                <div><div style="font-size:11.5px;font-weight:600;color:#7A5800;margin-bottom:2px;">Service principal for Fabric</div><div style="font-size:11px;color:#9A7200;line-height:1.5;">IT creates an Azure AD identity that the server uses to authenticate to our Fabric data warehouse. Without this, no data can be read. It's the same mechanism Power BI uses today — we just need a separate one for Argus.</div></div>
+                <div style="background:#7DC49A;color:#fff;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px;">✓</div>
+                <div><div style="font-size:11.5px;font-weight:600;color:#1A6E3E;margin-bottom:2px;">Hosting &amp; authentication — done</div><div style="font-size:11px;color:#555;line-height:1.5;">Argus runs on a permanent HTTPS URL (<a href="https://argus.auroraer.cloud" target="_blank" style="color:#288184;">argus.auroraer.cloud</a>). Cloudflare One gates access to Aurora Microsoft accounts — no additional IT setup needed. Fabric SQL authenticates via the service account already in place.</div></div>
               </div>
               <div style="display:flex;gap:12px;align-items:flex-start;">
-                <div style="background:#D4AA30;color:#fff;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px;">2</div>
-                <div><div style="font-size:11.5px;font-weight:600;color:#7A5800;margin-bottom:2px;">Azure App Service hosting</div><div style="font-size:11px;color:#9A7200;line-height:1.5;">The Argus app and MCP server need to run at a permanent HTTPS URL — not on a laptop. IT provisions an App Service (small, low cost), adds M365 Easy Auth so Aurora staff sign in with their existing Microsoft account. Setup is roughly a half-day of IT time.</div></div>
+                <div style="background:#7DC49A;color:#fff;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px;">✓</div>
+                <div><div style="font-size:11.5px;font-weight:600;color:#1A6E3E;margin-bottom:2px;">MCP server built &amp; tested</div><div style="font-size:11px;color:#555;line-height:1.5;">The MCP server is built, data-validated against Argus, and running locally. Tools cover account search, full client health reports, and software-specific views — with upsell intelligence and live news.</div></div>
               </div>
               <div style="display:flex;gap:12px;align-items:flex-start;">
-                <div style="background:#D4AA30;color:#fff;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px;">3</div>
-                <div><div style="font-size:11.5px;font-weight:600;color:#7A5800;margin-bottom:2px;">Claude Enterprise admin config</div><div style="font-size:11px;color:#9A7200;line-height:1.5;">Once the server is live at its URL, an Aurora Claude admin registers it in the Claude Enterprise workspace settings. After that, every Aurora user can immediately ask Claude questions against live data — no individual setup required.</div></div>
+                <div style="background:#D4AA30;color:#fff;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px;">→</div>
+                <div><div style="font-size:11.5px;font-weight:600;color:#7A5800;margin-bottom:2px;">Claude Enterprise admin config — next step</div><div style="font-size:11px;color:#9A7200;line-height:1.5;">A Claude Enterprise admin registers the MCP server URL in the Aurora workspace settings. Once done, every Aurora user can immediately ask Claude questions against live data — no individual setup required.</div></div>
               </div>
             </div>
-            <div style="margin-top:12px;font-size:11px;color:#9A7200;border-top:1px solid #E8C060;padding-top:10px;">Once these three steps are done, it is self-service for every Aurora user — no further IT involvement for each person who uses it.</div>
           </div>
 
           <!-- Development journey -->
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
             <div style="background:#EBF5EE;border:1px solid #7DC49A;border-radius:10px;padding:18px;">
-              <div style="font-size:10px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:#1A6E3E;margin-bottom:4px;">Phase 1 — Argus dashboard</div>
-              <div style="font-size:11px;color:#555;margin-bottom:12px;">CS &amp; RPM test users · live data · building data confidence</div>
+              <div style="font-size:10px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:#1A6E3E;margin-bottom:4px;">Phase 1 — Argus dashboard ✓ Live</div>
+              <div style="font-size:11px;color:#555;margin-bottom:12px;">argus.auroraer.cloud · Cloudflare One · pilot access via SG-Entra-App-Argus</div>
               <div style="display:flex;flex-direction:column;gap:6px;">
-                <div style="background:rgba(255,255,255,0.75);border:1px solid rgba(0,0,0,0.08);border-radius:6px;padding:8px 10px;font-size:10.5px;color:#333;line-height:1.4;"><strong style="display:block;margin-bottom:2px;">Prove the data</strong>Real users surface ARR gaps, filter issues and field quality problems before they reach Claude</div>
-                <div style="background:rgba(255,255,255,0.75);border:1px solid rgba(0,0,0,0.08);border-radius:6px;padding:8px 10px;font-size:10.5px;color:#333;line-height:1.4;"><strong style="display:block;margin-bottom:2px;">Learn what questions matter</strong>Which accounts, which metrics, which time horizons — shapes exactly what the MCP tools need to return</div>
+                <div style="background:rgba(255,255,255,0.75);border:1px solid rgba(0,0,0,0.08);border-radius:6px;padding:8px 10px;font-size:10.5px;color:#333;line-height:1.4;"><strong style="display:block;margin-bottom:2px;">Client Health Card</strong>Salesforce subscriptions, ARR, renewals, opportunities, Zendesk tickets, Productboard insights, PostHog usage and EOS engagement — one view per account</div>
+                <div style="background:rgba(255,255,255,0.75);border:1px solid rgba(0,0,0,0.08);border-radius:6px;padding:8px 10px;font-size:10.5px;color:#333;line-height:1.4;"><strong style="display:block;margin-bottom:2px;">Region Intelligence &amp; Software Health</strong>Book-of-business views — renewal risk, EOS engagement by account, total client engagement by market</div>
               </div>
             </div>
             <div style="background:#FBF0EE;border:1px solid #E0A098;border-radius:10px;padding:18px;">
-              <div style="font-size:10px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:#8A2A1A;margin-bottom:4px;">Phase 2 — MCP server (9 tools)</div>
-              <div style="font-size:11px;color:#555;margin-bottom:12px;">Built from Argus-validated patterns · same API layer</div>
+              <div style="font-size:10px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:#8A2A1A;margin-bottom:4px;">Phase 2 — MCP server (3 tools)</div>
+              <div style="font-size:11px;color:#555;margin-bottom:12px;">In progress · next phase · needs Claude Enterprise registration</div>
               <div style="display:flex;flex-direction:column;gap:4px;">
-                <div style="display:flex;align-items:baseline;gap:8px;"><span style="font-family:'Courier New',monospace;font-size:9.5px;font-weight:600;color:#8A2A1A;white-space:nowrap;">search_accounts</span><span style="font-size:9.5px;color:#777;">name lookup · resolves parent/child</span></div>
-                <div style="display:flex;align-items:baseline;gap:8px;"><span style="font-family:'Courier New',monospace;font-size:9.5px;font-weight:600;color:#8A2A1A;white-space:nowrap;">get_account_summary</span><span style="font-size:9.5px;color:#777;">ARR · health · renewal date</span></div>
-                <div style="display:flex;align-items:baseline;gap:8px;"><span style="font-family:'Courier New',monospace;font-size:9.5px;font-weight:600;color:#8A2A1A;white-space:nowrap;">get_account_subscriptions</span><span style="font-size:9.5px;color:#777;">service · market · ARR per line</span></div>
-                <div style="display:flex;align-items:baseline;gap:8px;"><span style="font-family:'Courier New',monospace;font-size:9.5px;font-weight:600;color:#8A2A1A;white-space:nowrap;">get_renewals_at_risk</span><span style="font-size:9.5px;color:#777;">OVERDUE / AT_RISK / TO_WATCH · ARR</span></div>
-                <div style="display:flex;align-items:baseline;gap:8px;"><span style="font-family:'Courier New',monospace;font-size:9.5px;font-weight:600;color:#8A2A1A;white-space:nowrap;">get_opportunities</span><span style="font-size:9.5px;color:#777;">SF pipeline · stage · ARR</span></div>
-                <div style="display:flex;align-items:baseline;gap:8px;"><span style="font-family:'Courier New',monospace;font-size:9.5px;font-weight:600;color:#8A2A1A;white-space:nowrap;">get_support_tickets</span><span style="font-size:9.5px;color:#777;">Zendesk open / pending / trend</span></div>
-                <div style="display:flex;align-items:baseline;gap:8px;"><span style="font-family:'Courier New',monospace;font-size:9.5px;font-weight:600;color:#8A2A1A;white-space:nowrap;">get_feature_priorities</span><span style="font-size:9.5px;color:#777;">Productboard · by market / service</span></div>
-                <div style="display:flex;align-items:baseline;gap:8px;"><span style="font-family:'Courier New',monospace;font-size:9.5px;font-weight:600;color:#8A2A1A;white-space:nowrap;">get_account_usage</span><span style="font-size:9.5px;color:#777;">EOS API volume · engagement trend</span></div>
-                <div style="display:flex;align-items:baseline;gap:8px;"><span style="font-family:'Courier New',monospace;font-size:9.5px;font-weight:600;color:#8A2A1A;white-space:nowrap;">get_pre_call_brief</span><span style="font-size:9.5px;color:#777;">all of the above · one response</span></div>
+                <div style="display:flex;align-items:baseline;gap:8px;"><span style="font-family:'Courier New',monospace;font-size:9.5px;font-weight:600;color:#8A2A1A;white-space:nowrap;">search_accounts</span><span style="font-size:9.5px;color:#777;">name lookup · resolves parent/child hierarchy</span></div>
+                <div style="display:flex;align-items:baseline;gap:8px;"><span style="font-family:'Courier New',monospace;font-size:9.5px;font-weight:600;color:#8A2A1A;white-space:nowrap;">get_client_health</span><span style="font-size:9.5px;color:#777;">ARR · renewals · pipeline · upsell intelligence · news</span></div>
+                <div style="display:flex;align-items:baseline;gap:8px;"><span style="font-family:'Courier New',monospace;font-size:9.5px;font-weight:600;color:#8A2A1A;white-space:nowrap;">get_software_health</span><span style="font-size:9.5px;color:#777;">scoped to Software subs (Chronos, Origin, Amun, Nodal)</span></div>
               </div>
             </div>
           </div>
 
           <!-- Technical note (for IT readers) -->
           <div style="background:#f7f7f5;border:1px solid #e6e6e5;border-radius:8px;padding:14px 16px;">
-            <div style="font-size:11px;font-weight:700;color:#6d6d6c;margin-bottom:6px;">For IT — architecture note</div>
-            <div style="font-size:11px;color:#9d9d9d;line-height:1.6;">Both Argus and the MCP server run on the same Node.js codebase and share the same API layer — a schema change in a Gold table is fixed once, not twice. Azure App Service (B1 tier) hosts both at separate subdomains. M365 Easy Auth gates access to Aurora-authenticated users. The MCP server exposes tools over HTTP; Claude Enterprise calls them on demand via the URL registered in the Anthropic admin console. No data is stored by Claude — every query hits Fabric live and returns only the rows needed.</div>
+            <div style="font-size:11px;font-weight:700;color:#6d6d6c;margin-bottom:6px;">Architecture note</div>
+            <div style="font-size:11px;color:#9d9d9d;line-height:1.6;">Argus runs as a Node.js/Express service on a Windows server (<code style="font-size:10px;background:#eee;padding:1px 4px;border-radius:3px;">srvargusinfrastructure</code>) managed by NSSM. Cloudflare One proxies the public URL and gates access to Aurora Microsoft accounts — no separate IT auth setup required. The MCP server shares the same codebase and Fabric API layer; a schema change is fixed once, not twice. The MCP server runs over stdio for Claude Desktop today; registering it in Claude Enterprise settings makes it available to every Aurora user instantly. No data is stored by Claude — every query hits Fabric live and returns only the rows needed.</div>
           </div>
 
+        </div>
+      </sc-if>
+
+      <!-- Roadmap tab -->
+      <sc-if value="{{ buildTabIsRoadmap }}" hint-placeholder-val="{{ false }}">
+        <div style="background:#fff;border:1px solid #e6e6e5;border-radius:12px;padding:28px;margin-top:0;max-width:800px;">
+
+          <div style="font-size:13px;font-weight:700;color:#3c3c3b;margin-bottom:4px;">What's coming next</div>
+          <div style="font-size:11.5px;color:#6d6d6c;margin-bottom:24px;">Phase 1 (dashboard) is live. Phase 2 (MCP) is in progress. Below is what follows — each feature builds on the validated data layer Argus has established.</div>
+
+          <div style="display:flex;flex-direction:column;gap:16px;">
+
+            <!-- Feature Priority -->
+            <div style="border:1px solid #e6e6e5;border-radius:10px;padding:18px 20px;">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+                <div style="background:#f0f7fd;color:#1A4F8A;border-radius:6px;padding:3px 10px;font-size:10px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;white-space:nowrap;">Phase 3</div>
+                <div style="font-size:13px;font-weight:700;color:#3c3c3b;">Feature Priority</div>
+                <div style="margin-left:auto;font-size:10px;color:#9d9d9d;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;">Planned</div>
+              </div>
+              <div style="font-size:11.5px;color:#6d6d6c;line-height:1.65;margin-bottom:10px;">A Productboard-powered view that ranks the most requested features by the ARR weight and tier of the accounts asking for them. Account managers can see exactly which product investments matter most to their segment — and bring that into commercial conversations.</div>
+              <div style="display:flex;flex-wrap:wrap;gap:6px;">
+                <span style="background:#f0f7fd;color:#1A4F8A;border-radius:12px;padding:3px 10px;font-size:10px;font-weight:600;">Productboard API</span>
+                <span style="background:#f7f7f5;color:#6d6d6c;border-radius:12px;padding:3px 10px;font-size:10px;font-weight:600;">ARR-weighted ranking</span>
+                <span style="background:#f7f7f5;color:#6d6d6c;border-radius:12px;padding:3px 10px;font-size:10px;font-weight:600;">Segment filtering</span>
+              </div>
+            </div>
+
+            <!-- Ask Argus -->
+            <div style="border:1px solid #e6e6e5;border-radius:10px;padding:18px 20px;">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+                <div style="background:#f0f7fd;color:#1A4F8A;border-radius:6px;padding:3px 10px;font-size:10px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;white-space:nowrap;">Phase 3</div>
+                <div style="font-size:13px;font-weight:700;color:#3c3c3b;">Ask Argus</div>
+                <div style="margin-left:auto;font-size:10px;color:#9d9d9d;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;">Prototype exists</div>
+              </div>
+              <div style="font-size:11.5px;color:#6d6d6c;line-height:1.65;margin-bottom:10px;">Natural language chat against live Argus data — no SQL, no dashboard navigation. Ask portfolio-level questions and get instant structured answers. Built and demoed at the AI Offsite; being rebuilt on the validated Argus data layer rather than the prototype's mock data.</div>
+              <div style="background:#f7f7f5;border:1px solid #e6e6e5;border-radius:8px;padding:10px 14px;margin-bottom:10px;">
+                <div style="font-size:10.5px;font-weight:600;color:#288184;margin-bottom:3px;">— "Which Power &amp; Renewables accounts haven't run any software in 3 months?"</div>
+                <div style="font-size:10.5px;color:#9d9d9d;line-height:1.5;">Returns a ranked list with last-run date, ARR, and renewal proximity — ready to act on</div>
+              </div>
+              <div style="display:flex;flex-wrap:wrap;gap:6px;">
+                <span style="background:#f7f7f5;color:#6d6d6c;border-radius:12px;padding:3px 10px;font-size:10px;font-weight:600;">MCP backend</span>
+                <span style="background:#f7f7f5;color:#6d6d6c;border-radius:12px;padding:3px 10px;font-size:10px;font-weight:600;">Claude Enterprise</span>
+                <span style="background:#f7f7f5;color:#6d6d6c;border-radius:12px;padding:3px 10px;font-size:10px;font-weight:600;">Portfolio-level queries</span>
+              </div>
+            </div>
+
+            <!-- Pre-Call Briefing -->
+            <div style="border:1px solid #e6e6e5;border-radius:10px;padding:18px 20px;">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+                <div style="background:#f0f7fd;color:#1A4F8A;border-radius:6px;padding:3px 10px;font-size:10px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;white-space:nowrap;">Phase 3</div>
+                <div style="font-size:13px;font-weight:700;color:#3c3c3b;">Pre-Call Briefing</div>
+                <div style="margin-left:auto;font-size:10px;color:#9d9d9d;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;">Prototype exists</div>
+              </div>
+              <div style="font-size:11.5px;color:#6d6d6c;line-height:1.65;margin-bottom:10px;">Auto-generated one-page brief before any client call. Pull up any account and instantly see: ARR + renewal status, open Zendesk tickets, recent Productboard notes, EOS software engagement, open pipeline, and recent news — all in one formatted brief prepared for the account manager on record.</div>
+              <div style="display:flex;flex-wrap:wrap;gap:6px;">
+                <span style="background:#f7f7f5;color:#6d6d6c;border-radius:12px;padding:3px 10px;font-size:10px;font-weight:600;">All Argus data sources</span>
+                <span style="background:#f7f7f5;color:#6d6d6c;border-radius:12px;padding:3px 10px;font-size:10px;font-weight:600;">Google News RSS</span>
+                <span style="background:#f7f7f5;color:#6d6d6c;border-radius:12px;padding:3px 10px;font-size:10px;font-weight:600;">AM-personalised</span>
+              </div>
+            </div>
+
+            <!-- New Data Signals -->
+            <div style="border:1px solid #e6e6e5;border-radius:10px;padding:18px 20px;">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+                <div style="background:#fffaeb;color:#7A5800;border-radius:6px;padding:3px 10px;font-size:10px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;white-space:nowrap;">Investigation</div>
+                <div style="font-size:13px;font-weight:700;color:#3c3c3b;">New Data Signals</div>
+                <div style="margin-left:auto;font-size:10px;color:#9d9d9d;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;">In planning</div>
+              </div>
+              <div style="font-size:11.5px;color:#6d6d6c;line-height:1.65;margin-bottom:12px;">Three new engagement signals to surface in the health card — giving a fuller picture of how deeply a client is embedded in Aurora's platform.</div>
+              <div style="display:flex;flex-direction:column;gap:8px;">
+                <div style="background:#f7f7f5;border-radius:8px;padding:10px 14px;">
+                  <div style="font-size:11px;font-weight:700;color:#3c3c3b;margin-bottom:3px;">Customer AI engagement</div>
+                  <div style="font-size:10.5px;color:#6d6d6c;line-height:1.5;">How much is each client using Aurora's AI features? Tracked via PostHog — frequency, feature adoption, active users. A leading indicator of platform stickiness and upsell readiness.</div>
+                </div>
+                <div style="background:#f7f7f5;border-radius:8px;padding:10px 14px;">
+                  <div style="font-size:11px;font-weight:700;color:#3c3c3b;margin-bottom:3px;">MCP &amp; Claude tool usage</div>
+                  <div style="font-size:10.5px;color:#6d6d6c;line-height:1.5;">How often are Aurora staff querying client data via the MCP server? Usage volume by account surfaces which clients are being actively managed and where attention may be needed.</div>
+                </div>
+                <div style="background:#f7f7f5;border-radius:8px;padding:10px 14px;">
+                  <div style="font-size:11px;font-weight:700;color:#3c3c3b;margin-bottom:3px;">EOS API engagement</div>
+                  <div style="font-size:10.5px;color:#6d6d6c;line-height:1.5;">API call volume per client as a signal of how deeply the software is embedded in their workflows. High API usage means the product is operationally critical — a strong retention and expansion signal.</div>
+                </div>
+              </div>
+            </div>
+
+          </div>
         </div>
       </sc-if>
 
@@ -1706,6 +1786,7 @@ if (localStorage.getItem('sidebarCollapsed') === 'true') {
 }
 
 // Auto-select account from URL param: ?account=Sonnedix
+// Deep-link to view/tab: ?view=buildDesign&tab=roadmap
 (function() {
   var params = new URLSearchParams(window.location.search);
   var acct = params.get('account');
@@ -1713,7 +1794,16 @@ if (localStorage.getItem('sidebarCollapsed') === 'true') {
     try { localStorage.setItem('argusHealthAccount', acct); } catch(_) {}
     window.__argusTargetAccount = acct;
   }
+  var view = params.get('view');
+  if (view) { try { localStorage.setItem('argusView', view); } catch(_) {} }
+  var tab = params.get('tab');
+  if (tab) { try { localStorage.setItem('buildTab', tab); } catch(_) {} }
 })();
+
+window.__syncUrl = function(view, tab) {
+  var qs = '?view=' + view + (tab ? '&tab=' + tab : '');
+  history.replaceState(null, '', qs);
+};
 
 // Navigate to requested view when opened in new tab (e.g. from SW Intelligence Client Health button)
 (function() {
@@ -8559,25 +8649,27 @@ class Component extends DCLogic {
 
     return {
       syncedAgo:S.buildStatus.syncLabel || 'Synced just now', amName:S.currentUser.name, amInitials:S.currentUser.initials,
-      goHealth:(e)=>{e&&e.preventDefault();localStorage.setItem('argusView','health');this.setV({view:'health'});},
-      goFeatures:(e)=>{e&&e.preventDefault();localStorage.setItem('argusView','features');this.setV({view:'features'});},
-      goAssistant:(e)=>{e&&e.preventDefault();localStorage.setItem('argusView','assistant');this.setV({view:'assistant'});},
-      goBriefing:(e)=>{e&&e.preventDefault();localStorage.setItem('argusView','briefing');this.setV({view:'briefing'});},
-      goBuildStatus:(e)=>{e&&e.preventDefault();localStorage.setItem('argusView','buildStatus');this.setV({view:'buildStatus'});},
-      goBuildDesign:(e)=>{e&&e.preventDefault();localStorage.setItem('argusView','buildDesign');this.setV({view:'buildDesign'});},
-      setBuildTabArgusVision:(e)=>{e&&e.preventDefault();localStorage.setItem('buildTab','argusVision');this.setV({buildTab:'argusVision'});},
-      setBuildTabDatalake:(e)=>{e&&e.preventDefault();localStorage.setItem('buildTab','dataLakeBuild');this.setV({buildTab:'dataLakeBuild'});},
-      setBuildTabArgusMcp:(e)=>{e&&e.preventDefault();localStorage.setItem('buildTab','argusMcp');this.setV({buildTab:'argusMcp'});},
-      setBuildTabFeedback:(e)=>{e&&e.preventDefault();localStorage.setItem('buildTab','feedback');this.setV({buildTab:'feedback'});},
-      goMdm:(e)=>{e&&e.preventDefault();localStorage.setItem('argusView','mdm');window.__mdmSearch='';window.__mdmConfFilter=null;window.__mdmExpandedId=null;this.setV({view:'mdm'}); },
-      goSwIntelligence:(e)=>{e&&e.preventDefault();localStorage.setItem('argusView','swIntelligence');document.body.classList.add('sidebar-collapsed');localStorage.setItem('sidebarCollapsed','true');this.setV({view:'swIntelligence'});},
+      goHealth:(e)=>{e&&e.preventDefault();localStorage.setItem('argusView','health');window.__syncUrl('health');this.setV({view:'health'});},
+      goFeatures:(e)=>{e&&e.preventDefault();localStorage.setItem('argusView','features');window.__syncUrl('features');this.setV({view:'features'});},
+      goAssistant:(e)=>{e&&e.preventDefault();localStorage.setItem('argusView','assistant');window.__syncUrl('assistant');this.setV({view:'assistant'});},
+      goBriefing:(e)=>{e&&e.preventDefault();localStorage.setItem('argusView','briefing');window.__syncUrl('briefing');this.setV({view:'briefing'});},
+      goBuildStatus:(e)=>{e&&e.preventDefault();localStorage.setItem('argusView','buildStatus');window.__syncUrl('buildStatus');this.setV({view:'buildStatus'});},
+      goBuildDesign:(e)=>{e&&e.preventDefault();localStorage.setItem('argusView','buildDesign');window.__syncUrl('buildDesign',localStorage.getItem('buildTab')||'argusVision');this.setV({view:'buildDesign'});},
+      setBuildTabArgusVision:(e)=>{e&&e.preventDefault();localStorage.setItem('buildTab','argusVision');window.__syncUrl('buildDesign','argusVision');this.setV({buildTab:'argusVision'});},
+      setBuildTabDatalake:(e)=>{e&&e.preventDefault();localStorage.setItem('buildTab','dataLakeBuild');window.__syncUrl('buildDesign','dataLakeBuild');this.setV({buildTab:'dataLakeBuild'});},
+      setBuildTabArgusMcp:(e)=>{e&&e.preventDefault();localStorage.setItem('buildTab','argusMcp');window.__syncUrl('buildDesign','argusMcp');this.setV({buildTab:'argusMcp'});},
+      setBuildTabRoadmap:(e)=>{e&&e.preventDefault();localStorage.setItem('buildTab','roadmap');window.__syncUrl('buildDesign','roadmap');this.setV({buildTab:'roadmap'});},
+      setBuildTabFeedback:(e)=>{e&&e.preventDefault();localStorage.setItem('buildTab','feedback');window.__syncUrl('buildDesign','feedback');this.setV({buildTab:'feedback'});},
+      goMdm:(e)=>{e&&e.preventDefault();localStorage.setItem('argusView','mdm');window.__syncUrl('mdm');window.__mdmSearch='';window.__mdmConfFilter=null;window.__mdmExpandedId=null;this.setV({view:'mdm'}); },
+      goSwIntelligence:(e)=>{e&&e.preventDefault();localStorage.setItem('argusView','swIntelligence');window.__syncUrl('swIntelligence');document.body.classList.add('sidebar-collapsed');localStorage.setItem('sidebarCollapsed','true');this.setV({view:'swIntelligence'});},
       tourBtnStyle:S.view==='buildDesign'?'display:none':'display:flex;align-items:center;gap:6px;padding:5px 12px;background:transparent;border:1px solid rgba(255,255,255,0.25);border-radius:6px;color:rgba(255,255,255,0.8);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;letter-spacing:0.02em;',
       navStyleHealth:navStyle('health'), navStyleFeatures:navStyle('features'), navStyleAssistant:navStyle('assistant'), navStyleBriefing:navStyle('briefing'), navStyleBuildStatus:navStyle('buildStatus'), navStyleBuildDesign:navStyle('buildDesign'), navStyleMdm:navStyle('mdm'), navStyleSwIntelligence:navStyle('swIntelligence'),
       isHealth:S.view==='health', isFeatures:S.view==='features', isAssistant:S.view==='assistant', isBriefing:S.view==='briefing', isBuildStatus:S.view==='buildStatus', isBuildDesign:S.view==='buildDesign', isMdm:S.view==='mdm', isSwIntelligence:S.view==='swIntelligence',
-      buildTabIsArgusVision:(S.buildTab||'argusVision')==='argusVision', buildTabIsDataLake:S.buildTab==='dataLakeBuild', buildTabIsArgusMcp:S.buildTab==='argusMcp', buildTabIsFeedback:S.buildTab==='feedback',
+      buildTabIsArgusVision:(S.buildTab||'argusVision')==='argusVision', buildTabIsDataLake:S.buildTab==='dataLakeBuild', buildTabIsArgusMcp:S.buildTab==='argusMcp', buildTabIsRoadmap:S.buildTab==='roadmap', buildTabIsFeedback:S.buildTab==='feedback',
       buildTabStyleArgusVision:(S.buildTab||'argusVision')==='argusVision'?'padding:12px 20px;font-size:13px;font-weight:600;color:#3c3c3b;border-bottom:2px solid #288184;cursor:pointer;white-space:nowrap;display:flex;align-items:center;margin-bottom:-1px;':'padding:12px 20px;font-size:13px;font-weight:600;color:#9d9d9d;border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap;display:flex;align-items:center;margin-bottom:-1px;',
       buildTabStyleDatalake:S.buildTab==='dataLakeBuild'?'padding:12px 20px;font-size:13px;font-weight:600;color:#3c3c3b;border-bottom:2px solid #288184;cursor:pointer;white-space:nowrap;display:flex;align-items:center;margin-bottom:-1px;':'padding:12px 20px;font-size:13px;font-weight:600;color:#9d9d9d;border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap;display:flex;align-items:center;margin-bottom:-1px;',
       buildTabStyleArgusMcp:S.buildTab==='argusMcp'?'padding:12px 20px;font-size:13px;font-weight:600;color:#3c3c3b;border-bottom:2px solid #288184;cursor:pointer;white-space:nowrap;display:flex;align-items:center;margin-bottom:-1px;':'padding:12px 20px;font-size:13px;font-weight:600;color:#9d9d9d;border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap;display:flex;align-items:center;margin-bottom:-1px;',
+      buildTabStyleRoadmap:S.buildTab==='roadmap'?'padding:12px 20px;font-size:13px;font-weight:600;color:#3c3c3b;border-bottom:2px solid #288184;cursor:pointer;white-space:nowrap;display:flex;align-items:center;margin-bottom:-1px;':'padding:12px 20px;font-size:13px;font-weight:600;color:#9d9d9d;border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap;display:flex;align-items:center;margin-bottom:-1px;',
       buildTabStyleFeedback:S.buildTab==='feedback'?'padding:12px 20px;font-size:13px;font-weight:600;color:#3c3c3b;border-bottom:2px solid #288184;cursor:pointer;white-space:nowrap;display:flex;align-items:center;margin-bottom:-1px;':'padding:12px 20px;font-size:13px;font-weight:600;color:#9d9d9d;border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap;display:flex;align-items:center;margin-bottom:-1px;',
       healthTabsHtml, rangesHtml, healthTabs, ranges, hc,
       toggleUsers:()=>this.toggleDrill('users_'+S.healthClient), drillUsers:!!S.drills['users_'+S.healthClient],
