@@ -32,7 +32,6 @@
       'font-family:Lato,Helvetica Neue,Arial,sans-serif',
     ].join(';');
 
-    // Position below icon, align right edge to icon right edge
     var top = rect.bottom + window.scrollY + 6;
     var left = Math.min(rect.right - 280, window.innerWidth - 296);
     dialog.style.top = top + 'px';
@@ -41,7 +40,7 @@
     dialog.innerHTML = [
       '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">',
         '<span style="font-size:11px;font-weight:700;color:#3c3c3b;letter-spacing:0.04em;text-transform:uppercase;">' + widgetName + '</span>',
-        '<button class="fb-close" style="background:none;border:none;cursor:pointer;font-size:16px;color:#9d9d9d;padding:0;line-height:1;">✕</button>',
+        '<button class="fb-close" style="background:none;border:none;cursor:pointer;font-size:16px;color:#9d9d9d;padding:0;line-height:1;">&#x2715;</button>',
       '</div>',
       '<textarea class="fb-text" placeholder="What could be improved?" style="width:100%;box-sizing:border-box;border:1px solid #e6e6e5;border-radius:6px;padding:8px;font-size:12px;font-family:inherit;resize:vertical;min-height:72px;color:#3c3c3b;outline:none;"></textarea>',
       '<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:10px;">',
@@ -81,10 +80,13 @@
     };
   }
 
+  var SVG = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#288184" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:block;opacity:0.7;pointer-events:none;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>';
+
   function wireFeedback(el) {
     var widgetName = el.getAttribute('data-feedback');
     var btn = document.createElement('button');
     btn.title = 'Give feedback on this widget';
+    btn.setAttribute('data-fb-widget', widgetName);
     btn.style.cssText = [
       'background:none',
       'border:none',
@@ -95,20 +97,13 @@
       'display:flex',
       'align-items:center',
     ].join(';');
-    btn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#288184" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:block;opacity:0.7;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>';
-
+    btn.innerHTML = SVG;
     el.style.position = el.style.position || 'relative';
     el.appendChild(btn);
-
-    btn.addEventListener('click', function (e) {
-      e.stopPropagation();
-      e.stopImmediatePropagation();
-      showDialog(btn, widgetName);
-    });
   }
 
   function wireFeedbackIfNeeded(el) {
-    if (el.querySelector('button[title="Give feedback on this widget"]')) return;
+    if (el.querySelector('button[data-fb-widget]')) return;
     wireFeedback(el);
   }
 
@@ -116,9 +111,14 @@
     document.querySelectorAll('[data-feedback]').forEach(wireFeedbackIfNeeded);
   }
 
+  // Single delegated listener — no stopPropagation, works regardless of other handlers
   document.addEventListener('click', function (e) {
-    if (e.target.closest('.fb-dialog') || e.target.closest('button[title="Give feedback on this widget"]')) return;
-    closeAll();
+    var fbBtn = e.target.closest('button[data-fb-widget]');
+    if (fbBtn) {
+      showDialog(fbBtn, fbBtn.getAttribute('data-fb-widget'));
+      return;
+    }
+    if (!e.target.closest('.fb-dialog')) closeAll();
   });
 
   document.addEventListener('keydown', function (e) {
@@ -127,7 +127,6 @@
 
   wireAll();
 
-  // Re-wire after data loads replace card header content
   var _rewireTimer;
   new MutationObserver(function () {
     clearTimeout(_rewireTimer);
