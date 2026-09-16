@@ -1347,6 +1347,12 @@ async function loadData(currency) {
 if (new URLSearchParams(location.search).get('embed') === '1') {
   document.documentElement.classList.add('embed-mode');
 }
+(function() {
+  var _p = new URLSearchParams(location.search);
+  var _t = _p.get('tab') || (document.documentElement.classList.contains('embed-mode') && localStorage.getItem('swTab'));
+  try { localStorage.removeItem('swTab'); } catch(e) {}
+  if (_t && _t !== 'sw') setTimeout(function() { switchTab(_t); }, 0);
+})();
 
 // ── Client Engagement tab ─────────────────────────────────────────────────
 var ENG_DATA = null, engLoaded = false;
@@ -1394,6 +1400,9 @@ function engSumStream(s, region, months) {
 
 function switchTab(tab) {
   track('tab_switched', { tab: tab === 'sw' ? 'software_health' : 'total_client_engagement', page: 'sw_intelligence' });
+  if (document.documentElement.classList.contains('embed-mode') && window.parent && window.parent.__syncUrl) {
+    window.parent.__syncUrl('swIntelligence', tab === 'sw' ? null : tab);
+  }
   var isSW = (tab === 'sw');
   document.getElementById('sw-tab').classList.toggle('active', isSW);
   document.getElementById('eng-tab').classList.toggle('active', !isSW);

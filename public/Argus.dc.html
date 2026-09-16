@@ -1815,7 +1815,10 @@ if (localStorage.getItem('sidebarCollapsed') === 'true') {
   var view = params.get('view');
   if (view) { try { localStorage.setItem('argusView', view); } catch(_) {} }
   var tab = params.get('tab');
-  if (tab) { try { localStorage.setItem('buildTab', tab); } catch(_) {} }
+  if (tab) {
+    try { localStorage.setItem('buildTab', tab); } catch(_) {}
+    if (view === 'swIntelligence') { try { localStorage.setItem('swTab', tab); } catch(_) {} }
+  }
 })();
 
 window.__syncUrl = function(view, tab) {
