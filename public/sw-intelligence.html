@@ -8,7 +8,6 @@
 <title>Region Intelligence · Software Health</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@0.9.8/dist/driver.min.css">
-<script src="./analytics.js"></script>
 <style>
 @font-face{font-family:'Lato';src:url('assets/fonts/lato-regular.woff2') format('woff2');font-weight:400;font-style:normal;font-display:swap;}
 @font-face{font-family:'Lato';src:url('assets/fonts/lato-bold.woff2') format('woff2');font-weight:700;font-style:normal;font-display:swap;}
@@ -417,7 +416,8 @@ function renderCurrBar() {
 }
 
 function track(event, props) {
-  if (window.posthog) posthog.capture(event, props || {});
+  var ph = (window.parent && window.parent.posthog) || window.posthog;
+  if (ph) ph.capture(event, props || {});
 }
 
 function setCurr(c) {
