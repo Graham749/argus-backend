@@ -8711,19 +8711,19 @@ class Component extends DCLogic {
       briefTabs, bc, briefStamp:'17 Jun 2025 · 09:14',
       buildStatus:S.buildStatus,
       bronzeExpanded:S.bronzeExpanded,
-      toggleBronzeExpand:()=>this.setV({bronzeExpanded:!S.bronzeExpanded}),
+      toggleBronzeExpand:()=>{if(window.posthog&&!S.bronzeExpanded)posthog.capture('card_expanded',{card:'bronze',page:'build_status'});this.setV({bronzeExpanded:!S.bronzeExpanded});},
       bronzeButtonStyle:S.bronzeExpanded
         ? {width:'100%',fontSize:'12px',fontWeight:700,padding:'8px 12px',borderRadius:'8px',border:'1.5px solid #cd7f32',background:'#f5ece0',color:'#cd7f32',cursor:'pointer',marginBottom:'8px',userSelect:'none',WebkitUserSelect:'none'}
         : {width:'100%',fontSize:'12px',fontWeight:700,padding:'8px 12px',borderRadius:'8px',border:'1.5px solid #e6e6e5',background:'#fff',color:'#cd7f32',cursor:'pointer',marginBottom:'8px',userSelect:'none',WebkitUserSelect:'none'},
       bronzeButtonLabel:S.bronzeExpanded ? '▼ Hide detail' : '▶ Show detail',
       silverExpanded:S.silverExpanded,
-      toggleSilverExpand:()=>this.setV({silverExpanded:!S.silverExpanded}),
+      toggleSilverExpand:()=>{if(window.posthog&&!S.silverExpanded)posthog.capture('card_expanded',{card:'silver',page:'build_status'});this.setV({silverExpanded:!S.silverExpanded});},
       silverButtonStyle:S.silverExpanded
         ? {width:'100%',fontSize:'12px',fontWeight:700,padding:'8px 12px',borderRadius:'8px',border:'1.5px solid #c0c0c0',background:'#f0f0f0',color:'#708090',cursor:'pointer',marginBottom:'8px',userSelect:'none',WebkitUserSelect:'none'}
         : {width:'100%',fontSize:'12px',fontWeight:700,padding:'8px 12px',borderRadius:'8px',border:'1.5px solid #e6e6e5',background:'#fff',color:'#c0c0c0',cursor:'pointer',marginBottom:'8px',userSelect:'none',WebkitUserSelect:'none'},
       silverButtonLabel:S.silverExpanded ? '▼ Hide detail' : '▶ Show detail',
       goldExpanded:S.goldExpanded,
-      toggleGoldExpand:()=>this.setV({goldExpanded:!S.goldExpanded}),
+      toggleGoldExpand:()=>{if(window.posthog&&!S.goldExpanded)posthog.capture('card_expanded',{card:'gold',page:'build_status'});this.setV({goldExpanded:!S.goldExpanded});},
       goldButtonStyle:S.goldExpanded
         ? {width:'100%',fontSize:'12px',fontWeight:700,padding:'8px 12px',borderRadius:'8px',border:'1.5px solid #d4af37',background:'#fefbf3',color:'#d4af37',cursor:'pointer',marginBottom:'8px',userSelect:'none',WebkitUserSelect:'none'}
         : {width:'100%',fontSize:'12px',fontWeight:700,padding:'8px 12px',borderRadius:'8px',border:'1.5px solid #e6e6e5',background:'#fff',color:'#d4af37',cursor:'pointer',marginBottom:'8px',userSelect:'none',WebkitUserSelect:'none'},
@@ -8817,7 +8817,8 @@ class Component extends DCLogic {
           const phPill = phRowData
             ? '<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:#fff3e8;color:#e36a00;white-space:nowrap;">'+(phRowData.matchMethod||'Matched')+'</span>'
             : '<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:#f1f1f0;color:#9d9d9d;white-space:nowrap;">No data</span>';
-          const mainRow = '<tr style="border-bottom:1px solid #f1f1f0;cursor:pointer;'+(a.pbOnly?'background:#fdf9ff;':'')+(isExp?'background:#fafafa;':'')+'" onclick="(function(){window.__mdmExpandedId=window.__mdmExpandedId==='+tid+'?null:'+tid+';window.__mdmRefresh&&window.__mdmRefresh();})()">'
+          const phAcct = JSON.stringify(a.pbOnly ? (a.pbCompanyName||'') : (a.sfAccountName||''));
+          const mainRow = '<tr style="border-bottom:1px solid #f1f1f0;cursor:pointer;'+(a.pbOnly?'background:#fdf9ff;':'')+(isExp?'background:#fafafa;':'')+'" onclick="(function(){var _k='+tid+';var _exp=window.__mdmExpandedId!==_k;window.__mdmExpandedId=_exp?_k:null;if(_exp&&window.posthog)posthog.capture(\'card_expanded\',{card:\'mdm_row\',account:'+phAcct+',page:\'mdm\'});window.__mdmRefresh&&window.__mdmRefresh();})()">'
             +'<td style="padding:9px 10px;">'+nameCell+'</td>'
             +'<td style="padding:9px 10px;">'+zdPill+'</td>'
             +'<td style="padding:9px 10px;">'+pbPill+'</td>'
@@ -9838,9 +9839,9 @@ class Component extends DCLogic {
           +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;">'
             +'<div style="display:flex;flex:1;min-width:220px;border:1.5px solid #e6e6e5;border-radius:8px;overflow:hidden;background:#fff;">'
               +'<input id="mdm-search" type="text" placeholder="Search by SF name, SF ID, ZD org name, ZD org ID, PB company…" value="'+(window.__mdmSearch||'')+'" '
-                +'onkeydown="(function(e){if(e.key===\'Enter\'){window.__mdmSearch=e.target.value;window.__mdmRefresh&&window.__mdmRefresh();}})(event)" '
+                +'onkeydown="(function(e){if(e.key===\'Enter\'){window.__mdmSearch=e.target.value;if(window.posthog)posthog.capture(\'filter_applied\',{widget:\'mdm_search\',value:e.target.value,page:\'mdm\'});window.__mdmRefresh&&window.__mdmRefresh();}})(event)" '
                 +'style="flex:1;padding:8px 12px;border:none;font-size:13px;font-family:inherit;outline:none;min-width:0;" />'
-              +'<button onclick="(function(){var v=document.getElementById(\'mdm-search\').value;window.__mdmSearch=v;window.__mdmRefresh&&window.__mdmRefresh();})()" '
+              +'<button onclick="(function(){var v=document.getElementById(\'mdm-search\').value;window.__mdmSearch=v;if(window.posthog)posthog.capture(\'filter_applied\',{widget:\'mdm_search\',value:v,page:\'mdm\'});window.__mdmRefresh&&window.__mdmRefresh();})()" '
                 +'style="padding:8px 16px;background:#288184;color:#fff;border:none;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;">Search</button>'
             +'</div>'
             +'<div id="mdm-am-wrap"></div>'
