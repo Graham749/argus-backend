@@ -625,7 +625,6 @@ function clearAll() {
 }
 
 function setGroupBy(el, gb) {
-  track('filter_applied', { widget: 'group_by', value: gb, page: 'sw_intelligence' });
   GROUP_BY = gb;
   REGION = 'all'; MKT = new Set(); HEALTH = 'all'; STAGE = 'all';
   document.querySelectorAll('#groupby-toggle .toggle-btn').forEach(function(b) { b.classList.remove('active'); });
