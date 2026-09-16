@@ -8817,8 +8817,9 @@ class Component extends DCLogic {
           const phPill = phRowData
             ? '<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:#fff3e8;color:#e36a00;white-space:nowrap;">'+(phRowData.matchMethod||'Matched')+'</span>'
             : '<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:#f1f1f0;color:#9d9d9d;white-space:nowrap;">No data</span>';
-          const phAcct = JSON.stringify(a.pbOnly ? (a.pbCompanyName||'') : (a.sfAccountName||''));
-          const mainRow = '<tr style="border-bottom:1px solid #f1f1f0;cursor:pointer;'+(a.pbOnly?'background:#fdf9ff;':'')+(isExp?'background:#fafafa;':'')+'" onclick="(function(){var _k='+tid+';var _exp=window.__mdmExpandedId!==_k;window.__mdmExpandedId=_exp?_k:null;if(_exp&&window.posthog)posthog.capture(\'card_expanded\',{card:\'mdm_row\',account:'+phAcct+',page:\'mdm\'});window.__mdmRefresh&&window.__mdmRefresh();})()">'
+          if (!window.__mdmAcctNames) window.__mdmAcctNames = {};
+          window.__mdmAcctNames[rowKey] = a.pbOnly ? (a.pbCompanyName||'') : (a.sfAccountName||'');
+          const mainRow = '<tr style="border-bottom:1px solid #f1f1f0;cursor:pointer;'+(a.pbOnly?'background:#fdf9ff;':'')+(isExp?'background:#fafafa;':'')+'" onclick="(function(){var _k='+tid+';var _exp=window.__mdmExpandedId!==_k;window.__mdmExpandedId=_exp?_k:null;if(_exp&&window.posthog)posthog.capture(\'card_expanded\',{card:\'mdm_row\',account:(window.__mdmAcctNames&&window.__mdmAcctNames[_k])||_k,page:\'mdm\'});window.__mdmRefresh&&window.__mdmRefresh();})()">'
             +'<td style="padding:9px 10px;">'+nameCell+'</td>'
             +'<td style="padding:9px 10px;">'+zdPill+'</td>'
             +'<td style="padding:9px 10px;">'+pbPill+'</td>'
