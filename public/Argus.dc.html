@@ -3442,7 +3442,7 @@ class Component extends DCLogic {
             return `<circle cx="${xp(i).toFixed(1)}" cy="${yp(p.numCredits).toFixed(1)}" r="7" fill="transparent" style="cursor:pointer;"
               onmouseover="window.__zdSparkShow(event,'${p.id}',${p.numCredits}+' credits','${d}')"
               onmouseout="window.__zdSparkHide()"
-              onclick="window.open('https://auroraer.zendesk.com/agent/tickets/${p.id}','_blank')"/>`;
+              onclick="if(window.posthog)posthog.capture('external_link_opened',{widget:'zendesk',ticket_id:'${p.id}',page:'client_health'});window.open('https://auroraer.zendesk.com/agent/tickets/${p.id}','_blank')"/>`;
           }).join('');
           host.innerHTML = `<svg width="100%" height="${H}" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
             <path d="${line}" fill="none" stroke="#03363D" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
@@ -3470,7 +3470,7 @@ class Component extends DCLogic {
             return `<circle cx="${xp(i).toFixed(1)}" cy="${yp(p.replyBusinessMinutes).toFixed(1)}" r="7" fill="transparent" style="cursor:pointer;"
               onmouseover="window.__zdSparkShow(event,'${p.id}',${hrs}+'h reply','${d}')"
               onmouseout="window.__zdSparkHide()"
-              onclick="window.open('https://auroraer.zendesk.com/agent/tickets/${p.id}','_blank')"/>`;
+              onclick="if(window.posthog)posthog.capture('external_link_opened',{widget:'zendesk',ticket_id:'${p.id}',page:'client_health'});window.open('https://auroraer.zendesk.com/agent/tickets/${p.id}','_blank')"/>`;
           }).join('');
           host.innerHTML = `<svg width="100%" height="${H}" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
             <path d="${line}" fill="none" stroke="#03363D" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
@@ -3519,7 +3519,7 @@ class Component extends DCLogic {
             return `<circle cx="${xp(i).toFixed(1)}" cy="${yp(p.timeSpentMinutes).toFixed(1)}" r="7" fill="transparent" style="cursor:pointer;"
               onmouseover="window.__zdSparkShow(event,'${p.id}',${p.timeSpentMinutes}+' mins','${d}')"
               onmouseout="window.__zdSparkHide()"
-              onclick="window.open('https://auroraer.zendesk.com/agent/tickets/${p.id}','_blank')"/>`;
+              onclick="if(window.posthog)posthog.capture('external_link_opened',{widget:'zendesk',ticket_id:'${p.id}',page:'client_health'});window.open('https://auroraer.zendesk.com/agent/tickets/${p.id}','_blank')"/>`;
           }).join('');
 
           host.innerHTML = `<svg width="100%" height="${H}" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
@@ -5868,6 +5868,7 @@ class Component extends DCLogic {
         renderCasesGraph();
 
         window.__showCasesDrillFromCompact = function(filter) {
+          if (window.posthog) posthog.capture('pill_drilled', { widget: 'cases', value: filter, page: 'client_health' });
           window.__hcExpand('cases');
           var sv = document.getElementById('casesSummaryView'); if (sv) sv.style.display = 'block';
           if (!window.__casesData) return;
@@ -6209,6 +6210,7 @@ class Component extends DCLogic {
         window.__renderOppsGraph = renderOppsGraph;
         renderOppsGraph();
         window.__showOppsDrillFromCompact = function(filter) {
+          if (window.posthog) posthog.capture('pill_drilled', { widget: 'opps', value: filter, page: 'client_health' });
           window.__hcExpand('opps');
           var sv = document.getElementById('oppsSummaryView'); if (sv) sv.style.display = 'block';
           if (!window.__oppsData) return;
@@ -6883,6 +6885,7 @@ class Component extends DCLogic {
         newBtn.style.color = '#fff';
         newBtn.style.border = '1px solid #288184';
 
+        if (window.posthog) posthog.capture('filter_applied', { widget: 'sf_service_type', value: newBtn.dataset.type, page: 'client_health' });
         this.currentServiceTypeFilter = newBtn.dataset.type;
         this.currentProductFilter = 'all';
         this.setupProductFilters(newBtn.dataset.type);
@@ -10184,5 +10187,14 @@ class Component extends DCLogic {
 <script src="https://cdn.jsdelivr.net/npm/driver.js@0.9.8/dist/driver.min.js"></script>
 <script src="./tour.js"></script>
 <script src="./feedback-widget.js"></script>
+<script>
+document.addEventListener('click', function(e) {
+  var a = e.target.closest('a[href*="zendesk.com"]');
+  if (a && window.posthog) {
+    var m = (a.href || '').match(/\/tickets\/(\d+)/);
+    posthog.capture('external_link_opened', { widget: 'zendesk', ticket_id: m ? m[1] : null, page: 'client_health' });
+  }
+});
+</script>
 </body>
 </html>
