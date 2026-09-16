@@ -1816,8 +1816,7 @@ function engRenderDlPanel(wm) {
 
   // Wire up searchable product dropdown into the wrapper div just rendered
   makeSearchableSelect('eng-dl-prod-wrap', dlProducts, 'All', 'All products', function(v) {
-    E_DL_PRODUCT = v;
-    engRender();
+    engSetDlProduct(v);
   }, E_DL_PRODUCT);
 }
 
