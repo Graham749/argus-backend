@@ -1924,6 +1924,7 @@ document.addEventListener('click', function(e) {
 });
 
 window.__hcExpand = function(prefix) {
+  if (window.posthog) posthog.capture('card_expanded', { card: prefix, page: 'client_health' });
   var ids = prefix === 'eos'
     ? { hdr:'eosEngHeader', body:'eosEngBody', chev:'eosEngChev' }
     : { hdr:prefix+'CardHeader', body:prefix+'CardBody', chev:prefix+'CollapseChev' };
@@ -3077,6 +3078,7 @@ class Component extends DCLogic {
       if(!select.__argusWired) { select.__argusWired = true; select.addEventListener('change', (e) => {
         const accountName = e.target.value;
         if(accountName) {
+          if (window.posthog) posthog.capture('account_selected', { account: accountName, page: 'client_health' });
           try{ localStorage.setItem('argusHealthAccount', accountName); }catch(e){}
           this.updateAccountTitles(accountName);
           this.currentServiceTypeFilter = 'all';
@@ -4280,9 +4282,9 @@ class Component extends DCLogic {
     var viewDayBtn   = document.getElementById('phViewDay');
     var viewWeekBtn  = document.getElementById('phViewWeek');
     var viewMonthBtn = document.getElementById('phViewMonth');
-    if (viewDayBtn)   viewDayBtn.onclick   = function() { window.__phSetView('day'); };
-    if (viewWeekBtn)  viewWeekBtn.onclick  = function() { window.__phSetView('week'); };
-    if (viewMonthBtn) viewMonthBtn.onclick = function() { window.__phSetView('month'); };
+    if (viewDayBtn)   viewDayBtn.onclick   = function() { if (window.posthog) posthog.capture('filter_applied', { widget: 'ph_view', value: 'day',   page: 'client_health' }); window.__phSetView('day'); };
+    if (viewWeekBtn)  viewWeekBtn.onclick  = function() { if (window.posthog) posthog.capture('filter_applied', { widget: 'ph_view', value: 'week',  page: 'client_health' }); window.__phSetView('week'); };
+    if (viewMonthBtn) viewMonthBtn.onclick = function() { if (window.posthog) posthog.capture('filter_applied', { widget: 'ph_view', value: 'month', page: 'client_health' }); window.__phSetView('month'); };
 
     window.__phSetMetric = function(m) {
       if (!window.__phState) return;
@@ -4304,10 +4306,10 @@ class Component extends DCLogic {
     var metricEventsBtn   = document.getElementById('phMetricEvents');
     var metricUsersBtn    = document.getElementById('phMetricUsers');
     var metricRunsBtn     = document.getElementById('phMetricRuns');
-    if (metricFeaturesBtn) metricFeaturesBtn.onclick = function() { window.__phSetMetric('features'); };
-    if (metricEventsBtn)   metricEventsBtn.onclick   = function() { window.__phSetMetric('events'); };
-    if (metricUsersBtn)    metricUsersBtn.onclick    = function() { window.__phSetMetric('users'); };
-    if (metricRunsBtn)     metricRunsBtn.onclick     = function() { window.__phSetMetric('runs'); };
+    if (metricFeaturesBtn) metricFeaturesBtn.onclick = function() { if (window.posthog) posthog.capture('filter_applied', { widget: 'ph_metric', value: 'features', page: 'client_health' }); window.__phSetMetric('features'); };
+    if (metricEventsBtn)   metricEventsBtn.onclick   = function() { if (window.posthog) posthog.capture('filter_applied', { widget: 'ph_metric', value: 'events',   page: 'client_health' }); window.__phSetMetric('events'); };
+    if (metricUsersBtn)    metricUsersBtn.onclick    = function() { if (window.posthog) posthog.capture('filter_applied', { widget: 'ph_metric', value: 'users',    page: 'client_health' }); window.__phSetMetric('users'); };
+    if (metricRunsBtn)     metricRunsBtn.onclick     = function() { if (window.posthog) posthog.capture('filter_applied', { widget: 'ph_metric', value: 'runs',     page: 'client_health' }); window.__phSetMetric('runs'); };
 
     window.__phToggle = function(k) {
       if (!window.__phState) return;

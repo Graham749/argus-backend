@@ -25,6 +25,7 @@
   }
 
   function startTour() {
+    if (window.posthog) posthog.capture('tour_started', { page: 'sw_intelligence' });
     if (typeof Driver === 'undefined') {
       console.warn('Driver.js not loaded');
       return;

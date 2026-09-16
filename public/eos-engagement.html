@@ -159,6 +159,7 @@ function fmt(n) { return Number(n||0).toLocaleString('en-GB'); }
 function fmtK(n) { const v = Number(n||0); return v >= 1000 ? (v/1000).toFixed(1)+'k' : String(v); }
 
 function setRegion(el, r) {
+  if (window.posthog) posthog.capture('filter_applied', { widget: 'region', value: r, page: 'eos_engagement' });
   REGION = r;
   document.querySelectorAll('#region-bar .pill').forEach(p => p.classList.remove('active'));
   el.classList.add('active');
@@ -166,6 +167,7 @@ function setRegion(el, r) {
 }
 
 function setPeriod(el, p) {
+  if (window.posthog) posthog.capture('filter_applied', { widget: 'period', value: p, page: 'eos_engagement' });
   PERIOD = p;
   document.querySelectorAll('.filter-bar .pill[data-p]').forEach(x => x.classList.remove('active'));
   el.classList.add('active');

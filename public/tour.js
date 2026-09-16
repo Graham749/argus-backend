@@ -326,6 +326,7 @@
   document.addEventListener('click', function (e) {
     if (e.target.closest('#tourBtn')) {
       e.stopPropagation();
+      if (window.posthog) posthog.capture('tour_started', { page: 'argus' });
       startTour();
     }
   });

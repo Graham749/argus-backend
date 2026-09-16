@@ -416,7 +416,12 @@ function renderCurrBar() {
   }).join('');
 }
 
+function track(event, props) {
+  if (window.posthog) posthog.capture(event, props || {});
+}
+
 function setCurr(c) {
+  track('filter_applied', { widget: 'currency', value: c, page: 'sw_intelligence' });
   CURR = c;
   renderCurrBar();
   renderKPIs();
@@ -447,6 +452,7 @@ function swChip(s) {
 }
 
 function setZDFilter(el, mode) {
+  track('filter_applied', { widget: 'zd_status', value: mode, page: 'sw_intelligence' });
   ZD_FILTER = mode;
   document.querySelectorAll('#zd-subfilter .pill').forEach(function(p) { p.classList.remove('active'); });
   el.classList.add('active');
@@ -454,6 +460,7 @@ function setZDFilter(el, mode) {
 }
 
 function setOPPFilter(el, mode) {
+  track('filter_applied', { widget: 'opp_status', value: mode, page: 'sw_intelligence' });
   OPP_FILTER = mode;
   document.querySelectorAll('#opp-subfilter .pill').forEach(function(p) { p.classList.remove('active'); });
   el.classList.add('active');
@@ -461,6 +468,7 @@ function setOPPFilter(el, mode) {
 }
 
 function setFP(el, mode) {
+  track('filter_applied', { widget: 'signal', value: mode, page: 'sw_intelligence' });
   FP = mode;
   ZD_FILTER = 'all';
   OPP_FILTER = 'open';
@@ -480,6 +488,7 @@ function setFP(el, mode) {
 }
 
 function setRegion(el, r) {
+  track('filter_applied', { widget: 'region', value: r, page: 'sw_intelligence' });
   REGION = r; MKT = new Set(); HEALTH = 'all'; STAGE = 'all';
   document.querySelectorAll('#region-bar .pill').forEach(function(p) { p.classList.remove('active'); });
   el.classList.add('active');
@@ -488,6 +497,7 @@ function setRegion(el, r) {
 }
 
 function setMkt(el, m) {
+  track('filter_applied', { widget: 'market', value: m || 'all', page: 'sw_intelligence' });
   if (!m) {
     MKT = new Set();
     document.querySelectorAll('#mkt-bar .pill').forEach(function(p) { p.classList.remove('active'); });
@@ -552,6 +562,7 @@ function populateRegionPills() {
 }
 
 function openClientHealth(acct) {
+  track('client_health_opened', { account: acct, page: 'sw_intelligence' });
   try {
     localStorage.setItem('argusHealthAccount', acct);
     localStorage.setItem('argusInitView', 'health');
@@ -579,6 +590,7 @@ function updateClearAllState() {
 }
 
 function clearAll() {
+  track('filters_cleared', { page: 'sw_intelligence' });
   REGION = 'all'; MKT = new Set(); HEALTH = 'all'; STAGE = 'all';
   FP = 'ALL'; ZD_FILTER = 'all'; OPP_FILTER = 'open';
   var srch = document.getElementById('cl-search');
@@ -613,6 +625,7 @@ function clearAll() {
 }
 
 function setGroupBy(el, gb) {
+  track('filter_applied', { widget: 'group_by', value: gb, page: 'sw_intelligence' });
   GROUP_BY = gb;
   REGION = 'all'; MKT = new Set(); HEALTH = 'all'; STAGE = 'all';
   document.querySelectorAll('#groupby-toggle .toggle-btn').forEach(function(b) { b.classList.remove('active'); });
@@ -625,6 +638,7 @@ function setGroupBy(el, gb) {
 }
 
 function setStage(s) {
+  track('filter_applied', { widget: 'stage', value: s, page: 'sw_intelligence' });
   STAGE = (STAGE === s) ? 'all' : s;
   HEALTH = 'all';
   renderHealthBar(); renderKPIs(); renderClients(); updateClearAllState();
@@ -664,6 +678,7 @@ function clientHealthBucket(client) {
 }
 
 function setHealth(key) {
+  track('filter_applied', { widget: 'renewal_health', value: key, page: 'sw_intelligence' });
   HEALTH = key;
   STAGE = 'all';
   renderHealthBar();
@@ -1378,6 +1393,7 @@ function engSumStream(s, region, months) {
 }
 
 function switchTab(tab) {
+  track('tab_switched', { tab: tab === 'sw' ? 'software_health' : 'total_client_engagement', page: 'sw_intelligence' });
   var isSW = (tab === 'sw');
   document.getElementById('sw-tab').classList.toggle('active', isSW);
   document.getElementById('eng-tab').classList.toggle('active', !isSW);
@@ -1433,6 +1449,7 @@ function engRenderFilter() {
 }
 
 function engSetRegion(r) {
+  track('filter_applied', { widget: 'tce_region', value: r, page: 'sw_intelligence' });
   E_REGION = r; E_MARKET = "All";
   engRenderFilter();
   engPopulateMarketBar();
@@ -1440,6 +1457,7 @@ function engSetRegion(r) {
 }
 
 function engSetMarket(m) {
+  track('filter_applied', { widget: 'tce_market', value: m, page: 'sw_intelligence' });
   E_MARKET = m;
   engPopulateMarketBar();
   engRender();
@@ -1456,6 +1474,7 @@ function engClearFilters() {
 }
 
 function engPreset(p) {
+  track('filter_applied', { widget: 'tce_time_preset', value: p, page: 'sw_intelligence' });
   var now = new Date();
   var curM = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
   if (p === 'all')  { E_START = E_MIN; E_END = E_MAX; }
@@ -1707,6 +1726,7 @@ function engRenderRunsPanel(wm) {
 }
 
 function engSetDlProduct(p) {
+  track('filter_applied', { widget: 'tce_dl_product', value: p, page: 'sw_intelligence' });
   E_DL_PRODUCT = p;
   engRender();
 }
@@ -1794,6 +1814,7 @@ function engRenderDlPanel(wm) {
 }
 
 function engSetProduct(p) {
+  track('filter_applied', { widget: 'tce_product', value: p, page: 'sw_intelligence' });
   E_PRODUCT = p;
   engRender();
 }
