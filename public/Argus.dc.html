@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html>
 <head>
 <meta charset="utf-8">
@@ -217,6 +217,12 @@ input{font-family:inherit;}
             </span>
           </div>
 
+          <!-- Energy market pills: outside sfSummaryView so visible during drilldown -->
+          <div id="sfMarketPillContainer" style="display:none;gap:8px;margin-bottom:8px;flex-wrap:wrap;align-items:center;">
+            <span style="font-size:11px;color:#6d6d6c;font-weight:700;min-width:70px;">Market:</span>
+            <div id="sfMarketPills" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
+          </div>
+
           <!-- Summary View (Risk Status Cards) -->
           <div id="sfSummaryView" style="display:none;">
             <!-- Service Type Filter -->
@@ -233,11 +239,6 @@ input{font-family:inherit;}
               <div id="sfProductFilters" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
             </div>
 
-            <!-- Energy Market pills (shown when specific product selected) -->
-            <div id="sfMarketPillContainer" style="display:none;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center;">
-              <span style="font-size:11px;color:#6d6d6c;font-weight:700;min-width:70px;">Market:</span>
-              <div id="sfMarketPills" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
-            </div>
 
             <!-- Account Filter (Parent/Child) -->
             <div id="sfAccountFilterContainer" style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center;display:none;">
@@ -6830,6 +6831,7 @@ class Component extends DCLogic {
     this.currentServiceTypeFilter = 'all';
     this.currentProductFilter = 'all';
     this.currentAccountFilter = 'all';
+    this.currentMarketFilter = 'all';
     this.currentCurrencyMode = 'GBP';
     this.fxRates = fxRates || { GBP: 1 };
 
@@ -6921,6 +6923,7 @@ class Component extends DCLogic {
         if (window.posthog) posthog.capture('filter_applied', { widget: 'sf_service_type', value: newBtn.dataset.type, page: 'client_health' });
         this.currentServiceTypeFilter = newBtn.dataset.type;
         this.currentProductFilter = 'all';
+        this.currentMarketFilter = 'all';
         this.setupProductFilters(newBtn.dataset.type);
         this.showSummary();
         if(['Software','Subscription Analytics'].includes(newBtn.dataset.type)){
@@ -6973,6 +6976,7 @@ class Component extends DCLogic {
         filtersDiv.querySelectorAll('button').forEach(b => { b.style.cssText = btnStyle(false); });
         btn.style.cssText = btnStyle(true);
         this.currentProductFilter = btn.dataset.prod;
+        this.currentMarketFilter = 'all';
         this.showSummary();
         this.autoExpandAll();
       });
@@ -7123,8 +7127,8 @@ class Component extends DCLogic {
     const _sym      = _symMap[_currCode] || _currCode;
     const _fmtCurr  = (v, sym) => { const p = (sym==='£'||sym==='$'||sym==='€') ? sym : sym+' '; return v >= 1e6 ? p+(v/1e6).toFixed(1)+'m' : p+Math.round(v/1000)+'k'; };
 
-    // Energy market pills — only when a specific product is selected
-    (function renderMarketPills(productFilter, subs, toDisp, sym) {
+    // Energy market pills — only when a specific product is selected; clickable to filter drilldown
+    (function renderMarketPills(self, productFilter, subs, toDisp, sym) {
       const container = document.getElementById('sfMarketPillContainer');
       const pillsDiv  = document.getElementById('sfMarketPills');
       if(!container || !pillsDiv) return;
@@ -7133,12 +7137,39 @@ class Component extends DCLogic {
       subs.forEach(s => { if(s.energy_market && (toDisp(s.arr_gbp) || 0) > 0) mktArr[s.energy_market] = (mktArr[s.energy_market] || 0) + toDisp(s.arr_gbp); });
       const markets = Object.keys(mktArr).sort();
       if(!markets.length) { container.style.display = 'none'; return; }
-      const fmt = v => { const p = (sym==='£'||sym==='$'||sym==='€') ? sym : sym+' '; return v >= 1e6 ? p+(v/1e6).toFixed(1)+'m' : p+Math.round(v/1000)+'k'; };
-      pillsDiv.innerHTML = markets.map(m =>
-        `<span style="padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;background:#f0f9f9;color:#288184;border:1px solid #cde8e8;white-space:nowrap;">${m}<span style="opacity:0.7;font-weight:400;margin-left:4px;">· ${fmt(mktArr[m])}</span></span>`
-      ).join('');
+      const fmt = v => { const p = (sym==='£'||sym==='$'||sym==='€') ? sym : sym+' '; return v >= 1e6 ? p+(v/1e6).toFixed(1)+'m' : p+Math.round(v/1000)+'k'; };
+      pillsDiv.innerHTML = markets.map(m => {
+        const active = m === self.currentMarketFilter;
+        const bg = active ? '#288184' : '#f0f9f9';
+        const col = active ? '#fff' : '#288184';
+        const border = active ? '1px solid #288184' : '1px solid #cde8e8';
+        const opacity = active ? '0.85' : '0.7';
+        return `<span data-market="${m}" style="padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;background:${bg};color:${col};border:${border};white-space:nowrap;cursor:pointer;">${m}<span style="opacity:${opacity};font-weight:400;margin-left:4px;">· ${fmt(mktArr[m])}</span></span>`;
+      }).join('');
+      pillsDiv.querySelectorAll('[data-market]').forEach(function(sp) {
+        sp.onclick = function() {
+          const mkt = sp.dataset.market;
+          self.currentMarketFilter = (self.currentMarketFilter === mkt) ? 'all' : mkt;
+          pillsDiv.querySelectorAll('[data-market]').forEach(function(p2) {
+            const a = p2.dataset.market === self.currentMarketFilter;
+            p2.style.background = a ? '#288184' : '#f0f9f9';
+            p2.style.color = a ? '#fff' : '#288184';
+            p2.style.borderColor = a ? '#288184' : '#cde8e8';
+          });
+          if(window.__sfActiveDrilldown) {
+            self.showDetailView();
+          } else {
+            self.showSummary();
+          }
+        };
+      });
       container.style.display = 'flex';
-    })(this.currentProductFilter, filteredSubs, _toDisp, _sym);
+    })(this, this.currentProductFilter, filteredSubs, _toDisp, _sym);
+
+    // Filter subscriptions by energy market
+    if(this.currentMarketFilter && this.currentMarketFilter !== 'all'){
+      filteredSubs = filteredSubs.filter(s => s.energy_market === this.currentMarketFilter);
+    }
 
     // Filter subscriptions by account
     if(this.currentAccountFilter && this.currentAccountFilter !== 'all'){
@@ -7536,9 +7567,13 @@ class Component extends DCLogic {
     const tbody = document.getElementById('sfSubscriptionsBody');
     tbody.innerHTML = '';
 
-    const filtered = this.currentAccountFilter && this.currentAccountFilter !== 'all'
-      ? this.currentDrilldownSubs.filter(s => s.account_name === this.currentAccountFilter)
-      : this.currentDrilldownSubs;
+    let filtered = this.currentDrilldownSubs;
+    if(this.currentAccountFilter && this.currentAccountFilter !== 'all'){
+      filtered = filtered.filter(s => s.account_name === this.currentAccountFilter);
+    }
+    if(this.currentMarketFilter && this.currentMarketFilter !== 'all'){
+      filtered = filtered.filter(s => s.energy_market === this.currentMarketFilter);
+    }
 
     const sorted = [...filtered].sort((a, b) => {
       const aVal = a[this.currentSortField];
