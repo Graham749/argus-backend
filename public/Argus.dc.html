@@ -7175,7 +7175,12 @@ class Component extends DCLogic {
     const riskSummary = document.getElementById('sfRiskSummaryRow');
 
     if(totalCount === 0){
-      if(noDataMsg)   noDataMsg.style.display   = 'block';
+      if(noDataMsg){
+        noDataMsg.style.display = 'block';
+        noDataMsg.querySelector('div').textContent = _isGbp
+          ? 'No subscriptions found for this service type'
+          : `No ${_currCode} subscriptions for this account`;
+      }
       if(timelineEl)  timelineEl.style.display  = 'none';
       if(riskSummary) riskSummary.style.display = 'none';
       this.updateHcCompact('sfCompact', '<div class="hc-compact-status"><span class="hc-pill hc-pill-grey">No subscriptions</span></div>');
