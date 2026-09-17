@@ -217,11 +217,6 @@ input{font-family:inherit;}
             </span>
           </div>
 
-          <!-- Energy market pills: outside sfSummaryView so visible during drilldown -->
-          <div id="sfMarketPillContainer" style="display:none;gap:8px;margin-bottom:8px;flex-wrap:wrap;align-items:center;">
-            <span style="font-size:11px;color:#6d6d6c;font-weight:700;min-width:70px;">Market:</span>
-            <div id="sfMarketPills" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
-          </div>
 
           <!-- Summary View (Risk Status Cards) -->
           <div id="sfSummaryView" style="display:none;">
@@ -239,6 +234,12 @@ input{font-family:inherit;}
               <div id="sfProductFilters" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
             </div>
 
+
+            <!-- Energy Market pills (shown when specific product selected) -->
+            <div id="sfMarketPillContainer" style="display:none;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center;">
+              <span style="font-size:11px;color:#6d6d6c;font-weight:700;min-width:70px;">Market:</span>
+              <div id="sfMarketPills" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
+            </div>
 
             <!-- Account Filter (Parent/Child) -->
             <div id="sfAccountFilterContainer" style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center;display:none;">
@@ -7150,17 +7151,9 @@ class Component extends DCLogic {
         sp.onclick = function() {
           const mkt = sp.dataset.market;
           self.currentMarketFilter = (self.currentMarketFilter === mkt) ? 'all' : mkt;
-          pillsDiv.querySelectorAll('[data-market]').forEach(function(p2) {
-            const a = p2.dataset.market === self.currentMarketFilter;
-            p2.style.background = a ? '#288184' : '#f0f9f9';
-            p2.style.color = a ? '#fff' : '#288184';
-            p2.style.borderColor = a ? '#288184' : '#cde8e8';
-          });
-          if(window.__sfActiveDrilldown) {
-            self.showDetailView();
-          } else {
-            self.showSummary();
-          }
+          const wasAutoExpanded = window.__sfActiveDrilldown === '_all';
+          self.showSummary();
+          if(wasAutoExpanded) self.autoExpandAll();
         };
       });
       container.style.display = 'flex';
