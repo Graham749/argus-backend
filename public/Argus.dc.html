@@ -223,6 +223,12 @@ input{font-family:inherit;}
               <div id="sfProductFilters" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
             </div>
 
+            <!-- Energy Market pills (shown when specific product selected) -->
+            <div id="sfMarketPillContainer" style="display:none;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center;">
+              <span style="font-size:11px;color:#6d6d6c;font-weight:700;min-width:70px;">Market:</span>
+              <div id="sfMarketPills" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
+            </div>
+
             <!-- Account Filter (Parent/Child) -->
             <div id="sfAccountFilterContainer" style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center;display:none;">
               <span style="font-size:11px;color:#6d6d6c;font-weight:700;min-width:70px;">Account:</span>
@@ -7076,6 +7082,23 @@ class Component extends DCLogic {
     if(this.currentProductFilter && this.currentProductFilter !== 'all'){
       filteredSubs = filteredSubs.filter(s => s.product_category === this.currentProductFilter);
     }
+
+    // Energy market pills — only when a specific product is selected
+    (function renderMarketPills(productFilter, subs) {
+      const container = document.getElementById('sfMarketPillContainer');
+      const pillsDiv  = document.getElementById('sfMarketPills');
+      if(!container || !pillsDiv) return;
+      if(!productFilter || productFilter === 'all') { container.style.display = 'none'; pillsDiv.innerHTML = ''; return; }
+      const mktArr = {};
+      subs.forEach(s => { if(s.energy_market && s.arr_gbp > 0) mktArr[s.energy_market] = (mktArr[s.energy_market] || 0) + s.arr_gbp; });
+      const markets = Object.keys(mktArr).sort();
+      if(!markets.length) { container.style.display = 'none'; return; }
+      const fmt = v => v >= 1e6 ? '£'+(v/1e6).toFixed(1)+'m' : '£'+Math.round(v/1000)+'k';
+      pillsDiv.innerHTML = markets.map(m =>
+        `<span style="padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;background:#f0f9f9;color:#288184;border:1px solid #cde8e8;white-space:nowrap;">${m}<span style="opacity:0.7;font-weight:400;margin-left:4px;">· ${fmt(mktArr[m])}</span></span>`
+      ).join('');
+      container.style.display = 'flex';
+    })(this.currentProductFilter, filteredSubs);
 
     // Filter subscriptions by account
     if(this.currentAccountFilter && this.currentAccountFilter !== 'all'){
