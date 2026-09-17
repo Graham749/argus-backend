@@ -216,10 +216,10 @@ input{font-family:inherit;}
               <button class="sfServiceTypeFilter" data-type="Admin Product" data-hidden="true" style="padding:6px 12px;border-radius:6px;border:1px solid #e6e6e5;background:#fff;color:#288184;font-size:11px;font-weight:700;cursor:pointer;display:none;">Admin Product</button>
               <span id="sfTotalRevPill" style="display:none;margin-left:4px;padding:4px 12px;border-radius:12px;background:#e8f5e9;color:#2e7d32;font-size:11px;font-weight:700;white-space:nowrap;"></span>
               <span id="sfCurrencyToggle" style="display:none;margin-left:auto;gap:2px;border:1px solid #e6e6e5;border-radius:6px;overflow:hidden;">
-                <button onclick="window.__sfSetCurrency('GBP')" data-curr="GBP" style="padding:3px 9px;font-size:10px;font-weight:700;border:none;cursor:pointer;background:#288184;color:#fff;">GBP</button>
-                <button onclick="window.__sfSetCurrency('AUD')" data-curr="AUD" style="padding:3px 9px;font-size:10px;font-weight:700;border:none;cursor:pointer;background:#fff;color:#288184;">AUD</button>
-                <button onclick="window.__sfSetCurrency('USD')" data-curr="USD" style="padding:3px 9px;font-size:10px;font-weight:700;border:none;cursor:pointer;background:#fff;color:#288184;">USD</button>
-                <button onclick="window.__sfSetCurrency('EUR')" data-curr="EUR" style="padding:3px 9px;font-size:10px;font-weight:700;border:none;cursor:pointer;background:#fff;color:#288184;">EUR</button>
+                <button data-curr="GBP" style="padding:3px 9px;font-size:10px;font-weight:700;border:none;cursor:pointer;background:#288184;color:#fff;">GBP</button>
+                <button data-curr="AUD" style="padding:3px 9px;font-size:10px;font-weight:700;border:none;cursor:pointer;background:#fff;color:#288184;">AUD</button>
+                <button data-curr="USD" style="padding:3px 9px;font-size:10px;font-weight:700;border:none;cursor:pointer;background:#fff;color:#288184;">USD</button>
+                <button data-curr="EUR" style="padding:3px 9px;font-size:10px;font-weight:700;border:none;cursor:pointer;background:#fff;color:#288184;">EUR</button>
               </span>
             </div>
 
@@ -10263,6 +10263,10 @@ document.addEventListener('click', function(e) {
     var m = (a.href || '').match(/\/tickets\/(\d+)/);
     posthog.capture('external_link_opened', { widget: 'zendesk', ticket_id: m ? m[1] : null, page: 'client_health' });
   }
+});
+document.getElementById('sfCurrencyToggle').addEventListener('click', function(e) {
+  var btn = e.target.closest('button[data-curr]');
+  if (btn && window.__sfSetCurrency) window.__sfSetCurrency(btn.dataset.curr);
 });
 </script>
 </body>
