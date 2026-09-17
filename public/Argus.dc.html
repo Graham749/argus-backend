@@ -7139,7 +7139,7 @@ class Component extends DCLogic {
     // Total revenue pill + currency toggle
     const totalArr = filteredSubs.reduce((s, r) => s + (r[_arrField] || 0), 0);
     const pill = document.getElementById('sfTotalRevPill');
-    if(pill){ pill.textContent = _fmtCurr(totalArr, _currSym) + ' Total ARR'; pill.style.display = 'inline-block'; }
+    if(pill){ pill.textContent = _fmtCurr(totalArr, _sym) + ' Total ARR'; pill.style.display = 'inline-block'; }
     const toggle = document.getElementById('sfCurrencyToggle');
     if(toggle) {
       toggle.style.display = 'flex';
