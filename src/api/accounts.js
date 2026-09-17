@@ -118,6 +118,7 @@ async function getAccountSubscriptions(req, res) {
         s.status,
         CAST(s.currency AS VARCHAR(3)) as currency,
         ROUND(s.arr_gbp, 2) as arr_gbp,
+        ROUND(s.arr, 2) as arr_local,
         s.subscription_start_date,
         s.subscription_end_date,
         s.renewal_date,

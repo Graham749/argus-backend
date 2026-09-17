@@ -215,6 +215,10 @@ input{font-family:inherit;}
               <button class="sfServiceTypeFilter" data-type="Subscription Analytics" data-hidden="true" style="padding:6px 12px;border-radius:6px;border:1px solid #e6e6e5;background:#fff;color:#288184;font-size:11px;font-weight:700;cursor:pointer;display:none;">Subscription Analytics</button>
               <button class="sfServiceTypeFilter" data-type="Admin Product" data-hidden="true" style="padding:6px 12px;border-radius:6px;border:1px solid #e6e6e5;background:#fff;color:#288184;font-size:11px;font-weight:700;cursor:pointer;display:none;">Admin Product</button>
               <span id="sfTotalRevPill" style="display:none;margin-left:4px;padding:4px 12px;border-radius:12px;background:#e8f5e9;color:#2e7d32;font-size:11px;font-weight:700;white-space:nowrap;"></span>
+              <span id="sfCurrencyToggle" style="display:none;margin-left:auto;display:none;gap:2px;border:1px solid #e6e6e5;border-radius:6px;overflow:hidden;">
+                <button id="sfCurrGbp" onclick="window.__sfSetCurrency('gbp')" style="padding:3px 9px;font-size:10px;font-weight:700;border:none;cursor:pointer;background:#288184;color:#fff;">GBP</button>
+                <button id="sfCurrLocal" onclick="window.__sfSetCurrency('local')" style="padding:3px 9px;font-size:10px;font-weight:700;border:none;cursor:pointer;background:#fff;color:#288184;">Local</button>
+              </span>
             </div>
 
             <!-- Product Sub-filter (shown when Software or Subscription Analytics selected) -->
@@ -6820,6 +6824,18 @@ class Component extends DCLogic {
     this.currentServiceTypeFilter = 'all';
     this.currentProductFilter = 'all';
     this.currentAccountFilter = 'all';
+    if (!this.currentCurrencyMode) this.currentCurrencyMode = 'gbp';
+
+    const self = this;
+    window.__sfSetCurrency = function(mode) {
+      self.currentCurrencyMode = mode;
+      const gbpBtn   = document.getElementById('sfCurrGbp');
+      const localBtn = document.getElementById('sfCurrLocal');
+      if (gbpBtn)   { gbpBtn.style.background   = mode === 'gbp'   ? '#288184' : '#fff'; gbpBtn.style.color   = mode === 'gbp'   ? '#fff' : '#288184'; }
+      if (localBtn) { localBtn.style.background = mode === 'local' ? '#288184' : '#fff'; localBtn.style.color = mode === 'local' ? '#fff' : '#288184'; }
+      self.showSummary();
+      self.setupProductFilters(self.currentServiceTypeFilter);
+    };
     this.setupServiceTypeFilters();
     this.setupAccountFilters();
     this.groupedSubs = this.groupByRenewalDays(subs);
@@ -6913,16 +6929,21 @@ class Component extends DCLogic {
       return;
     }
     // Collect distinct products + total ARR per product for this service type
+    const _pCurrMode = this.currentCurrencyMode || 'gbp';
+    const _pArrField = _pCurrMode === 'local' ? 'arr_local' : 'arr_gbp';
+    const _pCurrSym  = _pCurrMode === 'local'
+      ? (this.currentSubscriptions.find(s => s.currency) || {}).currency || '£'
+      : '£';
     const prodArr = {};
     this.currentSubscriptions
       .filter(s => s.service_type === serviceType && s.product_category)
       .forEach(s => {
-        prodArr[s.product_category] = (prodArr[s.product_category] || 0) + (s.arr_gbp || 0);
+        prodArr[s.product_category] = (prodArr[s.product_category] || 0) + (s[_pArrField] || 0);
       });
     const products = Object.keys(prodArr).sort();
     if(!products.length){ container.style.display = 'none'; return; }
 
-    const fmtA = v => v >= 1e6 ? '£'+(v/1e6).toFixed(1)+'m' : '£'+Math.round(v/1000)+'k';
+    const fmtA = v => { const p = _pCurrSym === '£' ? '£' : _pCurrSym+' '; return v >= 1e6 ? p+(v/1e6).toFixed(1)+'m' : p+Math.round(v/1000)+'k'; };
     const btnStyle = (active) =>
       `padding:5px 10px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;border:1px solid ${active?'#288184':'#e6e6e5'};background:${active?'#288184':'#fff'};color:${active?'#fff':'#288184'};white-space:nowrap;`;
 
@@ -7084,32 +7105,46 @@ class Component extends DCLogic {
     }
 
     // Energy market pills — only when a specific product is selected
-    (function renderMarketPills(productFilter, subs) {
+    const _currMode = this.currentCurrencyMode || 'gbp';
+    const _arrField = _currMode === 'local' ? 'arr_local' : 'arr_gbp';
+    const _currSym  = _currMode === 'local'
+      ? (filteredSubs.find(s => s.currency) || {}).currency || '£'
+      : '£';
+    const _fmtCurr = (v, sym) => {
+      const s = sym === '£' ? '£' : (sym + ' ');
+      return v >= 1e6 ? s+(v/1e6).toFixed(1)+'m' : s+Math.round(v/1000)+'k';
+    };
+    (function renderMarketPills(productFilter, subs, arrField, sym) {
       const container = document.getElementById('sfMarketPillContainer');
       const pillsDiv  = document.getElementById('sfMarketPills');
       if(!container || !pillsDiv) return;
       if(!productFilter || productFilter === 'all') { container.style.display = 'none'; pillsDiv.innerHTML = ''; return; }
       const mktArr = {};
-      subs.forEach(s => { if(s.energy_market && s.arr_gbp > 0) mktArr[s.energy_market] = (mktArr[s.energy_market] || 0) + s.arr_gbp; });
+      subs.forEach(s => { if(s.energy_market && (s[arrField] || 0) > 0) mktArr[s.energy_market] = (mktArr[s.energy_market] || 0) + (s[arrField] || 0); });
       const markets = Object.keys(mktArr).sort();
       if(!markets.length) { container.style.display = 'none'; return; }
-      const fmt = v => v >= 1e6 ? '£'+(v/1e6).toFixed(1)+'m' : '£'+Math.round(v/1000)+'k';
+      const fmt = v => { const p = sym === '£' ? '£' : sym+' '; return v >= 1e6 ? p+(v/1e6).toFixed(1)+'m' : p+Math.round(v/1000)+'k'; };
       pillsDiv.innerHTML = markets.map(m =>
         `<span style="padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;background:#f0f9f9;color:#288184;border:1px solid #cde8e8;white-space:nowrap;">${m}<span style="opacity:0.7;font-weight:400;margin-left:4px;">· ${fmt(mktArr[m])}</span></span>`
       ).join('');
       container.style.display = 'flex';
-    })(this.currentProductFilter, filteredSubs);
+    })(this.currentProductFilter, filteredSubs, _arrField, _currSym);
 
     // Filter subscriptions by account
     if(this.currentAccountFilter && this.currentAccountFilter !== 'all'){
       filteredSubs = filteredSubs.filter(s => s.account_name === this.currentAccountFilter);
     }
 
-    // Total revenue pill — always show next to service type buttons
-    const fmtAp = v => v >= 1e6 ? '£'+(v/1e6).toFixed(1)+'m' : '£'+Math.round(v/1000)+'k';
-    const totalArr = filteredSubs.reduce((s, r) => s + (r.arr_gbp || 0), 0);
+    // Total revenue pill + currency toggle
+    const totalArr = filteredSubs.reduce((s, r) => s + (r[_arrField] || 0), 0);
     const pill = document.getElementById('sfTotalRevPill');
-    if(pill){ pill.textContent = fmtAp(totalArr) + ' Total ARR'; pill.style.display = 'inline-block'; }
+    if(pill){ pill.textContent = _fmtCurr(totalArr, _currSym) + ' Total ARR'; pill.style.display = 'inline-block'; }
+    const toggle = document.getElementById('sfCurrencyToggle');
+    if(toggle) toggle.style.display = 'flex';
+    const gbpBtn   = document.getElementById('sfCurrGbp');
+    const localBtn = document.getElementById('sfCurrLocal');
+    if(gbpBtn)   { gbpBtn.style.background   = _currMode === 'gbp'   ? '#288184' : '#fff'; gbpBtn.style.color   = _currMode === 'gbp'   ? '#fff' : '#288184'; }
+    if(localBtn) { localBtn.style.background = _currMode === 'local' ? '#288184' : '#fff'; localBtn.style.color = _currMode === 'local' ? '#fff' : '#288184'; }
 
     // Regroup based on filtered subscriptions and store for drilldown
     const groups = this.groupByRenewalDays(filteredSubs);
