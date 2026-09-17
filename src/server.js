@@ -62,52 +62,6 @@ app.use((req, res, next) => {
   next();
 });
 
-// ── Allowlist guard (temporary until ALB/Entra group restriction is in place) ──
-// Set ALLOWED_EMAILS in .env as a comma-separated list of authorised email addresses.
-// If the var is missing or empty the guard is disabled (open to all authenticated users).
-// Bypassed automatically on localhost.
-const _allowedEmails = new Set(
-  (process.env.ALLOWED_EMAILS || '')
-    .split(',')
-    .map(e => e.trim().toLowerCase())
-    .filter(Boolean)
-);
-
-function decodeOidcEmail(req) {
-  try {
-    const token = req.headers['x-amzn-oidc-data'];
-    if (!token) return null;
-    const payload = JSON.parse(Buffer.from(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString('utf8'));
-    return (payload.email || payload.upn || payload.preferred_username || payload.unique_name || '').toLowerCase();
-  } catch { return null; }
-}
-
-app.use((req, res, next) => {
-  // Skip when allowlist is not configured
-  if (_allowedEmails.size === 0) return next();
-  // Skip in local dev
-  if (req.hostname === 'localhost' || req.hostname === '127.0.0.1') return next();
-  // Skip health check
-  if (req.path === '/health') return next();
-
-  const email = decodeOidcEmail(req);
-  if (email && _allowedEmails.has(email)) return next();
-
-  const displayEmail = email || 'unknown';
-  console.warn(`[auth] Blocked unauthorised access: ${displayEmail} ${req.path}`);
-
-  if (req.path.startsWith('/api/')) {
-    return res.status(403).json({ error: 'Access restricted. Contact your account manager lead to request access.' });
-  }
-  return res.status(403).send(`<!DOCTYPE html><html><head><title>Access Restricted</title>
-<style>body{font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:#f5f5f5;}
-.box{background:#fff;border-radius:8px;padding:40px;max-width:420px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.1);}
-h2{color:#3c3c3b;margin-bottom:8px;}p{color:#6d6d6c;font-size:14px;}</style></head>
-<body><div class="box"><h2>Access Restricted</h2>
-<p>Your account (<strong>${displayEmail}</strong>) is not authorised to use Argus.</p>
-<p>Contact your account manager lead to request access.</p></div></body></html>`);
-});
-
 const argusPath = path.join(__dirname, '../public');
 
 // Health check
