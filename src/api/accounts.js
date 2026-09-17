@@ -168,7 +168,11 @@ async function getAccountSubscriptions(req, res) {
     const contract_cards = Object.values(contractMap).sort((a, b) => b.total - a.total);
     contract_cards.forEach(c => { c.arr_gbp = Math.round(c.arr_gbp); });
 
-    const data = { account: queryAccountName, account_manager: accountLookup.accountManager || null, summary: summaryData, contract_cards, subscriptions: detailRows };
+    const fxRows = await query(`SELECT currency_iso_code, CAST(gbp_rate AS FLOAT) as gbp_rate FROM dbo.v_gold_lookup_fxrates WHERE currency_iso_code IN ('AUD','USD','EUR','GBP')`);
+    const fxRates = { GBP: 1 };
+    fxRows.forEach(r => { fxRates[r.currency_iso_code] = r.gbp_rate; });
+
+    const data = { account: queryAccountName, account_manager: accountLookup.accountManager || null, summary: summaryData, contract_cards, subscriptions: detailRows, fxRates };
     resultCache[accountName] = { ts: Date.now(), data };
     res.json(data);
   } catch (err) {

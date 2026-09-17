@@ -6805,7 +6805,7 @@ class Component extends DCLogic {
           if (data.account_manager) { amEl.textContent = 'Account Manager: ' + data.account_manager; amEl.style.display = 'block'; }
           else { amEl.style.display = 'none'; }
         }
-        this.renderSubscriptions(data.subscriptions || []);
+        this.renderSubscriptions(data.subscriptions || [], data.fxRates || { GBP: 1 });
         console.log('[Argus] Subscriptions rendered');
       })
       .catch(err=>{
@@ -6821,12 +6821,13 @@ class Component extends DCLogic {
       });
   }
 
-  renderSubscriptions(subs){
+  renderSubscriptions(subs, fxRates){
     this.currentSubscriptions = subs;
     this.currentServiceTypeFilter = 'all';
     this.currentProductFilter = 'all';
     this.currentAccountFilter = 'all';
-    if (!this.currentCurrencyMode) this.currentCurrencyMode = 'gbp';
+    this.currentCurrencyMode = 'GBP';
+    this.fxRates = fxRates || { GBP: 1 };
 
     const self = this;
     window.__sfSetCurrency = function(code) {
@@ -6933,19 +6934,20 @@ class Component extends DCLogic {
     }
     // Collect distinct products + total ARR per product for this service type
     const _pCode    = this.currentCurrencyMode || 'GBP';
-    const _pIsGbp   = _pCode === 'GBP';
-    const _pField   = _pIsGbp ? 'arr_gbp' : 'arr_local';
-    const _pSym     = _pIsGbp ? '£' : _pCode;
+    const _pGbpRate = (this.fxRates && this.fxRates[_pCode]) || 1;
+    const _pToDisp  = (arrGbp) => (arrGbp || 0) / _pGbpRate;
+    const _pSymMap  = { GBP:'£', AUD:'A$', USD:'$', EUR:'€' };
+    const _pSym     = _pSymMap[_pCode] || _pCode;
     const prodArr = {};
     this.currentSubscriptions
-      .filter(s => s.service_type === serviceType && s.product_category && (_pIsGbp || s.currency === _pCode))
+      .filter(s => s.service_type === serviceType && s.product_category)
       .forEach(s => {
-        prodArr[s.product_category] = (prodArr[s.product_category] || 0) + (s[_pField] || 0);
+        prodArr[s.product_category] = (prodArr[s.product_category] || 0) + _pToDisp(s.arr_gbp);
       });
     const products = Object.keys(prodArr).sort();
     if(!products.length){ container.style.display = 'none'; return; }
 
-    const fmtA = v => { const p = _pSym === '£' ? '£' : _pSym+' '; return v >= 1e6 ? p+(v/1e6).toFixed(1)+'m' : p+Math.round(v/1000)+'k'; };
+    const fmtA = v => { const p = (_pSym==='£'||_pSym==='$'||_pSym==='€') ? _pSym : _pSym+' '; return v >= 1e6 ? p+(v/1e6).toFixed(1)+'m' : p+Math.round(v/1000)+'k'; };
     const btnStyle = (active) =>
       `padding:5px 10px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;border:1px solid ${active?'#288184':'#e6e6e5'};background:${active?'#288184':'#fff'};color:${active?'#fff':'#288184'};white-space:nowrap;`;
 
@@ -7106,30 +7108,30 @@ class Component extends DCLogic {
       filteredSubs = filteredSubs.filter(s => s.product_category === this.currentProductFilter);
     }
 
-    // Currency mode — GBP shows arr_gbp for all subs; others filter by currency and use arr_local
+    // Convert arr_gbp to selected display currency using FX rates
     const _currCode = this.currentCurrencyMode || 'GBP';
-    const _isGbp    = _currCode === 'GBP';
-    if (!_isGbp) filteredSubs = filteredSubs.filter(s => s.currency === _currCode);
-    const _arrField = _isGbp ? 'arr_gbp' : 'arr_local';
-    const _sym      = _isGbp ? '£' : _currCode;
-    const _fmtCurr  = (v, sym) => { const p = sym === '£' ? '£' : sym+' '; return v >= 1e6 ? p+(v/1e6).toFixed(1)+'m' : p+Math.round(v/1000)+'k'; };
+    const _gbpRate  = (this.fxRates && this.fxRates[_currCode]) || 1;
+    const _toDisp   = (arrGbp) => (arrGbp || 0) / _gbpRate;
+    const _symMap   = { GBP:'£', AUD:'A$', USD:'$', EUR:'€' };
+    const _sym      = _symMap[_currCode] || _currCode;
+    const _fmtCurr  = (v, sym) => { const p = (sym==='£'||sym==='$'||sym==='€') ? sym : sym+' '; return v >= 1e6 ? p+(v/1e6).toFixed(1)+'m' : p+Math.round(v/1000)+'k'; };
 
     // Energy market pills — only when a specific product is selected
-    (function renderMarketPills(productFilter, subs, arrField, sym) {
+    (function renderMarketPills(productFilter, subs, toDisp, sym) {
       const container = document.getElementById('sfMarketPillContainer');
       const pillsDiv  = document.getElementById('sfMarketPills');
       if(!container || !pillsDiv) return;
       if(!productFilter || productFilter === 'all') { container.style.display = 'none'; pillsDiv.innerHTML = ''; return; }
       const mktArr = {};
-      subs.forEach(s => { if(s.energy_market && (s[arrField] || 0) > 0) mktArr[s.energy_market] = (mktArr[s.energy_market] || 0) + (s[arrField] || 0); });
+      subs.forEach(s => { if(s.energy_market && (toDisp(s.arr_gbp) || 0) > 0) mktArr[s.energy_market] = (mktArr[s.energy_market] || 0) + toDisp(s.arr_gbp); });
       const markets = Object.keys(mktArr).sort();
       if(!markets.length) { container.style.display = 'none'; return; }
-      const fmt = v => { const p = sym === '£' ? '£' : sym+' '; return v >= 1e6 ? p+(v/1e6).toFixed(1)+'m' : p+Math.round(v/1000)+'k'; };
+      const fmt = v => { const p = (sym==='£'||sym==='$'||sym==='€') ? sym : sym+' '; return v >= 1e6 ? p+(v/1e6).toFixed(1)+'m' : p+Math.round(v/1000)+'k'; };
       pillsDiv.innerHTML = markets.map(m =>
         `<span style="padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;background:#f0f9f9;color:#288184;border:1px solid #cde8e8;white-space:nowrap;">${m}<span style="opacity:0.7;font-weight:400;margin-left:4px;">· ${fmt(mktArr[m])}</span></span>`
       ).join('');
       container.style.display = 'flex';
-    })(this.currentProductFilter, filteredSubs, _arrField, _sym);
+    })(this.currentProductFilter, filteredSubs, _toDisp, _sym);
 
     // Filter subscriptions by account
     if(this.currentAccountFilter && this.currentAccountFilter !== 'all'){
@@ -7137,7 +7139,7 @@ class Component extends DCLogic {
     }
 
     // Total revenue pill + currency toggle
-    const totalArr = filteredSubs.reduce((s, r) => s + (r[_arrField] || 0), 0);
+    const totalArr = filteredSubs.reduce((s, r) => s + _toDisp(r.arr_gbp), 0);
     const pill = document.getElementById('sfTotalRevPill');
     if(pill){ pill.textContent = _fmtCurr(totalArr, _sym) + ' Total ARR'; pill.style.display = 'inline-block'; }
     const toggle = document.getElementById('sfCurrencyToggle');
@@ -7177,9 +7179,7 @@ class Component extends DCLogic {
     if(totalCount === 0){
       if(noDataMsg){
         noDataMsg.style.display = 'block';
-        noDataMsg.querySelector('div').textContent = _isGbp
-          ? 'No subscriptions found for this service type'
-          : `No ${_currCode} subscriptions for this account`;
+        noDataMsg.querySelector('div').textContent = 'No subscriptions found for this service type';
       }
       if(timelineEl)  timelineEl.style.display  = 'none';
       if(riskSummary) riskSummary.style.display = 'none';
