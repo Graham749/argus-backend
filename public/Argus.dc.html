@@ -206,6 +206,17 @@ input{font-family:inherit;}
           <!-- No account selected -->
           <div id="sfNoAccount" style="padding:20px 0;text-align:center;color:#9d9d9d;font-size:13px;">Select an account above to view subscription data</div>
 
+          <!-- ARR pill + currency toggle: outside sfSummaryView so they stay visible during drilldown -->
+          <div id="sfControlBar" style="display:none;gap:8px;margin-bottom:8px;flex-wrap:wrap;align-items:center;">
+            <span id="sfTotalRevPill" style="padding:4px 12px;border-radius:12px;background:#e8f5e9;color:#2e7d32;font-size:11px;font-weight:700;white-space:nowrap;"></span>
+            <span id="sfCurrencyToggle" style="margin-left:auto;gap:2px;border:1px solid #e6e6e5;border-radius:6px;overflow:hidden;display:flex;">
+              <button data-curr="GBP" style="padding:3px 9px;font-size:10px;font-weight:700;border:none;cursor:pointer;background:#288184;color:#fff;">GBP</button>
+              <button data-curr="AUD" style="padding:3px 9px;font-size:10px;font-weight:700;border:none;cursor:pointer;background:#fff;color:#288184;">AUD</button>
+              <button data-curr="USD" style="padding:3px 9px;font-size:10px;font-weight:700;border:none;cursor:pointer;background:#fff;color:#288184;">USD</button>
+              <button data-curr="EUR" style="padding:3px 9px;font-size:10px;font-weight:700;border:none;cursor:pointer;background:#fff;color:#288184;">EUR</button>
+            </span>
+          </div>
+
           <!-- Summary View (Risk Status Cards) -->
           <div id="sfSummaryView" style="display:none;">
             <!-- Service Type Filter -->
@@ -214,13 +225,6 @@ input{font-family:inherit;}
               <button class="sfServiceTypeFilter" data-type="Software" data-hidden="true" style="padding:6px 12px;border-radius:6px;border:1px solid #e6e6e5;background:#fff;color:#288184;font-size:11px;font-weight:700;cursor:pointer;display:none;">Software</button>
               <button class="sfServiceTypeFilter" data-type="Subscription Analytics" data-hidden="true" style="padding:6px 12px;border-radius:6px;border:1px solid #e6e6e5;background:#fff;color:#288184;font-size:11px;font-weight:700;cursor:pointer;display:none;">Subscription Analytics</button>
               <button class="sfServiceTypeFilter" data-type="Admin Product" data-hidden="true" style="padding:6px 12px;border-radius:6px;border:1px solid #e6e6e5;background:#fff;color:#288184;font-size:11px;font-weight:700;cursor:pointer;display:none;">Admin Product</button>
-              <span id="sfTotalRevPill" style="display:none;margin-left:4px;padding:4px 12px;border-radius:12px;background:#e8f5e9;color:#2e7d32;font-size:11px;font-weight:700;white-space:nowrap;"></span>
-              <span id="sfCurrencyToggle" style="display:none;margin-left:auto;gap:2px;border:1px solid #e6e6e5;border-radius:6px;overflow:hidden;">
-                <button data-curr="GBP" style="padding:3px 9px;font-size:10px;font-weight:700;border:none;cursor:pointer;background:#288184;color:#fff;">GBP</button>
-                <button data-curr="AUD" style="padding:3px 9px;font-size:10px;font-weight:700;border:none;cursor:pointer;background:#fff;color:#288184;">AUD</button>
-                <button data-curr="USD" style="padding:3px 9px;font-size:10px;font-weight:700;border:none;cursor:pointer;background:#fff;color:#288184;">USD</button>
-                <button data-curr="EUR" style="padding:3px 9px;font-size:10px;font-weight:700;border:none;cursor:pointer;background:#fff;color:#288184;">EUR</button>
-              </span>
             </div>
 
             <!-- Product Sub-filter (shown when Software or Subscription Analytics selected) -->
@@ -6840,6 +6844,9 @@ class Component extends DCLogic {
       self.setupProductFilters(self.currentServiceTypeFilter);
       self.showSummary();
     };
+    document.querySelectorAll('#sfCurrencyToggle button[data-curr]').forEach(function(btn) {
+      btn.onclick = function() { window.__sfSetCurrency(btn.dataset.curr); };
+    });
     this.setupServiceTypeFilters();
     this.setupAccountFilters();
     this.groupedSubs = this.groupByRenewalDays(subs);
@@ -7141,7 +7148,9 @@ class Component extends DCLogic {
     // Total revenue pill + currency toggle
     const totalArr = filteredSubs.reduce((s, r) => s + _toDisp(r.arr_gbp), 0);
     const pill = document.getElementById('sfTotalRevPill');
-    if(pill){ pill.textContent = _fmtCurr(totalArr, _sym) + ' Total ARR'; pill.style.display = 'inline-block'; }
+    if(pill){ pill.textContent = _fmtCurr(totalArr, _sym) + ' Total ARR'; }
+    const controlBar = document.getElementById('sfControlBar');
+    if(controlBar) controlBar.style.display = 'flex';
     const toggle = document.getElementById('sfCurrencyToggle');
     if(toggle) {
       toggle.style.display = 'flex';
