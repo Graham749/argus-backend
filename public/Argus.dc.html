@@ -215,9 +215,11 @@ input{font-family:inherit;}
               <button class="sfServiceTypeFilter" data-type="Subscription Analytics" data-hidden="true" style="padding:6px 12px;border-radius:6px;border:1px solid #e6e6e5;background:#fff;color:#288184;font-size:11px;font-weight:700;cursor:pointer;display:none;">Subscription Analytics</button>
               <button class="sfServiceTypeFilter" data-type="Admin Product" data-hidden="true" style="padding:6px 12px;border-radius:6px;border:1px solid #e6e6e5;background:#fff;color:#288184;font-size:11px;font-weight:700;cursor:pointer;display:none;">Admin Product</button>
               <span id="sfTotalRevPill" style="display:none;margin-left:4px;padding:4px 12px;border-radius:12px;background:#e8f5e9;color:#2e7d32;font-size:11px;font-weight:700;white-space:nowrap;"></span>
-              <span id="sfCurrencyToggle" style="display:none;margin-left:auto;display:none;gap:2px;border:1px solid #e6e6e5;border-radius:6px;overflow:hidden;">
-                <button id="sfCurrGbp" onclick="window.__sfSetCurrency('gbp')" style="padding:3px 9px;font-size:10px;font-weight:700;border:none;cursor:pointer;background:#288184;color:#fff;">GBP</button>
-                <button id="sfCurrLocal" onclick="window.__sfSetCurrency('local')" style="padding:3px 9px;font-size:10px;font-weight:700;border:none;cursor:pointer;background:#fff;color:#288184;">Local</button>
+              <span id="sfCurrencyToggle" style="display:none;margin-left:auto;gap:2px;border:1px solid #e6e6e5;border-radius:6px;overflow:hidden;">
+                <button onclick="window.__sfSetCurrency('GBP')" data-curr="GBP" style="padding:3px 9px;font-size:10px;font-weight:700;border:none;cursor:pointer;background:#288184;color:#fff;">GBP</button>
+                <button onclick="window.__sfSetCurrency('AUD')" data-curr="AUD" style="padding:3px 9px;font-size:10px;font-weight:700;border:none;cursor:pointer;background:#fff;color:#288184;">AUD</button>
+                <button onclick="window.__sfSetCurrency('USD')" data-curr="USD" style="padding:3px 9px;font-size:10px;font-weight:700;border:none;cursor:pointer;background:#fff;color:#288184;">USD</button>
+                <button onclick="window.__sfSetCurrency('EUR')" data-curr="EUR" style="padding:3px 9px;font-size:10px;font-weight:700;border:none;cursor:pointer;background:#fff;color:#288184;">EUR</button>
               </span>
             </div>
 
@@ -6827,14 +6829,15 @@ class Component extends DCLogic {
     if (!this.currentCurrencyMode) this.currentCurrencyMode = 'gbp';
 
     const self = this;
-    window.__sfSetCurrency = function(mode) {
-      self.currentCurrencyMode = mode;
-      const gbpBtn   = document.getElementById('sfCurrGbp');
-      const localBtn = document.getElementById('sfCurrLocal');
-      if (gbpBtn)   { gbpBtn.style.background   = mode === 'gbp'   ? '#288184' : '#fff'; gbpBtn.style.color   = mode === 'gbp'   ? '#fff' : '#288184'; }
-      if (localBtn) { localBtn.style.background = mode === 'local' ? '#288184' : '#fff'; localBtn.style.color = mode === 'local' ? '#fff' : '#288184'; }
-      self.showSummary();
+    window.__sfSetCurrency = function(code) {
+      self.currentCurrencyMode = code;
+      document.querySelectorAll('#sfCurrencyToggle button').forEach(b => {
+        const active = b.dataset.curr === code;
+        b.style.background = active ? '#288184' : '#fff';
+        b.style.color      = active ? '#fff'     : '#288184';
+      });
       self.setupProductFilters(self.currentServiceTypeFilter);
+      self.showSummary();
     };
     this.setupServiceTypeFilters();
     this.setupAccountFilters();
@@ -6929,21 +6932,20 @@ class Component extends DCLogic {
       return;
     }
     // Collect distinct products + total ARR per product for this service type
-    const _pCurrMode = this.currentCurrencyMode || 'gbp';
-    const _pArrField = _pCurrMode === 'local' ? 'arr_local' : 'arr_gbp';
-    const _pCurrSym  = _pCurrMode === 'local'
-      ? (this.currentSubscriptions.find(s => s.currency) || {}).currency || '£'
-      : '£';
+    const _pCode    = this.currentCurrencyMode || 'GBP';
+    const _pIsGbp   = _pCode === 'GBP';
+    const _pField   = _pIsGbp ? 'arr_gbp' : 'arr_local';
+    const _pSym     = _pIsGbp ? '£' : _pCode;
     const prodArr = {};
     this.currentSubscriptions
-      .filter(s => s.service_type === serviceType && s.product_category)
+      .filter(s => s.service_type === serviceType && s.product_category && (_pIsGbp || s.currency === _pCode))
       .forEach(s => {
-        prodArr[s.product_category] = (prodArr[s.product_category] || 0) + (s[_pArrField] || 0);
+        prodArr[s.product_category] = (prodArr[s.product_category] || 0) + (s[_pField] || 0);
       });
     const products = Object.keys(prodArr).sort();
     if(!products.length){ container.style.display = 'none'; return; }
 
-    const fmtA = v => { const p = _pCurrSym === '£' ? '£' : _pCurrSym+' '; return v >= 1e6 ? p+(v/1e6).toFixed(1)+'m' : p+Math.round(v/1000)+'k'; };
+    const fmtA = v => { const p = _pSym === '£' ? '£' : _pSym+' '; return v >= 1e6 ? p+(v/1e6).toFixed(1)+'m' : p+Math.round(v/1000)+'k'; };
     const btnStyle = (active) =>
       `padding:5px 10px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;border:1px solid ${active?'#288184':'#e6e6e5'};background:${active?'#288184':'#fff'};color:${active?'#fff':'#288184'};white-space:nowrap;`;
 
@@ -7104,16 +7106,15 @@ class Component extends DCLogic {
       filteredSubs = filteredSubs.filter(s => s.product_category === this.currentProductFilter);
     }
 
+    // Currency mode — GBP shows arr_gbp for all subs; others filter by currency and use arr_local
+    const _currCode = this.currentCurrencyMode || 'GBP';
+    const _isGbp    = _currCode === 'GBP';
+    if (!_isGbp) filteredSubs = filteredSubs.filter(s => s.currency === _currCode);
+    const _arrField = _isGbp ? 'arr_gbp' : 'arr_local';
+    const _sym      = _isGbp ? '£' : _currCode;
+    const _fmtCurr  = (v, sym) => { const p = sym === '£' ? '£' : sym+' '; return v >= 1e6 ? p+(v/1e6).toFixed(1)+'m' : p+Math.round(v/1000)+'k'; };
+
     // Energy market pills — only when a specific product is selected
-    const _currMode = this.currentCurrencyMode || 'gbp';
-    const _arrField = _currMode === 'local' ? 'arr_local' : 'arr_gbp';
-    const _currSym  = _currMode === 'local'
-      ? (filteredSubs.find(s => s.currency) || {}).currency || '£'
-      : '£';
-    const _fmtCurr = (v, sym) => {
-      const s = sym === '£' ? '£' : (sym + ' ');
-      return v >= 1e6 ? s+(v/1e6).toFixed(1)+'m' : s+Math.round(v/1000)+'k';
-    };
     (function renderMarketPills(productFilter, subs, arrField, sym) {
       const container = document.getElementById('sfMarketPillContainer');
       const pillsDiv  = document.getElementById('sfMarketPills');
@@ -7128,7 +7129,7 @@ class Component extends DCLogic {
         `<span style="padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;background:#f0f9f9;color:#288184;border:1px solid #cde8e8;white-space:nowrap;">${m}<span style="opacity:0.7;font-weight:400;margin-left:4px;">· ${fmt(mktArr[m])}</span></span>`
       ).join('');
       container.style.display = 'flex';
-    })(this.currentProductFilter, filteredSubs, _arrField, _currSym);
+    })(this.currentProductFilter, filteredSubs, _arrField, _sym);
 
     // Filter subscriptions by account
     if(this.currentAccountFilter && this.currentAccountFilter !== 'all'){
@@ -7140,11 +7141,14 @@ class Component extends DCLogic {
     const pill = document.getElementById('sfTotalRevPill');
     if(pill){ pill.textContent = _fmtCurr(totalArr, _currSym) + ' Total ARR'; pill.style.display = 'inline-block'; }
     const toggle = document.getElementById('sfCurrencyToggle');
-    if(toggle) toggle.style.display = 'flex';
-    const gbpBtn   = document.getElementById('sfCurrGbp');
-    const localBtn = document.getElementById('sfCurrLocal');
-    if(gbpBtn)   { gbpBtn.style.background   = _currMode === 'gbp'   ? '#288184' : '#fff'; gbpBtn.style.color   = _currMode === 'gbp'   ? '#fff' : '#288184'; }
-    if(localBtn) { localBtn.style.background = _currMode === 'local' ? '#288184' : '#fff'; localBtn.style.color = _currMode === 'local' ? '#fff' : '#288184'; }
+    if(toggle) {
+      toggle.style.display = 'flex';
+      toggle.querySelectorAll('button').forEach(b => {
+        const active = b.dataset.curr === _currCode;
+        b.style.background = active ? '#288184' : '#fff';
+        b.style.color      = active ? '#fff'     : '#288184';
+      });
+    }
 
     // Regroup based on filtered subscriptions and store for drilldown
     const groups = this.groupByRenewalDays(filteredSubs);
