@@ -31,6 +31,7 @@ const eosEngagementAccount = require('./api/eos-engagement-account');
 const { query: dbQuery } = require('./lib/db');
 const cacheWarmer        = require('./lib/cache-warmer');
 const { postFeedback, getFeedback, deleteFeedback } = require('./api/feedback');
+const { isAllowed, loadAllowlist } = require('./lib/allowlist');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -60,6 +61,40 @@ app.use((req, res, next) => {
   res.header('Pragma', 'no-cache');
   res.header('Expires', '0');
   next();
+});
+
+// ── Allowlist guard — reads from dbo.argus_allowed_users in Fabric ──
+// Guard is automatically disabled if the table doesn't exist yet (fail open).
+// Cache refreshes every 5 minutes — no restart needed to add/remove users.
+function decodeOidcEmail(req) {
+  try {
+    const token = req.headers['x-amzn-oidc-data'];
+    if (!token) return null;
+    const payload = JSON.parse(Buffer.from(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString('utf8'));
+    return (payload.email || payload.upn || payload.preferred_username || payload.unique_name || '').toLowerCase();
+  } catch { return null; }
+}
+
+app.use(async (req, res, next) => {
+  if (req.hostname === 'localhost' || req.hostname === '127.0.0.1') return next();
+  if (req.path === '/health') return next();
+
+  const email = decodeOidcEmail(req);
+  if (!email) return next(); // no OIDC header — ALB will have already blocked unauthenticated requests
+
+  if (await isAllowed(email)) return next();
+
+  console.warn(`[allowlist] Blocked: ${email} ${req.path}`);
+  if (req.path.startsWith('/api/')) {
+    return res.status(403).json({ error: 'Access restricted. Contact your account manager lead to request access.' });
+  }
+  return res.status(403).send(`<!DOCTYPE html><html><head><title>Access Restricted</title>
+<style>body{font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:#f5f5f5;}
+.box{background:#fff;border-radius:8px;padding:40px;max-width:420px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.1);}
+h2{color:#3c3c3b;margin-bottom:8px;}p{color:#6d6d6c;font-size:14px;}</style></head>
+<body><div class="box"><h2>Access Restricted</h2>
+<p>Your account (<strong>${email}</strong>) is not authorised to use Argus.</p>
+<p>Contact your account manager lead to request access.</p></div></body></html>`);
 });
 
 const argusPath = path.join(__dirname, '../public');
