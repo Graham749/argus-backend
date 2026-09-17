@@ -177,7 +177,10 @@ async function getAccountSubscriptions(req, res) {
     res.json(data);
   } catch (err) {
     console.error('[accounts]', err);
-    res.status(500).json({ error: err.message });
+    if (err.message && err.message.includes('CapacityLimitExceeded')) {
+      return res.status(503).json({ error: 'capacity_exceeded' });
+    }
+    res.status(500).json({ error: 'Failed to load subscription data.' });
   }
 }
 

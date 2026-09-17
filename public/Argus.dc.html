@@ -6821,7 +6821,10 @@ class Component extends DCLogic {
         error.style.display = 'block';
         const errorText = document.getElementById('sfErrorText');
         if(errorText) {
-          errorText.textContent = `Error: ${err.message}`;
+          const isCapacity = err.message && (err.message.includes('capacity_exceeded') || err.message.includes('CapacityLimitExceeded'));
+          errorText.textContent = isCapacity
+            ? 'Fabric compute capacity temporarily exceeded — please wait a moment and try again.'
+            : 'Failed to load subscription data. Please refresh and try again.';
         }
         this.updateHcCompact('sfCompact', '<div class="hc-compact-status"><span class="hc-pill hc-pill-od">SF error — expand for details</span></div>');
       });
