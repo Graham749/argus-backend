@@ -30,11 +30,41 @@
     .features{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:16px;margin-bottom:48px;}
 
     .card{background:#fff;border:1px solid #e6e6e5;border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(60,60,59,0.07);border-left:4px solid var(--accent);}
-    .card-preview{height:96px;background:var(--accent-light);border-bottom:1px solid var(--accent-border);display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;}
-    .card-body{padding:18px 20px 20px;}
+    .card-preview{height:112px;background:var(--accent-bg);border-bottom:1px solid var(--accent-border);position:relative;overflow:hidden;display:flex;flex-direction:column;}
+    .card-body{padding:16px 20px 18px;}
     .card-body h3{font-size:14px;font-weight:700;color:#3c3c3b;margin-bottom:5px;}
     .card-body p{font-size:12px;color:#6d6d6c;line-height:1.6;}
     .card-body .tag{display:inline-block;margin-top:10px;font-size:10px;font-weight:700;color:var(--accent);background:var(--accent-light);padding:3px 8px;border-radius:4px;letter-spacing:0.04em;text-transform:uppercase;}
+
+    /* ── Shared mini-widget chrome ── */
+    .w-filters{display:flex;gap:4px;padding:8px 10px 0;flex-shrink:0;}
+    .w-pill{font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;border:1px solid #d0d0d0;background:#fff;color:#9d9d9d;cursor:default;letter-spacing:0.03em;transition:all 0.35s;}
+    .w-pill.on{background:var(--accent);border-color:var(--accent);color:#fff;}
+
+    /* ── Shared monthly bar chart ── */
+    .w-chart{display:flex;align-items:flex-end;gap:3px;padding:6px 10px 0;flex:1;}
+    .w-col{display:flex;flex-direction:column;align-items:center;gap:0;flex:1;cursor:default;}
+    .w-stack{display:flex;flex-direction:column;justify-content:flex-end;width:100%;gap:1px;border-radius:2px 2px 0 0;overflow:hidden;}
+    .w-seg{width:100%;border-radius:0;transition:height 0.55s ease,opacity 0.35s;}
+    .w-col.sel .w-stack{outline:1.5px solid var(--accent);outline-offset:-1px;border-radius:2px;}
+    .w-month{font-size:7px;font-weight:700;color:#b0b0b0;margin-top:2px;letter-spacing:0.02em;transition:color 0.35s;}
+    .w-col.sel .w-month{color:var(--accent);font-weight:900;}
+
+    /* ── Status pills row (Client Health) ── */
+    .w-status{display:flex;gap:5px;padding:6px 10px 8px;flex-wrap:wrap;}
+    .w-spill{font-size:8px;font-weight:700;padding:2px 7px;border-radius:12px;letter-spacing:0.03em;transition:opacity 0.4s,transform 0.4s;}
+    .w-spill.dim{opacity:0.35;transform:scale(0.95);}
+
+    /* ── MDM source connect ── */
+    .mdm-preview{width:100%;height:100%;display:flex;align-items:center;justify-content:center;}
+    .mdm-svg{width:200px;height:88px;}
+    .mdm-line{stroke:#c2600f;stroke-width:1.5;stroke-dasharray:48;fill:none;}
+    .mdm-line.l1{animation:lineIn 3.4s ease-in-out 0s infinite;}
+    .mdm-line.l2{animation:lineIn 3.4s ease-in-out 0.45s infinite;}
+    .mdm-line.l3{animation:lineIn 3.4s ease-in-out 0.9s infinite;}
+    .mdm-dot{fill:#c2600f;animation:dotPulse 3.4s ease-in-out 1.3s infinite;}
+    @keyframes lineIn{0%{opacity:0;stroke-dashoffset:48;}35%{opacity:1;stroke-dashoffset:0;}70%{opacity:1;stroke-dashoffset:0;}100%{opacity:0;stroke-dashoffset:-48;}}
+    @keyframes dotPulse{0%,55%,100%{opacity:0;r:0;}30%{opacity:1;r:3.5;}}
 
     /* ── CTA ── */
     .divider{border:none;border-top:1px solid #e6e6e5;margin:48px 0;}
@@ -45,75 +75,16 @@
     .cta-btn:hover{background:#236f72;}
     .cta-btn svg{width:16px;height:16px;}
 
-    /* Tour button with repeating beacon */
     .tour-btn{position:relative;display:inline-flex;align-items:center;gap:8px;background:#fff;color:#288184;border:2px solid #288184;border-radius:8px;padding:13px 28px;font-family:inherit;font-size:15px;font-weight:700;cursor:pointer;letter-spacing:0.01em;transition:background 0.15s,color 0.15s;}
     .tour-btn:hover{background:#288184;color:#fff;}
     .tour-btn svg{width:16px;height:16px;}
     .tour-btn::before{content:'';position:absolute;inset:-4px;border-radius:10px;border:2px solid #288184;animation:tourBeacon 2.2s ease-out infinite;pointer-events:none;}
-    .tour-btn::after{content:'';position:absolute;inset:-8px;border-radius:14px;border:2px solid #288184;animation:tourBeacon 2.2s ease-out 0.4s infinite;pointer-events:none;}
-    @keyframes tourBeacon{0%{opacity:0.7;transform:scale(1);}100%{opacity:0;transform:scale(1.18);}}
+    .tour-btn::after{content:'';position:absolute;inset:-9px;border-radius:14px;border:2px solid #288184;animation:tourBeacon 2.2s ease-out 0.45s infinite;pointer-events:none;}
+    @keyframes tourBeacon{0%{opacity:0.65;transform:scale(1);}100%{opacity:0;transform:scale(1.2);}}
 
-    .skip-row{margin-top:20px;display:flex;align-items:center;justify-content:center;gap:8px;}
+    .skip-row{margin-top:20px;display:flex;align-items:center;justify-content:center;}
     .skip-row label{font-size:13px;color:#9d9d9d;cursor:pointer;display:flex;align-items:center;gap:6px;}
     .skip-row input[type=checkbox]{width:14px;height:14px;accent-color:#288184;cursor:pointer;}
-
-    /* ═══════════════════════════════════════
-       CARD 1 — CLIENT HEALTH: signal rows
-    ═══════════════════════════════════════ */
-    .hc-preview{width:100%;padding:10px 16px;display:flex;flex-direction:column;gap:7px;}
-    .hc-row{display:flex;align-items:center;gap:8px;border-radius:5px;padding:3px 5px;transition:background 0.3s;}
-    .hc-row.active{background:rgba(40,129,132,0.1);}
-    .hc-label{font-size:10px;font-weight:700;color:#9d9d9d;width:28px;flex-shrink:0;letter-spacing:0.04em;}
-    .hc-row.active .hc-label{color:#288184;}
-    .hc-track{flex:1;height:5px;background:#e6e6e5;border-radius:3px;overflow:hidden;}
-    .hc-fill{height:100%;border-radius:3px;background:var(--bar-color,#288184);}
-    .hc-pct{font-size:10px;font-weight:700;color:#9d9d9d;width:26px;text-align:right;flex-shrink:0;}
-    .hc-row.active .hc-pct{color:#3c3c3b;}
-
-    /* ═══════════════════════════════════════
-       CARD 2 — ENGAGEMENT PULSE: bar chart
-    ═══════════════════════════════════════ */
-    .ep-preview{width:100%;padding:12px 16px 8px;display:flex;flex-direction:column;gap:4px;}
-    .ep-bars{display:flex;align-items:flex-end;gap:4px;height:62px;}
-    .ep-bar{flex:1;border-radius:3px 3px 0 0;background:#93b8e6;transition:background 0.3s;}
-    .ep-bar.active{background:#1565c0;}
-    .ep-labels{display:flex;gap:4px;}
-    .ep-wk{flex:1;font-size:8px;color:#c0c0c0;text-align:center;font-weight:700;}
-    .ep-wk.active{color:#1565c0;}
-
-    /* ═══════════════════════════════════════
-       CARD 3 — REGION INTELLIGENCE: pill grid
-    ═══════════════════════════════════════ */
-    .ri-preview{padding:10px 12px;display:flex;flex-wrap:wrap;gap:6px;align-content:center;}
-    .ri-pill{font-size:10px;font-weight:700;padding:4px 9px;border-radius:20px;background:#e9e0f5;color:#9d9d9d;border:1px solid transparent;transition:all 0.4s;letter-spacing:0.03em;}
-    .ri-pill.active{background:#7030a0;color:#fff;border-color:#7030a0;box-shadow:0 1px 6px rgba(112,48,160,0.35);}
-
-    /* ═══════════════════════════════════════
-       CARD 4 — ACCOUNT MDM: source connect
-    ═══════════════════════════════════════ */
-    .mdm-preview{width:100%;height:100%;position:relative;display:flex;align-items:center;justify-content:center;}
-    .mdm-svg{width:200px;height:80px;}
-    .mdm-node{font-size:9px;font-weight:700;}
-    .mdm-line{stroke:#c2600f;stroke-width:1.5;stroke-dasharray:40;fill:none;opacity:0;}
-    .mdm-line.l1{animation:lineIn 3.6s ease-in-out 0s infinite;}
-    .mdm-line.l2{animation:lineIn 3.6s ease-in-out 0.4s infinite;}
-    .mdm-line.l3{animation:lineIn 3.6s ease-in-out 0.8s infinite;}
-    .mdm-src{font-size:9px;font-weight:700;fill:#c2600f;}
-    .mdm-box{fill:#fdeee0;stroke:#c2600f;stroke-width:1.5;rx:4;}
-    .mdm-ctr{font-size:8px;font-weight:700;fill:#c2600f;}
-    .mdm-dot{fill:#c2600f;opacity:0;animation:dotPulse 3.6s ease-in-out 1.2s infinite;}
-    @keyframes lineIn{0%{opacity:0;stroke-dashoffset:40;}40%{opacity:1;stroke-dashoffset:0;}70%{opacity:1;stroke-dashoffset:0;}100%{opacity:0;stroke-dashoffset:-40;}}
-    @keyframes dotPulse{0%,60%{opacity:0;r:0;}30%{opacity:1;r:4;}100%{opacity:0;r:0;}}
-
-    /* ═══════════════════════════════════════
-       CARD 5 — SW INTELLIGENCE: ARR bars
-    ═══════════════════════════════════════ */
-    .sw-preview{width:100%;padding:10px 16px;display:flex;flex-direction:column;gap:7px;}
-    .sw-row{display:flex;align-items:center;gap:8px;}
-    .sw-label{font-size:9px;font-weight:700;color:#6d6d6c;width:34px;flex-shrink:0;letter-spacing:0.03em;}
-    .sw-track{flex:1;height:8px;background:#d4e8d5;border-radius:4px;overflow:hidden;}
-    .sw-fill{height:100%;border-radius:4px;background:#2e7d32;width:0%;transition:width 0.8s ease;}
-    .sw-val{font-size:9px;font-weight:700;color:#2e7d32;width:30px;text-align:right;flex-shrink:0;}
   </style>
 </head>
 <body>
@@ -131,30 +102,30 @@
 
     <div class="features">
 
-      <!-- Card 1: Client Health Card -->
-      <div class="card" style="--accent:#288184;--accent-light:#edf8f8;--accent-border:#c8e8e9;">
-        <div class="card-preview">
-          <div class="hc-preview" id="hcPreview">
-            <div class="hc-row" data-idx="0">
-              <span class="hc-label">EOS</span>
-              <div class="hc-track"><div class="hc-fill" style="width:78%;--bar-color:#288184;"></div></div>
-              <span class="hc-pct">78%</span>
-            </div>
-            <div class="hc-row" data-idx="1">
-              <span class="hc-label">SF</span>
-              <div class="hc-track"><div class="hc-fill" style="width:91%;--bar-color:#1565c0;"></div></div>
-              <span class="hc-pct">91%</span>
-            </div>
-            <div class="hc-row" data-idx="2">
-              <span class="hc-label">ZD</span>
-              <div class="hc-track"><div class="hc-fill" style="width:54%;--bar-color:#c2600f;"></div></div>
-              <span class="hc-pct">54%</span>
-            </div>
-            <div class="hc-row" data-idx="3">
-              <span class="hc-label">PB</span>
-              <div class="hc-track"><div class="hc-fill" style="width:63%;--bar-color:#7030a0;"></div></div>
-              <span class="hc-pct">63%</span>
-            </div>
+      <!-- ── Card 1: Client Health Card ── -->
+      <div class="card" style="--accent:#288184;--accent-bg:#f0fafa;--accent-border:#c8e8e9;--accent-light:#edf8f8;">
+        <div class="card-preview" id="hcCard">
+          <!-- filters -->
+          <div class="w-filters">
+            <span class="w-pill on" data-hc="0">All</span>
+            <span class="w-pill" data-hc="1">Active</span>
+            <span class="w-pill" data-hc="2">At Risk</span>
+          </div>
+          <!-- status pills -->
+          <div class="w-status" id="hcStatus">
+            <span class="w-spill" style="background:#fee2e2;color:#b91c1c;">Terminating</span>
+            <span class="w-spill" style="background:#fef3c7;color:#92400e;">To Watch</span>
+            <span class="w-spill" style="background:#dcfce7;color:#166534;">Healthy</span>
+            <span class="w-spill" style="background:#ffedd5;color:#9a3412;">At Risk</span>
+          </div>
+          <!-- mini bar chart -->
+          <div class="w-chart" id="hcChart">
+            <div class="w-col" data-idx="0"><div class="w-stack"><div class="w-seg" style="height:18px;background:#288184;"></div><div class="w-seg" style="height:8px;background:#93c5c7;"></div></div><span class="w-month">Sep</span></div>
+            <div class="w-col" data-idx="1"><div class="w-stack"><div class="w-seg" style="height:26px;background:#288184;"></div><div class="w-seg" style="height:6px;background:#93c5c7;"></div></div><span class="w-month">Oct</span></div>
+            <div class="w-col" data-idx="2"><div class="w-stack"><div class="w-seg" style="height:14px;background:#288184;"></div><div class="w-seg" style="height:12px;background:#93c5c7;"></div></div><span class="w-month">Nov</span></div>
+            <div class="w-col" data-idx="3"><div class="w-stack"><div class="w-seg" style="height:32px;background:#288184;"></div><div class="w-seg" style="height:4px;background:#93c5c7;"></div></div><span class="w-month">Dec</span></div>
+            <div class="w-col" data-idx="4"><div class="w-stack"><div class="w-seg" style="height:20px;background:#288184;"></div><div class="w-seg" style="height:10px;background:#93c5c7;"></div></div><span class="w-month">Jan</span></div>
+            <div class="w-col" data-idx="5"><div class="w-stack"><div class="w-seg" style="height:24px;background:#288184;"></div><div class="w-seg" style="height:7px;background:#93c5c7;"></div></div><span class="w-month">Feb</span></div>
           </div>
         </div>
         <div class="card-body">
@@ -164,30 +135,23 @@
         </div>
       </div>
 
-      <!-- Card 2: Engagement Pulse -->
-      <div class="card" style="--accent:#1565c0;--accent-light:#eaf2fd;--accent-border:#bcd6f5;">
-        <div class="card-preview">
-          <div class="ep-preview">
-            <div class="ep-bars" id="epBars">
-              <div class="ep-bar" style="height:38px;" data-idx="0"></div>
-              <div class="ep-bar" style="height:52px;" data-idx="1"></div>
-              <div class="ep-bar" style="height:31px;" data-idx="2"></div>
-              <div class="ep-bar" style="height:58px;" data-idx="3"></div>
-              <div class="ep-bar" style="height:44px;" data-idx="4"></div>
-              <div class="ep-bar" style="height:62px;" data-idx="5"></div>
-              <div class="ep-bar" style="height:48px;" data-idx="6"></div>
-              <div class="ep-bar" style="height:55px;" data-idx="7"></div>
-            </div>
-            <div class="ep-labels" id="epLabels">
-              <span class="ep-wk" data-idx="0">W1</span>
-              <span class="ep-wk" data-idx="1">W2</span>
-              <span class="ep-wk" data-idx="2">W3</span>
-              <span class="ep-wk" data-idx="3">W4</span>
-              <span class="ep-wk" data-idx="4">W5</span>
-              <span class="ep-wk" data-idx="5">W6</span>
-              <span class="ep-wk" data-idx="6">W7</span>
-              <span class="ep-wk" data-idx="7">W8</span>
-            </div>
+      <!-- ── Card 2: Engagement Pulse ── -->
+      <div class="card" style="--accent:#1565c0;--accent-bg:#f0f6ff;--accent-border:#bcd6f5;--accent-light:#eaf2fd;">
+        <div class="card-preview" id="epCard">
+          <div class="w-filters">
+            <span class="w-pill on" data-ep="0">All Users</span>
+            <span class="w-pill" data-ep="1">Power</span>
+            <span class="w-pill" data-ep="2">Analytics</span>
+          </div>
+          <div class="w-chart" id="epChart">
+            <div class="w-col" data-idx="0"><div class="w-stack"><div class="w-seg" style="height:22px;background:#1565c0;"></div><div class="w-seg" style="height:9px;background:#90afd4;"></div></div><span class="w-month">W1</span></div>
+            <div class="w-col" data-idx="1"><div class="w-stack"><div class="w-seg" style="height:30px;background:#1565c0;"></div><div class="w-seg" style="height:6px;background:#90afd4;"></div></div><span class="w-month">W2</span></div>
+            <div class="w-col" data-idx="2"><div class="w-stack"><div class="w-seg" style="height:16px;background:#1565c0;"></div><div class="w-seg" style="height:14px;background:#90afd4;"></div></div><span class="w-month">W3</span></div>
+            <div class="w-col" data-idx="3"><div class="w-stack"><div class="w-seg" style="height:36px;background:#1565c0;"></div><div class="w-seg" style="height:4px;background:#90afd4;"></div></div><span class="w-month">W4</span></div>
+            <div class="w-col" data-idx="4"><div class="w-stack"><div class="w-seg" style="height:24px;background:#1565c0;"></div><div class="w-seg" style="height:10px;background:#90afd4;"></div></div><span class="w-month">W5</span></div>
+            <div class="w-col" data-idx="5"><div class="w-stack"><div class="w-seg" style="height:28px;background:#1565c0;"></div><div class="w-seg" style="height:8px;background:#90afd4;"></div></div><span class="w-month">W6</span></div>
+            <div class="w-col" data-idx="6"><div class="w-stack"><div class="w-seg" style="height:20px;background:#1565c0;"></div><div class="w-seg" style="height:12px;background:#90afd4;"></div></div><span class="w-month">W7</span></div>
+            <div class="w-col" data-idx="7"><div class="w-stack"><div class="w-seg" style="height:32px;background:#1565c0;"></div><div class="w-seg" style="height:5px;background:#90afd4;"></div></div><span class="w-month">W8</span></div>
           </div>
         </div>
         <div class="card-body">
@@ -197,18 +161,21 @@
         </div>
       </div>
 
-      <!-- Card 3: Region Intelligence -->
-      <div class="card" style="--accent:#7030a0;--accent-light:#f3eaff;--accent-border:#d9bdf5;">
-        <div class="card-preview">
-          <div class="ri-preview" id="riPreview">
-            <span class="ri-pill" data-idx="0">GB Power</span>
-            <span class="ri-pill" data-idx="1">Germany</span>
-            <span class="ri-pill" data-idx="2">France</span>
-            <span class="ri-pill" data-idx="3">Nordics</span>
-            <span class="ri-pill" data-idx="4">APAC</span>
-            <span class="ri-pill" data-idx="5">US East</span>
-            <span class="ri-pill" data-idx="6">Iberia</span>
-            <span class="ri-pill" data-idx="7">Benelux</span>
+      <!-- ── Card 3: Region Intelligence ── -->
+      <div class="card" style="--accent:#7030a0;--accent-bg:#f8f0ff;--accent-border:#d9bdf5;--accent-light:#f3eaff;">
+        <div class="card-preview" id="riCard">
+          <div class="w-filters">
+            <span class="w-pill on" data-ri="0">All</span>
+            <span class="w-pill" data-ri="1">Europe</span>
+            <span class="w-pill" data-ri="2">Americas</span>
+          </div>
+          <div class="w-chart" id="riChart">
+            <div class="w-col" data-idx="0"><div class="w-stack"><div class="w-seg" style="height:30px;background:#7030a0;"></div><div class="w-seg" style="height:8px;background:#c09ddb;"></div></div><span class="w-month">GB</span></div>
+            <div class="w-col" data-idx="1"><div class="w-stack"><div class="w-seg" style="height:22px;background:#7030a0;"></div><div class="w-seg" style="height:10px;background:#c09ddb;"></div></div><span class="w-month">DE</span></div>
+            <div class="w-col" data-idx="2"><div class="w-stack"><div class="w-seg" style="height:16px;background:#7030a0;"></div><div class="w-seg" style="height:6px;background:#c09ddb;"></div></div><span class="w-month">FR</span></div>
+            <div class="w-col" data-idx="3"><div class="w-stack"><div class="w-seg" style="height:12px;background:#7030a0;"></div><div class="w-seg" style="height:14px;background:#c09ddb;"></div></div><span class="w-month">NL</span></div>
+            <div class="w-col" data-idx="4"><div class="w-stack"><div class="w-seg" style="height:18px;background:#7030a0;"></div><div class="w-seg" style="height:5px;background:#c09ddb;"></div></div><span class="w-month">US</span></div>
+            <div class="w-col" data-idx="5"><div class="w-stack"><div class="w-seg" style="height:8px;background:#7030a0;"></div><div class="w-seg" style="height:16px;background:#c09ddb;"></div></div><span class="w-month">AU</span></div>
           </div>
         </div>
         <div class="card-body">
@@ -218,33 +185,24 @@
         </div>
       </div>
 
-      <!-- Card 4: Account MDM -->
-      <div class="card" style="--accent:#c2600f;--accent-light:#fdeee0;--accent-border:#f5cfa0;">
+      <!-- ── Card 4: Account MDM ── -->
+      <div class="card" style="--accent:#c2600f;--accent-bg:#fdf5ee;--accent-border:#f5cfa0;--accent-light:#fdeee0;">
         <div class="card-preview">
           <div class="mdm-preview">
-            <svg class="mdm-svg" viewBox="0 0 200 80" xmlns="http://www.w3.org/2000/svg">
-              <!-- Source labels -->
-              <rect x="4" y="14" width="28" height="16" rx="4" fill="#fdeee0" stroke="#c2600f" stroke-width="1.5"/>
-              <text x="18" y="25.5" text-anchor="middle" class="mdm-src">SF</text>
-
-              <rect x="4" y="50" width="28" height="16" rx="4" fill="#fdeee0" stroke="#c2600f" stroke-width="1.5"/>
-              <text x="18" y="61.5" text-anchor="middle" class="mdm-src">ZD</text>
-
-              <rect x="168" y="32" width="28" height="16" rx="4" fill="#fdeee0" stroke="#c2600f" stroke-width="1.5"/>
-              <text x="182" y="43.5" text-anchor="middle" class="mdm-src">PB</text>
-
-              <!-- Connection lines -->
-              <path class="mdm-line l1" d="M32 22 Q80 22 88 36"/>
-              <path class="mdm-line l2" d="M32 58 Q80 58 88 44"/>
-              <path class="mdm-line l3" d="M168 40 Q140 40 120 40"/>
-
-              <!-- MDM centre box -->
-              <rect x="88" y="26" width="32" height="28" rx="5" fill="#fdeee0" stroke="#c2600f" stroke-width="1.5"/>
-              <text x="104" y="37" text-anchor="middle" font-size="7" font-weight="700" fill="#c2600f">MDM</text>
-              <text x="104" y="47.5" text-anchor="middle" font-size="6" fill="#c2600f">✓ matched</text>
-
-              <!-- Pulse dot -->
-              <circle class="mdm-dot" cx="104" cy="40" r="0"/>
+            <svg class="mdm-svg" viewBox="0 0 200 88" xmlns="http://www.w3.org/2000/svg">
+              <rect x="4"   y="10" width="30" height="18" rx="4" fill="#fdeee0" stroke="#c2600f" stroke-width="1.5"/>
+              <text x="19"  y="23" text-anchor="middle" font-size="9" font-weight="700" fill="#c2600f" font-family="Lato,Arial,sans-serif">SF</text>
+              <rect x="4"   y="60" width="30" height="18" rx="4" fill="#fdeee0" stroke="#c2600f" stroke-width="1.5"/>
+              <text x="19"  y="73" text-anchor="middle" font-size="9" font-weight="700" fill="#c2600f" font-family="Lato,Arial,sans-serif">ZD</text>
+              <rect x="166" y="35" width="30" height="18" rx="4" fill="#fdeee0" stroke="#c2600f" stroke-width="1.5"/>
+              <text x="181" y="48" text-anchor="middle" font-size="9" font-weight="700" fill="#c2600f" font-family="Lato,Arial,sans-serif">PB</text>
+              <path class="mdm-line l1" d="M34 19 Q82 19 90 40"/>
+              <path class="mdm-line l2" d="M34 69 Q82 69 90 48"/>
+              <path class="mdm-line l3" d="M166 44 Q134 44 118 44"/>
+              <rect x="90" y="30" width="28" height="28" rx="5" fill="#fdeee0" stroke="#c2600f" stroke-width="1.5"/>
+              <text x="104" y="42" text-anchor="middle" font-size="7" font-weight="700" fill="#c2600f" font-family="Lato,Arial,sans-serif">MDM</text>
+              <text x="104" y="52" text-anchor="middle" font-size="6" fill="#c2600f" font-family="Lato,Arial,sans-serif">matched</text>
+              <circle class="mdm-dot" cx="104" cy="44" r="0"/>
             </svg>
           </div>
         </div>
@@ -255,30 +213,22 @@
         </div>
       </div>
 
-      <!-- Card 5: SW Intelligence -->
-      <div class="card" style="--accent:#2e7d32;--accent-light:#eaf5ea;--accent-border:#b3dab5;">
-        <div class="card-preview">
-          <div class="sw-preview" id="swPreview">
-            <div class="sw-row">
-              <span class="sw-label">Power</span>
-              <div class="sw-track"><div class="sw-fill" data-target="72" style="width:0%;"></div></div>
-              <span class="sw-val">£8.2M</span>
-            </div>
-            <div class="sw-row">
-              <span class="sw-label">Gas</span>
-              <div class="sw-track"><div class="sw-fill" data-target="51" style="width:0%;"></div></div>
-              <span class="sw-val">£5.4M</span>
-            </div>
-            <div class="sw-row">
-              <span class="sw-label">Flex</span>
-              <div class="sw-track"><div class="sw-fill" data-target="38" style="width:0%;"></div></div>
-              <span class="sw-val">£3.1M</span>
-            </div>
-            <div class="sw-row">
-              <span class="sw-label">Argus</span>
-              <div class="sw-track"><div class="sw-fill" data-target="22" style="width:0%;"></div></div>
-              <span class="sw-val">£1.1M</span>
-            </div>
+      <!-- ── Card 5: SW Intelligence ── -->
+      <div class="card" style="--accent:#2e7d32;--accent-bg:#f0f9f0;--accent-border:#b3dab5;--accent-light:#eaf5ea;">
+        <div class="card-preview" id="swCard">
+          <div class="w-filters">
+            <span class="w-pill on" data-sw="0">All</span>
+            <span class="w-pill" data-sw="1">Software</span>
+            <span class="w-pill" data-sw="2">Analytics</span>
+          </div>
+          <div class="w-chart" id="swChart">
+            <!-- two segments per bar: dark = Software, light = Sub Analytics -->
+            <div class="w-col" data-idx="0"><div class="w-stack"><div class="w-seg sw-a" style="height:24px;background:#2e7d32;"></div><div class="w-seg sw-b" style="height:10px;background:#86c289;"></div></div><span class="w-month">Sep</span></div>
+            <div class="w-col" data-idx="1"><div class="w-stack"><div class="w-seg sw-a" style="height:30px;background:#2e7d32;"></div><div class="w-seg sw-b" style="height:6px;background:#86c289;"></div></div><span class="w-month">Oct</span></div>
+            <div class="w-col" data-idx="2"><div class="w-stack"><div class="w-seg sw-a" style="height:16px;background:#2e7d32;"></div><div class="w-seg sw-b" style="height:14px;background:#86c289;"></div></div><span class="w-month">Nov</span></div>
+            <div class="w-col" data-idx="3"><div class="w-stack"><div class="w-seg sw-a" style="height:36px;background:#2e7d32;"></div><div class="w-seg sw-b" style="height:4px;background:#86c289;"></div></div><span class="w-month">Dec</span></div>
+            <div class="w-col" data-idx="4"><div class="w-stack"><div class="w-seg sw-a" style="height:20px;background:#2e7d32;"></div><div class="w-seg sw-b" style="height:12px;background:#86c289;"></div></div><span class="w-month">Jan</span></div>
+            <div class="w-col" data-idx="5"><div class="w-stack"><div class="w-seg sw-a" style="height:28px;background:#2e7d32;"></div><div class="w-seg sw-b" style="height:8px;background:#86c289;"></div></div><span class="w-month">Feb</span></div>
           </div>
         </div>
         <div class="card-body">
@@ -326,7 +276,6 @@
       }
       window.location.href = '/';
     }
-
     function startTourFlow() {
       sessionStorage.setItem('argus_entered', '1');
       if (document.getElementById('skipToggle').checked) {
@@ -335,80 +284,124 @@
       window.location.href = '/?start_tour=1';
     }
 
-    /* ── Card 1: Health row cycling ── */
-    (function () {
-      var rows = document.querySelectorAll('#hcPreview .hc-row');
-      var i = 0;
-      function tick() {
-        rows.forEach(function (r) { r.classList.remove('active'); });
-        rows[i].classList.add('active');
-        i = (i + 1) % rows.length;
+    /*
+     * Generic bar chart animator
+     * Cycles the active filter pill and sweeps a selection through the columns.
+     */
+    function initChart(opts) {
+      var pills   = document.querySelectorAll(opts.pillSel);
+      var cols    = document.querySelectorAll(opts.colSel);
+      var pIdx    = 0;  // current active filter
+      var cIdx    = 0;  // current selected column
+
+      /* Filter pill cycle */
+      function nextPill() {
+        pills[pIdx].classList.remove('on');
+        pIdx = (pIdx + 1) % pills.length;
+        pills[pIdx].classList.add('on');
+        if (opts.onFilter) opts.onFilter(pIdx, cols);
       }
-      tick();
-      setInterval(tick, 1100);
-    })();
 
-    /* ── Card 2: EP bar sweep ── */
-    (function () {
-      var bars   = document.querySelectorAll('#epBars .ep-bar');
-      var labels = document.querySelectorAll('#epLabels .ep-wk');
-      var i = 0;
-      function tick() {
-        bars.forEach(function (b) { b.classList.remove('active'); });
-        labels.forEach(function (l) { l.classList.remove('active'); });
-        bars[i].classList.add('active');
-        labels[i].classList.add('active');
-        i = (i + 1) % bars.length;
+      /* Column selection sweep */
+      function nextCol() {
+        cols[cIdx].classList.remove('sel');
+        cIdx = (cIdx + 1) % cols.length;
+        cols[cIdx].classList.add('sel');
       }
-      tick();
-      setInterval(tick, 600);
-    })();
 
-    /* ── Card 3: Region pill cycling ── */
-    (function () {
-      var pills = document.querySelectorAll('#riPreview .ri-pill');
-      var active = [];
-      var i = 0;
-      function tick() {
-        pills[i].classList.add('active');
-        active.push(i);
-        if (active.length > 2) {
-          pills[active.shift()].classList.remove('active');
-        }
-        i = (i + 1) % pills.length;
+      /* Start initial selection */
+      cols[cIdx].classList.add('sel');
+
+      setInterval(nextCol,  opts.colMs  || 800);
+      setInterval(nextPill, opts.pillMs || 2800);
+    }
+
+    /* ── Card 1: Client Health ── */
+    initChart({
+      pillSel: '[data-hc]',
+      colSel:  '#hcChart .w-col',
+      colMs: 900,
+      pillMs: 2600,
+      onFilter: function (pIdx, cols) {
+        cols.forEach(function (col) {
+          var segs = col.querySelectorAll('.w-seg');
+          if (pIdx === 1) { /* Active only — show main seg, shrink second */
+            segs[0].style.opacity = '1';
+            segs[1].style.height  = '3px';
+            segs[1].style.opacity = '0.3';
+          } else if (pIdx === 2) { /* At Risk — dim main, show second */
+            segs[0].style.opacity = '0.3';
+            segs[1].style.opacity = '1';
+          } else { /* All */
+            segs[0].style.opacity = '1';
+            segs[1].style.opacity = '1';
+            segs[1].style.height  = '';
+          }
+        });
+        /* Bounce status pills */
+        var spills = document.querySelectorAll('#hcStatus .w-spill');
+        spills.forEach(function (s) { s.classList.add('dim'); });
+        setTimeout(function () {
+          spills.forEach(function (s) { s.classList.remove('dim'); });
+        }, 350);
       }
-      tick();
-      setInterval(tick, 900);
-    })();
+    });
 
-    /* ── Card 5: SW bars animate in, pause, reset ── */
-    (function () {
-      var fills = document.querySelectorAll('#swPreview .sw-fill');
-
-      function animateIn() {
-        fills.forEach(function (f, idx) {
-          setTimeout(function () {
-            f.style.width = f.dataset.target + '%';
-          }, idx * 200);
+    /* ── Card 2: Engagement Pulse ── */
+    initChart({
+      pillSel: '[data-ep]',
+      colSel:  '#epChart .w-col',
+      colMs: 650,
+      pillMs: 2800,
+      onFilter: function (pIdx, cols) {
+        cols.forEach(function (col) {
+          var segs = col.querySelectorAll('.w-seg');
+          segs[0].style.opacity = pIdx === 2 ? '0.25' : '1';
+          segs[1].style.opacity = pIdx === 1 ? '0.25' : '1';
         });
       }
+    });
 
-      function reset() {
-        fills.forEach(function (f) {
-          f.style.transition = 'none';
-          f.style.width = '0%';
-          f.offsetHeight; /* force reflow */
-          f.style.transition = 'width 0.8s ease';
+    /* ── Card 3: Region Intelligence ── */
+    initChart({
+      pillSel: '[data-ri]',
+      colSel:  '#riChart .w-col',
+      colMs: 820,
+      pillMs: 2600,
+      onFilter: function (pIdx, cols) {
+        /* Europe = cols 0-3, Americas = cols 4-5 */
+        cols.forEach(function (col, i) {
+          var inGroup = (pIdx === 1 && i <= 3) || (pIdx === 2 && i >= 4) || pIdx === 0;
+          col.querySelectorAll('.w-seg').forEach(function (s) {
+            s.style.opacity = inGroup ? '1' : '0.2';
+          });
         });
       }
+    });
 
-      animateIn();
-
-      setInterval(function () {
-        reset();
-        setTimeout(animateIn, 400);
-      }, 4000);
-    })();
+    /* ── Card 5: SW Intelligence ── */
+    initChart({
+      pillSel: '[data-sw]',
+      colSel:  '#swChart .w-col',
+      colMs: 900,
+      pillMs: 2800,
+      onFilter: function (pIdx, cols) {
+        cols.forEach(function (col) {
+          var a = col.querySelector('.sw-a');
+          var b = col.querySelector('.sw-b');
+          if (pIdx === 1) { /* Software only */
+            a.style.opacity = '1';
+            b.style.opacity = '0.15';
+          } else if (pIdx === 2) { /* Analytics only */
+            a.style.opacity = '0.15';
+            b.style.opacity = '1';
+          } else {
+            a.style.opacity = '1';
+            b.style.opacity = '1';
+          }
+        });
+      }
+    });
   </script>
 </body>
 </html>
