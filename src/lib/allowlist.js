@@ -6,18 +6,31 @@ let _cache = null;      // Set of lowercase email strings
 let _cacheTime = 0;
 let _tableExists = null; // null = unknown, true/false once checked
 
+function envAllowlist() {
+  const val = process.env.ALLOWED_EMAILS;
+  if (!val) return null;
+  return new Set(val.split(',').map(e => e.trim().toLowerCase()).filter(Boolean));
+}
+
 async function loadAllowlist() {
   try {
-    const rows = await query(`SELECT email FROM dbo.argus_allowed_users WHERE is_active = 1`);
+    const rows = await query(`SELECT email FROM dbo.gold_argus_access WHERE is_active = 1`);
     _cache = new Set(rows.map(r => r.email.trim().toLowerCase()));
     _cacheTime = Date.now();
     _tableExists = true;
-    console.log(`[allowlist] Loaded ${_cache.size} authorised users`);
+    console.log(`[allowlist] Loaded ${_cache.size} authorised users from Fabric`);
   } catch (err) {
     if (_tableExists === null) {
-      // First attempt — table probably doesn't exist yet, disable guard
-      console.warn('[allowlist] argus_allowed_users table not found — allowlist guard disabled');
-      _tableExists = false;
+      const env = envAllowlist();
+      if (env) {
+        _cache = env;
+        _cacheTime = Date.now();
+        _tableExists = true;
+        console.warn(`[allowlist] Fabric table not found — using ALLOWED_EMAILS env var (${env.size} users)`);
+      } else {
+        console.warn('[allowlist] gold_argus_access table not found and ALLOWED_EMAILS not set — guard disabled');
+        _tableExists = false;
+      }
     } else {
       // Subsequent failure — keep stale cache rather than locking everyone out
       console.warn('[allowlist] Refresh failed, keeping stale cache:', err.message);
@@ -26,18 +39,14 @@ async function loadAllowlist() {
 }
 
 async function isAllowed(email) {
-  // Guard disabled if table doesn't exist
   if (_tableExists === false) return true;
 
-  // Load on first call or refresh if stale
   if (!_cache || Date.now() - _cacheTime > CACHE_TTL_MS) {
     await loadAllowlist();
   }
 
-  // If still no table after load attempt, fail open
   if (_tableExists === false) return true;
 
-  // If cache is populated, check it; otherwise fail open to avoid locking out on DB hiccup
   return _cache ? _cache.has(email.toLowerCase()) : true;
 }
 

@@ -76,25 +76,71 @@ function decodeOidcEmail(req) {
 }
 
 app.use(async (req, res, next) => {
-  if (req.hostname === 'localhost' || req.hostname === '127.0.0.1') return next();
   if (req.path === '/health') return next();
+  if (req.path.startsWith('/assets/')) return next(); // static assets always public (fonts, images)
 
-  const email = decodeOidcEmail(req);
-  if (!email) return next(); // no OIDC header — ALB will have already blocked unauthenticated requests
+  const isLocal = req.hostname === 'localhost' || req.hostname === '127.0.0.1';
+  let email = decodeOidcEmail(req);
+
+  // Local dev: simulate a user via DEV_USER_EMAIL so the allowlist can be tested without an ALB
+  if (!email && isLocal) {
+    email = process.env.DEV_USER_EMAIL || null;
+  }
+
+  if (!email) return next(); // no identity — ALB will have already blocked unauthenticated requests in prod
 
   if (await isAllowed(email)) return next();
 
   console.warn(`[allowlist] Blocked: ${email} ${req.path}`);
   if (req.path.startsWith('/api/')) {
-    return res.status(403).json({ error: 'Access restricted. Contact your account manager lead to request access.' });
+    return res.status(403).json({ error: 'Argus is currently in a limited pilot. Your account has not been added yet.' });
   }
-  return res.status(403).send(`<!DOCTYPE html><html><head><title>Access Restricted</title>
-<style>body{font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:#f5f5f5;}
-.box{background:#fff;border-radius:8px;padding:40px;max-width:420px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.1);}
-h2{color:#3c3c3b;margin-bottom:8px;}p{color:#6d6d6c;font-size:14px;}</style></head>
-<body><div class="box"><h2>Access Restricted</h2>
-<p>Your account (<strong>${email}</strong>) is not authorised to use Argus.</p>
-<p>Contact your account manager lead to request access.</p></div></body></html>`);
+  return res.status(403).send(`<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Argus — Pilot Access</title>
+  <style>
+    @font-face{font-family:'Lato';src:url('/assets/fonts/lato-regular.woff2') format('woff2');font-weight:400;font-style:normal;}
+    @font-face{font-family:'Lato';src:url('/assets/fonts/lato-bold.woff2') format('woff2');font-weight:700;font-style:normal;}
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:'Lato','Helvetica Neue',Arial,sans-serif;background:#f7f7f6;color:#3c3c3b;-webkit-font-smoothing:antialiased;min-height:100vh;display:flex;flex-direction:column;}
+    nav{background:#3c3c3b;height:60px;display:flex;align-items:center;padding:0 28px;gap:12px;box-shadow:0 1px 0 rgba(0,0,0,0.2);}
+    nav img{height:32px;width:32px;}
+    nav .brand{font-size:15px;font-weight:700;color:#fff;letter-spacing:0.02em;}
+    nav .pill{font-size:10px;font-weight:700;padding:3px 9px;background:#ffcc00;color:#3c3c3b;border-radius:20px;letter-spacing:0.08em;text-transform:uppercase;}
+    main{flex:1;display:flex;align-items:center;justify-content:center;padding:40px 20px;}
+    .card{background:#fff;border:1px solid #e6e6e5;border-radius:12px;padding:48px 40px;max-width:480px;width:100%;text-align:center;box-shadow:0 2px 8px rgba(60,60,59,0.08);}
+    .card h1{font-size:22px;font-weight:700;color:#3c3c3b;margin-bottom:12px;}
+    .card .sub{font-size:14px;color:#6d6d6c;line-height:1.7;margin-bottom:8px;}
+    .card .email{font-size:13px;color:#9d9d9d;background:#f7f7f6;border-radius:6px;padding:8px 14px;display:inline-block;margin:12px 0 20px;}
+    .card a{color:#288184;text-decoration:none;font-weight:700;}
+    .card a:hover{text-decoration:underline;}
+    .divider{border:none;border-top:1px solid #e6e6e5;margin:24px 0;}
+    .footer{font-size:11px;color:#9d9d9d;}
+  </style>
+</head>
+<body>
+  <nav>
+    <img src="/assets/Argus Logo.svg" alt="Argus">
+    <span class="brand">ARGUS</span>
+    <span class="pill">Pilot</span>
+  </nav>
+  <main>
+    <div class="card">
+      <h1>Access Restricted</h1>
+      <p class="sub">Argus is Aurora's internal intelligence platform — bringing together client engagement, commercial signals, EOS usage, and support activity into a single view.</p>
+      <hr class="divider">
+      <p class="sub">Argus is currently available to a limited pilot group of users.</p>
+      <div class="email">${email}</div>
+      <p class="sub">Your account has not been included in this phase.</p>
+      <hr class="divider">
+      <p class="footer">To request access, please contact <a href="mailto:graham.clark@auroraer.com">Graham Clark</a>.</p>
+    </div>
+  </main>
+</body>
+</html>`);
 });
 
 const argusPath = path.join(__dirname, '../public');
