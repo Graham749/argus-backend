@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<script>if(!sessionStorage.getItem('argus_entered')){window.location.replace('/welcome');}</script>
+<!-- no redirect — home view shown inline when argus_entered is not set -->
 <script src="./mock-data.js"></script>
 <script src="./support.js"></script>
 <script src="./analytics.js"></script>
@@ -60,6 +60,91 @@ input{font-family:inherit;}
 #phCardHeader>div:first-child img{width:20px!important;}
 #eosEngHeader>img{width:28px!important;height:28px!important;}
 #sfCollapseChev,#casesCollapseChev,#oppsCollapseChev,#zdCollapseChev,#pbCollapseChev,#phCollapseChev,#epCollapseChev,#eosEngChev{font-size:13px!important;}
+/* ── Home view ── */
+.hv-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:18px;margin-bottom:36px;}
+.hv-card{background:#fff;border:1px solid #e6e6e5;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(60,60,59,0.07);}
+.hv-preview{height:210px;display:flex;flex-direction:column;border-bottom:1px solid #e6e6e5;position:relative;overflow:hidden;}
+.hv-mini-nav{background:#3c3c3b;height:30px;display:flex;align-items:center;padding:0 11px;gap:7px;flex-shrink:0;}
+.hv-logo{width:12px;height:12px;background:#288184;border-radius:3px;flex-shrink:0;}
+.hv-brand{font-size:8.5px;font-weight:900;color:#fff;letter-spacing:0.06em;flex:1;}
+.hv-sep{width:1px;height:12px;background:rgba(255,255,255,0.15);flex-shrink:0;}
+.hv-page{font-size:8.5px;color:rgba(255,255,255,0.6);font-weight:700;white-space:nowrap;}
+.hv-tour-btn{display:flex;align-items:center;gap:3px;padding:2px 8px;background:transparent;border:1px solid rgba(255,255,255,0.3);border-radius:4px;color:rgba(255,255,255,0.8);font-size:8.5px;font-weight:700;cursor:default;font-family:inherit;white-space:nowrap;transition:all .3s;}
+.hv-tour-btn.pulsing{border-color:#ffcc00;color:#ffcc00;animation:hvBtnPulse 1s ease-in-out infinite alternate;}
+@keyframes hvBtnPulse{from{box-shadow:0 0 0 2px rgba(255,204,0,.1);}to{box-shadow:0 0 0 5px rgba(255,204,0,.3);}}
+.hv-body{padding:14px 16px 16px;}
+.hv-body h3{font-size:13px;font-weight:700;color:#3c3c3b;margin-bottom:5px;}
+.hv-body p{font-size:11.5px;color:#6d6d6c;line-height:1.65;}
+/* tour card */
+.hv-tp-tgt{font-size:8.5px;font-weight:700;color:#3c3c3b;background:#fff;border:1.5px solid #e6e6e5;border-radius:5px;padding:4px 8px;display:inline-flex;align-items:center;gap:4px;transition:border-color .4s,box-shadow .4s;}
+.hv-tp-tgt.hl{border-color:#288184;box-shadow:0 0 0 3px rgba(40,129,132,.18);}
+.hv-tp-dot{width:6px;height:6px;border-radius:50%;background:#e6e6e5;flex-shrink:0;transition:background .3s;}
+.hv-tp-tgt.hl .hv-tp-dot{background:#288184;}
+.hv-popover{background:#fff;border:1px solid #e6e6e5;border-radius:7px;padding:8px 10px;box-shadow:0 4px 14px rgba(0,0,0,.13);opacity:0;transform:translateY(5px);transition:opacity .4s,transform .4s;position:relative;margin-top:2px;}
+.hv-popover::before{content:'';position:absolute;top:-5px;left:14px;width:7px;height:7px;background:#fff;border-left:1px solid #e6e6e5;border-top:1px solid #e6e6e5;transform:rotate(45deg);}
+.hv-popover.show{opacity:1;transform:translateY(0);}
+.hv-ptitle{font-size:9.5px;font-weight:900;color:#3c3c3b;margin-bottom:2px;}
+.hv-pbody{font-size:8.5px;color:#6d6d6c;line-height:1.45;margin-bottom:6px;}
+.hv-pfoot{display:flex;align-items:center;justify-content:space-between;}
+.hv-pstep{font-size:7.5px;font-weight:700;color:#9d9d9d;}
+.hv-pnext{font-size:8.5px;font-weight:700;background:#288184;color:#fff;border:none;border-radius:4px;padding:2px 8px;cursor:default;font-family:inherit;transition:background .2s;}
+.hv-pnext.click{background:#1e6567;}
+/* drill card */
+.hv-dd-arr{font-size:8.5px;font-weight:700;background:#dcfce7;color:#166534;padding:2px 7px;border-radius:20px;}
+.hv-dd-filters{display:flex;gap:4px;margin-bottom:5px;flex-shrink:0;}
+.hv-dd-pill{font-size:8.5px;font-weight:700;padding:2px 8px;border-radius:20px;border:1.5px solid #d0d0d0;background:#fff;color:#9d9d9d;transition:all .3s;}
+.hv-dd-pill.on{background:#288184;border-color:#288184;color:#fff;}
+.hv-dd-chart{display:flex;align-items:flex-end;gap:3px;height:58px;flex-shrink:0;margin-bottom:3px;}
+.hv-dd-col{flex:1;display:flex;flex-direction:column;align-items:center;}
+.hv-dd-stack{width:100%;display:flex;flex-direction:column;gap:1px;border-radius:3px 3px 0 0;overflow:hidden;transition:outline .25s;}
+.hv-dd-col.sel .hv-dd-stack{outline:2px solid #288184;}
+.hv-dd-bar{width:100%;transition:opacity .35s;}
+.hv-dd-bar-a{background:#288184;}
+.hv-dd-bar-b{background:#93c5c7;}
+.hv-dd-mo{font-size:6.5px;font-weight:700;color:#b0b0b0;margin-top:2px;transition:color .3s;}
+.hv-dd-col.sel .hv-dd-mo{color:#288184;font-weight:900;}
+.hv-dd-table{border-top:1px solid #e6e6e5;padding-top:3px;opacity:0;transition:opacity .4s;}
+.hv-dd-table.show{opacity:1;}
+.hv-dd-thead{display:grid;grid-template-columns:1fr 1fr 48px;padding:2px 0;border-bottom:1px solid #e6e6e5;margin-bottom:1px;}
+.hv-dd-th{font-size:6.5px;font-weight:900;color:#9d9d9d;letter-spacing:.05em;text-transform:uppercase;}
+.hv-dd-row{display:grid;grid-template-columns:1fr 1fr 48px;padding:2px 0;border-bottom:1px solid #f0f0f0;transition:opacity .35s;}
+.hv-dd-row.dim{opacity:.18;}
+.hv-dd-td{font-size:7.5px;color:#6d6d6c;}
+.hv-dd-td.ok{color:#166534;font-weight:700;}
+.hv-dd-td.risk{color:#92400e;font-weight:700;}
+.hv-dd-td.date{color:#288184;font-weight:700;}
+/* feedback card */
+.hv-fb-icon{display:flex;align-items:center;justify-content:center;width:24px;height:18px;border-radius:4px;border:1px solid rgba(255,255,255,.25);background:transparent;cursor:default;transition:all .35s;flex-shrink:0;}
+.hv-fb-icon svg{width:11px;height:11px;stroke:rgba(255,255,255,.6);transition:stroke .3s;}
+.hv-fb-icon.pulsing{border-color:#ffcc00;animation:hvBtnPulse 1s ease-in-out infinite alternate;}
+.hv-fb-icon.pulsing svg{stroke:#ffcc00;}
+.hv-fb-icon.clicked{background:#288184;border-color:#288184;}
+.hv-fb-icon.clicked svg{stroke:#fff;}
+.hv-fb-sig{display:flex;align-items:center;gap:6px;margin-bottom:6px;}
+.hv-fb-lbl{font-size:8.5px;font-weight:700;color:#9d9d9d;width:20px;flex-shrink:0;}
+.hv-fb-track{flex:1;height:5px;background:#e6e6e5;border-radius:3px;overflow:hidden;}
+.hv-fb-fill{height:100%;border-radius:3px;}
+.hv-fb-pct{font-size:8.5px;font-weight:700;color:#6d6d6c;width:22px;text-align:right;flex-shrink:0;}
+.hv-fb-form{position:absolute;bottom:0;left:0;right:0;background:#fff;border-top:2px solid #288184;padding:10px 12px 8px;box-shadow:0 -5px 16px rgba(0,0,0,.12);transform:translateY(105%);transition:transform .42s cubic-bezier(.34,1.08,.64,1);}
+.hv-fb-form.show{transform:translateY(0);}
+.hv-fb-form-title{font-size:9.5px;font-weight:900;color:#3c3c3b;margin-bottom:5px;display:flex;align-items:center;gap:5px;}
+.hv-fb-form-title svg{width:10px;height:10px;stroke:#288184;}
+.hv-fb-ta{width:100%;border:1px solid #e0e0e0;border-radius:4px;padding:4px 6px;font-size:8.5px;font-family:inherit;color:#3c3c3b;background:#fafafa;height:30px;resize:none;line-height:1.4;display:block;}
+.hv-fb-foot{display:flex;align-items:center;justify-content:flex-end;margin-top:5px;gap:6px;}
+.hv-fb-sub{font-size:8.5px;font-weight:700;background:#288184;color:#fff;border:none;border-radius:3px;padding:3px 10px;cursor:default;font-family:inherit;transition:background .2s,transform .15s;}
+.hv-fb-sub.click{background:#1e6567;transform:scale(.95);}
+.hv-fb-ok{display:none;align-items:center;gap:4px;font-size:9.5px;font-weight:700;color:#166534;}
+.hv-fb-ok.show{display:flex;}
+.hv-fb-ok svg{width:12px;height:12px;}
+/* cta */
+.hv-cta{display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;padding-bottom:4px;}
+.hv-enter-btn{display:inline-flex;align-items:center;gap:7px;background:#288184;color:#fff;border:none;border-radius:7px;padding:12px 30px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;letter-spacing:.01em;transition:background .15s;}
+.hv-enter-btn:hover{background:#236f72;}
+.hv-tour-cta{position:relative;display:inline-flex;align-items:center;gap:7px;background:#fff;color:#288184;border:2px solid #288184;border-radius:7px;padding:11px 24px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;letter-spacing:.01em;transition:background .15s,color .15s;}
+.hv-tour-cta:hover{background:#288184;color:#fff;}
+.hv-tour-cta::before{content:'';position:absolute;inset:-4px;border-radius:9px;border:2px solid #288184;animation:hvBeacon 2.2s ease-out infinite;pointer-events:none;}
+.hv-tour-cta::after{content:'';position:absolute;inset:-9px;border-radius:13px;border:2px solid #288184;animation:hvBeacon 2.2s ease-out .45s infinite;pointer-events:none;}
+@keyframes hvBeacon{0%{opacity:.65;transform:scale(1);}100%{opacity:0;transform:scale(1.2);}}
 </style>
 </helmet>
 
@@ -96,7 +181,7 @@ input{font-family:inherit;}
         <div data-toggle-sidebar="true" style="color:#fff;cursor:pointer;font-size:18px;padding:4px 6px;user-select:none;">◀</div>
       </div>
       <div style="padding:22px 0;">
-      <a href="/welcome" style="display:flex;align-items:center;gap:10px;padding:8px 20px;font-size:13px;color:rgba(255,255,255,0.7);text-decoration:none;border-left:3px solid transparent;font-weight:600;margin-bottom:8px;" onmouseover="this.style.background='rgba(255,255,255,0.06)';this.style.color='#fff'" onmouseout="this.style.background='';this.style.color='rgba(255,255,255,0.7)'">
+      <a href="#" onClick="{{ goHome }}" style="{{ navStyleHome }}" style-hover="background:rgba(255,255,255,0.06);color:#fff;">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;flex-shrink:0;"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
         Home
       </a>
@@ -153,6 +238,223 @@ input{font-family:inherit;}
     </aside>
 
     <main style="flex:1;overflow:auto;margin-left:226px;">
+
+      <!-- ============ HOME ============ -->
+      <sc-if value="{{ isHome }}" hint-placeholder-val="{{ false }}">
+      <div style="padding:28px 28px 40px;max-width:980px;animation:argusFade .25s ease;">
+        <div style="margin-bottom:28px;">
+          <div style="font-size:20px;font-weight:700;letter-spacing:-0.01em;">Welcome to Argus</div>
+          <div style="font-size:12px;color:#9d9d9d;margin-top:4px;">Aurora's intelligence platform — client engagement, commercial signals, EOS usage and support in one view</div>
+        </div>
+        <div class="hv-grid">
+
+          <!-- Card 1: Take a Tour -->
+          <div class="hv-card">
+            <div class="hv-preview">
+              <div class="hv-mini-nav">
+                <div class="hv-logo"></div>
+                <span class="hv-brand">ARGUS</span>
+                <button class="hv-tour-btn pulsing" id="hvTpBtn">
+                  <svg width="7" height="7" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="8" cy="8" r="7"/><path d="M8 11V8"/><circle cx="8" cy="5.5" r=".8" fill="currentColor" stroke="none"/></svg>
+                  Take a tour
+                </button>
+              </div>
+              <div style="flex:1;padding:8px 10px;display:flex;flex-direction:column;gap:5px;">
+                <div class="hv-tp-tgt" id="hvT1"><div class="hv-tp-dot"></div><span>Client Health Card</span></div>
+                <div class="hv-tp-tgt" id="hvT2" style="opacity:0"><div class="hv-tp-dot"></div><span>Engagement Pulse</span></div>
+                <div class="hv-tp-tgt" id="hvT3" style="opacity:0"><div class="hv-tp-dot"></div><span>Region Intelligence</span></div>
+                <div class="hv-popover" id="hvPop">
+                  <div class="hv-ptitle" id="hvPTitle"></div>
+                  <div class="hv-pbody" id="hvPBody"></div>
+                  <div class="hv-pfoot">
+                    <span class="hv-pstep" id="hvStep"></span>
+                    <button class="hv-pnext" id="hvNext">Next →</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="hv-body">
+              <h3>Take a Tour</h3>
+              <p>Click <strong>Take a tour</strong> in the top bar for a guided walkthrough of every Argus feature.</p>
+            </div>
+          </div>
+
+          <!-- Card 2: Drill Down -->
+          <div class="hv-card">
+            <div class="hv-preview">
+              <div class="hv-mini-nav">
+                <div class="hv-logo"></div>
+                <span class="hv-brand">ARGUS</span>
+                <div class="hv-sep"></div>
+                <span class="hv-page">SF Subscriptions</span>
+                <span style="flex:1;"></span>
+                <span class="hv-dd-arr">£728k ARR</span>
+              </div>
+              <div style="flex:1;padding:7px 10px 0;display:flex;flex-direction:column;">
+                <div class="hv-dd-filters">
+                  <span class="hv-dd-pill on" id="hvDdP0">All</span>
+                  <span class="hv-dd-pill" id="hvDdP1">Software</span>
+                  <span class="hv-dd-pill" id="hvDdP2">Analytics</span>
+                </div>
+                <div class="hv-dd-chart" id="hvDdChart">
+                  <div class="hv-dd-col"><div class="hv-dd-stack"><div class="hv-dd-bar hv-dd-bar-a" style="height:28px;"></div><div class="hv-dd-bar hv-dd-bar-b" style="height:9px;"></div></div><span class="hv-dd-mo">Sep</span></div>
+                  <div class="hv-dd-col"><div class="hv-dd-stack"><div class="hv-dd-bar hv-dd-bar-a" style="height:38px;"></div><div class="hv-dd-bar hv-dd-bar-b" style="height:5px;"></div></div><span class="hv-dd-mo">Oct</span></div>
+                  <div class="hv-dd-col"><div class="hv-dd-stack"><div class="hv-dd-bar hv-dd-bar-a" style="height:20px;"></div><div class="hv-dd-bar hv-dd-bar-b" style="height:16px;"></div></div><span class="hv-dd-mo">Nov</span></div>
+                  <div class="hv-dd-col" id="hvDdDecCol"><div class="hv-dd-stack"><div class="hv-dd-bar hv-dd-bar-a" style="height:46px;"></div><div class="hv-dd-bar hv-dd-bar-b" style="height:4px;"></div></div><span class="hv-dd-mo">Dec</span></div>
+                  <div class="hv-dd-col"><div class="hv-dd-stack"><div class="hv-dd-bar hv-dd-bar-a" style="height:30px;"></div><div class="hv-dd-bar hv-dd-bar-b" style="height:12px;"></div></div><span class="hv-dd-mo">Jan</span></div>
+                  <div class="hv-dd-col"><div class="hv-dd-stack"><div class="hv-dd-bar hv-dd-bar-a" style="height:34px;"></div><div class="hv-dd-bar hv-dd-bar-b" style="height:7px;"></div></div><span class="hv-dd-mo">Feb</span></div>
+                </div>
+                <div class="hv-dd-table show" id="hvDdTable">
+                  <div class="hv-dd-thead"><span class="hv-dd-th">Product</span><span class="hv-dd-th">Status</span><span class="hv-dd-th">Renewal</span></div>
+                  <div class="hv-dd-row" id="hvDdR0"><span class="hv-dd-td">Software</span><span class="hv-dd-td ok">Active</span><span class="hv-dd-td date">Mar 27</span></div>
+                  <div class="hv-dd-row" id="hvDdR1"><span class="hv-dd-td">Analytics</span><span class="hv-dd-td ok">Active</span><span class="hv-dd-td date">Mar 27</span></div>
+                  <div class="hv-dd-row" id="hvDdR2"><span class="hv-dd-td">Flex</span><span class="hv-dd-td risk">At Risk</span><span class="hv-dd-td date">Jun 27</span></div>
+                </div>
+              </div>
+            </div>
+            <div class="hv-body">
+              <h3>Drill Down</h3>
+              <p>Filter by product segment. Click any bar to see underlying subscriptions and renewal dates.</p>
+            </div>
+          </div>
+
+          <!-- Card 3: Feedback -->
+          <div class="hv-card">
+            <div class="hv-preview" style="position:relative;">
+              <div class="hv-mini-nav">
+                <div class="hv-logo"></div>
+                <span class="hv-brand">ARGUS</span>
+                <div class="hv-sep"></div>
+                <span class="hv-page">Client Health</span>
+                <span style="flex:1;"></span>
+                <button class="hv-fb-icon pulsing" id="hvFbBtn">
+                  <svg viewBox="0 0 16 16" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 10c0 .6-.4 1-1 1H4l-2 2V3c0-.6.4-1 1-1h10c.6 0 1 .4 1 1v7z"/></svg>
+                </button>
+              </div>
+              <div style="flex:1;padding:9px 10px;">
+                <div class="hv-fb-sig"><span class="hv-fb-lbl">EOS</span><div class="hv-fb-track"><div class="hv-fb-fill" style="width:78%;background:#288184;"></div></div><span class="hv-fb-pct">78%</span></div>
+                <div class="hv-fb-sig"><span class="hv-fb-lbl">SF</span><div class="hv-fb-track"><div class="hv-fb-fill" style="width:91%;background:#1565c0;"></div></div><span class="hv-fb-pct">91%</span></div>
+                <div class="hv-fb-sig"><span class="hv-fb-lbl">ZD</span><div class="hv-fb-track"><div class="hv-fb-fill" style="width:54%;background:#c2600f;"></div></div><span class="hv-fb-pct">54%</span></div>
+                <div class="hv-fb-sig"><span class="hv-fb-lbl">PB</span><div class="hv-fb-track"><div class="hv-fb-fill" style="width:63%;background:#7030a0;"></div></div><span class="hv-fb-pct">63%</span></div>
+              </div>
+              <div class="hv-fb-form" id="hvFbForm">
+                <div class="hv-fb-form-title">
+                  <svg viewBox="0 0 16 16" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 10c0 .6-.4 1-1 1H4l-2 2V3c0-.6.4-1 1-1h10c.6 0 1 .4 1 1v7z"/></svg>
+                  Share your thoughts
+                </div>
+                <textarea class="hv-fb-ta" id="hvFbText" readonly></textarea>
+                <div class="hv-fb-foot">
+                  <div class="hv-fb-ok" id="hvFbOk">
+                    <svg viewBox="0 0 16 16" fill="none" stroke="#166534" stroke-width="2.5" stroke-linecap="round"><path d="M3 8l3.5 3.5L13 4"/></svg>
+                    Thank you!
+                  </div>
+                  <button class="hv-fb-sub" id="hvFbSub">Submit</button>
+                </div>
+              </div>
+            </div>
+            <div class="hv-body">
+              <h3>Submit Feedback</h3>
+              <p>See the <strong>chat icon</strong> in any widget header to share feedback in context.</p>
+            </div>
+          </div>
+
+        </div><!-- /grid -->
+
+        <div class="hv-cta">
+          <button class="hv-tour-cta" id="hvStartTourBtn">
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="7"/><path d="M8 11V8"/><circle cx="8" cy="5.5" r=".5" fill="currentColor" stroke="none"/></svg>
+            Start Tour
+          </button>
+          <button class="hv-enter-btn" id="hvEnterBtn">
+            Enter Argus
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+          </button>
+        </div>
+
+      </div>
+      <script>
+      (function(){
+        // Wire CTA buttons once DOM is ready
+        document.getElementById('hvEnterBtn').addEventListener('click', function(){
+          sessionStorage.setItem('argus_entered','1');
+          window.__argus.setV({view:'health'});
+        });
+        document.getElementById('hvStartTourBtn').addEventListener('click', function(){
+          sessionStorage.setItem('argus_entered','1');
+          window.__argus.setV({view:'health'});
+          setTimeout(function(){ if(window.argusStartTour) window.argusStartTour(); }, 1400);
+        });
+
+        /* Animation 1: Tour */
+        (function(){
+          var btn=document.getElementById('hvTpBtn');
+          var pop=document.getElementById('hvPop');
+          var pTit=document.getElementById('hvPTitle');
+          var pBod=document.getElementById('hvPBody');
+          var pStep=document.getElementById('hvStep');
+          var pNext=document.getElementById('hvNext');
+          var t=[document.getElementById('hvT1'),document.getElementById('hvT2'),document.getElementById('hvT3')];
+          var STEPS=[
+            {title:'Client Health Card',body:'All signals — subscriptions, support and EOS engagement — in one place.',s:'1 of 3'},
+            {title:'Engagement Pulse',body:'Track weekly platform usage and compare against the full customer base.',s:'2 of 3'},
+            {title:'Region Intelligence',body:'Explore which EOS regions this client is accessing.',s:'3 of 3'}
+          ];
+          var phase=0;
+          function showStep(i){ t.forEach(function(el,idx){el.style.opacity=idx<=i?'1':'0';el.classList.toggle('hl',idx===i);}); pTit.textContent=STEPS[i].title; pBod.textContent=STEPS[i].body; pStep.textContent=STEPS[i].s; pop.classList.add('show'); }
+          function reset(){ phase=0; pop.classList.remove('show'); pNext.classList.remove('click'); t.forEach(function(el){el.style.opacity='0';el.classList.remove('hl');}); t[0].style.opacity='1'; btn.classList.add('pulsing'); }
+          reset();
+          setInterval(function(){
+            phase++;
+            if(phase===1){btn.classList.remove('pulsing');showStep(0);}
+            else if(phase===2){pNext.classList.add('click');setTimeout(function(){pNext.classList.remove('click');showStep(1);},280);}
+            else if(phase===3){pNext.classList.add('click');setTimeout(function(){pNext.classList.remove('click');showStep(2);},280);}
+            else{reset();}
+          }, 2200);
+        })();
+
+        /* Animation 2: Drill */
+        (function(){
+          var pills=[document.getElementById('hvDdP0'),document.getElementById('hvDdP1'),document.getElementById('hvDdP2')];
+          var decCol=document.getElementById('hvDdDecCol');
+          var rows=[document.getElementById('hvDdR0'),document.getElementById('hvDdR1'),document.getElementById('hvDdR2')];
+          var barsA=document.querySelectorAll('#hvDdChart .hv-dd-bar-a');
+          var barsB=document.querySelectorAll('#hvDdChart .hv-dd-bar-b');
+          var pIdx=0;
+          function applyPill(i){
+            pills.forEach(function(p){p.classList.remove('on');}); pills[i].classList.add('on');
+            barsA.forEach(function(b){b.style.opacity=i===2?'0.15':'1';});
+            barsB.forEach(function(b){b.style.opacity=i===1?'0.15':'1';});
+            rows[0].classList.toggle('dim',i===2);
+            rows[1].classList.toggle('dim',i===1);
+            rows[2].classList.toggle('dim',i!==0);
+            if(i===0){decCol.classList.add('sel');}else{decCol.classList.remove('sel');}
+          }
+          applyPill(0);
+          setInterval(function(){ pIdx=(pIdx+1)%pills.length; applyPill(pIdx); }, 1400);
+        })();
+
+        /* Animation 3: Feedback */
+        (function(){
+          var fbBtn=document.getElementById('hvFbBtn');
+          var fbForm=document.getElementById('hvFbForm');
+          var fbText=document.getElementById('hvFbText');
+          var fbSub=document.getElementById('hvFbSub');
+          var fbOk=document.getElementById('hvFbOk');
+          var phase=0; var timer=null;
+          var MSG='The SF currency toggle is great!';
+          function reset(){ phase=0; fbBtn.classList.remove('clicked'); fbBtn.classList.add('pulsing'); fbForm.classList.remove('show'); fbText.value=''; fbSub.classList.remove('click'); fbSub.style.display=''; fbOk.classList.remove('show'); if(timer){clearInterval(timer);timer=null;} }
+          reset();
+          setInterval(function(){
+            phase++;
+            if(phase===1){fbBtn.classList.remove('pulsing');fbBtn.classList.add('clicked');setTimeout(function(){fbForm.classList.add('show');},160);}
+            else if(phase===2){var i=0;fbText.value='';timer=setInterval(function(){if(i<MSG.length){fbText.value+=MSG[i++];}else{clearInterval(timer);timer=null;}},50);}
+            else if(phase===3){fbSub.classList.add('click');setTimeout(function(){fbSub.style.display='none';fbOk.classList.add('show');},320);}
+            else{reset();}
+          }, 2000);
+        })();
+      })();
+      </script>
+      </sc-if>
 
       <!-- ============ HEALTH ============ -->
       <sc-if value="{{ isHealth }}" hint-placeholder-val="{{ true }}">
@@ -2846,7 +3148,7 @@ class Component extends DCLogic {
     const ls = typeof localStorage !== 'undefined' ? localStorage : {getItem:()=>null,setItem:()=>{},removeItem:()=>{}};
     // One-time bust: clear any mock-polluted accounts cache from previous ?mock sessions
     try { if (ls.getItem('argusAccCacheV') !== '2') { ls.removeItem('argusAccountsCache'); ls.setItem('argusAccCacheV', '2'); } } catch(e){}
-    let savedView           = ls.getItem('argusView') || 'health';
+    let savedView = (!sessionStorage.getItem('argus_entered') ? 'home' : null) || ls.getItem('argusView') || 'health';
     if (savedView==='dataLakeBuild'||savedView==='argusMcp') { savedView='buildDesign'; }
     const savedHealthClient = ls.getItem('argusHealthClient') || 'rwe';
     const savedRange        = ls.getItem('argusRange')        || '3m';
@@ -8788,7 +9090,8 @@ class Component extends DCLogic {
 
     return {
       syncedAgo:S.buildStatus.syncLabel || 'Synced just now', amName:S.currentUser.name, amInitials:S.currentUser.initials,
-      goHealth:(e)=>{e&&e.preventDefault();localStorage.setItem('argusView','health');window.__syncUrl('health');this.setV({view:'health'});},
+      goHome:(e)=>{e&&e.preventDefault();localStorage.setItem('argusView','home');window.__syncUrl('home');this.setV({view:'home'});},
+      goHealth:(e)=>{e&&e.preventDefault();sessionStorage.setItem('argus_entered','1');localStorage.setItem('argusView','health');window.__syncUrl('health');this.setV({view:'health'});},
       goFeatures:(e)=>{e&&e.preventDefault();localStorage.setItem('argusView','features');window.__syncUrl('features');this.setV({view:'features'});},
       goAssistant:(e)=>{e&&e.preventDefault();localStorage.setItem('argusView','assistant');window.__syncUrl('assistant');this.setV({view:'assistant'});},
       goBriefing:(e)=>{e&&e.preventDefault();localStorage.setItem('argusView','briefing');window.__syncUrl('briefing');this.setV({view:'briefing'});},
@@ -8802,8 +9105,8 @@ class Component extends DCLogic {
       goMdm:(e)=>{e&&e.preventDefault();localStorage.setItem('argusView','mdm');window.__syncUrl('mdm');window.__mdmSearch='';window.__mdmConfFilter=null;window.__mdmExpandedId=null;this.setV({view:'mdm'}); },
       goSwIntelligence:(e)=>{e&&e.preventDefault();localStorage.setItem('argusView','swIntelligence');window.__syncUrl('swIntelligence');document.body.classList.add('sidebar-collapsed');localStorage.setItem('sidebarCollapsed','true');this.setV({view:'swIntelligence'});},
       tourBtnStyle:S.view==='buildDesign'?'display:none':'display:flex;align-items:center;gap:6px;padding:5px 12px;background:transparent;border:1px solid rgba(255,255,255,0.25);border-radius:6px;color:rgba(255,255,255,0.8);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;letter-spacing:0.02em;',
-      navStyleHealth:navStyle('health'), navStyleFeatures:navStyle('features'), navStyleAssistant:navStyle('assistant'), navStyleBriefing:navStyle('briefing'), navStyleBuildStatus:navStyle('buildStatus'), navStyleBuildDesign:navStyle('buildDesign'), navStyleMdm:navStyle('mdm'), navStyleSwIntelligence:navStyle('swIntelligence'),
-      isHealth:S.view==='health', isFeatures:S.view==='features', isAssistant:S.view==='assistant', isBriefing:S.view==='briefing', isBuildStatus:S.view==='buildStatus', isBuildDesign:S.view==='buildDesign', isMdm:S.view==='mdm', isSwIntelligence:S.view==='swIntelligence',
+      navStyleHome:navStyle('home'), navStyleHealth:navStyle('health'), navStyleFeatures:navStyle('features'), navStyleAssistant:navStyle('assistant'), navStyleBriefing:navStyle('briefing'), navStyleBuildStatus:navStyle('buildStatus'), navStyleBuildDesign:navStyle('buildDesign'), navStyleMdm:navStyle('mdm'), navStyleSwIntelligence:navStyle('swIntelligence'),
+      isHome:S.view==='home', isHealth:S.view==='health', isFeatures:S.view==='features', isAssistant:S.view==='assistant', isBriefing:S.view==='briefing', isBuildStatus:S.view==='buildStatus', isBuildDesign:S.view==='buildDesign', isMdm:S.view==='mdm', isSwIntelligence:S.view==='swIntelligence',
       buildTabIsArgusVision:(S.buildTab||'argusVision')==='argusVision', buildTabIsDataLake:S.buildTab==='dataLakeBuild', buildTabIsArgusMcp:S.buildTab==='argusMcp', buildTabIsRoadmap:S.buildTab==='roadmap', buildTabIsFeedback:S.buildTab==='feedback',
       buildTabStyleArgusVision:(S.buildTab||'argusVision')==='argusVision'?'padding:12px 20px;font-size:13px;font-weight:600;color:#3c3c3b;border-bottom:2px solid #288184;cursor:pointer;white-space:nowrap;display:flex;align-items:center;margin-bottom:-1px;':'padding:12px 20px;font-size:13px;font-weight:600;color:#9d9d9d;border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap;display:flex;align-items:center;margin-bottom:-1px;',
       buildTabStyleDatalake:S.buildTab==='dataLakeBuild'?'padding:12px 20px;font-size:13px;font-weight:600;color:#3c3c3b;border-bottom:2px solid #288184;cursor:pointer;white-space:nowrap;display:flex;align-items:center;margin-bottom:-1px;':'padding:12px 20px;font-size:13px;font-weight:600;color:#9d9d9d;border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap;display:flex;align-items:center;margin-bottom:-1px;',
