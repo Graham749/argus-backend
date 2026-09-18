@@ -10298,6 +10298,12 @@ class Component extends DCLogic {
 <script src="./tour.js"></script>
 <script src="./feedback-widget.js"></script>
 <script>
+if (new URLSearchParams(window.location.search).get('start_tour') === '1') {
+  history.replaceState(null, '', '/');
+  setTimeout(function () { if (window.argusStartTour) window.argusStartTour(); }, 1200);
+}
+</script>
+<script>
 document.addEventListener('click', function(e) {
   var a = e.target.closest('a[href*="zendesk.com"]');
   if (a && window.posthog) {
