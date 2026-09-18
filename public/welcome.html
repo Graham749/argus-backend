@@ -69,12 +69,17 @@
     .tp-pnext.click{background:#1e6567;}
 
     /* ═══════════════════════════════════
-       ANIMATION 2 — WIDGET + DRILL DOWN
+       ANIMATION 2 — DRILL DOWN
     ═══════════════════════════════════ */
-    .dd-preview{display:flex;flex-direction:column;height:100%;padding:10px 12px;}
+    .dd-preview{display:flex;flex-direction:column;height:100%;padding:0;}
+
+    /* widget header */
+    .dd-widget-header{display:flex;align-items:center;justify-content:space-between;padding:8px 12px 6px;border-bottom:1px solid #e6e6e5;flex-shrink:0;}
+    .dd-widget-title{font-size:11px;font-weight:900;color:#3c3c3b;letter-spacing:0.01em;}
+    .dd-arr-badge{font-size:9px;font-weight:700;background:#dcfce7;color:#166534;padding:2px 8px;border-radius:20px;}
 
     /* filter pills */
-    .dd-filters{display:flex;gap:5px;margin-bottom:8px;flex-shrink:0;}
+    .dd-filters{display:flex;gap:5px;padding:7px 12px 0;flex-shrink:0;}
     .dd-pill{font-size:9px;font-weight:700;padding:3px 9px;border-radius:20px;border:1.5px solid #d0d0d0;background:#fff;color:#9d9d9d;transition:all 0.35s;}
     .dd-pill.on{background:#288184;border-color:#288184;color:#fff;box-shadow:0 1px 4px rgba(0,0,0,0.12);}
 
@@ -103,28 +108,39 @@
     /* ═══════════════════════════════════
        ANIMATION 3 — SUBMIT FEEDBACK
     ═══════════════════════════════════ */
-    .fb-preview{display:flex;flex-direction:column;height:100%;}
+    .fb-preview{position:relative;height:100%;overflow:hidden;}
 
-    /* mini nav with feedback button */
-    .fb-nav{background:#3c3c3b;display:flex;align-items:center;padding:0 12px;height:30px;gap:8px;flex-shrink:0;}
-    .fb-brand{font-size:9px;font-weight:900;color:#fff;letter-spacing:0.06em;flex:1;}
-    .fb-logo{width:14px;height:14px;background:#288184;border-radius:3px;flex-shrink:0;}
-    .fb-btn{display:flex;align-items:center;gap:4px;padding:3px 9px;background:transparent;border:1px solid rgba(255,255,255,0.3);border-radius:5px;color:rgba(255,255,255,0.85);font-size:9px;font-weight:700;cursor:default;white-space:nowrap;transition:all 0.3s;}
-    .fb-btn.pulsing{border-color:#ffcc00;color:#ffcc00;box-shadow:0 0 0 4px rgba(255,204,0,0.2);}
-    .fb-btn svg{width:9px;height:9px;}
+    /* mini health widget */
+    .fb-widget{display:flex;flex-direction:column;height:100%;}
+    .fb-widget-header{display:flex;align-items:center;justify-content:space-between;padding:8px 12px 6px;border-bottom:1px solid #e6e6e5;flex-shrink:0;}
+    .fb-widget-title{font-size:11px;font-weight:900;color:#3c3c3b;}
+    .fb-icon-btn{display:flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:6px;border:1px solid #e0e0e0;background:#fff;cursor:default;transition:all 0.3s;}
+    .fb-icon-btn svg{width:12px;height:12px;color:#9d9d9d;transition:color 0.3s;}
+    .fb-icon-btn.pulsing{border-color:#288184;background:#edf8f8;box-shadow:0 0 0 4px rgba(40,129,132,0.18);animation:iconPulse 1s ease-in-out infinite alternate;}
+    .fb-icon-btn.pulsing svg{color:#288184;}
+    .fb-icon-btn.clicked{background:#288184;border-color:#288184;}
+    .fb-icon-btn.clicked svg{color:#fff;}
+    @keyframes iconPulse{from{box-shadow:0 0 0 2px rgba(40,129,132,0.1);}to{box-shadow:0 0 0 6px rgba(40,129,132,0.25);}}
 
-    /* feedback form */
-    .fb-body{flex:1;padding:10px 12px;display:flex;align-items:center;justify-content:center;}
-    .fb-card{background:#fff;border:1px solid #e6e6e5;border-radius:8px;padding:10px 12px;width:100%;box-shadow:0 3px 12px rgba(0,0,0,0.1);opacity:0;transform:translateY(10px);transition:opacity 0.4s,transform 0.4s;}
-    .fb-card.show{opacity:1;transform:translateY(0);}
-    .fb-title{font-size:10px;font-weight:900;color:#3c3c3b;margin-bottom:6px;}
-    .fb-textarea{width:100%;border:1px solid #e0e0e0;border-radius:5px;padding:5px 7px;font-size:9px;font-family:inherit;color:#3c3c3b;background:#fafafa;height:38px;resize:none;line-height:1.4;display:block;}
+    /* signal rows */
+    .fb-widget-body{padding:10px 12px;display:flex;flex-direction:column;gap:8px;}
+    .fb-sig-row{display:flex;align-items:center;gap:7px;}
+    .fb-sig-lbl{font-size:9px;font-weight:700;color:#9d9d9d;width:22px;flex-shrink:0;}
+    .fb-sig-track{flex:1;height:5px;background:#e6e6e5;border-radius:3px;overflow:hidden;}
+    .fb-sig-fill{height:100%;border-radius:3px;}
+    .fb-sig-pct{font-size:9px;font-weight:700;color:#6d6d6c;width:24px;text-align:right;flex-shrink:0;}
+
+    /* form slides up from bottom */
+    .fb-form-slide{position:absolute;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #e6e6e5;border-radius:0 0 14px 14px;padding:12px 14px 10px;box-shadow:0 -4px 16px rgba(0,0,0,0.1);transform:translateY(100%);transition:transform 0.45s cubic-bezier(0.34,1.1,0.64,1);}
+    .fb-form-slide.show{transform:translateY(0);}
+    .fb-title{font-size:10px;font-weight:900;color:#3c3c3b;margin-bottom:7px;}
+    .fb-textarea{width:100%;border:1px solid #e0e0e0;border-radius:5px;padding:5px 7px;font-size:9px;font-family:inherit;color:#3c3c3b;background:#fafafa;height:36px;resize:none;line-height:1.4;display:block;}
     .fb-textarea:focus-visible{outline:none;}
-    .fb-foot{display:flex;justify-content:flex-end;margin-top:6px;}
+    .fb-foot{display:flex;align-items:center;justify-content:flex-end;margin-top:7px;gap:8px;}
     .fb-submit{font-size:9px;font-weight:700;background:#288184;color:#fff;border:none;border-radius:4px;padding:4px 12px;cursor:default;font-family:inherit;transition:background 0.2s,transform 0.15s;}
     .fb-submit.click{background:#1e6567;transform:scale(0.96);}
-    .fb-success{display:none;align-items:center;gap:6px;font-size:10px;font-weight:700;color:#166534;}
-    .fb-success svg{width:14px;height:14px;flex-shrink:0;}
+    .fb-success{display:none;align-items:center;gap:5px;font-size:10px;font-weight:700;color:#166534;}
+    .fb-success svg{width:13px;height:13px;flex-shrink:0;}
     .fb-success.show{display:flex;}
 
     /* ── CTA ── */
@@ -193,10 +209,14 @@
         </div>
       </div>
 
-      <!-- ═══ CARD 2: WIDGET BUTTONS + DRILL DOWN ═══ -->
+      <!-- ═══ CARD 2: DRILL DOWN ═══ -->
       <div class="card">
         <div class="card-preview">
           <div class="dd-preview">
+            <div class="dd-widget-header">
+              <span class="dd-widget-title">SF Subscriptions</span>
+              <span class="dd-arr-badge">£728k ARR</span>
+            </div>
             <div class="dd-filters">
               <span class="dd-pill on" id="ddP0">All</span>
               <span class="dd-pill" id="ddP1">Software</span>
@@ -223,8 +243,8 @@
           </div>
         </div>
         <div class="card-body">
-          <h3>Widget Buttons &amp; Drill Down</h3>
-          <p>Use the filter pills above any chart to focus on a segment. Click a bar to drill into the underlying subscriptions and renewal details.</p>
+          <h3>Drill Down</h3>
+          <p>Click any bar in a chart to instantly drill into the underlying data. Use the filter pills to focus on a product segment first.</p>
         </div>
       </div>
 
@@ -232,34 +252,39 @@
       <div class="card">
         <div class="card-preview">
           <div class="fb-preview">
-            <div class="fb-nav">
-              <div class="fb-logo"></div>
-              <span class="fb-brand">ARGUS</span>
-              <button class="fb-btn" id="fbBtn">
-                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                  <path d="M14 10c0 .6-.4 1-1 1H4l-2 2V3c0-.6.4-1 1-1h10c.6 0 1 .4 1 1v7z"/>
-                </svg>
-                Feedback
-              </button>
+            <!-- mini widget with feedback icon in header -->
+            <div class="fb-widget">
+              <div class="fb-widget-header">
+                <span class="fb-widget-title">Client Health</span>
+                <button class="fb-icon-btn" id="fbBtn">
+                  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 10c0 .6-.4 1-1 1H4l-2 2V3c0-.6.4-1 1-1h10c.6 0 1 .4 1 1v7z"/>
+                  </svg>
+                </button>
+              </div>
+              <div class="fb-widget-body">
+                <div class="fb-sig-row"><span class="fb-sig-lbl">EOS</span><div class="fb-sig-track"><div class="fb-sig-fill" style="width:78%;background:#288184;"></div></div><span class="fb-sig-pct">78%</span></div>
+                <div class="fb-sig-row"><span class="fb-sig-lbl">SF</span><div class="fb-sig-track"><div class="fb-sig-fill" style="width:91%;background:#1565c0;"></div></div><span class="fb-sig-pct">91%</span></div>
+                <div class="fb-sig-row"><span class="fb-sig-lbl">ZD</span><div class="fb-sig-track"><div class="fb-sig-fill" style="width:54%;background:#c2600f;"></div></div><span class="fb-sig-pct">54%</span></div>
+              </div>
             </div>
-            <div class="fb-body">
-              <div class="fb-card" id="fbCard">
-                <div class="fb-title">Share your thoughts</div>
-                <textarea class="fb-textarea" id="fbText" readonly></textarea>
-                <div class="fb-foot">
-                  <div class="fb-success" id="fbSuccess">
-                    <svg viewBox="0 0 16 16" fill="none" stroke="#166534" stroke-width="2.5" stroke-linecap="round"><path d="M3 8l3.5 3.5L13 4"/></svg>
-                    Thank you!
-                  </div>
-                  <button class="fb-submit" id="fbSubmit">Submit</button>
+            <!-- feedback form slides up from bottom -->
+            <div class="fb-form-slide" id="fbCard">
+              <div class="fb-title">Share your thoughts</div>
+              <textarea class="fb-textarea" id="fbText" readonly></textarea>
+              <div class="fb-foot">
+                <div class="fb-success" id="fbSuccess">
+                  <svg viewBox="0 0 16 16" fill="none" stroke="#166534" stroke-width="2.5" stroke-linecap="round"><path d="M3 8l3.5 3.5L13 4"/></svg>
+                  Thank you!
                 </div>
+                <button class="fb-submit" id="fbSubmit">Submit</button>
               </div>
             </div>
           </div>
         </div>
         <div class="card-body">
           <h3>Submit Feedback</h3>
-          <p>Found something to improve? Click <strong>Feedback</strong> in the top nav on any page to share thoughts, flag issues, or suggest new features.</p>
+          <p>See the <strong>chat icon</strong> in any widget header? Click it to share a thought, flag an issue, or suggest an improvement — right in context.</p>
         </div>
       </div>
 
@@ -371,19 +396,18 @@
       }, 2200);
     })();
 
-    /* ═══ ANIMATION 2: WIDGET + DRILL DOWN ═══
-       Phase 0 (0-2s):  pill cycles
-       Phase 1 (2-3s):  bar gets selected
-       Phase 2 (3-6s):  drill-down table fades in
-       Phase 3 (6-7s):  reset
+    /* ═══ ANIMATION 2: DRILL DOWN ═══
+       Phase 0: pills cycle (All → Software → Analytics) every 900ms
+       On pill click: bar selects AND table appears simultaneously
+       Hold 3.5s, then reset
     */
     (function () {
       var pills  = [document.getElementById('ddP0'), document.getElementById('ddP1'), document.getElementById('ddP2')];
       var cols   = document.querySelectorAll('#ddChart .dd-col');
       var table  = document.getElementById('ddTable');
       var pIdx   = 0;
-      var selIdx = 3; // Dec bar (tallest)
-      var phase  = 0;
+      var selIdx = 3; // Dec — tallest bar
+      var drilling = false;
 
       function setPill(i) {
         pills.forEach(function (p) { p.classList.remove('on'); });
@@ -394,51 +418,50 @@
         cols.forEach(function (col) {
           var a = col.querySelector('.dd-bar-a');
           var b = col.querySelector('.dd-bar-b');
-          if (i === 1) { a.style.opacity='1'; b.style.opacity='0.1'; }
-          else if (i === 2) { a.style.opacity='0.1'; b.style.opacity='1'; }
+          if (i === 1) { a.style.opacity='1'; b.style.opacity='0.12'; }
+          else if (i === 2) { a.style.opacity='0.12'; b.style.opacity='1'; }
           else { a.style.opacity='1'; b.style.opacity='1'; }
         });
       }
 
-      function reset() {
-        cols.forEach(function (c) { c.classList.remove('sel'); });
-        table.classList.remove('show');
-        pIdx = 0; phase = 0;
-        setPill(0); setFilter(0);
+      function drill() {
+        drilling = true;
+        /* simultaneously: select bar + show table */
+        cols[selIdx].classList.add('sel');
+        table.classList.add('show');
+        setTimeout(function () {
+          /* reset after 3.5s hold */
+          cols.forEach(function (c) { c.classList.remove('sel'); });
+          table.classList.remove('show');
+          pIdx = 0; setPill(0); setFilter(0);
+          setTimeout(function () { drilling = false; }, 400);
+        }, 3500);
       }
 
-      reset();
+      setPill(0); setFilter(0);
 
-      /* pill cycle every 900ms during phase 0 */
+      /* pill cycling — steps through all 3, then drills on the 4th tick */
+      var tickCount = 0;
       setInterval(function () {
-        if (phase === 0) {
+        if (drilling) return;
+        tickCount++;
+        if (tickCount % 4 === 0) {
+          /* drill on every 4th tick (after cycling through all pills once) */
+          pIdx = 0; setPill(0); setFilter(0);
+          setTimeout(drill, 250);
+        } else {
           pIdx = (pIdx + 1) % pills.length;
           setPill(pIdx); setFilter(pIdx);
         }
-      }, 900);
-
-      /* main phase ticker */
-      setInterval(function () {
-        phase++;
-        if (phase === 1) {
-          /* freeze pill on "All", select bar */
-          pIdx = 0; setPill(0); setFilter(0);
-          cols[selIdx].classList.add('sel');
-        } else if (phase === 2) {
-          table.classList.add('show');
-        } else if (phase >= 4) {
-          reset();
-        }
-      }, 1800);
+      }, 950);
     })();
 
-    /* ═══ ANIMATION 3: FEEDBACK ═══
-       Phase 0 (0-2s):  feedback button pulsing
-       Phase 1 (2-3s):  card slides in
-       Phase 2 (3-5s):  text types
-       Phase 3 (5-6s):  submit clicks
-       Phase 4 (6-8s):  success shown
-       Phase 5 (8-9s):  reset
+    /* ═══ ANIMATION 3: FEEDBACK (widget icon) ═══
+       Phase 0: feedback icon on widget pulses
+       Phase 1: icon clicked (filled) → form slides up
+       Phase 2: text types into textarea
+       Phase 3: submit clicks → success
+       Phase 4: reset (form slides back down)
     */
     (function () {
       var fbBtn     = document.getElementById('fbBtn');
@@ -452,6 +475,7 @@
 
       function reset() {
         phase = 0;
+        fbBtn.classList.remove('clicked');
         fbBtn.classList.add('pulsing');
         fbCard.classList.remove('show');
         fbText.value = '';
@@ -465,13 +489,9 @@
         var i = 0;
         fbText.value = '';
         typeTimer = setInterval(function () {
-          if (i < MSG.length) {
-            fbText.value += MSG[i++];
-          } else {
-            clearInterval(typeTimer);
-            typeTimer = null;
-          }
-        }, 55);
+          if (i < MSG.length) { fbText.value += MSG[i++]; }
+          else { clearInterval(typeTimer); typeTimer = null; }
+        }, 52);
       }
 
       reset();
@@ -479,8 +499,10 @@
       setInterval(function () {
         phase++;
         if (phase === 1) {
+          /* click the icon */
           fbBtn.classList.remove('pulsing');
-          fbCard.classList.add('show');
+          fbBtn.classList.add('clicked');
+          setTimeout(function () { fbCard.classList.add('show'); }, 200);
         } else if (phase === 2) {
           startTyping();
         } else if (phase === 3) {
