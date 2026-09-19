@@ -136,6 +136,10 @@ input{font-family:inherit;}
 .hv-fb-ok{display:none;align-items:center;gap:4px;font-size:9.5px;font-weight:700;color:#166534;}
 .hv-fb-ok.show{display:flex;}
 .hv-fb-ok svg{width:12px;height:12px;}
+/* mouse cursor overlay for click animation */
+.hv-cursor{position:absolute;top:4px;right:5px;width:15px;height:15px;opacity:0;transform:scale(1);pointer-events:none;z-index:20;transition:opacity 0.18s,transform 0.1s;}
+.hv-cursor.show{opacity:1;}
+.hv-cursor.tap{transform:scale(0.65);}
 /* feedback icon inside white widget header */
 .hv-fb-icon-w{display:flex;align-items:center;justify-content:center;width:20px;height:16px;border-radius:3px;border:1px solid #e0e0e0;background:transparent;cursor:default;transition:all .35s;flex-shrink:0;}
 .hv-fb-icon-w svg{width:10px;height:10px;stroke:#b0b0b0;transition:stroke .3s;}
@@ -332,6 +336,10 @@ input{font-family:inherit;}
           <!-- Card 3: Feedback -->
           <div class="hv-card">
             <div class="hv-preview" style="position:relative;">
+              <!-- click cursor overlay — positioned over the mini-nav chat icon -->
+              <div class="hv-cursor" id="hvCursor">
+                <svg viewBox="0 0 14 18" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 1l4.5 13 2-4.5L12 7.5 1 1z" fill="#3c3c3b" stroke="#fff" stroke-width="1.2" stroke-linejoin="round"/></svg>
+              </div>
               <!-- Argus app nav -->
               <div class="hv-mini-nav">
                 <div class="hv-logo"></div>
@@ -2137,12 +2145,23 @@ window.__hvInit = function() {
   (function(){
     var fbBtn=document.getElementById('hvFbBtn'),fbForm=document.getElementById('hvFbForm'),fbText=document.getElementById('hvFbText'),fbSub=document.getElementById('hvFbSub'),fbOk=document.getElementById('hvFbOk');
     var phase=0,typeTimer=null,MSG='The SF currency toggle is great!';
-    function reset(){ phase=0; fbBtn.classList.remove('clicked'); fbBtn.classList.add('pulsing'); fbForm.classList.remove('show'); fbText.value=''; if(fbSub){fbSub.classList.remove('click'); fbSub.style.display='';} fbOk.classList.remove('show'); if(typeTimer){clearInterval(typeTimer);typeTimer=null;} }
+    function reset(){ phase=0; fbBtn.classList.remove('clicked'); fbBtn.classList.add('pulsing'); fbForm.classList.remove('show'); fbText.value=''; if(fbSub){fbSub.classList.remove('click'); fbSub.style.display='';} fbOk.classList.remove('show'); if(typeTimer){clearInterval(typeTimer);typeTimer=null;} var cur=document.getElementById('hvCursor'); if(cur){cur.classList.remove('show','tap');} }
     reset();
     hvi(function(){
       if(!document.getElementById('hvFbBtn'))return;
       phase++;
-      if(phase===1){fbBtn.classList.remove('pulsing');fbBtn.classList.add('clicked');setTimeout(function(){fbForm.classList.add('show');},160);}
+      if(phase===1){
+        var cur=document.getElementById('hvCursor');
+        if(cur) cur.classList.add('show');
+        setTimeout(function(){
+          if(cur) cur.classList.add('tap');
+          setTimeout(function(){
+            if(cur){ cur.classList.remove('tap'); setTimeout(function(){ cur.classList.remove('show'); },180); }
+            fbBtn.classList.remove('pulsing'); fbBtn.classList.add('clicked');
+            setTimeout(function(){ fbForm.classList.add('show'); },160);
+          },150);
+        },300);
+      }
       else if(phase===2){var i=0;fbText.value='';typeTimer=setInterval(function(){if(i<MSG.length){fbText.value+=MSG[i++];}else{clearInterval(typeTimer);typeTimer=null;}},50);}
       else if(phase===3){fbSub.classList.add('click');setTimeout(function(){fbSub.style.display='none';fbOk.classList.add('show');},320);}
       else{reset();}
