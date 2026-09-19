@@ -2163,7 +2163,8 @@ aside > div:nth-child(2) { transition: opacity 0.2s ease; }
 
 <script>
 // Restore sidebar state on page load
-var _initView = (!sessionStorage.getItem('argus_entered') ? 'home' : null) || localStorage.getItem('argusView') || 'health';
+var _lsV = localStorage.getItem('argusView');
+var _initView = _lsV || (!sessionStorage.getItem('argus_entered') ? 'home' : 'health');
 if (_initView === 'home' || localStorage.getItem('sidebarCollapsed') === 'true') {
   document.body.classList.add('sidebar-collapsed');
 }
@@ -3287,7 +3288,8 @@ class Component extends DCLogic {
     const ls = typeof localStorage !== 'undefined' ? localStorage : {getItem:()=>null,setItem:()=>{},removeItem:()=>{}};
     // One-time bust: clear any mock-polluted accounts cache from previous ?mock sessions
     try { if (ls.getItem('argusAccCacheV') !== '2') { ls.removeItem('argusAccountsCache'); ls.setItem('argusAccCacheV', '2'); } } catch(e){}
-    let savedView = (!sessionStorage.getItem('argus_entered') ? 'home' : null) || ls.getItem('argusView') || 'health';
+    let _lsView = ls.getItem('argusView');
+    let savedView = _lsView || (!sessionStorage.getItem('argus_entered') ? 'home' : 'health');
     if (savedView==='dataLakeBuild'||savedView==='argusMcp') { savedView='buildDesign'; }
     const savedHealthClient = ls.getItem('argusHealthClient') || 'rwe';
     const savedRange        = ls.getItem('argusRange')        || '3m';
