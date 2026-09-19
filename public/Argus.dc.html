@@ -250,6 +250,10 @@ input{font-family:inherit;}
 
           <!-- Card 1: Take a Tour -->
           <div class="hv-card">
+            <div style="padding:14px 16px 12px;border-bottom:1px solid #e6e6e5;">
+              <div style="font-size:13px;font-weight:700;color:#3c3c3b;margin-bottom:5px;">Take a Tour</div>
+              <div style="font-size:11.5px;color:#6d6d6c;line-height:1.65;">Click <strong>Take a tour</strong> in the top bar for a guided walkthrough of every Argus feature.</div>
+            </div>
             <div class="hv-preview">
               <div class="hv-mini-nav">
                 <div class="hv-logo"></div>
@@ -272,10 +276,6 @@ input{font-family:inherit;}
                   </div>
                 </div>
               </div>
-            </div>
-            <div class="hv-body">
-              <h3>Take a Tour</h3>
-              <p>Click <strong>Take a tour</strong> in the top bar for a guided walkthrough of every Argus feature.</p>
             </div>
           </div>
 
@@ -9115,7 +9115,7 @@ class Component extends DCLogic {
       setBuildTabFeedback:(e)=>{e&&e.preventDefault();localStorage.setItem('buildTab','feedback');window.__syncUrl('buildDesign','feedback');this.setV({buildTab:'feedback'});},
       goMdm:(e)=>{e&&e.preventDefault();localStorage.setItem('argusView','mdm');window.__syncUrl('mdm');window.__mdmSearch='';window.__mdmConfFilter=null;window.__mdmExpandedId=null;this.setV({view:'mdm'}); },
       goSwIntelligence:(e)=>{e&&e.preventDefault();localStorage.setItem('argusView','swIntelligence');window.__syncUrl('swIntelligence');document.body.classList.add('sidebar-collapsed');localStorage.setItem('sidebarCollapsed','true');this.setV({view:'swIntelligence'});},
-      tourBtnStyle:S.view==='buildDesign'?'display:none':'display:flex;align-items:center;gap:6px;padding:5px 12px;background:transparent;border:1px solid rgba(255,255,255,0.25);border-radius:6px;color:rgba(255,255,255,0.8);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;letter-spacing:0.02em;',
+      tourBtnStyle:(S.view==='buildDesign'||S.view==='home')?'display:none':'display:flex;align-items:center;gap:6px;padding:5px 12px;background:transparent;border:1px solid rgba(255,255,255,0.25);border-radius:6px;color:rgba(255,255,255,0.8);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;letter-spacing:0.02em;',
       navStyleHome:navStyle('home'), navStyleHealth:navStyle('health'), navStyleFeatures:navStyle('features'), navStyleAssistant:navStyle('assistant'), navStyleBriefing:navStyle('briefing'), navStyleBuildStatus:navStyle('buildStatus'), navStyleBuildDesign:navStyle('buildDesign'), navStyleMdm:navStyle('mdm'), navStyleSwIntelligence:navStyle('swIntelligence'),
       isHome:S.view==='home', isHealth:S.view==='health', isFeatures:S.view==='features', isAssistant:S.view==='assistant', isBriefing:S.view==='briefing', isBuildStatus:S.view==='buildStatus', isBuildDesign:S.view==='buildDesign', isMdm:S.view==='mdm', isSwIntelligence:S.view==='swIntelligence',
       buildTabIsArgusVision:(S.buildTab||'argusVision')==='argusVision', buildTabIsDataLake:S.buildTab==='dataLakeBuild', buildTabIsArgusMcp:S.buildTab==='argusMcp', buildTabIsRoadmap:S.buildTab==='roadmap', buildTabIsFeedback:S.buildTab==='feedback',
