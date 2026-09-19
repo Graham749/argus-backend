@@ -145,9 +145,6 @@ input{font-family:inherit;}
 .hv-tour-cta::before{content:'';position:absolute;inset:-4px;border-radius:9px;border:2px solid #288184;animation:hvBeacon 2.2s ease-out infinite;pointer-events:none;}
 .hv-tour-cta::after{content:'';position:absolute;inset:-9px;border-radius:13px;border:2px solid #288184;animation:hvBeacon 2.2s ease-out .45s infinite;pointer-events:none;}
 @keyframes hvBeacon{0%{opacity:.65;transform:scale(1);}100%{opacity:0;transform:scale(1.2);}}
-/* sidebar hidden on home view */
-.hv-active aside{display:none!important;}
-.hv-active main{margin-left:0!important;}
 </style>
 </helmet>
 
@@ -243,7 +240,7 @@ input{font-family:inherit;}
     <main style="flex:1;overflow:auto;margin-left:226px;">
 
       <!-- ============ HOME ============ -->
-      <sc-if value="{{ isHome }}" hint-placeholder-val="{{ false }}">
+      <sc-if value="{{ isHome }}" hint-placeholder-val="{{ true }}">
       <div style="padding:40px 48px 52px;max-width:1060px;margin:0 auto;animation:argusFade .25s ease;">
         <div style="margin-bottom:28px;">
           <div style="font-size:20px;font-weight:700;letter-spacing:-0.01em;">Welcome to Argus</div>
@@ -376,26 +373,30 @@ input{font-family:inherit;}
 
       </div>
       <script>
-      (function(){
-        // Clear any intervals from a previous home-view render
+      // Define as global so setV can re-call it when navigating back to Home
+      window.__hvInit = function() {
         (window.__hvIntervals||[]).forEach(clearInterval);
-        window.__hvIntervals=[];
-        function hvInterval(fn,ms){ var id=setInterval(fn,ms); window.__hvIntervals.push(id); return id; }
+        window.__hvIntervals = [];
 
-        // CTA buttons
-        document.getElementById('hvEnterBtn').addEventListener('click', function(){
+        var anchorEl = document.getElementById('hvTpBtn');
+        if (!anchorEl) return; // DOM not ready yet — setV will retry via setTimeout
+
+        function hvInterval(fn, ms) { var id=setInterval(fn,ms); window.__hvIntervals.push(id); return id; }
+
+        // CTA buttons (assign onclick to safely overwrite any previous binding)
+        document.getElementById('hvEnterBtn').onclick = function() {
           sessionStorage.setItem('argus_entered','1');
           document.body.classList.remove('sidebar-collapsed');
           localStorage.setItem('sidebarCollapsed','false');
           window.__argus.setV({view:'health'});
-        });
-        document.getElementById('hvStartTourBtn').addEventListener('click', function(){
+        };
+        document.getElementById('hvStartTourBtn').onclick = function() {
           sessionStorage.setItem('argus_entered','1');
           document.body.classList.remove('sidebar-collapsed');
           localStorage.setItem('sidebarCollapsed','false');
           window.__argus.setV({view:'health'});
           setTimeout(function(){ if(window.argusStartTour) window.argusStartTour(); }, 1400);
-        });
+        };
 
         /* Animation 1: Tour */
         (function(){
@@ -408,7 +409,7 @@ input{font-family:inherit;}
           var t=[document.getElementById('hvT1'),document.getElementById('hvT2'),document.getElementById('hvT3')];
           var STEPS=[
             {title:'Client Health Card',body:'All signals — subscriptions, support and EOS engagement — in one place.',s:'1 of 3'},
-            {title:'Engagement Pulse',body:'Track weekly platform usage and compare against the full customer base.',s:'2 of 3'},
+            {title:'Engagement Pulse',body:'Track weekly usage and compare against the full customer base.',s:'2 of 3'},
             {title:'Region Intelligence',body:'Explore which EOS regions this client is accessing.',s:'3 of 3'}
           ];
           var phase=0;
@@ -416,10 +417,11 @@ input{font-family:inherit;}
           function reset(){ phase=0; pop.classList.remove('show'); pNext.classList.remove('click'); t.forEach(function(el){el.style.opacity='0';el.classList.remove('hl');}); t[0].style.opacity='1'; btn.classList.add('pulsing'); }
           reset();
           hvInterval(function(){
+            if(!document.getElementById('hvTpBtn'))return;
             phase++;
             if(phase===1){btn.classList.remove('pulsing');showStep(0);}
-            else if(phase===2){pNext.classList.add('click');setTimeout(function(){if(pNext.parentNode){pNext.classList.remove('click');showStep(1);}},280);}
-            else if(phase===3){pNext.classList.add('click');setTimeout(function(){if(pNext.parentNode){pNext.classList.remove('click');showStep(2);}},280);}
+            else if(phase===2){pNext.classList.add('click');setTimeout(function(){pNext.classList.remove('click');showStep(1);},280);}
+            else if(phase===3){pNext.classList.add('click');setTimeout(function(){pNext.classList.remove('click');showStep(2);},280);}
             else{reset();}
           }, 2200);
         })();
@@ -459,18 +461,19 @@ input{font-family:inherit;}
           hvInterval(function(){
             if(!document.getElementById('hvFbBtn'))return;
             phase++;
-            if(phase===1){fbBtn.classList.remove('pulsing');fbBtn.classList.add('clicked');setTimeout(function(){if(fbForm.parentNode)fbForm.classList.add('show');},160);}
+            if(phase===1){fbBtn.classList.remove('pulsing');fbBtn.classList.add('clicked');setTimeout(function(){fbForm.classList.add('show');},160);}
             else if(phase===2){var i=0;fbText.value='';typeTimer=setInterval(function(){if(i<MSG.length){fbText.value+=MSG[i++];}else{clearInterval(typeTimer);typeTimer=null;}},50);}
-            else if(phase===3){fbSub.classList.add('click');setTimeout(function(){if(fbSub.parentNode){fbSub.style.display='none';fbOk.classList.add('show');}},320);}
+            else if(phase===3){fbSub.classList.add('click');setTimeout(function(){fbSub.style.display='none';fbOk.classList.add('show');},320);}
             else{reset();}
           }, 2000);
         })();
-      })();
+      };
+      window.__hvInit();
       </script>
       </sc-if>
 
       <!-- ============ HEALTH ============ -->
-      <sc-if value="{{ isHealth }}" hint-placeholder-val="{{ true }}">
+      <sc-if value="{{ isHealth }}" hint-placeholder-val="{{ false }}">
       <div style="padding:20px 28px;max-width:1000px;animation:argusFade .25s ease;">
         <div style="margin-bottom:12px;">
           <div id="healthPageTitle" style="font-size:20px;font-weight:700;letter-spacing:-0.01em;">Client health card</div>
@@ -2138,9 +2141,7 @@ aside > div:nth-child(2) { transition: opacity 0.2s ease; }
 <script>
 // Restore sidebar state on page load
 var _initView = (!sessionStorage.getItem('argus_entered') ? 'home' : null) || localStorage.getItem('argusView') || 'health';
-if (_initView === 'home') {
-  document.body.classList.add('hv-active');
-} else if (localStorage.getItem('sidebarCollapsed') === 'true') {
+if (_initView === 'home' || localStorage.getItem('sidebarCollapsed') === 'true') {
   document.body.classList.add('sidebar-collapsed');
 }
 
@@ -8402,9 +8403,10 @@ class Component extends DCLogic {
   utilPctStyle(p){ return {fontSize:'11px',marginLeft:'6px',fontWeight:p>100?700:400,color:p>100?'#d23f3f':'#9d9d9d'}; }
 
   setV(patch){
-    if(patch.view) {
-      if(patch.view === 'home') document.body.classList.add('hv-active');
-      else document.body.classList.remove('hv-active');
+    if(patch.view === 'home') {
+      document.body.classList.add('sidebar-collapsed');
+      localStorage.setItem('sidebarCollapsed','true');
+      setTimeout(function(){ if(window.__hvInit) window.__hvInit(); }, 60);
     }
     if(typeof localStorage !== 'undefined'){
       if(patch.view)         localStorage.setItem('argusView',         patch.view);
