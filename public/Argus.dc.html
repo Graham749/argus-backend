@@ -2187,6 +2187,12 @@ window.__hvStartTour = function() {
   setTimeout(function(){ if(window.argusStartTour) window.argusStartTour(); }, 1400);
 };
 
+// Event delegation for CTA buttons — DC's React render drops string onclick attrs.
+document.addEventListener('click', function(e) {
+  if (e.target.closest('#hvEnterBtn')) window.__hvEnter();
+  if (e.target.closest('#hvStartTourBtn')) window.__hvStartTour();
+});
+
 // Home view animations — defined here (outside x-dc) so the script actually executes.
 // Called by setV when navigating to home, and polled below for initial page load.
 window.__hvInit = function() {
