@@ -136,6 +136,14 @@ input{font-family:inherit;}
 .hv-fb-ok{display:none;align-items:center;gap:4px;font-size:9.5px;font-weight:700;color:#166534;}
 .hv-fb-ok.show{display:flex;}
 .hv-fb-ok svg{width:12px;height:12px;}
+/* feedback icon inside white widget header */
+.hv-fb-icon-w{display:flex;align-items:center;justify-content:center;width:20px;height:16px;border-radius:3px;border:1px solid #e0e0e0;background:transparent;cursor:default;transition:all .35s;flex-shrink:0;}
+.hv-fb-icon-w svg{width:10px;height:10px;stroke:#b0b0b0;transition:stroke .3s;}
+.hv-fb-icon-w.pulsing{border-color:#288184;animation:hvWPulse 1s ease-in-out infinite alternate;}
+.hv-fb-icon-w.pulsing svg{stroke:#288184;}
+.hv-fb-icon-w.clicked{background:#288184;border-color:#288184;}
+.hv-fb-icon-w.clicked svg{stroke:#fff;}
+@keyframes hvWPulse{from{box-shadow:0 0 0 2px rgba(40,129,132,.08);}to{box-shadow:0 0 0 5px rgba(40,129,132,.22);}}
 /* cta */
 .hv-cta{display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;padding-bottom:4px;}
 .hv-enter-btn{display:inline-flex;align-items:center;gap:7px;background:#288184;color:#fff;border:none;border-radius:7px;padding:12px 30px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;letter-spacing:.01em;transition:background .15s;}
@@ -324,21 +332,31 @@ input{font-family:inherit;}
           <!-- Card 3: Feedback -->
           <div class="hv-card">
             <div class="hv-preview" style="position:relative;">
+              <!-- Argus app nav — no icon here -->
               <div class="hv-mini-nav">
                 <div class="hv-logo"></div>
                 <span class="hv-brand">ARGUS</span>
                 <div class="hv-sep"></div>
                 <span class="hv-page">Help us improve</span>
-                <span style="flex:1;"></span>
-                <button class="hv-fb-icon pulsing" id="hvFbBtn">
-                  <svg viewBox="0 0 16 16" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 10c0 .6-.4 1-1 1H4l-2 2V3c0-.6.4-1 1-1h10c.6 0 1 .4 1 1v7z"/></svg>
-                </button>
               </div>
-              <div style="flex:1;padding:9px 10px;">
-                <div class="hv-fb-sig"><span class="hv-fb-lbl">EOS</span><div class="hv-fb-track"><div class="hv-fb-fill" style="width:78%;background:#288184;"></div></div><span class="hv-fb-pct">78%</span></div>
-                <div class="hv-fb-sig"><span class="hv-fb-lbl">SF</span><div class="hv-fb-track"><div class="hv-fb-fill" style="width:91%;background:#1565c0;"></div></div><span class="hv-fb-pct">91%</span></div>
-                <div class="hv-fb-sig"><span class="hv-fb-lbl">ZD</span><div class="hv-fb-track"><div class="hv-fb-fill" style="width:54%;background:#c2600f;"></div></div><span class="hv-fb-pct">54%</span></div>
-                <div class="hv-fb-sig"><span class="hv-fb-lbl">PB</span><div class="hv-fb-track"><div class="hv-fb-fill" style="width:63%;background:#7030a0;"></div></div><span class="hv-fb-pct">63%</span></div>
+              <!-- Widget card with icon in header corner -->
+              <div style="flex:1;padding:7px 9px;display:flex;flex-direction:column;gap:5px;">
+                <div style="background:#fff;border:1px solid #e6e6e5;border-radius:7px;overflow:hidden;box-shadow:0 1px 4px rgba(60,60,59,0.06);">
+                  <!-- Widget header: title + feedback icon in corner -->
+                  <div style="display:flex;align-items:center;gap:6px;padding:5px 8px;border-bottom:1px solid #f0f0f0;">
+                    <span style="font-size:7px;font-weight:900;color:#3c3c3b;letter-spacing:0.05em;text-transform:uppercase;flex:1;">ENGAGEMENT PULSE</span>
+                    <span style="font-size:7px;color:#9d9d9d;">Sonnedix</span>
+                    <button class="hv-fb-icon-w pulsing" id="hvFbBtn">
+                      <svg viewBox="0 0 16 16" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 10c0 .6-.4 1-1 1H4l-2 2V3c0-.6.4-1 1-1h10c.6 0 1 .4 1 1v7z"/></svg>
+                    </button>
+                  </div>
+                  <!-- Widget signal rows -->
+                  <div style="padding:5px 8px;">
+                    <div class="hv-fb-sig"><span class="hv-fb-lbl">EOS</span><div class="hv-fb-track"><div class="hv-fb-fill" style="width:78%;background:#288184;"></div></div><span class="hv-fb-pct">78%</span></div>
+                    <div class="hv-fb-sig"><span class="hv-fb-lbl">SF</span><div class="hv-fb-track"><div class="hv-fb-fill" style="width:91%;background:#1565c0;"></div></div><span class="hv-fb-pct">91%</span></div>
+                    <div class="hv-fb-sig"><span class="hv-fb-lbl">ZD</span><div class="hv-fb-track"><div class="hv-fb-fill" style="width:54%;background:#c2600f;"></div></div><span class="hv-fb-pct">54%</span></div>
+                  </div>
+                </div>
               </div>
               <div class="hv-fb-form" id="hvFbForm">
                 <div class="hv-fb-form-title">
@@ -2115,7 +2133,7 @@ window.__hvInit = function() {
   (function(){
     var fbBtn=document.getElementById('hvFbBtn'),fbForm=document.getElementById('hvFbForm'),fbText=document.getElementById('hvFbText'),fbSub=document.getElementById('hvFbSub'),fbOk=document.getElementById('hvFbOk');
     var phase=0,typeTimer=null,MSG='The SF currency toggle is great!';
-    function reset(){ phase=0; fbBtn.classList.remove('clicked'); fbBtn.classList.add('pulsing'); fbForm.classList.remove('show'); fbText.value=''; fbSub.classList.remove('click'); fbSub.style.display=''; fbOk.classList.remove('show'); if(typeTimer){clearInterval(typeTimer);typeTimer=null;} }
+    function reset(){ phase=0; fbBtn.classList.remove('clicked'); fbBtn.classList.add('pulsing'); fbForm.classList.remove('show'); fbText.value=''; if(fbSub){fbSub.classList.remove('click'); fbSub.style.display='';} fbOk.classList.remove('show'); if(typeTimer){clearInterval(typeTimer);typeTimer=null;} }
     reset();
     hvi(function(){
       if(!document.getElementById('hvFbBtn'))return;
