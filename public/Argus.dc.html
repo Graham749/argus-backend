@@ -407,11 +407,11 @@ input{font-family:inherit;}
         </div><!-- /grid -->
 
         <div class="hv-cta">
-          <button class="hv-tour-cta" id="hvStartTourBtn">
+          <button class="hv-tour-cta" id="hvStartTourBtn" onclick="window.__hvStartTour()">
             <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="7"/><path d="M8 11V8"/><circle cx="8" cy="5.5" r=".5" fill="currentColor" stroke="none"/></svg>
             Start Tour
           </button>
-          <button class="hv-enter-btn" id="hvEnterBtn">
+          <button class="hv-enter-btn" id="hvEnterBtn" onclick="window.__hvEnter()">
             Enter Argus
             <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
           </button>
@@ -2169,6 +2169,22 @@ if (_initView === 'home' || localStorage.getItem('sidebarCollapsed') === 'true')
   document.body.classList.add('sidebar-collapsed');
 }
 
+window.__hvEnter = function() {
+  sessionStorage.setItem('argus_entered','1');
+  document.body.classList.remove('sidebar-collapsed');
+  localStorage.setItem('sidebarCollapsed','false');
+  if(window.posthog)posthog.capture('home_enter_argus',{page:'home'});
+  if(window.__argus)window.__argus.setV({view:'health'});
+};
+window.__hvStartTour = function() {
+  sessionStorage.setItem('argus_entered','1');
+  document.body.classList.remove('sidebar-collapsed');
+  localStorage.setItem('sidebarCollapsed','false');
+  if(window.posthog)posthog.capture('home_start_tour',{page:'home'});
+  if(window.__argus)window.__argus.setV({view:'health'});
+  setTimeout(function(){ if(window.argusStartTour) window.argusStartTour(); }, 1400);
+};
+
 // Home view animations — defined here (outside x-dc) so the script actually executes.
 // Called by setV when navigating to home, and polled below for initial page load.
 window.__hvInit = function() {
@@ -2178,21 +2194,6 @@ window.__hvInit = function() {
   if (!anchor) return; // DOM not ready; setV will retry
   function hvi(fn,ms){ var id=setInterval(fn,ms); window.__hvIntervals.push(id); }
 
-  document.getElementById('hvEnterBtn').onclick = function() {
-    sessionStorage.setItem('argus_entered','1');
-    document.body.classList.remove('sidebar-collapsed');
-    localStorage.setItem('sidebarCollapsed','false');
-    if(window.posthog)posthog.capture('home_enter_argus',{page:'home'});
-    window.__argus.setV({view:'health'});
-  };
-  document.getElementById('hvStartTourBtn').onclick = function() {
-    sessionStorage.setItem('argus_entered','1');
-    document.body.classList.remove('sidebar-collapsed');
-    localStorage.setItem('sidebarCollapsed','false');
-    if(window.posthog)posthog.capture('home_start_tour',{page:'home'});
-    window.__argus.setV({view:'health'});
-    setTimeout(function(){ if(window.argusStartTour) window.argusStartTour(); }, 1400);
-  };
 
   /* Tour card */
   (function(){
