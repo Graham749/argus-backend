@@ -185,7 +185,6 @@ app.get('/api/eos-engagement',         eosEngagement);
 app.get('/api/eos-engagement-account', eosEngagementAccount);
 app.get('/sw-intelligence',   (req, res) => { res.set('Cache-Control', 'no-store'); res.sendFile(path.join(argusPath, 'sw-intelligence.html')); });
 app.get('/eos-engagement',    (req, res) => { res.set('Cache-Control', 'no-store'); res.sendFile(path.join(argusPath, 'eos-engagement.html')); });
-app.get('/welcome',           (req, res) => { res.set('Cache-Control', 'no-store'); res.sendFile(path.join(argusPath, 'welcome.html')); });
 
 // Serve Argus dashboard at root
 app.post('/api/feedback', postFeedback);

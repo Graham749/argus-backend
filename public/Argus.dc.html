@@ -145,6 +145,9 @@ input{font-family:inherit;}
 .hv-tour-cta::before{content:'';position:absolute;inset:-4px;border-radius:9px;border:2px solid #288184;animation:hvBeacon 2.2s ease-out infinite;pointer-events:none;}
 .hv-tour-cta::after{content:'';position:absolute;inset:-9px;border-radius:13px;border:2px solid #288184;animation:hvBeacon 2.2s ease-out .45s infinite;pointer-events:none;}
 @keyframes hvBeacon{0%{opacity:.65;transform:scale(1);}100%{opacity:0;transform:scale(1.2);}}
+/* sidebar hidden on home view */
+.hv-active aside{display:none!important;}
+.hv-active main{margin-left:0!important;}
 </style>
 </helmet>
 
@@ -241,7 +244,7 @@ input{font-family:inherit;}
 
       <!-- ============ HOME ============ -->
       <sc-if value="{{ isHome }}" hint-placeholder-val="{{ false }}">
-      <div style="padding:28px 28px 40px;max-width:980px;animation:argusFade .25s ease;">
+      <div style="padding:40px 48px 52px;max-width:1060px;margin:0 auto;animation:argusFade .25s ease;">
         <div style="margin-bottom:28px;">
           <div style="font-size:20px;font-weight:700;letter-spacing:-0.01em;">Welcome to Argus</div>
           <div style="font-size:12px;color:#9d9d9d;margin-top:4px;">Aurora's intelligence platform — client engagement, commercial signals, EOS usage and support in one view</div>
@@ -374,13 +377,22 @@ input{font-family:inherit;}
       </div>
       <script>
       (function(){
-        // Wire CTA buttons once DOM is ready
+        // Clear any intervals from a previous home-view render
+        (window.__hvIntervals||[]).forEach(clearInterval);
+        window.__hvIntervals=[];
+        function hvInterval(fn,ms){ var id=setInterval(fn,ms); window.__hvIntervals.push(id); return id; }
+
+        // CTA buttons
         document.getElementById('hvEnterBtn').addEventListener('click', function(){
           sessionStorage.setItem('argus_entered','1');
+          document.body.classList.remove('sidebar-collapsed');
+          localStorage.setItem('sidebarCollapsed','false');
           window.__argus.setV({view:'health'});
         });
         document.getElementById('hvStartTourBtn').addEventListener('click', function(){
           sessionStorage.setItem('argus_entered','1');
+          document.body.classList.remove('sidebar-collapsed');
+          localStorage.setItem('sidebarCollapsed','false');
           window.__argus.setV({view:'health'});
           setTimeout(function(){ if(window.argusStartTour) window.argusStartTour(); }, 1400);
         });
@@ -403,11 +415,11 @@ input{font-family:inherit;}
           function showStep(i){ t.forEach(function(el,idx){el.style.opacity=idx<=i?'1':'0';el.classList.toggle('hl',idx===i);}); pTit.textContent=STEPS[i].title; pBod.textContent=STEPS[i].body; pStep.textContent=STEPS[i].s; pop.classList.add('show'); }
           function reset(){ phase=0; pop.classList.remove('show'); pNext.classList.remove('click'); t.forEach(function(el){el.style.opacity='0';el.classList.remove('hl');}); t[0].style.opacity='1'; btn.classList.add('pulsing'); }
           reset();
-          setInterval(function(){
+          hvInterval(function(){
             phase++;
             if(phase===1){btn.classList.remove('pulsing');showStep(0);}
-            else if(phase===2){pNext.classList.add('click');setTimeout(function(){pNext.classList.remove('click');showStep(1);},280);}
-            else if(phase===3){pNext.classList.add('click');setTimeout(function(){pNext.classList.remove('click');showStep(2);},280);}
+            else if(phase===2){pNext.classList.add('click');setTimeout(function(){if(pNext.parentNode){pNext.classList.remove('click');showStep(1);}},280);}
+            else if(phase===3){pNext.classList.add('click');setTimeout(function(){if(pNext.parentNode){pNext.classList.remove('click');showStep(2);}},280);}
             else{reset();}
           }, 2200);
         })();
@@ -430,7 +442,7 @@ input{font-family:inherit;}
             if(i===0){decCol.classList.add('sel');}else{decCol.classList.remove('sel');}
           }
           applyPill(0);
-          setInterval(function(){ pIdx=(pIdx+1)%pills.length; applyPill(pIdx); }, 1400);
+          hvInterval(function(){ if(!document.getElementById('hvDdP0'))return; pIdx=(pIdx+1)%pills.length; applyPill(pIdx); }, 1400);
         })();
 
         /* Animation 3: Feedback */
@@ -440,15 +452,16 @@ input{font-family:inherit;}
           var fbText=document.getElementById('hvFbText');
           var fbSub=document.getElementById('hvFbSub');
           var fbOk=document.getElementById('hvFbOk');
-          var phase=0; var timer=null;
+          var phase=0; var typeTimer=null;
           var MSG='The SF currency toggle is great!';
-          function reset(){ phase=0; fbBtn.classList.remove('clicked'); fbBtn.classList.add('pulsing'); fbForm.classList.remove('show'); fbText.value=''; fbSub.classList.remove('click'); fbSub.style.display=''; fbOk.classList.remove('show'); if(timer){clearInterval(timer);timer=null;} }
+          function reset(){ phase=0; fbBtn.classList.remove('clicked'); fbBtn.classList.add('pulsing'); fbForm.classList.remove('show'); fbText.value=''; fbSub.classList.remove('click'); fbSub.style.display=''; fbOk.classList.remove('show'); if(typeTimer){clearInterval(typeTimer);typeTimer=null;} }
           reset();
-          setInterval(function(){
+          hvInterval(function(){
+            if(!document.getElementById('hvFbBtn'))return;
             phase++;
-            if(phase===1){fbBtn.classList.remove('pulsing');fbBtn.classList.add('clicked');setTimeout(function(){fbForm.classList.add('show');},160);}
-            else if(phase===2){var i=0;fbText.value='';timer=setInterval(function(){if(i<MSG.length){fbText.value+=MSG[i++];}else{clearInterval(timer);timer=null;}},50);}
-            else if(phase===3){fbSub.classList.add('click');setTimeout(function(){fbSub.style.display='none';fbOk.classList.add('show');},320);}
+            if(phase===1){fbBtn.classList.remove('pulsing');fbBtn.classList.add('clicked');setTimeout(function(){if(fbForm.parentNode)fbForm.classList.add('show');},160);}
+            else if(phase===2){var i=0;fbText.value='';typeTimer=setInterval(function(){if(i<MSG.length){fbText.value+=MSG[i++];}else{clearInterval(typeTimer);typeTimer=null;}},50);}
+            else if(phase===3){fbSub.classList.add('click');setTimeout(function(){if(fbSub.parentNode){fbSub.style.display='none';fbOk.classList.add('show');}},320);}
             else{reset();}
           }, 2000);
         })();
@@ -2124,7 +2137,10 @@ aside > div:nth-child(2) { transition: opacity 0.2s ease; }
 
 <script>
 // Restore sidebar state on page load
-if (localStorage.getItem('sidebarCollapsed') === 'true') {
+var _initView = (!sessionStorage.getItem('argus_entered') ? 'home' : null) || localStorage.getItem('argusView') || 'health';
+if (_initView === 'home') {
+  document.body.classList.add('hv-active');
+} else if (localStorage.getItem('sidebarCollapsed') === 'true') {
   document.body.classList.add('sidebar-collapsed');
 }
 
@@ -8386,6 +8402,10 @@ class Component extends DCLogic {
   utilPctStyle(p){ return {fontSize:'11px',marginLeft:'6px',fontWeight:p>100?700:400,color:p>100?'#d23f3f':'#9d9d9d'}; }
 
   setV(patch){
+    if(patch.view) {
+      if(patch.view === 'home') document.body.classList.add('hv-active');
+      else document.body.classList.remove('hv-active');
+    }
     if(typeof localStorage !== 'undefined'){
       if(patch.view)         localStorage.setItem('argusView',         patch.view);
       if(patch.healthClient) localStorage.setItem('argusHealthClient', patch.healthClient);
@@ -9090,8 +9110,8 @@ class Component extends DCLogic {
 
     return {
       syncedAgo:S.buildStatus.syncLabel || 'Synced just now', amName:S.currentUser.name, amInitials:S.currentUser.initials,
-      goHome:(e)=>{e&&e.preventDefault();localStorage.setItem('argusView','home');window.__syncUrl('home');this.setV({view:'home'});},
-      goHealth:(e)=>{e&&e.preventDefault();sessionStorage.setItem('argus_entered','1');localStorage.setItem('argusView','health');window.__syncUrl('health');this.setV({view:'health'});},
+      goHome:(e)=>{e&&e.preventDefault();this.setV({view:'home'});},
+      goHealth:(e)=>{e&&e.preventDefault();sessionStorage.setItem('argus_entered','1');window.__syncUrl('health');this.setV({view:'health'});},
       goFeatures:(e)=>{e&&e.preventDefault();localStorage.setItem('argusView','features');window.__syncUrl('features');this.setV({view:'features'});},
       goAssistant:(e)=>{e&&e.preventDefault();localStorage.setItem('argusView','assistant');window.__syncUrl('assistant');this.setV({view:'assistant'});},
       goBriefing:(e)=>{e&&e.preventDefault();localStorage.setItem('argusView','briefing');window.__syncUrl('briefing');this.setV({view:'briefing'});},
