@@ -151,8 +151,9 @@ input{font-family:inherit;}
 /* coming soon section */
 .hv-cs-heading{font-size:11px;font-weight:700;color:#b0b0b0;letter-spacing:0.1em;text-transform:uppercase;margin:36px 0 14px;}
 .hv-cs-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:36px;}
-.hv-cs-card{background:#fff;border:1px solid #e6e6e5;border-radius:12px;padding:20px 22px 22px;position:relative;overflow:hidden;}
-.hv-cs-card::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(135deg,transparent,transparent 6px,rgba(60,60,59,.025) 6px,rgba(60,60,59,.025) 7px);pointer-events:none;}
+.hv-cs-card{background:#fff;border:1px solid #e6e6e5;border-radius:12px;padding:0;position:relative;overflow:hidden;}
+.hv-cs-body{padding:16px 20px 20px;position:relative;}
+.hv-cs-body::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(135deg,transparent,transparent 6px,rgba(60,60,59,.025) 6px,rgba(60,60,59,.025) 7px);pointer-events:none;}
 .hv-cs-badge{display:inline-flex;align-items:center;gap:5px;font-size:9px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#288184;background:rgba(40,129,132,.08);border:1px solid rgba(40,129,132,.2);border-radius:20px;padding:3px 9px;margin-bottom:12px;}
 .hv-cs-badge svg{width:7px;height:7px;fill:#288184;}
 .hv-cs-icon{width:36px;height:36px;border-radius:9px;background:#f7f7f6;border:1px solid #e6e6e5;display:flex;align-items:center;justify-content:center;margin-bottom:12px;}
@@ -422,44 +423,71 @@ input{font-family:inherit;}
 
           <!-- CS 1: More Data Signals -->
           <div class="hv-cs-card">
-            <div class="hv-cs-badge">
-              <svg viewBox="0 0 8 8"><circle cx="4" cy="4" r="4"/></svg>
-              Coming Soon
+            <div class="hv-mini-nav">
+              <div class="hv-logo"></div>
+              <span class="hv-brand">ARGUS</span>
+              <div class="hv-sep"></div>
+              <span class="hv-page">More Data Signals</span>
+              <span style="flex:1;"></span>
+              <div class="hv-cs-badge" style="margin:0;">
+                <svg viewBox="0 0 8 8"><circle cx="4" cy="4" r="4"/></svg>
+                Coming Soon
+              </div>
             </div>
-            <div class="hv-cs-icon">
-              <svg viewBox="0 0 24 24"><path d="M3 20h18M3 14h4v6H3zM10 10h4v10h-4zM17 4h4v16h-4z"/></svg>
+            <div class="hv-cs-body">
+              <div class="hv-cs-icon">
+                <svg viewBox="0 0 24 24"><path d="M3 20h18M3 14h4v6H3zM10 10h4v10h-4zM17 4h4v16h-4z"/></svg>
+              </div>
+              <div class="hv-cs-title">More Data Signals</div>
+              <div class="hv-cs-desc">Expanding Argus with additional data sources — EOS API volume, MCP tool usage, ARR trend analysis from Salesforce, and an automated OKR pipeline replacing the current manual Power BI scraping process.</div>
+              <span class="hv-cs-tag">Data</span><span class="hv-cs-tag">Signals</span>
             </div>
-            <div class="hv-cs-title">More Data Signals</div>
-            <div class="hv-cs-desc">Expanding Argus with additional data sources — EOS API volume, MCP tool usage, ARR trend analysis from Salesforce, and an automated OKR pipeline replacing the current manual Power BI scraping process.</div>
-            <span class="hv-cs-tag">Data</span><span class="hv-cs-tag">Signals</span>
           </div>
 
           <!-- CS 2: Pre-call Briefing -->
           <div class="hv-cs-card">
-            <div class="hv-cs-badge">
-              <svg viewBox="0 0 8 8"><circle cx="4" cy="4" r="4"/></svg>
-              Coming Soon
+            <div class="hv-mini-nav">
+              <div class="hv-logo"></div>
+              <span class="hv-brand">ARGUS</span>
+              <div class="hv-sep"></div>
+              <span class="hv-page">Pre-call Briefing</span>
+              <span style="flex:1;"></span>
+              <div class="hv-cs-badge" style="margin:0;">
+                <svg viewBox="0 0 8 8"><circle cx="4" cy="4" r="4"/></svg>
+                Coming Soon
+              </div>
             </div>
-            <div class="hv-cs-icon">
-              <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M8 4v5M16 4v5M7 14h5M7 17h3"/></svg>
+            <div class="hv-cs-body">
+              <div class="hv-cs-icon">
+                <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M8 4v5M16 4v5M7 14h5M7 17h3"/></svg>
+              </div>
+              <div class="hv-cs-title">Pre-call Briefing</div>
+              <div class="hv-cs-desc">Auto-generated one-page brief before any client call. Pull up any account and instantly see: ARR + renewal status, open Zendesk tickets, recent Productboard notes, EOS software engagement, open pipeline, and recent news — all in one formatted brief prepared for the account manager on record.</div>
+              <span class="hv-cs-tag">AI</span><span class="hv-cs-tag">Briefing</span>
             </div>
-            <div class="hv-cs-title">Pre-call Briefing</div>
-            <div class="hv-cs-desc">Auto-generated one-page brief before any client call. Pull up any account and instantly see: ARR + renewal status, open Zendesk tickets, recent Productboard notes, EOS software engagement, open pipeline, and recent news — all in one formatted brief prepared for the account manager on record.</div>
-            <span class="hv-cs-tag">AI</span><span class="hv-cs-tag">Briefing</span>
           </div>
 
           <!-- CS 3: Ask Argus (MCP) -->
           <div class="hv-cs-card">
-            <div class="hv-cs-badge">
-              <svg viewBox="0 0 8 8"><circle cx="4" cy="4" r="4"/></svg>
-              Coming Soon
+            <div class="hv-mini-nav">
+              <div class="hv-logo"></div>
+              <span class="hv-brand">ARGUS</span>
+              <div class="hv-sep"></div>
+              <span class="hv-page">Ask Argus</span>
+              <span style="flex:1;"></span>
+              <div class="hv-cs-badge" style="margin:0;">
+                <svg viewBox="0 0 8 8"><circle cx="4" cy="4" r="4"/></svg>
+                Coming Soon
+              </div>
             </div>
-            <div class="hv-cs-icon">
-              <svg viewBox="0 0 24 24"><line x1="12" y1="3" x2="12" y2="21"/><line x1="12" y1="3" x2="12" y2="21" transform="rotate(30,12,12)"/><line x1="12" y1="3" x2="12" y2="21" transform="rotate(60,12,12)"/><line x1="12" y1="3" x2="12" y2="21" transform="rotate(90,12,12)"/><line x1="12" y1="3" x2="12" y2="21" transform="rotate(120,12,12)"/><line x1="12" y1="3" x2="12" y2="21" transform="rotate(150,12,12)"/></svg>
+            <div class="hv-cs-body">
+              <div class="hv-cs-icon">
+                <svg viewBox="0 0 24 24"><line x1="12" y1="3" x2="12" y2="21"/><line x1="12" y1="3" x2="12" y2="21" transform="rotate(30,12,12)"/><line x1="12" y1="3" x2="12" y2="21" transform="rotate(60,12,12)"/><line x1="12" y1="3" x2="12" y2="21" transform="rotate(90,12,12)"/><line x1="12" y1="3" x2="12" y2="21" transform="rotate(120,12,12)"/><line x1="12" y1="3" x2="12" y2="21" transform="rotate(150,12,12)"/></svg>
+              </div>
+              <div class="hv-cs-title">Ask Argus</div>
+              <div class="hv-cs-desc">Ask natural-language questions about any account directly in Claude. Powered by the Argus MCP (Model Context Protocol) server — exposing live Argus data to Claude Desktop so you can query subscriptions, EOS engagement, and support history without opening the app.</div>
+              <span class="hv-cs-tag">AI</span><span class="hv-cs-tag">MCP</span><span class="hv-cs-tag">Claude</span>
             </div>
-            <div class="hv-cs-title">Ask Argus</div>
-            <div class="hv-cs-desc">Ask natural-language questions about any account directly in Claude. Powered by the Argus MCP (Model Context Protocol) server — exposing live Argus data to Claude Desktop so you can query subscriptions, EOS engagement, and support history without opening the app.</div>
-            <span class="hv-cs-tag">AI</span><span class="hv-cs-tag">MCP</span><span class="hv-cs-tag">Claude</span>
           </div>
 
         </div><!-- /coming soon grid -->
