@@ -289,7 +289,7 @@ input{font-family:inherit;}
                 <div class="hv-logo"></div>
                 <span class="hv-brand">ARGUS</span>
                 <div class="hv-sep"></div>
-                <span class="hv-page">SF Subscriptions</span>
+                <span class="hv-page">View the detail</span>
                 <span style="flex:1;"></span>
                 <button class="hv-tour-btn pulsing" id="hvDdNavPill">All</button>
               </div>
@@ -2100,15 +2100,12 @@ window.__hvInit = function() {
     var barsA=document.querySelectorAll('#hvDdChart .hv-dd-bar-a');
     var barsB=document.querySelectorAll('#hvDdChart .hv-dd-bar-b');
     var pIdx=0;
-    var navPill=document.getElementById('hvDdNavPill');
-    var PILL_LABELS=['All','Software','Analytics'];
     function applyPill(i){
       pills.forEach(function(p){p.classList.remove('on');}); pills[i].classList.add('on');
       barsA.forEach(function(b){b.style.opacity=i===2?'0.15':'1';});
       barsB.forEach(function(b){b.style.opacity=i===1?'0.15':'1';});
       rows[0].classList.toggle('dim',i===2); rows[1].classList.toggle('dim',i===1); rows[2].classList.toggle('dim',i!==0);
       if(i===0){decCol.classList.add('sel');}else{decCol.classList.remove('sel');}
-      if(navPill) navPill.textContent=PILL_LABELS[i];
     }
     applyPill(0);
     hvi(function(){ if(!document.getElementById('hvDdP0'))return; pIdx=(pIdx+1)%pills.length; applyPill(pIdx); }, 1400);
