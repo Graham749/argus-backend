@@ -148,6 +148,18 @@ input{font-family:inherit;}
 .hv-fb-icon-w.clicked{background:#288184;border-color:#288184;}
 .hv-fb-icon-w.clicked svg{stroke:#fff;}
 @keyframes hvWPulse{from{box-shadow:0 0 0 2px rgba(40,129,132,.08);}to{box-shadow:0 0 0 5px rgba(40,129,132,.22);}}
+/* coming soon section */
+.hv-cs-heading{font-size:11px;font-weight:700;color:#b0b0b0;letter-spacing:0.1em;text-transform:uppercase;margin:36px 0 14px;}
+.hv-cs-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:36px;}
+.hv-cs-card{background:#fff;border:1px solid #e6e6e5;border-radius:12px;padding:20px 22px 22px;position:relative;overflow:hidden;}
+.hv-cs-card::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(135deg,transparent,transparent 6px,rgba(60,60,59,.025) 6px,rgba(60,60,59,.025) 7px);pointer-events:none;}
+.hv-cs-badge{display:inline-flex;align-items:center;gap:5px;font-size:9px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#288184;background:rgba(40,129,132,.08);border:1px solid rgba(40,129,132,.2);border-radius:20px;padding:3px 9px;margin-bottom:12px;}
+.hv-cs-badge svg{width:7px;height:7px;fill:#288184;}
+.hv-cs-icon{width:36px;height:36px;border-radius:9px;background:#f7f7f6;border:1px solid #e6e6e5;display:flex;align-items:center;justify-content:center;margin-bottom:12px;}
+.hv-cs-icon svg{width:18px;height:18px;stroke:#3c3c3b;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round;}
+.hv-cs-title{font-size:13px;font-weight:700;color:#3c3c3b;margin-bottom:6px;}
+.hv-cs-desc{font-size:11.5px;color:#6d6d6c;line-height:1.65;}
+.hv-cs-tag{display:inline-block;font-size:9px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#6d6d6c;background:#f0f0ef;border-radius:4px;padding:2px 7px;margin-top:10px;margin-right:4px;}
 /* cta */
 .hv-cta{display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;padding-bottom:4px;}
 .hv-enter-btn{display:inline-flex;align-items:center;gap:7px;background:#288184;color:#fff;border:none;border-radius:7px;padding:12px 30px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;letter-spacing:.01em;transition:background .15s;}
@@ -392,6 +404,54 @@ input{font-family:inherit;}
           </div>
 
         </div><!-- /grid -->
+
+        <!-- Coming soon -->
+        <div class="hv-cs-heading">Coming Soon</div>
+        <div class="hv-cs-grid">
+
+          <!-- CS 1: More Data Signals -->
+          <div class="hv-cs-card">
+            <div class="hv-cs-badge">
+              <svg viewBox="0 0 8 8"><circle cx="4" cy="4" r="4"/></svg>
+              Coming Soon
+            </div>
+            <div class="hv-cs-icon">
+              <svg viewBox="0 0 24 24"><path d="M3 20h18M3 14h4v6H3zM10 10h4v10h-4zM17 4h4v16h-4z"/></svg>
+            </div>
+            <div class="hv-cs-title">More Data Signals</div>
+            <div class="hv-cs-desc">Expanding Argus with additional data sources — product usage trends, renewal risk indicators, and industry signals — to give a richer, earlier picture of client health.</div>
+            <span class="hv-cs-tag">Data</span><span class="hv-cs-tag">Signals</span>
+          </div>
+
+          <!-- CS 2: Pre-call Briefing -->
+          <div class="hv-cs-card">
+            <div class="hv-cs-badge">
+              <svg viewBox="0 0 8 8"><circle cx="4" cy="4" r="4"/></svg>
+              Coming Soon
+            </div>
+            <div class="hv-cs-icon">
+              <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M8 4v5M16 4v5M7 14h5M7 17h3"/></svg>
+            </div>
+            <div class="hv-cs-title">Pre-call Briefing</div>
+            <div class="hv-cs-desc">Auto-generate a one-page briefing before any client call — pulling together subscription status, recent support activity, EOS engagement, and open opportunities from Argus.</div>
+            <span class="hv-cs-tag">AI</span><span class="hv-cs-tag">Briefing</span>
+          </div>
+
+          <!-- CS 3: Ask Argus (MCP) -->
+          <div class="hv-cs-card">
+            <div class="hv-cs-badge">
+              <svg viewBox="0 0 8 8"><circle cx="4" cy="4" r="4"/></svg>
+              Coming Soon
+            </div>
+            <div class="hv-cs-icon">
+              <svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20z"/><path d="M8 12h8M12 8v8" stroke-width="1.8"/></svg>
+            </div>
+            <div class="hv-cs-title">Ask Argus</div>
+            <div class="hv-cs-desc">Ask natural-language questions about any account directly in Claude. Powered by the Argus MCP (Model Context Protocol) server — exposing live Argus data to Claude Desktop so you can query subscriptions, EOS engagement, and support history without opening the app.</div>
+            <span class="hv-cs-tag">AI</span><span class="hv-cs-tag">MCP</span><span class="hv-cs-tag">Claude</span>
+          </div>
+
+        </div><!-- /coming soon grid -->
 
         <div class="hv-cta">
           <button class="hv-tour-cta" id="hvStartTourBtn">
