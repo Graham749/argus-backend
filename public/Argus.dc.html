@@ -2182,12 +2182,14 @@ window.__hvInit = function() {
     sessionStorage.setItem('argus_entered','1');
     document.body.classList.remove('sidebar-collapsed');
     localStorage.setItem('sidebarCollapsed','false');
+    if(window.posthog)posthog.capture('home_enter_argus',{page:'home'});
     window.__argus.setV({view:'health'});
   };
   document.getElementById('hvStartTourBtn').onclick = function() {
     sessionStorage.setItem('argus_entered','1');
     document.body.classList.remove('sidebar-collapsed');
     localStorage.setItem('sidebarCollapsed','false');
+    if(window.posthog)posthog.capture('home_start_tour',{page:'home'});
     window.__argus.setV({view:'health'});
     setTimeout(function(){ if(window.argusStartTour) window.argusStartTour(); }, 1400);
   };
@@ -9236,7 +9238,7 @@ class Component extends DCLogic {
 
     return {
       syncedAgo:S.buildStatus.syncLabel || 'Synced just now', amName:S.currentUser.name, amInitials:S.currentUser.initials,
-      goHome:(e)=>{e&&e.preventDefault();sessionStorage.removeItem('argus_entered');history.replaceState(null,'','/');this.setV({view:'home'});},
+      goHome:(e)=>{e&&e.preventDefault();sessionStorage.removeItem('argus_entered');history.replaceState(null,'','/');if(window.posthog)posthog.capture('home_viewed',{page:'home'});this.setV({view:'home'});},
       goHealth:(e)=>{e&&e.preventDefault();sessionStorage.setItem('argus_entered','1');window.__syncUrl('health');this.setV({view:'health'});},
       goFeatures:(e)=>{e&&e.preventDefault();localStorage.setItem('argusView','features');window.__syncUrl('features');this.setV({view:'features'});},
       goAssistant:(e)=>{e&&e.preventDefault();localStorage.setItem('argusView','assistant');window.__syncUrl('assistant');this.setV({view:'assistant'});},
