@@ -137,7 +137,7 @@ input{font-family:inherit;}
 .hv-fb-ok.show{display:flex;}
 .hv-fb-ok svg{width:12px;height:12px;}
 /* mouse cursor overlay for click animation */
-.hv-cursor{position:absolute;top:4px;right:5px;width:15px;height:15px;opacity:0;transform:scale(1);pointer-events:none;z-index:20;transition:opacity 0.18s,transform 0.1s;}
+.hv-cursor{position:absolute;top:43px;right:16px;width:15px;height:15px;opacity:0;transform:scale(1);pointer-events:none;z-index:20;transition:opacity 0.18s,transform 0.1s;}
 .hv-cursor.show{opacity:1;}
 .hv-cursor.tap{transform:scale(0.65);}
 /* feedback icon inside white widget header */
@@ -358,7 +358,7 @@ input{font-family:inherit;}
                   <div style="display:flex;align-items:center;gap:6px;padding:5px 8px;border-bottom:1px solid #f0f0f0;">
                     <span style="font-size:7px;font-weight:900;color:#3c3c3b;letter-spacing:0.05em;text-transform:uppercase;flex:1;">ENGAGEMENT PULSE</span>
                     <span style="font-size:7px;color:#9d9d9d;">Sonnedix</span>
-                    <button class="hv-fb-icon-w">
+                    <button class="hv-fb-icon-w pulsing" id="hvFbIconW">
                       <svg viewBox="0 0 16 16" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 10c0 .6-.4 1-1 1H4l-2 2V3c0-.6.4-1 1-1h10c.6 0 1 .4 1 1v7z"/></svg>
                     </button>
                   </div>
@@ -2145,18 +2145,19 @@ window.__hvInit = function() {
   (function(){
     var fbBtn=document.getElementById('hvFbBtn'),fbForm=document.getElementById('hvFbForm'),fbText=document.getElementById('hvFbText'),fbSub=document.getElementById('hvFbSub'),fbOk=document.getElementById('hvFbOk');
     var phase=0,typeTimer=null,MSG='The SF currency toggle is great!';
-    function reset(){ phase=0; fbBtn.classList.remove('clicked'); fbBtn.classList.add('pulsing'); fbForm.classList.remove('show'); fbText.value=''; if(fbSub){fbSub.classList.remove('click'); fbSub.style.display='';} fbOk.classList.remove('show'); if(typeTimer){clearInterval(typeTimer);typeTimer=null;} var cur=document.getElementById('hvCursor'); if(cur){cur.classList.remove('show','tap');} }
+    function reset(){ phase=0; fbBtn.classList.remove('clicked'); fbBtn.classList.add('pulsing'); fbForm.classList.remove('show'); fbText.value=''; if(fbSub){fbSub.classList.remove('click'); fbSub.style.display='';} fbOk.classList.remove('show'); if(typeTimer){clearInterval(typeTimer);typeTimer=null;} var cur=document.getElementById('hvCursor'); if(cur){cur.classList.remove('show','tap');} var wi=document.getElementById('hvFbIconW'); if(wi){wi.classList.remove('clicked');wi.classList.add('pulsing');} }
     reset();
     hvi(function(){
       if(!document.getElementById('hvFbBtn'))return;
       phase++;
       if(phase===1){
-        var cur=document.getElementById('hvCursor');
+        var cur=document.getElementById('hvCursor'),wi=document.getElementById('hvFbIconW');
         if(cur) cur.classList.add('show');
         setTimeout(function(){
           if(cur) cur.classList.add('tap');
           setTimeout(function(){
             if(cur){ cur.classList.remove('tap'); setTimeout(function(){ cur.classList.remove('show'); },180); }
+            if(wi){ wi.classList.remove('pulsing'); wi.classList.add('clicked'); }
             fbBtn.classList.remove('pulsing'); fbBtn.classList.add('clicked');
             setTimeout(function(){ fbForm.classList.add('show'); },160);
           },150);
