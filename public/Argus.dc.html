@@ -9234,7 +9234,7 @@ class Component extends DCLogic {
 
     return {
       syncedAgo:S.buildStatus.syncLabel || 'Synced just now', amName:S.currentUser.name, amInitials:S.currentUser.initials,
-      goHome:(e)=>{e&&e.preventDefault();this.setV({view:'home'});},
+      goHome:(e)=>{e&&e.preventDefault();sessionStorage.removeItem('argus_entered');history.replaceState(null,'','/');this.setV({view:'home'});},
       goHealth:(e)=>{e&&e.preventDefault();sessionStorage.setItem('argus_entered','1');window.__syncUrl('health');this.setV({view:'health'});},
       goFeatures:(e)=>{e&&e.preventDefault();localStorage.setItem('argusView','features');window.__syncUrl('features');this.setV({view:'features'});},
       goAssistant:(e)=>{e&&e.preventDefault();localStorage.setItem('argusView','assistant');window.__syncUrl('assistant');this.setV({view:'assistant'});},
