@@ -3389,6 +3389,10 @@ class Component extends DCLogic {
     if(this.state.view === 'health'){
       this._initHealthView();
     }
+    // Re-run home animations against DC-rendered DOM (poll may have fired against static x-dc HTML)
+    if(this.state.view === 'home'){
+      setTimeout(function(){ if(window.__hvInit) window.__hvInit(); }, 100);
+    }
   }
 
   _triggerHealthLoad(target){
