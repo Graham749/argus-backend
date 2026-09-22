@@ -43,6 +43,24 @@ function getFeedback(req, res) {
   res.json(loadFeedback());
 }
 
+function patchFeedback(req, res) {
+  const { id } = req.params;
+  const { status, response } = req.body || {};
+  const allowed = ['submitted', 'in progress', 'done', 'wont fix'];
+  if (status && !allowed.includes(status)) return res.status(400).json({ error: `status must be one of: ${allowed.join(', ')}` });
+
+  const entries = loadFeedback();
+  const idx = entries.findIndex(e => e.id === id);
+  if (idx === -1) return res.status(404).json({ error: 'not found' });
+
+  if (status)   entries[idx].status = status;
+  if (response !== undefined) entries[idx].response = response;
+  entries[idx].updated = new Date().toISOString();
+
+  saveFeedback(entries);
+  res.json({ ok: true, entry: entries[idx] });
+}
+
 function deleteFeedback(req, res) {
   const { id } = req.params;
   const entries = loadFeedback();
@@ -52,4 +70,4 @@ function deleteFeedback(req, res) {
   res.json({ ok: true });
 }
 
-module.exports = { postFeedback, getFeedback, deleteFeedback };
+module.exports = { postFeedback, getFeedback, patchFeedback, deleteFeedback };
