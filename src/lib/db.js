@@ -43,16 +43,18 @@ async function getPool(forceNew = false) {
     const p = new sql.ConnectionPool({
       server: SERVER,
       authentication: { type: 'azure-active-directory-access-token', options: { token } },
-      pool: { max: 15, min: 2, idleTimeoutMillis: 120000 },
+      pool: { max: 10, min: 0, idleTimeoutMillis: 30000 },
       requestTimeout: 120000,
       connectionTimeout: 30000,
       options: { encrypt: true, trustServerCertificate: false },
     });
     // Prevent pool errors from crashing the process.
+    // Close the pool explicitly so Fabric-side connections are released.
     p.on('error', err => {
       console.error('[db] pool error (will reconnect on next query):', err.message);
       _pool = null;
       _poolToken = null;
+      p.close().catch(() => {});
     });
     await p.connect();
     _pool = p;
