@@ -39,8 +39,11 @@ const PORT = process.env.PORT || 3001;
 // Prevent tarn/mssql pool TimeoutErrors from crashing the process.
 // These fire as unhandled rejections when the pool has no spare connections
 // and a pending acquire times out — the pool error handler doesn't catch them.
+// Resetting the pool ensures stuck connections are cleared and the next
+// query creates a fresh pool rather than inheriting degraded state.
 process.on('unhandledRejection', (err) => {
-  console.error('[process] unhandledRejection (non-fatal):', err && err.message || err);
+  console.error('[process] unhandledRejection — resetting pool:', err && err.message || err);
+  try { require('./lib/db').resetPool(); } catch (_) {}
 });
 
 // Middleware

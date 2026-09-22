@@ -92,4 +92,15 @@ const _cache = {};
 function cacheGet(key)         { const e = _cache[key]; return e && Date.now() < e.exp ? e.val : null; }
 function cacheSet(key, val, ttlMs) { _cache[key] = { val, exp: Date.now() + ttlMs }; }
 
-module.exports = { query, getAccessToken, cacheGet, cacheSet };
+// Called by server.js unhandledRejection handler when tarn fires a TimeoutError.
+// Closes the stuck pool and clears all state so the next query creates a fresh pool.
+function resetPool() {
+  if (_pool) { _pool.close().catch(() => {}); }
+  _cachedToken = null;
+  _tokenExpiry  = null;
+  _pool         = null;
+  _poolToken    = null;
+  _poolCreating = null;
+}
+
+module.exports = { query, getAccessToken, cacheGet, cacheSet, resetPool };
