@@ -36,6 +36,13 @@ const { isAllowed, loadAllowlist } = require('./lib/allowlist');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// Prevent tarn/mssql pool TimeoutErrors from crashing the process.
+// These fire as unhandled rejections when the pool has no spare connections
+// and a pending acquire times out — the pool error handler doesn't catch them.
+process.on('unhandledRejection', (err) => {
+  console.error('[process] unhandledRejection (non-fatal):', err && err.message || err);
+});
+
 // Middleware
 app.use((req, res, next) => {
   const start = Date.now();
