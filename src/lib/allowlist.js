@@ -2,7 +2,8 @@ const { query } = require('./db');
 
 const CACHE_TTL_MS = 5 * 60 * 1000; // refresh every 5 minutes
 
-let _cache = null;      // Set of lowercase email strings
+let _cache = null;       // Set of lowercase email strings (all active users)
+let _adminCache = null;  // Set of lowercase email strings (admin users)
 let _cacheTime = 0;
 let _tableExists = null; // null = unknown, true/false once checked
 
@@ -14,11 +15,12 @@ function envAllowlist() {
 
 async function loadAllowlist() {
   try {
-    const rows = await query(`SELECT email FROM dbo.gold_argus_access WHERE is_active = 1`);
-    _cache = new Set(rows.map(r => r.email.trim().toLowerCase()));
+    const rows = await query(`SELECT email, access_level FROM dbo.gold_argus_access WHERE is_active = 1`);
+    _cache      = new Set(rows.map(r => r.email.trim().toLowerCase()));
+    _adminCache = new Set(rows.filter(r => (r.access_level||'').toLowerCase() === 'admin').map(r => r.email.trim().toLowerCase()));
     _cacheTime = Date.now();
     _tableExists = true;
-    console.log(`[allowlist] Loaded ${_cache.size} authorised users from Fabric`);
+    console.log(`[allowlist] Loaded ${_cache.size} users (${_adminCache.size} admin) from Fabric`);
   } catch (err) {
     if (_tableExists === null) {
       const env = envAllowlist();
@@ -50,4 +52,9 @@ async function isAllowed(email) {
   return _cache ? _cache.has(email.toLowerCase()) : true;
 }
 
-module.exports = { isAllowed, loadAllowlist };
+async function isAdmin(email) {
+  if (!_cache || Date.now() - _cacheTime > CACHE_TTL_MS) await loadAllowlist();
+  return _adminCache ? _adminCache.has(email.toLowerCase()) : false;
+}
+
+module.exports = { isAllowed, loadAllowlist, isAdmin };

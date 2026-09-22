@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 
 const FILE = path.join(__dirname, '..', '..', 'data', 'feedback.json');
-const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || 'graham.clark@auroraer.com').split(',').map(s => s.trim().toLowerCase());
+const { isAdmin } = require('../lib/allowlist');
 
 function getCallerEmail(req) {
   try {
@@ -58,9 +58,9 @@ function getFeedback(req, res) {
   res.json(loadFeedback());
 }
 
-function patchFeedback(req, res) {
+async function patchFeedback(req, res) {
   const caller = getCallerEmail(req);
-  if (!caller || !ADMIN_EMAILS.includes(caller)) return res.status(403).json({ error: 'Admin access required' });
+  if (!caller || !(await isAdmin(caller))) return res.status(403).json({ error: 'Admin access required' });
 
   const { id } = req.params;
   const { status, note } = req.body || {};
