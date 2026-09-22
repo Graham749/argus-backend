@@ -28,20 +28,10 @@ const pca = new msal.PublicClientApplication({
 });
 
 async function getToken(resource) {
-  // Local dev: always use az CLI — MSAL's HTTP client fails on corporate TLS with Node 24
-  if (process.env.NODE_ENV !== 'production') {
-    const { execSync } = require('child_process');
-    const res = resource.replace(/\/$/, '').replace(/"/g, '');
-    const tenantFlag = TENANT_ID ? `--tenant "${TENANT_ID}"` : '';
-    try {
-      const token = execSync(`az account get-access-token --resource "${res}" ${tenantFlag} --query accessToken -o tsv`, { encoding: 'utf-8', timeout: 30000, windowsHide: true }).trim();
-      if (token) return token;
-    } catch (_) {}
-  }
-
-  // Production: MSAL silent refresh from file-based token cache
   const accounts = await pca.getTokenCache().getAllAccounts();
-  if (accounts.length === 0) throw new Error(`No cached credentials. Run: node setup-auth.js`);
+  if (accounts.length === 0) {
+    throw new Error(`No cached credentials. Run: node setup-auth.js`);
+  }
   try {
     const result = await pca.acquireTokenSilent({
       account: accounts[0],
