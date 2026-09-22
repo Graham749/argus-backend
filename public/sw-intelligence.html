@@ -664,9 +664,10 @@ function filteredTIP() {
   });
   if (REGION !== 'all') tip = tip.filter(function(t) { return (t.region || '').toLowerCase() === REGION; });
   if (MKT.size > 0) tip = tip.filter(function(t) { return MKT.has(t.market); });
+  var sw = (document.getElementById('cl-sw') || {}).value || 'ALL';
   var am = window.__swAmVal || 'ALL';
-  if (am !== 'ALL') {
-    // TIP records don't carry account_manager — cross-reference against the AM-filtered client list
+  if (sw !== 'ALL' || am !== 'ALL') {
+    // TIP records don't carry product or account_manager — cross-reference against filtered client list
     var clientAccts = new Set(filteredClientsBase().map(function(c) { return c.account; }));
     tip = tip.filter(function(t) { return clientAccts.has(t.account) || clientAccts.has(t.parent); });
   }
