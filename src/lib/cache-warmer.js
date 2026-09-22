@@ -61,12 +61,12 @@ async function run(port) {
     return;
   }
 
-  // Warm global endpoints first — these also keep Fabric compute alive
+  // Warm global endpoints sequentially — avoid flooding the pool
   console.log('[cache-warmer] Warming global endpoints...');
   await fetchLocal(port, '/api/sw-intelligence');
   console.log('[cache-warmer] sw-intelligence warmed');
-  // eos-engagement is heavy (14 queries, ~12s) — warm it once on startup so no user waits
-  fetchLocal(port, '/api/eos-engagement').then(s => console.log('[cache-warmer] eos-engagement warmed:', s)).catch(() => {});
+  await fetchLocal(port, '/api/eos-engagement');
+  console.log('[cache-warmer] eos-engagement warmed');
 
   console.log(`[cache-warmer] Pre-warming ${accounts.length} accounts...`);
   for (let i = 0; i < accounts.length; i++) {
