@@ -48,10 +48,14 @@ async function getPool(forceNew = false) {
       connectionTimeout: 30000,
       options: { encrypt: true, trustServerCertificate: false },
     });
-    // Prevent pool errors from crashing the process.
-    // Close the pool explicitly so Fabric-side connections are released.
     p.on('error', err => {
-      console.error('[db] pool error (will reconnect on next query):', err.message);
+      // Tarn acquire timeouts (pool busy) fire here too — don't destroy the pool for those.
+      // Only tear down on genuine connection failures.
+      if (err.name === 'TimeoutError' || (err.message && /timed out/i.test(err.message))) {
+        console.warn('[db] pool acquire timeout (non-fatal):', err.message);
+        return;
+      }
+      console.error('[db] pool connection error (will reconnect on next query):', err.message);
       _pool = null;
       _poolToken = null;
       p.close().catch(() => {});

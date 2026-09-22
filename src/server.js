@@ -42,6 +42,11 @@ const PORT = process.env.PORT || 3001;
 // Resetting the pool ensures stuck connections are cleared and the next
 // query creates a fresh pool rather than inheriting degraded state.
 process.on('unhandledRejection', (err) => {
+  const isAcquireTimeout = err && (err.name === 'TimeoutError' || (err.message && /timed out/i.test(err.message)));
+  if (isAcquireTimeout) {
+    console.warn('[process] tarn acquire timeout (non-fatal — pool stays alive)');
+    return;
+  }
   console.error('[process] unhandledRejection — resetting pool:', err && err.message || err);
   try { require('./lib/db').resetPool(); } catch (_) {}
 });
