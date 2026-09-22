@@ -36,12 +36,6 @@ const { isAllowed, loadAllowlist } = require('./lib/allowlist');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Node 24 turns unhandled rejections into fatal crashes.
-// Tarn pool acquire timeouts fire as unhandled rejections — catch them so the server stays up.
-process.on('unhandledRejection', (err) => {
-  console.warn('[process] unhandledRejection (non-fatal):', err && err.message || err);
-});
-
 // Middleware
 app.use((req, res, next) => {
   const start = Date.now();

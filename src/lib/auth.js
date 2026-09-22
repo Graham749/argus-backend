@@ -4,6 +4,7 @@ const path = require('path');
 
 const CACHE_FILE = path.join(__dirname, '..', '..', '.token-cache.json');
 const TENANT_ID = process.env.AZ_TENANT || 'ad3c7c7d-fe68-4eb7-a656-36bf93cf1d09';
+// Azure CLI public client ID — same auth path as `az login`
 const CLIENT_ID = '04b07795-8ddb-461a-bbee-02f9e1bf7b46';
 
 const cachePlugin = {

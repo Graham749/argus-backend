@@ -42,9 +42,7 @@ async function isAllowed(email) {
   if (_tableExists === false) return true;
 
   if (!_cache || Date.now() - _cacheTime > CACHE_TTL_MS) {
-    // Fire-and-forget — never block a request on a Fabric round-trip.
-    // Fail open while the first load is in flight; stale cache stays in place during refreshes.
-    loadAllowlist().catch(() => {});
+    await loadAllowlist();
   }
 
   if (_tableExists === false) return true;
