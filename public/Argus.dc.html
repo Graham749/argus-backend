@@ -2133,6 +2133,7 @@ input{font-family:inherit;}
           <button id="fbPreviewBtn" style="display:none;padding:7px 14px;border-radius:6px;border:1px solid #288184;background:#fff;font-size:12px;font-weight:600;cursor:pointer;color:#288184;">Preview as user</button>
           <button onclick="window.__fbLoad&&window.__fbLoad()" style="padding:7px 14px;border-radius:6px;border:1px solid #e6e6e5;background:#fff;font-size:12px;font-weight:600;cursor:pointer;color:#3c3c3b;">Refresh</button>
         </div>
+        <div id="fbFilterBar" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:16px;"></div>
         <div id="fbDashboard" style="color:#9d9d9d;font-size:13px;">Loading...</div>
       </div>
       </sc-if>
@@ -10684,9 +10685,26 @@ class Component extends DCLogic {
 <script>
 (function() {
   var _allEntries = [];
+  var _statusFilter = 'all';
+  var _creatorFilter = 'all';
 
   function esc(s) {
     return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function renderFilterBar(entries) {
+    var bar = document.getElementById('fbFilterBar');
+    if (!bar) return;
+    var statuses = ['all','submitted','in progress','on hold','new data','done'];
+    var pillsHtml = statuses.map(function(s) {
+      var active = _statusFilter === s;
+      return '<button data-fb-status="' + s + '" style="padding:4px 12px;border-radius:20px;border:1px solid ' + (active?'#288184':'#e6e6e5') + ';background:' + (active?'#288184':'#fff') + ';color:' + (active?'#fff':'#6d6d6c') + ';font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;">' + (s==='all'?'All':s) + '</button>';
+    }).join('');
+    var creators = ['all'].concat(Array.from(new Set(entries.map(function(e){return e.user;}))).sort());
+    var ddHtml = '<select id="fbCreatorFilter" style="padding:5px 10px;border:1px solid #e6e6e5;border-radius:6px;font-size:11px;color:#3c3c3b;background:#fff;cursor:pointer;">' +
+      creators.map(function(c){ return '<option value="'+esc(c)+'"'+(c===_creatorFilter?' selected':'')+'>'+( c==='all' ? 'All creators' : esc(c.split('@')[0].replace('.',' ').replace(/\b\w/g,function(l){return l.toUpperCase();})))+' </option>'; }).join('') +
+    '</select>';
+    bar.innerHTML = pillsHtml + ddHtml;
   }
 
   function renderEntries(entries) {
@@ -10749,11 +10767,10 @@ class Component extends DCLogic {
       .then(function(r) { return r.json(); })
       .then(function(entries) {
         _allEntries = entries.sort(function(a,b) { return b.ts.localeCompare(a.ts); });
+        renderFilterBar(_allEntries);
         var searchEl = document.getElementById('fbSearch');
         var q = searchEl ? searchEl.value.trim() : '';
-        renderEntries(q ? _allEntries.filter(function(e) {
-          return (e.id+' '+e.widget+' '+e.user+' '+(e.title||'')).toLowerCase().includes(q.toLowerCase());
-        }) : _allEntries);
+        window.__fbFilter(q);
       })
       .catch(function() {
         var el2 = document.getElementById('fbDashboard');
@@ -10762,9 +10779,11 @@ class Component extends DCLogic {
   };
 
   window.__fbFilter = function(q) {
-    if (!q) return renderEntries(_allEntries);
     var filtered = _allEntries.filter(function(e) {
-      return (e.id+' '+e.widget+' '+e.user+' '+(e.title||'')+' '+e.comment).toLowerCase().includes(q.toLowerCase());
+      var matchStatus  = _statusFilter === 'all' || e.status === _statusFilter;
+      var matchCreator = _creatorFilter === 'all' || e.user === _creatorFilter;
+      var matchSearch  = !q || (e.id+' '+e.widget+' '+e.user+' '+(e.title||'')+' '+e.comment).toLowerCase().includes(q.toLowerCase());
+      return matchStatus && matchCreator && matchSearch;
     });
     renderEntries(filtered);
   };
@@ -10843,6 +10862,19 @@ class Component extends DCLogic {
   document.addEventListener('click', function(e) {
     if (e.target && e.target.id === 'fbPreviewBtn') {
       window.__fbTogglePreview && window.__fbTogglePreview();
+    }
+    if (e.target && e.target.dataset && e.target.dataset.fbStatus !== undefined) {
+      _statusFilter = e.target.dataset.fbStatus;
+      renderFilterBar(_allEntries);
+      var searchEl = document.getElementById('fbSearch');
+      window.__fbFilter(searchEl ? searchEl.value.trim() : '');
+    }
+  });
+  document.addEventListener('change', function(e) {
+    if (e.target && e.target.id === 'fbCreatorFilter') {
+      _creatorFilter = e.target.value;
+      var searchEl = document.getElementById('fbSearch');
+      window.__fbFilter(searchEl ? searchEl.value.trim() : '');
     }
   });
 })();
