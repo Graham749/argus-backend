@@ -4,9 +4,9 @@ const http = require('http');
 const { query } = require('./db');
 const eosEngagementAccount = require('../api/eos-engagement-account');
 
-const TOP_N        = 20;
-const STAGGER_MS   = 5000;
-const START_DELAY  = 10000;
+const TOP_N        = 10;
+const STAGGER_MS   = 0;
+const START_DELAY  = 15000;
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
