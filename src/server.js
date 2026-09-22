@@ -36,6 +36,13 @@ const { isAllowed, loadAllowlist } = require('./lib/allowlist');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// Node 24 makes unhandled rejections fatal. Tarn pool acquire timeouts fire as
+// unhandled rejections — without this the server crashes and leaves zombie Fabric
+// sessions that saturate the warehouse and block all subsequent queries.
+process.on('unhandledRejection', (err) => {
+  console.warn('[process] unhandledRejection (non-fatal):', err && err.message || err);
+});
+
 // Middleware
 app.use((req, res, next) => {
   const start = Date.now();
