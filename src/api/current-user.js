@@ -4,6 +4,8 @@ const { getToken } = require('../lib/auth');
 let cachedUser = null;
 let userCacheTime = null;
 
+const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || 'graham.clark@auroraer.com').split(',').map(s => s.trim().toLowerCase());
+
 async function getAccessToken() {
   return getToken('https://graph.microsoft.com');
 }
@@ -85,7 +87,8 @@ async function getCurrentUser(req, res) {
     name = email.split('@')[0].split('.').map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ');
   }
 
-  res.json({ email, name, authenticated: true });
+  const isAdmin = ADMIN_EMAILS.includes(email.toLowerCase());
+  res.json({ email, name, authenticated: true, isAdmin });
 }
 
 module.exports = getCurrentUser;

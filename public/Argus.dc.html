@@ -185,7 +185,7 @@ input{font-family:inherit;}
       <span style="font-size:13px;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;color:#fff;">Argus</span>
       <span style="width:1px;height:24px;background:rgba(255,255,255,0.18);"></span>
       <span style="font-size:13px;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;color:#fff;">Team 20</span>
-      <span style="font-size:10px;font-weight:700;padding:3px 9px;background:#ffcc00;color:#3c3c3b;border-radius:20px;letter-spacing:0.08em;text-transform:uppercase;">Pilot</span>
+      <span id="navBadge" style="font-size:10px;font-weight:700;padding:3px 9px;background:#ffcc00;color:#3c3c3b;border-radius:20px;letter-spacing:0.08em;text-transform:uppercase;">Pilot</span>
     </div>
     <div style="display:flex;align-items:center;gap:16px;">
       <span style="display:flex;align-items:center;gap:7px;font-size:12px;color:rgba(255,255,255,0.6);">
@@ -2130,6 +2130,7 @@ input{font-family:inherit;}
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
           <div style="font-size:18px;font-weight:700;color:#3c3c3b;flex:1;">Feedback</div>
           <input id="fbSearch" type="text" placeholder="Search by ticket ID, widget or user..." style="padding:7px 12px;border:1px solid #e6e6e5;border-radius:6px;font-size:12px;width:280px;outline:none;"/>
+          <button id="fbPreviewBtn" style="display:none;padding:7px 14px;border-radius:6px;border:1px solid #288184;background:#fff;font-size:12px;font-weight:600;cursor:pointer;color:#288184;">Preview as user</button>
           <button onclick="window.__fbLoad&&window.__fbLoad()" style="padding:7px 14px;border-radius:6px;border:1px solid #e6e6e5;background:#fff;font-size:12px;font-weight:600;cursor:pointer;color:#3c3c3b;">Refresh</button>
         </div>
         <div id="fbDashboard" style="color:#9d9d9d;font-size:13px;">Loading...</div>
@@ -8210,6 +8211,11 @@ class Component extends DCLogic {
         clearTimeout(timeout);
         console.log('[Argus] Got user:', user.name);
         this.setState({currentUser:user});
+        if (user.isAdmin) {
+          window.__argusIsAdmin = true;
+          var badge = document.getElementById('navBadge');
+          if (badge) { badge.textContent = 'Admin'; badge.style.background = '#288184'; badge.style.color = '#fff'; }
+        }
       })
       .catch(err=>{
         clearTimeout(timeout);
@@ -10693,8 +10699,33 @@ class Component extends DCLogic {
     el.innerHTML = entries.map(function(e) {
       var d = new Date(e.ts);
       var date = d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}) + ' ' + d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
-      var statusColor = e.status === 'submitted' ? '#288184' : '#9d9d9d';
-      var statusBg = e.status === 'submitted' ? '#e8f7f7' : '#f5f5f5';
+      var sc = {submitted:'#288184', 'in progress':'#b45309', 'on hold':'#9d9d9d', 'new data':'#6d28d9', done:'#166534'};
+      var bg = {submitted:'#e8f7f7', 'in progress':'#fef3c7', 'on hold':'#f5f5f5', 'new data':'#f5f3ff', done:'#dcfce7'};
+      var statusColor = sc[e.status] || '#9d9d9d';
+      var statusBg   = bg[e.status] || '#f5f5f5';
+      var notesLog = (e.notes && e.notes.length)
+        ? e.notes.map(function(n) {
+            var nd = new Date(n.ts);
+            var nDate = nd.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}) + ' ' + nd.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+            return '<div style="padding:6px 10px;background:#f0f9f9;border-left:3px solid #288184;border-radius:4px;margin-bottom:5px;">' +
+              '<div style="font-size:10px;color:#9d9d9d;margin-bottom:2px;">' + nDate + '</div>' +
+              '<div style="font-size:12px;color:#3c3c3b;">' + esc(n.text) + '</div>' +
+            '</div>';
+          }).join('')
+        : (e.response ? '<div style="padding:6px 10px;background:#f0f9f9;border-left:3px solid #288184;border-radius:4px;font-size:12px;color:#3c3c3b;">' + esc(e.response) + '</div>' : '');
+      var adminSection = window.__argusIsAdmin && !window.__fbPreview
+        ? '<div style="margin-top:12px;padding-top:12px;border-top:1px solid #f0f0f0;">' +
+            (notesLog ? '<div style="margin-bottom:8px;">' + notesLog + '</div>' : '') +
+            '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;">' +
+              '<select id="fbSt-' + e.id + '" style="padding:4px 8px;border:1px solid #e6e6e5;border-radius:5px;font-size:11px;color:#3c3c3b;background:#fff;">' +
+                ['submitted','in progress','on hold','new data','done'].map(function(s){ return '<option value="'+s+'"'+(e.status===s?' selected':'')+'>'+s+'</option>'; }).join('') +
+              '</select>' +
+              '<button id="fbSave-' + e.id + '" onclick="window.__fbPatch(\'' + e.id + '\')" style="padding:4px 12px;border-radius:5px;border:none;background:#288184;color:#fff;font-size:11px;font-weight:700;cursor:pointer;">Save</button>' +
+              '<button onclick="window.__fbDelete(\'' + e.id + '\')" style="padding:4px 12px;border-radius:5px;border:1px solid #e6e6e5;background:#fff;color:#9d9d9d;font-size:11px;cursor:pointer;">Delete</button>' +
+            '</div>' +
+            '<textarea id="fbNote-' + e.id + '" placeholder="Add a timestamped note..." style="width:100%;padding:8px;border:1px solid #e6e6e5;border-radius:5px;font-size:12px;color:#3c3c3b;font-family:inherit;resize:vertical;min-height:55px;box-sizing:border-box;"></textarea>' +
+          '</div>'
+        : (notesLog ? '<div style="margin-top:10px;">' + notesLog + '</div>' : '');
       return '<div style="background:#fff;border:1px solid #e6e6e5;border-radius:10px;padding:16px 20px;margin-bottom:10px;">' +
         '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;">' +
           '<span style="font-size:10px;font-weight:700;color:#fff;background:#288184;padding:2px 8px;border-radius:4px;font-family:monospace;letter-spacing:0.04em;flex-shrink:0;">#' + esc(e.id) + '</span>' +
@@ -10705,6 +10736,7 @@ class Component extends DCLogic {
         (e.title ? '<div style="font-size:13px;font-weight:700;color:#3c3c3b;margin-bottom:4px;">' + esc(e.title) + '</div>' : '') +
         '<div style="font-size:12px;color:#6d6d6c;line-height:1.5;">' + esc(e.comment) + '</div>' +
         '<div style="font-size:11px;color:#9d9d9d;margin-top:6px;"><a href="mailto:' + esc(e.user) + '" style="color:#288184;text-decoration:none;">' + esc(e.user) + '</a></div>' +
+        adminSection +
       '</div>';
     }).join('');
   }
@@ -10737,7 +10769,17 @@ class Component extends DCLogic {
     renderEntries(filtered);
   };
 
+  window.__fbTogglePreview = function() {
+    window.__fbPreview = !window.__fbPreview;
+    var btn = document.getElementById('fbPreviewBtn');
+    if (btn) btn.textContent = window.__fbPreview ? 'Exit preview' : 'Preview as user';
+    var searchEl = document.getElementById('fbSearch');
+    var q = searchEl ? searchEl.value.trim() : '';
+    window.__fbFilter(q);
+  };
+
   window.__fbDelete = function(id) {
+    if (!confirm('Delete this feedback ticket? This cannot be undone.')) return;
     fetch('/api/feedback/' + id, { method: 'DELETE' })
       .then(function(r) { return r.json(); })
       .then(function() {
@@ -10749,18 +10791,58 @@ class Component extends DCLogic {
       .catch(function() { alert('Delete failed'); });
   };
 
+  window.__fbPatch = function(id) {
+    var statusEl = document.getElementById('fbSt-' + id);
+    var noteEl   = document.getElementById('fbNote-' + id);
+    var btn      = document.getElementById('fbSave-' + id);
+    var body = {};
+    if (statusEl) body.status = statusEl.value;
+    if (noteEl && noteEl.value.trim()) body.note = noteEl.value.trim();
+    if (btn) { btn.textContent = 'Saving...'; btn.disabled = true; }
+    fetch('/api/feedback/' + id, {
+      method: 'PATCH',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(body)
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.ok) {
+        var idx = _allEntries.findIndex(function(e) { return e.id === id; });
+        if (idx !== -1) _allEntries[idx] = data.entry;
+        if (noteEl) noteEl.value = '';
+        var searchEl = document.getElementById('fbSearch');
+        var q = searchEl ? searchEl.value.trim() : '';
+        window.__fbFilter(q);
+      } else {
+        if (btn) { btn.textContent = 'Save'; btn.disabled = false; }
+        alert(data.error || 'Save failed');
+      }
+    })
+    .catch(function() {
+      if (btn) { btn.textContent = 'Save'; btn.disabled = false; }
+      alert('Save failed');
+    });
+  };
+
   // Poll every 250ms: auto-load when fbDashboard appears, reset when it disappears
   var _fbLoaded = false;
   setInterval(function() {
     var el = document.getElementById('fbDashboard');
     if (el && !_fbLoaded) { _fbLoaded = true; window.__fbLoad(); }
     else if (!el && _fbLoaded) { _fbLoaded = false; }
+    var pbtn = document.getElementById('fbPreviewBtn');
+    if (pbtn) pbtn.style.display = (el && window.__argusIsAdmin) ? '' : 'none';
   }, 250);
 
-  // Event delegation for search — avoids inline oninput being stripped by sc-if
+  // Event delegation — avoids inline handlers being stripped by sc-if
   document.addEventListener('input', function(e) {
     if (e.target && e.target.id === 'fbSearch') {
       window.__fbFilter(e.target.value);
+    }
+  });
+  document.addEventListener('click', function(e) {
+    if (e.target && e.target.id === 'fbPreviewBtn') {
+      window.__fbTogglePreview && window.__fbTogglePreview();
     }
   });
 })();

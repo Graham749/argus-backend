@@ -2,6 +2,21 @@ const fs = require('fs');
 const path = require('path');
 
 const FILE = path.join(__dirname, '..', '..', 'data', 'feedback.json');
+const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || 'graham.clark@auroraer.com').split(',').map(s => s.trim().toLowerCase());
+
+function getCallerEmail(req) {
+  try {
+    const token = req.headers['x-amzn-oidc-data'];
+    if (token) {
+      const payload = JSON.parse(Buffer.from(token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/'), 'base64').toString('utf8'));
+      return (payload.email || payload.upn || payload.preferred_username || '').toLowerCase();
+    }
+  } catch {}
+  if (req.hostname === 'localhost' || req.hostname === '127.0.0.1') {
+    return (process.env.DEV_USER_EMAIL || 'graham.clark@auroraer.com').toLowerCase();
+  }
+  return null;
+}
 
 function loadFeedback() {
   try {
@@ -44,17 +59,23 @@ function getFeedback(req, res) {
 }
 
 function patchFeedback(req, res) {
+  const caller = getCallerEmail(req);
+  if (!caller || !ADMIN_EMAILS.includes(caller)) return res.status(403).json({ error: 'Admin access required' });
+
   const { id } = req.params;
-  const { status, response } = req.body || {};
-  const allowed = ['submitted', 'in progress', 'done', 'wont fix'];
+  const { status, note } = req.body || {};
+  const allowed = ['submitted', 'in progress', 'on hold', 'new data', 'done'];
   if (status && !allowed.includes(status)) return res.status(400).json({ error: `status must be one of: ${allowed.join(', ')}` });
 
   const entries = loadFeedback();
   const idx = entries.findIndex(e => e.id === id);
   if (idx === -1) return res.status(404).json({ error: 'not found' });
 
-  if (status)   entries[idx].status = status;
-  if (response !== undefined) entries[idx].response = response;
+  if (status) entries[idx].status = status;
+  if (note && note.trim()) {
+    if (!entries[idx].notes) entries[idx].notes = [];
+    entries[idx].notes.push({ ts: new Date().toISOString(), text: note.trim() });
+  }
   entries[idx].updated = new Date().toISOString();
 
   saveFeedback(entries);
