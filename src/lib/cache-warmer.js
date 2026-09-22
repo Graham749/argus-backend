@@ -37,21 +37,16 @@ async function getTopAccounts() {
 
 async function warmAccount(port, account, idx, total) {
   const enc = encodeURIComponent(account);
-  const [t, r, z, p, c, o, tl] = await Promise.all([
-    fetchLocal(port, `/api/ph-trends?account=${enc}`),
-    fetchLocal(port, `/api/ph-regions?account=${enc}`),
-    fetchLocal(port, `/api/zd-tickets?account=${enc}`),
-    fetchLocal(port, `/api/pb-insights?account=${enc}`),
-    fetchLocal(port, `/api/sf-cases?account=${enc}`),
-    fetchLocal(port, `/api/sf-opportunities?account=${enc}`),
-    fetchLocal(port, `/api/client-timeline?account=${enc}`),
-  ]);
+  // Sequential to avoid saturating the DB pool (7 concurrent was too many)
+  const t  = await fetchLocal(port, `/api/ph-trends?account=${enc}`);
+  const r  = await fetchLocal(port, `/api/ph-regions?account=${enc}`);
+  const z  = await fetchLocal(port, `/api/zd-tickets?account=${enc}`);
+  const p  = await fetchLocal(port, `/api/pb-insights?account=${enc}`);
+  const c  = await fetchLocal(port, `/api/sf-cases?account=${enc}`);
+  const o  = await fetchLocal(port, `/api/sf-opportunities?account=${enc}`);
+  const tl = await fetchLocal(port, `/api/client-timeline?account=${enc}`);
   const ok = t === 200 && r === 200;
   console.log(`[cache-warmer] (${idx}/${total}) ${account} — trends:${t} regions:${r} zd:${z} pb:${p} cases:${c} opps:${o} timeline:${tl} ${ok ? '✓' : '✗'}`);
-  // Pre-heat EOS engagement for this account in background (slow — don't await)
-  eosEngagementAccount.fetchAndCache(account)
-    .then(() => console.log(`[cache-warmer] eos-acct ${account} warmed`))
-    .catch(err => console.warn(`[cache-warmer] eos-acct ${account} failed:`, err.message));
 }
 
 async function run(port) {

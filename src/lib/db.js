@@ -43,7 +43,7 @@ async function getPool(forceNew = false) {
     const p = new sql.ConnectionPool({
       server: SERVER,
       authentication: { type: 'azure-active-directory-access-token', options: { token } },
-      pool: { max: 10, min: 0, idleTimeoutMillis: 30000 },
+      pool: { max: 20, min: 0, idleTimeoutMillis: 30000 },
       requestTimeout: 120000,
       connectionTimeout: 30000,
       options: { encrypt: true, trustServerCertificate: false },
