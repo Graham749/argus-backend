@@ -244,4 +244,13 @@ app.listen(PORT, () => {
   setInterval(() => {
     dbQuery('SELECT 1 AS ping').catch(() => {});
   }, 5 * 60 * 1000);
+
+  // Proactively refresh MSAL token every 45 minutes so it never expires mid-session.
+  // Azure AD access tokens last 60 minutes; refreshing at 45 gives a 15-minute buffer.
+  const { getToken } = require('./lib/auth');
+  setInterval(() => {
+    getToken('https://database.windows.net/')
+      .then(() => console.log('[auth] Token proactively refreshed'))
+      .catch(err => console.error('[auth] Proactive refresh failed — re-run setup-auth.js:', err.message));
+  }, 45 * 60 * 1000);
 });
