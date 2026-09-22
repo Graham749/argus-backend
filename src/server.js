@@ -36,21 +36,6 @@ const { isAllowed, loadAllowlist } = require('./lib/allowlist');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Prevent tarn/mssql pool TimeoutErrors from crashing the process.
-// These fire as unhandled rejections when the pool has no spare connections
-// and a pending acquire times out — the pool error handler doesn't catch them.
-// Resetting the pool ensures stuck connections are cleared and the next
-// query creates a fresh pool rather than inheriting degraded state.
-process.on('unhandledRejection', (err) => {
-  const isAcquireTimeout = err && (err.name === 'TimeoutError' || (err.message && /timed out/i.test(err.message)));
-  if (isAcquireTimeout) {
-    console.warn('[process] tarn acquire timeout (non-fatal — pool stays alive)');
-    return;
-  }
-  console.error('[process] unhandledRejection — resetting pool:', err && err.message || err);
-  try { require('./lib/db').resetPool(); } catch (_) {}
-});
-
 // Middleware
 app.use((req, res, next) => {
   const start = Date.now();
@@ -244,13 +229,4 @@ app.listen(PORT, () => {
   setInterval(() => {
     dbQuery('SELECT 1 AS ping').catch(() => {});
   }, 5 * 60 * 1000);
-
-  // Proactively refresh MSAL token every 45 minutes so it never expires mid-session.
-  // Azure AD access tokens last 60 minutes; refreshing at 45 gives a 15-minute buffer.
-  const { getToken } = require('./lib/auth');
-  setInterval(() => {
-    getToken('https://database.windows.net/')
-      .then(() => console.log('[auth] Token proactively refreshed'))
-      .catch(err => console.error('[auth] Proactive refresh failed — re-run setup-auth.js:', err.message));
-  }, 45 * 60 * 1000);
 });

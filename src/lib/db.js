@@ -48,17 +48,11 @@ async function getPool(forceNew = false) {
       connectionTimeout: 30000,
       options: { encrypt: true, trustServerCertificate: false },
     });
+    // Prevent pool errors from crashing the process.
     p.on('error', err => {
-      // Tarn acquire timeouts (pool busy) fire here too — don't destroy the pool for those.
-      // Only tear down on genuine connection failures.
-      if (err.name === 'TimeoutError' || (err.message && /timed out/i.test(err.message))) {
-        console.warn('[db] pool acquire timeout (non-fatal):', err.message);
-        return;
-      }
-      console.error('[db] pool connection error (will reconnect on next query):', err.message);
+      console.error('[db] pool error (will reconnect on next query):', err.message);
       _pool = null;
       _poolToken = null;
-      p.close().catch(() => {});
     });
     await p.connect();
     _pool = p;
@@ -98,15 +92,4 @@ const _cache = {};
 function cacheGet(key)         { const e = _cache[key]; return e && Date.now() < e.exp ? e.val : null; }
 function cacheSet(key, val, ttlMs) { _cache[key] = { val, exp: Date.now() + ttlMs }; }
 
-// Called by server.js unhandledRejection handler when tarn fires a TimeoutError.
-// Closes the stuck pool and clears all state so the next query creates a fresh pool.
-function resetPool() {
-  if (_pool) { _pool.close().catch(() => {}); }
-  _cachedToken = null;
-  _tokenExpiry  = null;
-  _pool         = null;
-  _poolToken    = null;
-  _poolCreating = null;
-}
-
-module.exports = { query, getAccessToken, cacheGet, cacheSet, resetPool };
+module.exports = { query, getAccessToken, cacheGet, cacheSet };
