@@ -195,7 +195,7 @@ tfoot td{font-size:11px;color:#9d9d9d;padding:6px 10px;border-top:1px solid #e6e
       <button onclick="renderKPIs();renderClients();"
         style="padding:6px 14px;background:#288184;color:#fff;border:none;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;">Search</button>
     </div>
-    <select id="cl-sw" onchange="renderKPIs();renderClients();"><option value="ALL">All products</option></select>
+    <select id="cl-sw" onchange="onProductChange();"><option value="ALL">All products</option></select>
     <div id="cl-am" style="display:inline-block;flex-shrink:0;"></div>
     <span style="margin-left:auto;display:flex;align-items:center;gap:6px;flex-shrink:0">
       <span class="filter-label">Grouped by:</span>
@@ -484,6 +484,15 @@ function setFP(el, mode) {
   document.querySelectorAll('#opp-subfilter .pill').forEach(function(p) { p.classList.remove('active'); });
   var oppOpen = document.getElementById('oppf-open');
   if (oppOpen) oppOpen.classList.add('active');
+  renderKPIs(); renderClients(); updateClearAllState();
+}
+
+function onProductChange() {
+  REGION = 'all'; MKT = new Set();
+  document.querySelectorAll('#region-bar .pill').forEach(function(p) { p.classList.remove('active'); });
+  var allPill = document.querySelector('#region-bar .pill[data-region="all"]');
+  if (allPill) allPill.classList.add('active');
+  populateMktPills();
   renderKPIs(); renderClients(); updateClearAllState();
 }
 
