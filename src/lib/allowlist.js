@@ -5,6 +5,7 @@ const CACHE_TTL_MS = 5 * 60 * 1000; // refresh every 5 minutes
 let _cache = null;      // Set of lowercase email strings
 let _cacheTime = 0;
 let _tableExists = null; // null = unknown, true/false once checked
+let _refreshing = false; // in-flight guard — only one refresh at a time
 
 function envAllowlist() {
   const val = process.env.ALLOWED_EMAILS;
@@ -41,10 +42,11 @@ async function loadAllowlist() {
 async function isAllowed(email) {
   if (_tableExists === false) return true;
 
-  if (!_cache || Date.now() - _cacheTime > CACHE_TTL_MS) {
+  if (!_refreshing && (!_cache || Date.now() - _cacheTime > CACHE_TTL_MS)) {
     // Fire-and-forget — never block a request on a Fabric round-trip.
-    // Fail open while the first load is in flight; stale cache stays in place during refreshes.
-    loadAllowlist().catch(() => {});
+    // _refreshing guard ensures only one Fabric call at a time.
+    _refreshing = true;
+    loadAllowlist().catch(() => {}).finally(() => { _refreshing = false; });
   }
 
   if (_tableExists === false) return true;

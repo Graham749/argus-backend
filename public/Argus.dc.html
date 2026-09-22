@@ -8233,7 +8233,7 @@ class Component extends DCLogic {
         clearInterval(loadingInterval);
         this.setState({isLoading:false});
         if(data.error || !data.gold){
-          this.setState({buildStatus:{...this.state.buildStatus,syncLabel:'Fabric auth expired — restart server'}});
+          this.setState({buildStatus:{...this.state.buildStatus,syncLabel:'Fabric unavailable — retrying…'}});
           return;
         }
         const topGoldTables=(data.gold.views||[]).slice(0,3).map(v=>({name:v.name,desc:v.purpose}));
