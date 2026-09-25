@@ -39,12 +39,12 @@ async function resolveTenantInList(account) {
 
   const inList = [...domains].map(d => `'${d.replace(/'/g, "''")}'`).join(',');
   const tenantRows = await query(`
-    SELECT ph_tenant FROM dbo.gold_posthog_account_activity
-    WHERE ph_tenant IN (${inList})
+    SELECT tenant FROM dbo.gold_posthog_account_activity
+    WHERE tenant IN (${inList})
   `);
   if (!tenantRows.length) return null;
 
-  const tenantInList = tenantRows.map(r => `'${r.ph_tenant.replace(/'/g, "''")}'`).join(',');
+  const tenantInList = tenantRows.map(r => `'${r.tenant.replace(/'/g, "''")}'`).join(',');
   cacheSet(cacheKey, tenantInList, MDM_TTL);
   return tenantInList;
 }

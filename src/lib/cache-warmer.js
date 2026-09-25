@@ -27,7 +27,7 @@ async function getTopAccounts() {
       g.sf_account_name,
       SUM(a.ph_total_events) AS total_events
     FROM dbo.gold_posthog_account_activity a
-    INNER JOIN dbo.gold_mdm_posthog g ON g.ph_tenant = a.ph_tenant
+    INNER JOIN dbo.gold_mdm_posthog g ON g.ph_tenant = a.tenant
     WHERE g.sf_account_name IS NOT NULL AND g.sf_account_name != ''
     GROUP BY g.sf_account_name
     ORDER BY total_events DESC

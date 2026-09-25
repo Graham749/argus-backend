@@ -49,9 +49,9 @@ async function accountMatches(req, res) {
     if (domains.size > 0) {
       const inList = [...domains].map(d => `'${d.replace(/'/g, "''")}'`).join(',');
       const phRows = await query(`
-        SELECT TOP 1 ph_tenant
+        SELECT TOP 1 tenant
         FROM dbo.gold_posthog_account_activity
-        WHERE ph_tenant IN (${inList})
+        WHERE tenant IN (${inList})
       `);
       hasPh = phRows.length > 0;
     }

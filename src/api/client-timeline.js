@@ -193,11 +193,11 @@ module.exports = async function clientTimeline(req, res) {
       if (domains.size) {
         const inList = [...domains].map(d => `'${d.replace(/'/g, "''")}'`).join(',');
         const activityRows = await query(`
-          SELECT TOP 1 ph_tenant FROM dbo.gold_posthog_account_activity
-          WHERE ph_tenant IN (${inList})
+          SELECT TOP 1 tenant FROM dbo.gold_posthog_account_activity
+          WHERE tenant IN (${inList})
           ORDER BY ph_total_events DESC
         `);
-        phTenant = activityRows?.[0]?.ph_tenant || null;
+        phTenant = activityRows?.[0]?.tenant || null;
       }
 
       // Fallback to gold_mdm_posthog if domain lookup finds nothing

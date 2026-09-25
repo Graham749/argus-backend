@@ -41,12 +41,10 @@ async function resolveTenants(account) {
   const inList = [...domains].map(d => `'${d.replace(/'/g, "''")}'`).join(',');
   const summaryRows = await query(`
     SELECT
-      ph_tenant, ph_total_events, ph_unique_users,
-      ph_first_seen, ph_last_seen,
-      ph_events_last_30d, ph_events_last_7d,
-      ph_investment_cases, ph_leaderboards, ph_benchmarks
+      tenant, ph_total_events, ph_distinct_users,
+      ph_first_seen, ph_last_seen
     FROM dbo.gold_posthog_account_activity
-    WHERE ph_tenant IN (${inList})
+    WHERE tenant IN (${inList})
   `);
   if (!summaryRows || !summaryRows.length) return null;
 
@@ -157,13 +155,13 @@ async function phTrends(req, res) {
     if (!resolved) return res.json({ tenants: [], summary: null, weekly: [], daily: [], weeklyRuns: [], dailyRuns: [] });
 
     const { mdm, summaryRows } = resolved;
-    const tenants     = summaryRows.map(r => r.ph_tenant);
+    const tenants     = summaryRows.map(r => r.tenant);
     const method      = matchMethod(mdm, tenants[0]);
     const tenantInList = tenants.map(t => `'${t.replace(/'/g, "''")}'`).join(',');
 
     const tenantsCte = `WITH tenants AS (
-      SELECT ph_tenant FROM dbo.gold_posthog_account_activity
-      WHERE ph_tenant IN (${tenantInList})
+      SELECT tenant FROM dbo.gold_posthog_account_activity
+      WHERE tenant IN (${tenantInList})
     )`;
 
     const [weeklyRows, dailyRows, weeklyRunRows, dailyRunRows] = await Promise.all([
@@ -180,7 +178,7 @@ async function phTrends(req, res) {
           COUNT(DISTINCT CASE WHEN e.pathname LIKE '%/benchmarks%'       THEN e.person_id END) AS bm_users,
           COUNT(DISTINCT CASE WHEN e.pathname NOT LIKE '%/investment-cases%' AND e.pathname NOT LIKE '%/leaderboards%' AND e.pathname NOT LIKE '%/benchmarks%' THEN e.person_id END) AS untagged_users
         FROM dbo.posthog_notebook_events e
-        INNER JOIN tenants t ON LOWER(LTRIM(RTRIM(e.tenant))) = t.ph_tenant
+        INNER JOIN tenants t ON LOWER(LTRIM(RTRIM(e.tenant))) = t.tenant
         WHERE e.timestamp IS NOT NULL AND e.event = '$pageview'
         GROUP BY CAST(DATEADD(DAY, DATEDIFF(DAY,'2000-01-03',e.timestamp)/7*7, '2000-01-03') AS DATE)
         ORDER BY week_start
@@ -198,7 +196,7 @@ async function phTrends(req, res) {
           COUNT(DISTINCT CASE WHEN e.pathname LIKE '%/benchmarks%'       THEN e.person_id END) AS bm_users,
           COUNT(DISTINCT CASE WHEN e.pathname NOT LIKE '%/investment-cases%' AND e.pathname NOT LIKE '%/leaderboards%' AND e.pathname NOT LIKE '%/benchmarks%' THEN e.person_id END) AS untagged_users
         FROM dbo.posthog_notebook_events e
-        INNER JOIN tenants t ON LOWER(LTRIM(RTRIM(e.tenant))) = t.ph_tenant
+        INNER JOIN tenants t ON LOWER(LTRIM(RTRIM(e.tenant))) = t.tenant
         WHERE e.timestamp IS NOT NULL AND e.event = '$pageview'
         GROUP BY CAST(e.timestamp AS DATE)
         ORDER BY day_start
@@ -208,7 +206,7 @@ async function phTrends(req, res) {
           CAST(DATEADD(DAY, DATEDIFF(DAY,'2000-01-03',e.timestamp)/7*7, '2000-01-03') AS DATE) AS week_start,
           e.feature, COUNT(*) AS runs
         FROM dbo.posthog_notebook_events e
-        INNER JOIN tenants t ON LOWER(LTRIM(RTRIM(e.tenant))) = t.ph_tenant
+        INNER JOIN tenants t ON LOWER(LTRIM(RTRIM(e.tenant))) = t.tenant
         WHERE e.timestamp IS NOT NULL AND e.feature IS NOT NULL AND e.feature != ''
         GROUP BY CAST(DATEADD(DAY, DATEDIFF(DAY,'2000-01-03',e.timestamp)/7*7, '2000-01-03') AS DATE), e.feature
         ORDER BY week_start
@@ -216,7 +214,7 @@ async function phTrends(req, res) {
       query(tenantsCte + `
         SELECT CAST(e.timestamp AS DATE) AS day_start, e.feature, COUNT(*) AS runs
         FROM dbo.posthog_notebook_events e
-        INNER JOIN tenants t ON LOWER(LTRIM(RTRIM(e.tenant))) = t.ph_tenant
+        INNER JOIN tenants t ON LOWER(LTRIM(RTRIM(e.tenant))) = t.tenant
         WHERE e.timestamp IS NOT NULL AND e.feature IS NOT NULL AND e.feature != ''
         GROUP BY CAST(e.timestamp AS DATE), e.feature
         ORDER BY day_start
@@ -224,7 +222,7 @@ async function phTrends(req, res) {
     ]);
 
     const totalEvents     = summaryRows.reduce((s, r) => s + (Number(r.ph_total_events)    || 0), 0);
-    const uniqueUsers     = summaryRows.reduce((s, r) => s + (Number(r.ph_unique_users)    || 0), 0);
+    const uniqueUsers     = summaryRows.reduce((s, r) => s + (Number(r.ph_distinct_users)  || 0), 0);
     const events30d       = summaryRows.reduce((s, r) => s + (Number(r.ph_events_last_30d) || 0), 0);
     const events7d        = summaryRows.reduce((s, r) => s + (Number(r.ph_events_last_7d)  || 0), 0);
     const investmentCases = summaryRows.reduce((s, r) => s + (Number(r.ph_investment_cases)|| 0), 0);
