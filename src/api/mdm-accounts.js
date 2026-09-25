@@ -146,7 +146,7 @@ async function mdmAccounts(req, res) {
             MAX(CASE WHEN g.match_method = 'Wildcard'       THEN 1 ELSE 0 END) AS is_wildcard_match,
             MAX(CASE WHEN g.match_method = 'EOS Tenant'     THEN 1 ELSE 0 END) AS is_eos_tenant_match,
             MAX(CASE WHEN g.ph_tenant IS NOT NULL           THEN 1 ELSE 0 END) AS is_any_match
-          FROM dbo.gold_posthog_account_activity ph
+          FROM dbo.v_silver_posthog_account_activity ph
           LEFT JOIN dbo.gold_mdm_posthog g ON g.ph_tenant = ph.ph_tenant
           GROUP BY ph.ph_tenant, ph.ph_tenant_format
         )
@@ -192,7 +192,7 @@ async function mdmAccounts(req, res) {
           ph.ph_last_seen,
           ph.ph_events_last_30d,
           ph.ph_top_feature
-        FROM dbo.gold_posthog_account_activity ph
+        FROM dbo.v_silver_posthog_account_activity ph
         WHERE ph.ph_tenant_format = 'domain'
         ORDER BY ph.ph_total_events DESC
       `),
