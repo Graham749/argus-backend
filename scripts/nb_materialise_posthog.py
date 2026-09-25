@@ -16,10 +16,11 @@ from pyspark.sql import functions as F
 from pyspark.sql.window import Window
 from datetime import date
 
-EVENTS_SRC   = "posthog_notebook_events"
-GOLD_EVENTS  = "gold_posthog_events_sfdc"
-GOLD_ACTIVITY = "gold_posthog_account_activity"
-GOLD_WEEKLY  = "gold_posthog_user_adoption_weekly"
+EVENTS_SRC      = "posthog_notebook_events"
+GOLD_EVENTS     = "gold_posthog_events_sfdc"
+GOLD_ACTIVITY   = "gold_posthog_account_activity"
+GOLD_WEEKLY     = "gold_posthog_user_adoption_weekly"
+GOLD_REGULARITY = "gold_posthog_user_regularity"
 
 # ── Cell 2: Watermark ────────────────────────────────────────────────────────
 try:
@@ -207,54 +208,117 @@ account_activity.write.format("delta").mode("overwrite").saveAsTable(GOLD_ACTIVI
 print(f"Wrote {account_activity.count():,} rows to {GOLD_ACTIVITY}")
 
 # ── Cell 9: Recompute gold_posthog_user_adoption_weekly ──────────────────────
-# Rolling 13-week window. Reads from gold_events (fast Delta read, no joins).
-# Pivot columns are generated dynamically so no view SQL needs updating.
+# Long-format: one row per (person × energy_market × feature × week).
+# Reads full history from gold_events — required for rolling regularity window.
 
-from datetime import timedelta
-
-def last_monday(d):
-    return d - timedelta(days=d.weekday())
-
-today = date.today()
-week_start = last_monday(today)
-weeks = [(week_start - timedelta(weeks=i)) for i in range(12, -1, -1)]  # 13 weeks oldest→newest
-
-features = {"benchmarks": "bm", "investment-cases": "ic", "leaderboards": "lb"}
+features = ["benchmarks", "investment-cases", "leaderboards"]
 
 filtered = spark.table(GOLD_EVENTS).filter(
     (F.col("event") == "url_state_change") &
-    F.col("feature").isin(list(features.keys())) &
+    F.col("feature").isin(features) &
     F.col("person_id").isNotNull() &
     (F.trim(F.col("person_id").cast("string")) != "") &
     F.col("session_id").isNotNull() &
-    (F.col("timestamp") >= str(weeks[0]))
+    F.col("sf_account_id").isNotNull() &
+    F.col("energy_market").isNotNull()
+).withColumn(
+    "week_start",
+    F.date_sub(
+        F.col("timestamp").cast("date"),
+        (F.dayofweek(F.col("timestamp")) + 5) % 7   # floor to Monday
+    )
 )
 
-agg_exprs = [F.col("person_id"), F.col("sf_account_id"), F.col("sf_account_code"), F.col("sf_account_name")]
-
-for feat_name, prefix in features.items():
-    for i, w_start in enumerate(weeks):
-        w_end = w_start + timedelta(weeks=1)
-        col_name = f"{prefix}_{w_start.strftime('%Y_%m_%d')}"
-        agg_exprs.append(
-            F.countDistinct(
-                F.when(
-                    (F.col("feature") == feat_name) &
-                    (F.col("timestamp") >= str(w_start)) &
-                    (F.col("timestamp") < str(w_end)),
-                    F.col("session_id")
-                )
-            ).alias(col_name)
-        )
-
-weekly = filtered.groupBy("person_id","sf_account_id","sf_account_code","sf_account_name").agg(
-    *[e for e in agg_exprs[4:]]
+weekly = (
+    filtered
+    .groupBy(
+        "person_id", "sf_account_id", "sf_account_code", "sf_account_name",
+        "energy_market", "feature", "week_start"
+    )
+    .agg(F.countDistinct("session_id").alias("session_count"))
 )
 
 weekly.write.format("delta").mode("overwrite").saveAsTable(GOLD_WEEKLY)
 print(f"Wrote {weekly.count():,} rows to {GOLD_WEEKLY}")
 
-# ── Cell 10: Drop the old views ───────────────────────────────────────────────
+# ── Cell 10: Recompute gold_posthog_user_regularity ──────────────────────────
+# Grain: person × energy_market × feature × as_of_week.
+# For each row, look back across three period grains and flag whether the person
+# was active in 4+ of the last 6 periods (4-of-6 rule).
+#
+# Weekly    — last 6 Mondays (6 weeks, datediff 0–35)
+# Fortnightly — last 6 fortnights = 12 weeks (datediff 0–77)
+# Monthly   — last 6 calendar months (months_between 0–5)
+#
+# Fortnights are aligned to the epoch 2026-04-13 (first Monday in data).
+
+EPOCH = F.lit("2026-04-13").cast("date")
+
+weekly_df = spark.table(GOLD_WEEKLY)
+
+weekly_p = (
+    weekly_df
+    .withColumn(
+        "fortnight_start",
+        F.date_sub(
+            F.col("week_start"),
+            F.datediff(F.col("week_start"), EPOCH) % 14
+        )
+    )
+    .withColumn(
+        "month_start",
+        F.date_trunc("month", F.col("week_start")).cast("date")
+    )
+)
+
+ref = weekly_p.alias("ref")
+lkp = weekly_p.alias("lkp")
+
+joined = ref.join(
+    lkp,
+    (F.col("ref.person_id")     == F.col("lkp.person_id"))     &
+    (F.col("ref.sf_account_id") == F.col("lkp.sf_account_id")) &
+    (F.col("ref.energy_market") == F.col("lkp.energy_market")) &
+    (F.col("ref.feature")       == F.col("lkp.feature")),
+    "left"
+)
+
+# Pre-compute lookback boolean flags before groupBy
+flagged = (
+    joined
+    .withColumn("in_6w",
+        F.datediff(F.col("ref.week_start"), F.col("lkp.week_start")).between(0, 35))
+    .withColumn("in_6f",
+        F.datediff(F.col("ref.week_start"), F.col("lkp.week_start")).between(0, 77))
+    .withColumn("in_6m",
+        F.months_between(F.col("ref.month_start"), F.col("lkp.month_start")).between(0, 5))
+)
+
+regularity = (
+    flagged
+    .groupBy(
+        F.col("ref.person_id").alias("person_id"),
+        F.col("ref.sf_account_id").alias("sf_account_id"),
+        F.col("ref.sf_account_code").alias("sf_account_code"),
+        F.col("ref.sf_account_name").alias("sf_account_name"),
+        F.col("ref.energy_market").alias("energy_market"),
+        F.col("ref.feature").alias("feature"),
+        F.col("ref.week_start").alias("as_of_week"),
+    )
+    .agg(
+        F.countDistinct(F.when(F.col("in_6w"), F.col("lkp.week_start"))).alias("active_weeks_6w"),
+        F.countDistinct(F.when(F.col("in_6f"), F.col("lkp.fortnight_start"))).alias("active_fortnights_6f"),
+        F.countDistinct(F.when(F.col("in_6m"), F.col("lkp.month_start"))).alias("active_months_6m"),
+    )
+    .withColumn("is_regular_weekly",      (F.col("active_weeks_6w")      >= 4).cast("int"))
+    .withColumn("is_regular_fortnightly", (F.col("active_fortnights_6f") >= 4).cast("int"))
+    .withColumn("is_regular_monthly",     (F.col("active_months_6m")     >= 4).cast("int"))
+)
+
+regularity.write.format("delta").mode("overwrite").saveAsTable(GOLD_REGULARITY)
+print(f"Wrote {regularity.count():,} rows to {GOLD_REGULARITY}")
+
+# ── Cell 11: Drop the old views ───────────────────────────────────────────────
 for view in [
     "v_gold_posthog_events_sfdc",
     "v_silver_posthog_account_activity",
